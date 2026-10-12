@@ -1,0 +1,50 @@
+[project]
+name = "wfm-api"
+version = "0.1.0"
+description = "Gijima WFM Django API"
+requires-python = ">=3.12"
+dependencies = [
+  "django>=5.2,<5.3",
+  "django-ninja>=1.4",
+  "psycopg[binary]>=3.2",
+  "celery[redis]>=5.4",
+  "gunicorn>=23",
+  "whitenoise>=6.7",
+  "wfm-engine",
+  "argon2-cffi>=25.1.0",
+]
+
+[tool.uv.sources]
+wfm-engine = { path = "../engine", editable = true }
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "pytest-django>=4.9",
+  "pytest-cov>=5",
+  "testcontainers[postgres]>=4.8",
+  "ruff>=0.6",
+  "mypy>=1.11",
+  "django-stubs>=5.1",
+  "import-linter>=2.1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["**/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "N", "RUF", "PT", "S", "DJ"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "S105", "S106"]
+"conftest.py" = ["S101", "S105", "S106"]
+# Django idiom: Meta.indexes / Meta.constraints are class-level lists.
+"**/models.py" = ["RUF012"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+testpaths = ["wfm", "tests"]
+addopts = "--cov=wfm --cov-report=term-missing"

@@ -1,0 +1,97 @@
+"""Settings shared by every environment. Environment-specific values come from env vars."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from ._env import broker_url_from_env, database_from_env, env, env_bool, env_list
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+SECRET_KEY = env("DJANGO_SECRET_KEY")
+DEBUG = env_bool("DJANGO_DEBUG")
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+
+INSTALLED_APPS = [
+    "django.contrib.contenttypes",
+    "django.contrib.auth",
+    "django.contrib.sessions",
+    "django.contrib.staticfiles",
+    "wfm.core",
+    "wfm.accounts",
+    "wfm.audit",
+]
+
+# No django.contrib.admin on purpose: it would be a write path that bypasses the audited
+# service layer (requirement AUD-08). Reference-data admin is added later, read-only.
+
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "wfm.core.middleware.RequestContextMiddleware",
+]
+
+ROOT_URLCONF = "config.urls"
+WSGI_APPLICATION = "config.wsgi.application"
+ASGI_APPLICATION = "config.asgi.application"
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "OPTIONS": {"connect_timeout": 5},
+        **database_from_env(),
+    },
+}
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTH_USER_MODEL = "accounts.User"
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+]
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 12},
+    },
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+]
+
+# Sessions (gap G7): server-side, sliding 30-minute idle timeout.
+SESSION_ENGINE = "django.contrib.sessions.backends.db"
+SESSION_COOKIE_AGE = 30 * 60
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_HTTPONLY = False  # the SPA reads the token and sends it as X-CSRFToken
+
+# Login lockout (gap G7)
+LOGIN_MAX_FAILURES = 5
+LOGIN_LOCKOUT_MINUTES = 15
+
+# Time: store UTC, display Africa/Johannesburg at the edge (NFR-07).
+USE_TZ = True
+TIME_ZONE = "Africa/Johannesburg"
+LANGUAGE_CODE = "en-za"
+USE_I18N = False
+
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+CELERY_BROKER_URL = broker_url_from_env()
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_TIME_LIMIT = 15 * 60
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": env("LOG_LEVEL", "INFO")},
+}
