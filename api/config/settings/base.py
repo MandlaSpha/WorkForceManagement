@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from ._env import broker_url_from_env, database_from_env, env, env_bool, env_list
@@ -85,13 +86,31 @@ USE_I18N = False
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Tracing is on whenever an OTLP endpoint is configured (Aspire sets one in development).
+WFM_TELEMETRY = env_bool("WFM_TELEMETRY", default="OTEL_EXPORTER_OTLP_ENDPOINT" in os.environ)
+
 CELERY_BROKER_URL = broker_url_from_env()
+# Results are only used for short round trips (the worker ping); real jobs report through the
+# database. Valkey also serves as the result store, and results expire after an hour.
+CELERY_RESULT_BACKEND = broker_url_from_env()
+CELERY_RESULT_EXPIRES = 3600
 CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_TIME_LIMIT = 15 * 60
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    # Every line carries the trace id so a log entry can be matched to its trace.
+    "filters": {"trace": {"()": "wfm.core.telemetry.TraceContextFilter"}},
+    "formatters": {
+        "plain": {"format": "%(asctime)s %(levelname)s %(name)s [trace=%(trace_id)s] %(message)s"}
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "filters": ["trace"],
+            "formatter": "plain",
+        }
+    },
     "root": {"handlers": ["console"], "level": env("LOG_LEVEL", "INFO")},
 }

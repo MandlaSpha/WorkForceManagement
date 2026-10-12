@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from django.http import HttpRequest, HttpResponse
 
-from . import request_context
+from . import request_context, telemetry
 
 MAX_UA_LENGTH = 300
 
@@ -38,6 +38,10 @@ class RequestContextMiddleware:
 
     @staticmethod
     def _trace_id(request: HttpRequest) -> str:
-        # W3C traceparent: version-traceid-spanid-flags
+        # Prefer the active OpenTelemetry span, which continues the browser's trace; fall back to
+        # the raw W3C traceparent header (version-traceid-spanid-flags) when tracing is off.
+        active = telemetry.trace_id_hex()
+        if active:
+            return active
         parts = request.headers.get("traceparent", "").split("-")
         return parts[1] if len(parts) == 4 else ""

@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 import { api, ApiProblem, setUnauthorisedHandler, toProblem } from '@/shared/api'
+import { setTelemetryRole } from '@/shared/telemetry'
 
 import { isRole, type Role } from './access'
 
@@ -24,6 +25,9 @@ export const useSessionStore = defineStore('session', () => {
   const status = ref<Status>('unknown')
   /** True when the server ended the session (idle timeout); the login page says so. */
   const expired = ref(false)
+
+  // Traces carry the role (never the person) so slow screens can be told apart by who sees them.
+  watch(user, (u) => setTelemetryRole(u?.role ?? null), { immediate: true })
 
   function expire(): void {
     user.value = null

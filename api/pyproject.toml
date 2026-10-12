@@ -12,6 +12,11 @@ dependencies = [
   "whitenoise>=6.7",
   "wfm-engine",
   "argon2-cffi>=25.1.0",
+  "opentelemetry-sdk>=1.45.1",
+  "opentelemetry-exporter-otlp>=1.45.1",
+  "opentelemetry-instrumentation-django>=0.66b1",
+  "opentelemetry-instrumentation-psycopg>=0.66b1",
+  "opentelemetry-instrumentation-celery>=0.66b1",
 ]
 
 [tool.uv.sources]

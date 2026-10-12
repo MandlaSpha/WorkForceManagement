@@ -18,6 +18,7 @@ Docker Desktop is installed per-user; if `docker` is not found in a shell, add i
 - `just verify`: format check, lint, strict types, engine + web unit tests, layer rules. Run before saying a change is done.
 - `just test-int`: API tests on a real Postgres in Testcontainers (needs Docker running).
 - `just e2e`: Playwright against a running `just dev` stack (needs WFM_BASE_URL and WFM_DEMO_PASSWORD, see the justfile).
+- `POST /api/v1/system/ping-worker` (admin): proves the worker is alive and that trace context survives the queue.
 - `just api-types`: regenerate the web app's typed API client after changing the API.
 - `just verify-full`: everything CI runs (grows as web/e2e are added).
 - `uv run python manage.py seed_demo --password <12+ chars>`: synthetic demo logins (dev only).
@@ -30,5 +31,6 @@ Docker Desktop is installed per-user; if `docker` is not found in a shell, add i
 - Every new or changed endpoint needs an integration test for every role, both allowed and refused. Out-of-scope records return 404.
 - Store UTC, display Africa/Johannesburg. Money is `Decimal`. Units go in names (`aht_s`, `sl_target_pct`).
 - Web: Feature-Sliced Design layers (app > pages > widgets > features > entities > shared); import other slices only via their `index.ts`. Never `v-html`. UI role checks are cosmetic; the API enforces access.
+- Telemetry: spans and logs carry the role and request id only. Never put a name, username, id of a person, pay value, query string or request body in a span, log line or analytics event. Scrubbing lives in `wfm/core/telemetry.py` and `web/src/shared/telemetry`; both have tests that search spans for leaked values.
 - The Copilot / AI assistant is **parked**: don't build it.
 - Don't skip hooks (`--no-verify`); fix the failure.

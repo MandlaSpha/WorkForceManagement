@@ -55,9 +55,16 @@ builder.AddPythonExecutable("worker", apiDir, "celery")
     .WaitFor(valkey);
 
 // The Vue app. Vite proxies /api to the Django API so cookies stay same-origin.
+// Browser spans go to /otlp on the web origin; Vite forwards them to the dashboard's OTLP/HTTP
+// port, so telemetry stays inside our own infrastructure and needs no CORS.
+var otlpHttp = builder.Configuration["ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL"]
+    ?? "http://localhost:19889";
+
 builder.AddViteApp("web", webDir)
     .WithPnpm()
     .WithEnvironment("API_URL", api.GetEndpoint("http"))
+    .WithEnvironment("OTLP_HTTP_URL", otlpHttp)
+    .WithEnvironment("VITE_OTEL_ENABLED", "1")
     .WithEnvironment("VITE_DEMO_LOGINS", "1")
     .WithEnvironment("VITE_DEMO_PASSWORD", demoPassword)
     .WaitFor(api);

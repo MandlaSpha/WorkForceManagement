@@ -41,6 +41,29 @@
         ],
         "title": "MeOut",
         "type": "object"
+      },
+      "WorkerPingOut": {
+        "properties": {
+          "apiTraceId": {
+            "title": "Apitraceid",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "workerTraceId": {
+            "title": "Workertraceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "apiTraceId",
+          "workerTraceId"
+        ],
+        "title": "WorkerPingOut",
+        "type": "object"
       }
     },
     "securitySchemes": {
@@ -149,6 +172,34 @@
         "summary": "The signed-in user",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/system/ping-worker": {
+      "post": {
+        "description": "Is the worker alive, and does trace context survive the queue? Both trace ids should match\nwhen tracing is on.",
+        "operationId": "wfm_core_api_ping_worker",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerPingOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Round trip through the background worker",
+        "tags": [
+          "system"
         ]
       }
     }

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw, type RouterHistory
 
 import { useSessionStore } from '@/entities/session'
 import { NAV_ITEMS, type NavKey } from '@/shared/config'
+import { recordRouteChange } from '@/shared/telemetry'
 import { AppShell } from '@/widgets/app-shell'
 
 import { authGuard } from './guard'
@@ -52,6 +53,8 @@ export function createAppRouter(history: RouterHistory = createWebHistory()) {
 
   // Screen-reader and tab-title friendly: say which screen we are on.
   router.afterEach((to) => {
+    // Route *name* only: params and query strings can hold identifiers.
+    recordRouteChange(String(to.name ?? 'unknown'))
     const item = NAV_ITEMS.find((i) => i.key === to.meta.navKey)
     document.title = `${item?.label ?? (to.name === 'login' ? 'Sign in' : 'Gijima')} · Gijima WFM`
   })

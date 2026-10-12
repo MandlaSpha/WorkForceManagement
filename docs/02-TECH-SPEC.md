@@ -252,3 +252,20 @@ Hosting for the demo and for the on-site install is **not decided**. We therefor
 - **Routing:** the layout's own address is `/`, so the dashboard is its empty-path child. Giving the child the absolute `/` too let the bare layout match first and render an empty page.
 - **Playwright:** a helper that clicks "Sign in" and returns immediately lets the next navigation abort the in-flight login, so `signIn` waits for the session. Tests run with `reducedMotion: 'reduce'` (the app honours it) so slide animations cannot make screenshots or assertions flaky. Accessibility is checked with axe (WCAG 2.1 A/AA) on the login page and the dashboard in light and dark.
 - **Aspire:** `seed_demo --reset-passwords` runs on every start so the persisted generated demo password (user secrets, `demo-password`) always matches the database volume.
+
+### 9.3 Tracing as built (verified 13 Oct 2026; OpenTelemetry Python 1.45 / 0.66b, JS SDK 2.12)
+
+What exists: browser → API → Celery worker → PostgreSQL as one trace (OBS-01), browser errors and route timings (OBS-02), role and request id on every span, no personal data in spans (OBS-10), audit events and log lines stamped with the trace id.
+
+- **Flow.** The browser starts the trace and sends a W3C `traceparent` on same-origin `fetch` calls. Django continues it, psycopg adds the query spans, and the Celery producer (in the API) writes the context into the task headers so the worker continues the same trace. `GET /api/v1/system/...` is not traced for health probes (`/healthz`, `/readyz`).
+- **Celery must be instrumented on both sides.** Only the worker was at first; the publishing side (the API) is what injects the context, so the worker started a new trace. Fixed in `CoreConfig.ready()` and covered by the e2e test.
+- **Worker set-up** happens in `worker_process_init` (it fires in every pool process, including the solo pool), not at Django load, so exporter threads exist after any fork. `running_under_celery()` keeps Django's `ready()` from configuring it too early.
+- **Browser spans** go to the same origin (`/otlp/v1/traces`); Vite (dev) or the reverse proxy (production) forwards them to the collector. In development the target is the Aspire dashboard's OTLP/HTTP port (19889) and the proxy adds the API key Aspire gives the web resource. No CORS, nothing leaves our infrastructure. `VITE_OTEL_ENABLED=1` switches it on.
+- **Scrubbing happens when a span ends** (`WfmSpanProcessor`), whatever created it: query strings and fragments are removed from URL attributes, user-agent is blanked. Instrumentation hooks were not enough: for `fetch('/path?x=1')` the hook never sees the URL.
+- **Python side:** `capture_parameters=False` so SQL values are never recorded; `wfm.role` and `wfm.request_id` are added in the Django response hook (after authentication, using the already-loaded user so no extra query); the user id appears only in the audit trail.
+- **Library behaviour to remember:**
+  - The Django instrumentor reads `OTEL_PYTHON_DJANGO_EXCLUDED_URLS` only when its module is first imported; pass `excluded_urls=` explicitly.
+  - The fetch instrumentation names spans `GET`/`POST` (not `HTTP GET`) with `url.full`, `http.request.method` and keeps a span open about 300 ms after the response, so tests must wait for spans.
+  - `openapi-fetch` and tracing both rely on `fetch` being resolved per call (see 9.2).
+- **`POST /api/v1/system/ping-worker`** (admin) round-trips a task through Valkey and Celery, which also runs a database query, and returns the API and worker trace ids. Both must equal the browser's; the e2e test asserts it. It doubles as an "is the worker alive" check. Valkey now also serves as Celery's result backend (results expire after one hour).
+- **Not built yet:** metrics (Prometheus), Jaeger or another long-term trace store, the collector's PII-stripping stage, per-user-action root spans, retention settings, and the privacy-safe usage-event tracker (separate pipeline, OBS-03 to OBS-09).

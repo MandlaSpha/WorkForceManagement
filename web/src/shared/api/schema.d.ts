@@ -72,6 +72,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/ping-worker": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Round trip through the background worker
+         * @description Is the worker alive, and does trace context survive the queue? Both trace ids should match
+         *     when tracing is on.
+         */
+        post: operations["wfm_core_api_ping_worker"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -91,6 +112,15 @@ export interface components {
             role: string;
             /** Username */
             username: string;
+        };
+        /** WorkerPingOut */
+        WorkerPingOut: {
+            /** Apitraceid */
+            apiTraceId: string;
+            /** Ok */
+            ok: boolean;
+            /** Workertraceid */
+            workerTraceId: string;
         };
     };
     responses: never;
@@ -177,6 +207,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+        };
+    };
+    wfm_core_api_ping_worker: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkerPingOut"];
                 };
             };
         };
