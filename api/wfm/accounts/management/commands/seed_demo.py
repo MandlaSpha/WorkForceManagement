@@ -33,6 +33,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: Any) -> None:
         parser.add_argument("--password", default=os.environ.get("WFM_DEMO_PASSWORD", ""))
+        parser.add_argument(
+            "--reset-passwords",
+            action="store_true",
+            help="Also set the password (and clear any lockout) on demo accounts that exist.",
+        )
 
     def handle(self, *args: Any, **options: Any) -> None:
         if not (settings.DEBUG or os.environ.get("WFM_ALLOW_DEMO_SEED") == "1"):
@@ -52,9 +57,12 @@ class Command(BaseCommand):
                     defaults={"role": role, "first_name": first, "last_name": last},
                 )
                 if was_created:
-                    user.set_password(password)
-                    user.save(update_fields=["password"])
                     created += 1
+                if was_created or options["reset_passwords"]:
+                    user.set_password(password)
+                    user.failed_login_count = 0
+                    user.locked_until = None
+                    user.save(update_fields=["password", "failed_login_count", "locked_until"])
             audit.record(
                 actor=None,
                 action="system.seed_demo",

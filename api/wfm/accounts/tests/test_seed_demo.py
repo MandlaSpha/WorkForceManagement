@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import override_settings
+from django.utils import timezone
 
 from wfm.accounts.models import Role, User
 from wfm.audit.models import AuditEvent
@@ -42,3 +45,20 @@ def test_refuses_outside_development(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_refuses_a_weak_password() -> None:
     with pytest.raises(CommandError, match="12 characters"):
         call_command("seed_demo", password="short")
+
+
+@override_settings(DEBUG=True)
+def test_reset_passwords_updates_existing_demo_users_and_clears_lockout() -> None:
+    call_command("seed_demo", password=STRONG)
+    planner = User.objects.get(username="planner")
+    planner.failed_login_count = 3
+    planner.locked_until = timezone.now() + timedelta(minutes=10)
+    planner.save()
+
+    call_command("seed_demo", password="rotated-password-789", reset_passwords=True)
+
+    planner.refresh_from_db()
+    assert planner.check_password("rotated-password-789")
+    assert planner.failed_login_count == 0
+    assert planner.locked_until is None
+    assert User.objects.count() == len(Role)

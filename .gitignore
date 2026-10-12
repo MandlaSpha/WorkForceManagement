@@ -26,8 +26,11 @@ htmlcov/
 node_modules/
 dist/
 coverage/
-playwright-report/
-test-results/
+
+# Playwright output (screenshots may show demo data; never commit)
+e2e/playwright-report/
+e2e/test-results/
+e2e/screenshots/
 
 # .NET (Aspire AppHost)
 bin/

@@ -15,9 +15,10 @@ Django 5.2 + Django Ninja, PostgreSQL 16, Celery + Valkey, pure-Python `wfm_engi
 ## Commands
 Docker Desktop is installed per-user; if `docker` is not found in a shell, add its `resources/bin` folder (under `%LOCALAPPDATA%/Programs/DockerDesktop`) to PATH. `uv` and `just` live in the Python Scripts folder.
 - `just dev`: start everything under .NET Aspire (dashboard http://localhost:15888).
-- `just verify`: format check, lint, strict types, engine tests. Run before saying a change is done.
+- `just verify`: format check, lint, strict types, engine + web unit tests, layer rules. Run before saying a change is done.
 - `just test-int`: API tests on a real Postgres in Testcontainers (needs Docker running).
-- `just e2e`: Playwright (not yet created: web shell pending).
+- `just e2e`: Playwright against a running `just dev` stack (needs WFM_BASE_URL and WFM_DEMO_PASSWORD, see the justfile).
+- `just api-types`: regenerate the web app's typed API client after changing the API.
 - `just verify-full`: everything CI runs (grows as web/e2e are added).
 - `uv run python manage.py seed_demo --password <12+ chars>`: synthetic demo logins (dev only).
 
@@ -28,5 +29,6 @@ Docker Desktop is installed per-user; if `docker` is not found in a shell, add i
 - `wfm_engine` must not import Django, read the clock or do I/O.
 - Every new or changed endpoint needs an integration test for every role, both allowed and refused. Out-of-scope records return 404.
 - Store UTC, display Africa/Johannesburg. Money is `Decimal`. Units go in names (`aht_s`, `sl_target_pct`).
+- Web: Feature-Sliced Design layers (app > pages > widgets > features > entities > shared); import other slices only via their `index.ts`. Never `v-html`. UI role checks are cosmetic; the API enforces access.
 - The Copilot / AI assistant is **parked**: don't build it.
 - Don't skip hooks (`--no-verify`); fix the failure.
