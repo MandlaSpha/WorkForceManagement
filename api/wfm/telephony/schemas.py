@@ -11,6 +11,13 @@ class QueueOut(Schema):
     id: int
     name: str
     confirmed: bool
+    # Staffing assumptions. Until settingsConfirmed is true they are defaults and must be shown
+    # as such (DAT-10).
+    slTargetPct: float  # noqa: N815
+    slThresholdS: int  # noqa: N815
+    occupancyCeilingPct: float  # noqa: N815
+    shrinkagePct: float  # noqa: N815
+    settingsConfirmed: bool  # noqa: N815
 
 
 class ImportOut(Schema):

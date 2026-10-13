@@ -8,3 +8,6 @@ os.environ.setdefault("DJANGO_DEBUG", "1")
 from .base import *  # noqa: F403
 
 CSRF_TRUSTED_ORIGINS = [*CSRF_TRUSTED_ORIGINS, "http://localhost:5173"]  # noqa: F405
+
+# Development-only tools (never installed in production).
+INSTALLED_APPS = [*INSTALLED_APPS, "wfm.devtools"]  # noqa: F405

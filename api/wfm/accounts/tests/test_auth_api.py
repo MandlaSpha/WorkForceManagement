@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from wfm.accounts.models import Role, User
 from wfm.audit.models import Action, AuditEvent, Outcome
+from wfm.core.features import REGISTRY
 
 if TYPE_CHECKING:  # stub-only name, not importable at runtime
     from django.test.client import _MonkeyPatchedWSGIResponse as TestResponse
@@ -57,7 +58,9 @@ def test_login_succeeds_and_is_audited_with_who_and_role() -> None:
     response = post_login(client, token, "pat", PASSWORD)
 
     assert response.status_code == 200
-    assert response.json() == {"username": "pat", "displayName": "pat", "role": "planner"}
+    body = response.json()
+    assert body.pop("features") == [f.value for f in REGISTRY]  # everything is on by default
+    assert body == {"username": "pat", "displayName": "pat", "role": "planner"}
     (event,) = events(Action.LOGIN_SUCCESS)
     assert event.actor_user_id == user.pk
     assert event.actor_role == "planner"

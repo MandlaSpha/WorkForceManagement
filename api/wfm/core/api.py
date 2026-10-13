@@ -7,6 +7,7 @@ from wfm.accounts.models import Role
 
 from . import telemetry
 from .errors import ApiError
+from .features import CORE
 from .permissions import RoleSessionAuth
 from .tasks import ping
 
@@ -21,7 +22,7 @@ class WorkerPingOut(Schema):
 
 @router.post(
     "/ping-worker",
-    auth=RoleSessionAuth(Role.ADMIN),
+    auth=RoleSessionAuth(Role.ADMIN, feature=CORE),
     response=WorkerPingOut,
     summary="Round trip through the background worker",
 )

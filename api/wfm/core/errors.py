@@ -27,6 +27,14 @@ def forbidden(detail: str = "Your role may not do this.") -> ApiError:
     return ApiError(403, "auth.forbidden", "Forbidden", detail)
 
 
+def feature_disabled() -> ApiError:
+    # 403, not 404: the person is signed in and the code says why, so a client can show "this is
+    # not part of your plan" instead of a confusing missing page.
+    return ApiError(
+        403, "feature.disabled", "Not available", "This feature is not part of your plan."
+    )
+
+
 def not_found(detail: str = "Not found.") -> ApiError:
     # Out-of-scope records also surface as 404 so their existence is not revealed.
     return ApiError(404, "resource.not_found", "Not found", detail)

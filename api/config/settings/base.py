@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "wfm.identity",
     "wfm.audit",
     "wfm.telephony",
+    "wfm.forecasting",
 ]
 
 # No django.contrib.admin on purpose: it would be a write path that bypasses the audited
@@ -100,6 +101,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Tracing is on whenever an OTLP endpoint is configured (Aspire sets one in development).
 WFM_TELEMETRY = env_bool("WFM_TELEMETRY", default="OTEL_EXPORTER_OTLP_ENDPOINT" in os.environ)
+
+# Features switched on in this deployment (FEAT-01): "all", "none" or a comma-separated list such
+# as "telephony,forecasting". Checked at start-up; a typo or a missing dependency stops the app.
+WFM_FEATURES = os.environ.get("WFM_FEATURES", "all")
 
 # Call data import (DAT-01..04). The ACD writes local times without a zone; this says which zone.
 # Confirm with the ACD vendor: if it exports UTC, set this to "UTC".

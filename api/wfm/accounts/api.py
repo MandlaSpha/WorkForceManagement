@@ -4,6 +4,7 @@ from django.http import HttpRequest
 from django.middleware.csrf import get_token
 from ninja import Router
 
+from wfm.core.features import CORE
 from wfm.core.permissions import ANY_ROLE, RoleSessionAuth
 
 from . import services
@@ -11,7 +12,7 @@ from .models import User
 from .schemas import MeOut, me_out
 
 router = Router(tags=["auth"])
-authenticated = RoleSessionAuth(*ANY_ROLE)
+authenticated = RoleSessionAuth(*ANY_ROLE, feature=CORE)
 
 # Signing in lives in wfm.identity.api: it works with any identity provider, local accounts
 # included.

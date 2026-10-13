@@ -30,6 +30,13 @@ class Queue(models.Model):
 
     name = models.CharField(max_length=100, unique=True)
     confirmed = models.BooleanField(default=False)
+    # Staffing assumptions (ENG-01, ENG-02, ENG-05). They start as ASSUMED defaults and are shown
+    # as such until an admin confirms them (DAT-10: a defaulted value is never passed off as fact).
+    sl_target_pct = models.DecimalField(max_digits=5, decimal_places=2, default=80)
+    sl_threshold_s = models.PositiveSmallIntegerField(default=20)
+    occupancy_ceiling_pct = models.DecimalField(max_digits=5, decimal_places=2, default=85)
+    shrinkage_pct = models.DecimalField(max_digits=5, decimal_places=2, default=30)
+    settings_confirmed = models.BooleanField(default=False)
     created_at = models.DateTimeField(
         db_default=models.Func(function="now", output_field=models.DateTimeField())
     )

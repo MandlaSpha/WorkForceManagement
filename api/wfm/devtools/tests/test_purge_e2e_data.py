@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 
 import pytest
@@ -11,8 +12,7 @@ from wfm.accounts.models import Role, User
 from wfm.audit.models import Action, AuditEvent
 from wfm.telephony import services
 from wfm.telephony.models import CallRecord, ImportBatch, IntervalActual, Queue
-
-from .workbooks import Call, workbook_bytes
+from wfm.telephony.tests.workbooks import Call, workbook_bytes
 
 pytestmark = pytest.mark.django_db
 
@@ -82,7 +82,7 @@ def test_says_what_it_deleted_in_the_audit_trail() -> None:
     call_command("purge_e2e_data")
 
     event = AuditEvent.objects.get(action=Action.DEV_DATA_PURGED)
-    assert event.reason == "1 calls, 1 imports"
+    assert event.reason == "1 calls, 1 imports, 0 forecasts"
 
 
 @pytest.mark.usefixtures("development")
@@ -93,3 +93,52 @@ def test_is_a_no_op_when_there_is_nothing_to_purge() -> None:
 
     assert CallRecord.objects.count() == 1
     assert not AuditEvent.objects.filter(action=Action.DEV_DATA_PURGED).exists()
+
+
+@pytest.mark.usefixtures("development")
+def test_removes_the_forecasts_of_the_test_queue_and_keeps_everyone_elses() -> None:
+    from wfm.forecasting import services as forecasting
+    from wfm.forecasting.models import ForecastInterval, ForecastVersion
+
+    user = User.objects.create_user(username="planner", password="x", role=Role.PLANNER)
+    for day in ("2026-05-04", "2026-05-11"):  # one file per day, holding both queues
+        number = int(day[-2:])
+        import_calls(
+            [
+                Call(number, "E2E Queue", "Agent", f"{day} 09:00:00", wait=1, talk=10),
+                Call(number + 100, "TotalSA", "Agent", f"{day} 09:00:00", wait=1, talk=10),
+            ]
+        )
+    for queue in ("E2E Queue", "TotalSA"):
+        forecasting.run_forecast(
+            user=user,
+            queue_id=Queue.objects.get(name=queue).pk,
+            date_from=date(2026, 5, 18),
+            date_to=date(2026, 5, 18),
+        )
+    assert ForecastVersion.objects.count() == 2
+
+    call_command("purge_e2e_data")
+
+    remaining = ForecastVersion.objects.get()
+    assert remaining.queue.name == "TotalSA"
+    assert ForecastInterval.objects.filter(version=remaining).count() == 48
+    assert ForecastInterval.objects.exclude(version=remaining).count() == 0
+
+
+@pytest.mark.usefixtures("development")
+def test_removes_every_queue_with_the_test_prefix_and_only_those() -> None:
+    import_calls([call(1, "E2E Queue"), call(2, "E2E Queue abc123"), call(3, "TotalSA")])
+
+    call_command("purge_e2e_data")
+
+    assert list(Queue.objects.values_list("name", flat=True)) == ["TotalSA"]
+
+
+@pytest.mark.usefixtures("development")
+@pytest.mark.parametrize("prefix", ["", "  ", "E2"])
+def test_refuses_a_prefix_short_enough_to_catch_real_queues(prefix: str) -> None:
+    import_calls([call(1, "E2E Queue")])
+    with pytest.raises(CommandError, match="too short"):
+        call_command("purge_e2e_data", prefix=prefix)
+    assert Queue.objects.count() == 1

@@ -28,6 +28,7 @@ _ensure_database()
 from .base import *  # noqa: E402, F403
 
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]  # speed only; never in prod
+INSTALLED_APPS = [*INSTALLED_APPS, "wfm.devtools"]  # noqa: F405
 AUTH_PASSWORD_VALIDATORS = []
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_RESULT_BACKEND = "cache+memory://"

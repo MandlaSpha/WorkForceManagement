@@ -8,15 +8,19 @@ from ninja.security import SessionAuth
 
 from wfm.accounts.models import Role, User
 
-from .errors import forbidden, unauthorised
+from .errors import feature_disabled, forbidden, unauthorised
+from .features import FeatureOrCore, is_enabled
 
 
 class RoleSessionAuth(SessionAuth):
     """Session login plus a role allow-list. Also enforces CSRF on unsafe methods."""
 
-    def __init__(self, *roles: Role) -> None:
+    def __init__(self, *roles: Role, feature: FeatureOrCore) -> None:
+        # `feature` has no default on purpose: every protected operation must say which sellable
+        # feature it belongs to (or CORE), so a new endpoint cannot slip outside the switch.
         super().__init__()
         self.roles = frozenset(roles)
+        self.feature = feature
 
     def authenticate(self, request: HttpRequest, key: str | None) -> object:
         user = getattr(request, "user", None)
@@ -34,6 +38,8 @@ class RoleSessionAuth(SessionAuth):
                 entity_id=request.path[:200],
             )
             raise forbidden()
+        if not is_enabled(self.feature):
+            raise feature_disabled()
         return user
 
 

@@ -10,7 +10,11 @@ class CoreConfig(AppConfig):
 
         from django.conf import settings
 
-        from . import telemetry
+        from . import features, telemetry
+
+        # A mistyped feature list must stop the application, not quietly enable or disable
+        # something a customer has (or has not) paid for.
+        features.enabled_features()
 
         # A Celery worker sets tracing up per pool process (config/celery.py), after any fork.
         if settings.WFM_TELEMETRY and not telemetry.running_under_celery():

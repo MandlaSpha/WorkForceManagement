@@ -35,6 +35,9 @@ class Action(models.TextChoices):
     CDR_IMPORTED = "import.cdr", "Call detail report imported"
     CDR_IMPORT_REFUSED = "import.cdr_refused", "Call detail report import refused"
     DEV_DATA_PURGED = "dev.data_purged", "Synthetic development data purged"
+    FORECAST_RUN = "forecast.run", "Forecast run"
+    FORECAST_PUBLISHED = "forecast.published", "Forecast published"
+    FORECAST_REFUSED = "forecast.refused", "Forecast request refused"
     CHAIN_BROKEN = "audit.chain_broken", "Audit chain integrity check failed"
 
 

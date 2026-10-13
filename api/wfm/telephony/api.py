@@ -8,6 +8,7 @@ from ninja import File, Router, Status
 from ninja.files import UploadedFile
 
 from wfm.core.errors import ApiError
+from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
 from . import selectors, services
@@ -28,7 +29,7 @@ router = Router(tags=["telephony"])
 
 @router.post(
     "/imports",
-    auth=RoleSessionAuth(*sorted(IMPORT_ROLES)),
+    auth=RoleSessionAuth(*sorted(IMPORT_ROLES), feature=Feature.TELEPHONY),
     response={201: ImportOut},
     summary="Import an ACD Call Detail Report (.xlsx)",
 )
@@ -50,7 +51,7 @@ def import_report(request: HttpRequest, file: File[UploadedFile]) -> Status[Impo
 
 @router.get(
     "/imports",
-    auth=RoleSessionAuth(*sorted(IMPORT_ROLES)),
+    auth=RoleSessionAuth(*sorted(IMPORT_ROLES), feature=Feature.TELEPHONY),
     response=list[ImportOut],
     summary="Recent imports, newest first",
 )
@@ -61,21 +62,30 @@ def list_imports(request: HttpRequest) -> list[ImportOut]:
 
 @router.get(
     "/queues",
-    auth=RoleSessionAuth(*VIEW_ROLES),
+    auth=RoleSessionAuth(*VIEW_ROLES, feature=Feature.TELEPHONY),
     response=list[QueueOut],
     summary="Queues the signed-in role may see",
 )
 def list_queues(request: HttpRequest) -> list[QueueOut]:
     user = current_user(request)
     return [
-        QueueOut(id=q.pk, name=q.name, confirmed=q.confirmed)
+        QueueOut(
+            id=q.pk,
+            name=q.name,
+            confirmed=q.confirmed,
+            slTargetPct=float(q.sl_target_pct),
+            slThresholdS=q.sl_threshold_s,
+            occupancyCeilingPct=float(q.occupancy_ceiling_pct),
+            shrinkagePct=float(q.shrinkage_pct),
+            settingsConfirmed=q.settings_confirmed,
+        )
         for q in selectors.visible_queues(user)
     ]
 
 
 @router.get(
     "/months",
-    auth=RoleSessionAuth(*VIEW_ROLES),
+    auth=RoleSessionAuth(*VIEW_ROLES, feature=Feature.TELEPHONY),
     response=MonthsOut,
     summary="The months that have call data",
 )
@@ -85,7 +95,7 @@ def list_months(request: HttpRequest) -> MonthsOut:
 
 @router.get(
     "/kpis",
-    auth=RoleSessionAuth(*VIEW_ROLES),
+    auth=RoleSessionAuth(*VIEW_ROLES, feature=Feature.TELEPHONY),
     response=KpiOut,
     summary="Measured service figures for a date range",
 )

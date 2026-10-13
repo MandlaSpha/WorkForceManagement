@@ -6,13 +6,16 @@ policy (CLAUDE.md hard rule; tech spec section 7 role-leak tests).
    403 (plus an ACCESS_DENIED audit event) for a role outside its allow-list, and never 401/403
    for an allowed role.
 
-Operations with path parameters are not exercised yet: the test fails loudly if one appears, so
-whoever adds it must extend this matrix (with real records) instead of silently skipping it.
+Path parameters are filled with a sample id that matches no record. Authentication and the role
+check run before the record is looked up, so a refused role gets 403 and an allowed role gets
+something other than 401/403 (usually 404). Tests with real records belong to each module.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+from typing import Any
 
 import pytest
 from django.test import Client
@@ -39,6 +42,7 @@ class Operation:
     method: str
     path: str
     roles: frozenset[Role] | None  # None = public; empty = any signed-in role
+    feature: str | None = None  # the sellable feature it belongs to, or core
 
     @property
     def id(self) -> str:
@@ -53,8 +57,9 @@ def all_operations() -> list[Operation]:
                 full_path = f"/api/v1{prefix}{sub_path}"
                 auths = [a for a in operation.auth_callbacks if isinstance(a, RoleSessionAuth)]
                 roles = auths[0].roles if auths else None
+                feature = str(auths[0].feature) if auths else None
                 for method in operation.methods:
-                    ops.append(Operation(method, full_path, roles))
+                    ops.append(Operation(method, full_path, roles, feature))
     return ops
 
 
@@ -77,18 +82,14 @@ def test_every_operation_is_public_on_purpose_or_declares_roles(op: Operation) -
         assert (op.method, op.path) not in PUBLIC, f"{op.id} is listed public but is protected"
 
 
-@pytest.mark.parametrize("op", OPERATIONS, ids=lambda op: op.id)
-def test_no_path_parameters_without_matrix_coverage(op: Operation) -> None:
-    # Public routes have no roles to exercise, so a path parameter is fine there.
-    assert "{" not in op.path or (op.method, op.path) in PUBLIC, (
-        f"{op.id}: extend the role matrix to cover path parameters"
-    )
+SAMPLE_ID = "00000000-0000-4000-8000-000000000000"
 
 
 def request(client: Client, op: Operation):
+    path = re.sub(r"\{[^}]+\}", SAMPLE_ID, op.path)
     if op.method == "GET":
-        return client.get(op.path)
-    return client.post(op.path, content_type="application/json", data={})
+        return client.get(path)
+    return client.post(path, content_type="application/json", data={})
 
 
 @pytest.mark.parametrize("op", PROTECTED, ids=lambda op: op.id)
@@ -113,3 +114,41 @@ def test_role_matrix(op: Operation, role: Role) -> None:
         denied = AuditEvent.objects.filter(action=Action.ACCESS_DENIED, actor_user_id=user.pk)
         assert denied.count() == 1
         assert denied.get().actor_role == role.value
+
+
+# --- the feature switch (FEAT-01) -------------------------------------------------------------
+
+
+def test_no_protected_operation_sits_outside_the_feature_switch() -> None:
+    # RoleSessionAuth cannot be built without a feature, so this is the belt to that brace.
+    assert all(op.feature for op in PROTECTED), [op.id for op in PROTECTED if not op.feature]
+
+
+FEATURE_OPS = [op for op in PROTECTED if op.feature != "core"]
+CORE_OPS = [op for op in PROTECTED if op.feature == "core"]
+
+
+def allowed_client(op: Operation) -> Client:
+    role = next(iter(op.roles)) if op.roles else Role.PLANNER
+    user = User.objects.create_user(username="allowed", password="x", role=role)
+    client = Client()
+    client.force_login(user)
+    return client
+
+
+@pytest.mark.parametrize("op", FEATURE_OPS, ids=lambda op: op.id)
+def test_every_feature_operation_is_refused_when_its_feature_is_off(
+    op: Operation, settings: Any
+) -> None:
+    settings.WFM_FEATURES = "none"
+    # A role that is allowed on the operation: the refusal must come from the switch alone.
+    response = request(allowed_client(op), op)
+
+    assert response.status_code == 403, f"{op.id} must be refused when {op.feature} is off"
+    assert response.json()["code"] == "feature.disabled"
+
+
+@pytest.mark.parametrize("op", CORE_OPS, ids=lambda op: op.id)
+def test_core_operations_work_with_every_feature_off(op: Operation, settings: Any) -> None:
+    settings.WFM_FEATURES = "none"
+    assert request(allowed_client(op), op).status_code not in {401, 403}
