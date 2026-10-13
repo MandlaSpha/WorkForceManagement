@@ -34,3 +34,13 @@ export function toProblem(error: unknown, response: Response): ApiProblem {
       : [],
   })
 }
+
+/** Something a person can read for any failure. API problems carry their own explanation; other
+ * errors (a dropped connection, a bug) get a plain fallback that never shows internals. */
+export function problemMessage(
+  error: unknown,
+  fallback = 'Something went wrong. Try again.',
+): string {
+  if (error instanceof ApiProblem) return error.detail || error.message
+  return fallback
+}

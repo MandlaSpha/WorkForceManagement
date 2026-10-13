@@ -16,15 +16,18 @@ declare module 'vue-router' {
   }
 }
 
+/** Screens that exist for real. Every other screen is an honest placeholder until its phase. */
+const BUILT_SCREENS: Partial<Record<NavKey, RouteRecordRaw['component']>> = {
+  dashboard: () => import('@/pages/dashboard'),
+  imports: () => import('@/pages/imports'),
+}
+
 const screens: RouteRecordRaw[] = NAV_ITEMS.map((item) => ({
   // "/" is the layout's own address, so the dashboard is its empty-path child; giving the child
   // the absolute "/" too would let the bare layout match first and render an empty page.
   path: item.path === '/' ? '' : item.path,
   name: item.key,
-  component:
-    item.key === 'dashboard'
-      ? () => import('@/pages/dashboard')
-      : () => import('@/pages/placeholder'),
+  component: BUILT_SCREENS[item.key] ?? (() => import('@/pages/placeholder')),
   meta: { navKey: item.key },
 }))
 

@@ -19,6 +19,7 @@ import {
   Sun,
   Ticket,
   TrendingUp,
+  Upload,
   Users,
 } from 'lucide-vue-next'
 import type { Component } from 'vue'
@@ -44,6 +45,7 @@ export const NAV_ICONS: Record<string, Component> = {
   'bar-chart-3': BarChart3,
   'sliders-horizontal': SlidersHorizontal,
   download: Download,
+  upload: Upload,
   settings: Settings,
   'shield-check': ShieldCheck,
 }

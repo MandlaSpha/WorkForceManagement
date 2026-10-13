@@ -1,6 +1,161 @@
 {
   "components": {
     "schemas": {
+      "Coverage": {
+        "properties": {
+          "intervalsTotal": {
+            "title": "Intervalstotal",
+            "type": "integer"
+          },
+          "intervalsUsed": {
+            "title": "Intervalsused",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "intervalsUsed",
+          "intervalsTotal"
+        ],
+        "title": "Coverage",
+        "type": "object"
+      },
+      "ImportOut": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "fileName": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "periodEnd": {
+            "format": "date-time",
+            "title": "Periodend",
+            "type": "string"
+          },
+          "periodStart": {
+            "format": "date-time",
+            "title": "Periodstart",
+            "type": "string"
+          },
+          "reconciles": {
+            "title": "Reconciles",
+            "type": "boolean"
+          },
+          "reconciliation": {
+            "additionalProperties": true,
+            "title": "Reconciliation",
+            "type": "object"
+          },
+          "rejectedSummary": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Rejectedsummary",
+            "type": "object"
+          },
+          "rowsDuplicate": {
+            "title": "Rowsduplicate",
+            "type": "integer"
+          },
+          "rowsInserted": {
+            "title": "Rowsinserted",
+            "type": "integer"
+          },
+          "rowsRead": {
+            "title": "Rowsread",
+            "type": "integer"
+          },
+          "rowsRejected": {
+            "title": "Rowsrejected",
+            "type": "integer"
+          },
+          "sheetsIgnored": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Sheetsignored",
+            "type": "array"
+          },
+          "sourceTimezone": {
+            "title": "Sourcetimezone",
+            "type": "string"
+          },
+          "uploadedBy": {
+            "title": "Uploadedby",
+            "type": "string"
+          },
+          "warnings": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Warnings",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "createdAt",
+          "uploadedBy",
+          "sourceTimezone",
+          "periodStart",
+          "periodEnd",
+          "rowsRead",
+          "rowsInserted",
+          "rowsDuplicate",
+          "rowsRejected",
+          "rejectedSummary",
+          "warnings",
+          "sheetsIgnored",
+          "reconciles",
+          "reconciliation"
+        ],
+        "title": "ImportOut",
+        "type": "object"
+      },
+      "KpiOut": {
+        "properties": {
+          "dateFrom": {
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "title": "Dateto",
+            "type": "string"
+          },
+          "queues": {
+            "items": {
+              "$ref": "#/components/schemas/QueueKpisOut"
+            },
+            "title": "Queues",
+            "type": "array"
+          },
+          "slThresholdS": {
+            "title": "Slthresholds",
+            "type": "integer"
+          },
+          "total": {
+            "$ref": "#/components/schemas/QueueKpisOut"
+          }
+        },
+        "required": [
+          "dateFrom",
+          "dateTo",
+          "slThresholdS",
+          "total",
+          "queues"
+        ],
+        "title": "KpiOut",
+        "type": "object"
+      },
       "LoginIn": {
         "properties": {
           "password": {
@@ -47,6 +202,54 @@
         "title": "MeOut",
         "type": "object"
       },
+      "Metric": {
+        "description": "DAT-10: a figure always says whether it was measured and what it rests on.",
+        "properties": {
+          "basis": {
+            "const": "measured",
+            "title": "Basis",
+            "type": "string"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "value",
+          "basis",
+          "coverage"
+        ],
+        "title": "Metric",
+        "type": "object"
+      },
+      "MonthsOut": {
+        "description": "The calendar months (`YYYY-MM`, South African time) that have call data, oldest first.\nEmpty when nothing has been imported or none of it is visible to the role.",
+        "properties": {
+          "months": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Months",
+            "type": "array"
+          }
+        },
+        "required": [
+          "months"
+        ],
+        "title": "MonthsOut",
+        "type": "object"
+      },
       "ProviderOut": {
         "properties": {
           "flow": {
@@ -89,6 +292,90 @@
           "flow"
         ],
         "title": "ProviderOut",
+        "type": "object"
+      },
+      "QueueKpisOut": {
+        "properties": {
+          "abandonPct": {
+            "$ref": "#/components/schemas/Metric"
+          },
+          "abandoned": {
+            "title": "Abandoned",
+            "type": "integer"
+          },
+          "ahtS": {
+            "$ref": "#/components/schemas/Metric"
+          },
+          "answered": {
+            "title": "Answered",
+            "type": "integer"
+          },
+          "asaS": {
+            "$ref": "#/components/schemas/Metric"
+          },
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "offered": {
+            "title": "Offered",
+            "type": "integer"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Queueid"
+          },
+          "serviceLevelPct": {
+            "$ref": "#/components/schemas/Metric"
+          }
+        },
+        "required": [
+          "queueId",
+          "queue",
+          "confirmed",
+          "offered",
+          "answered",
+          "abandoned",
+          "abandonPct",
+          "serviceLevelPct",
+          "asaS",
+          "ahtS"
+        ],
+        "title": "QueueKpisOut",
+        "type": "object"
+      },
+      "QueueOut": {
+        "properties": {
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "confirmed"
+        ],
+        "title": "QueueOut",
         "type": "object"
       },
       "WorkerPingOut": {
@@ -335,6 +622,206 @@
         "summary": "Round trip through the background worker",
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/api/v1/telephony/imports": {
+      "get": {
+        "operationId": "wfm_telephony_api_list_imports",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ImportOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Recent imports, newest first",
+        "tags": [
+          "telephony"
+        ]
+      },
+      "post": {
+        "description": "Reads the Call Record Report sheet, skips calls already imported, builds the 30-minute\nintervals and returns the import report with its reconciliation.",
+        "operationId": "wfm_telephony_api_import_report",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Import an ACD Call Detail Report (.xlsx)",
+        "tags": [
+          "telephony"
+        ]
+      }
+    },
+    "/api/v1/telephony/kpis": {
+      "get": {
+        "operationId": "wfm_telephony_api_kpis",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Queue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KpiOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Measured service figures for a date range",
+        "tags": [
+          "telephony"
+        ]
+      }
+    },
+    "/api/v1/telephony/months": {
+      "get": {
+        "operationId": "wfm_telephony_api_list_months",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "The months that have call data",
+        "tags": [
+          "telephony"
+        ]
+      }
+    },
+    "/api/v1/telephony/queues": {
+      "get": {
+        "operationId": "wfm_telephony_api_list_queues",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/QueueOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Queues the signed-in role may see",
+        "tags": [
+          "telephony"
         ]
       }
     }

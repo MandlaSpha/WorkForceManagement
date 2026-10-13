@@ -92,6 +92,9 @@ body {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+    /* Off, not "very short": a 0.01ms transition still holds the OLD value for one frame, so
+       right after a theme switch every colour is briefly wrong. Nothing here depends on
+       transitionend. */
+    transition-duration: 0s !important;
   }
 }

@@ -26,7 +26,8 @@ export const NAV_ITEMS = [
     group: 'Home',
     icon: 'home',
     phase: 0,
-    subtitle: 'Coverage, service and people across every queue, for the selected week.',
+    subtitle:
+      'Measured service across every queue, month by month. Coverage and headcount join once rosters exist.',
   },
 
   {
@@ -110,6 +111,15 @@ export const NAV_ITEMS = [
     icon: 'repeat',
     phase: 4,
     subtitle: 'Availability, cross-queue flexing, standby rota and rotations.',
+  },
+  {
+    key: 'imports',
+    path: '/imports',
+    label: 'Data import',
+    group: 'Operate',
+    icon: 'upload',
+    phase: 1,
+    subtitle: 'Bring in the ACD call detail report. Calls already imported are skipped.',
   },
   {
     key: 'service-desk',

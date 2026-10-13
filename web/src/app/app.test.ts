@@ -195,9 +195,7 @@ describe('honest empty states', () => {
     backend.signedIn = { username: 'planner', displayName: 'Pat Planner', role: 'planner' }
     await renderApp('/')
 
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      /No call data has been imported yet/,
-    )
+    expect(await screen.findByRole('status')).toHaveTextContent(/There is no call data to show yet/)
   })
 
   it('says which phase builds a screen that does not exist yet', async () => {

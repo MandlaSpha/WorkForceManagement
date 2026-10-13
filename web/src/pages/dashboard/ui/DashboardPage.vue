@@ -1,32 +1,78 @@
 <script setup lang="ts">
-import { ROLE_LABELS, useSessionStore } from '@/entities/session'
-import { useContextStore } from '@/features/context-filters'
+import { computed, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+
+import { useKpis, useMonths } from '@/entities/call-data'
+import { canAccess, useSessionStore } from '@/entities/session'
+import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
+import { formatMonth } from '@/shared/lib/month'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import SelectField from '@/shared/ui/SelectField.vue'
+import { ServiceKpis } from '@/widgets/service-kpis'
 
 const session = useSessionStore()
-const context = useContextStore()
 const dashboard = NAV_ITEMS.find((item) => item.key === 'dashboard')
+const mayImport = computed(() => (session.user ? canAccess(session.user.role, 'imports') : false))
+
+const range = useMonths()
+const months = computed(() => range.data.value?.months ?? [])
+
+// Open on the latest month that has calls, not on an empty current week.
+const chosen = ref('')
+const month = computed(() =>
+  months.value.includes(chosen.value) ? chosen.value : (months.value.at(-1) ?? null),
+)
+const selected = computed({
+  get: () => month.value ?? '',
+  set: (value: string) => (chosen.value = value),
+})
+const options = computed(() => months.value.map((m) => ({ value: m, label: formatMonth(m) })))
+
+const kpis = useKpis(month)
 </script>
 
 <template>
-  <PageHeader
-    eyebrow="Overview"
-    title="Dashboard"
-    :subtitle="`${dashboard?.subtitle ?? ''} Week of ${context.weekLabel}.`"
-  />
+  <PageHeader eyebrow="Overview" title="Dashboard" :subtitle="dashboard?.subtitle">
+    <template v-if="months.length > 0" #actions>
+      <div class="w-44">
+        <SelectField v-model="selected" label="Month" :options="options" />
+      </div>
+    </template>
+  </PageHeader>
 
-  <section class="space-y-4">
-    <p class="text-sm text-ink">
-      Signed in as <strong>{{ session.user?.displayName }}</strong> ({{
-        session.user ? ROLE_LABELS[session.user.role] : ''
-      }}).
-    </p>
-    <NoticeBox>
-      No call data has been imported yet, so there is nothing to measure. Coverage, service level
-      and the other tiles appear here once a call detail report is imported (Phase 1). Until then
-      this page shows no figures rather than invented ones.
+  <section class="space-y-4" aria-live="polite">
+    <p v-if="range.isPending.value" class="text-sm text-ink-muted">Loading…</p>
+
+    <NoticeBox v-else-if="range.isError.value" tone="danger">
+      Could not check which months have call data. {{ problemMessage(range.error.value) }}
     </NoticeBox>
+
+    <NoticeBox v-else-if="months.length === 0">
+      There is no call data to show yet, so there are no figures rather than invented ones.
+      <template v-if="mayImport">
+        <RouterLink to="/imports" class="font-medium text-brand-ink underline">
+          Import a call detail report
+        </RouterLink>
+        to see service figures here.
+      </template>
+      <template v-else>A planner or admin imports it from Data import.</template>
+    </NoticeBox>
+
+    <template v-else-if="month">
+      <p v-if="kpis.isPending.value" class="text-sm text-ink-muted">
+        Loading {{ formatMonth(month) }}…
+      </p>
+      <NoticeBox v-else-if="kpis.isError.value" tone="danger">
+        Could not load the figures for {{ formatMonth(month) }}.
+        {{ problemMessage(kpis.error.value) }}
+      </NoticeBox>
+      <ServiceKpis
+        v-else-if="kpis.data.value"
+        :summary="kpis.data.value"
+        :period-label="formatMonth(month)"
+      />
+    </template>
   </section>
 </template>

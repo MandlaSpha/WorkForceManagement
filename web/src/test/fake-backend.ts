@@ -1,5 +1,9 @@
 import { http, HttpResponse } from 'msw'
 
+import type { ImportReport, KpiSummary } from '@/entities/call-data'
+
+import { emptySummary } from './call-data-fixtures'
+
 /**
  * A tiny in-memory stand-in for the Django auth API, enough to exercise the real client, store
  * and guards. It enforces the same CSRF rule as the real server (token cookie echoed in
@@ -50,11 +54,19 @@ export const backend = {
   /** The provider named in the last login request. */
   lastProvider: null as string | null,
   requests: [] as Array<{ method: string; path: string; csrf: string | null }>,
+  /** Call data: what the telephony endpoints answer. Tests set these before rendering. */
+  /** The months (YYYY-MM) that have call data. */
+  months: [] as string[],
+  kpisByMonth: {} as Record<string, KpiSummary>,
+  imports: [] as ImportReport[],
   reset(): void {
     this.signedIn = null
     this.requests = []
     this.providers = [LOCAL_PROVIDER]
     this.lastProvider = null
+    this.months = []
+    this.kpisByMonth = {}
+    this.imports = []
   },
 }
 
@@ -107,4 +119,13 @@ export const handlers = [
     backend.signedIn = null
     return HttpResponse.json({ ok: true })
   }),
+
+  http.get('*/api/v1/telephony/months', () => HttpResponse.json({ months: backend.months })),
+
+  http.get('*/api/v1/telephony/kpis', ({ request }) => {
+    const from = new URL(request.url).searchParams.get('date_from') ?? ''
+    return HttpResponse.json(backend.kpisByMonth[from.slice(0, 7)] ?? emptySummary())
+  }),
+
+  http.get('*/api/v1/telephony/imports', () => HttpResponse.json(backend.imports)),
 ]

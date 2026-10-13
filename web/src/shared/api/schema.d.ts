@@ -144,10 +144,155 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/telephony/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recent imports, newest first */
+        get: operations["wfm_telephony_api_list_imports"];
+        put?: never;
+        /**
+         * Import an ACD Call Detail Report (.xlsx)
+         * @description Reads the Call Record Report sheet, skips calls already imported, builds the 30-minute
+         *     intervals and returns the import report with its reconciliation.
+         */
+        post: operations["wfm_telephony_api_import_report"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telephony/kpis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Measured service figures for a date range */
+        get: operations["wfm_telephony_api_kpis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telephony/months": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The months that have call data */
+        get: operations["wfm_telephony_api_list_months"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/telephony/queues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Queues the signed-in role may see */
+        get: operations["wfm_telephony_api_list_queues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Coverage */
+        Coverage: {
+            /** Intervalstotal */
+            intervalsTotal: number;
+            /** Intervalsused */
+            intervalsUsed: number;
+        };
+        /** ImportOut */
+        ImportOut: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Filename */
+            fileName: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Periodend
+             * Format: date-time
+             */
+            periodEnd: string;
+            /**
+             * Periodstart
+             * Format: date-time
+             */
+            periodStart: string;
+            /** Reconciles */
+            reconciles: boolean;
+            /** Reconciliation */
+            reconciliation: {
+                [key: string]: unknown;
+            };
+            /** Rejectedsummary */
+            rejectedSummary: {
+                [key: string]: number;
+            };
+            /** Rowsduplicate */
+            rowsDuplicate: number;
+            /** Rowsinserted */
+            rowsInserted: number;
+            /** Rowsread */
+            rowsRead: number;
+            /** Rowsrejected */
+            rowsRejected: number;
+            /** Sheetsignored */
+            sheetsIgnored: string[];
+            /** Sourcetimezone */
+            sourceTimezone: string;
+            /** Uploadedby */
+            uploadedBy: string;
+            /** Warnings */
+            warnings: {
+                [key: string]: number;
+            };
+        };
+        /** KpiOut */
+        KpiOut: {
+            /** Datefrom */
+            dateFrom: string;
+            /** Dateto */
+            dateTo: string;
+            /** Queues */
+            queues: components["schemas"]["QueueKpisOut"][];
+            /** Slthresholds */
+            slThresholdS: number;
+            total: components["schemas"]["QueueKpisOut"];
+        };
         /** LoginIn */
         LoginIn: {
             /** Password */
@@ -169,6 +314,29 @@ export interface components {
             /** Username */
             username: string;
         };
+        /**
+         * Metric
+         * @description DAT-10: a figure always says whether it was measured and what it rests on.
+         */
+        Metric: {
+            /**
+             * Basis
+             * @constant
+             */
+            basis: "measured";
+            coverage: components["schemas"]["Coverage"];
+            /** Value */
+            value: number | null;
+        };
+        /**
+         * MonthsOut
+         * @description The calendar months (`YYYY-MM`, South African time) that have call data, oldest first.
+         *     Empty when nothing has been imported or none of it is visible to the role.
+         */
+        MonthsOut: {
+            /** Months */
+            months: string[];
+        };
         /** ProviderOut */
         ProviderOut: {
             /** Flow */
@@ -186,6 +354,34 @@ export interface components {
             restricted: boolean;
             /** Starturl */
             startUrl?: string | null;
+        };
+        /** QueueKpisOut */
+        QueueKpisOut: {
+            abandonPct: components["schemas"]["Metric"];
+            /** Abandoned */
+            abandoned: number;
+            ahtS: components["schemas"]["Metric"];
+            /** Answered */
+            answered: number;
+            asaS: components["schemas"]["Metric"];
+            /** Confirmed */
+            confirmed: boolean;
+            /** Offered */
+            offered: number;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number | null;
+            serviceLevelPct: components["schemas"]["Metric"];
+        };
+        /** QueueOut */
+        QueueOut: {
+            /** Confirmed */
+            confirmed: boolean;
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
         };
         /** WorkerPingOut */
         WorkerPingOut: {
@@ -363,6 +559,120 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkerPingOut"];
+                };
+            };
+        };
+    };
+    wfm_telephony_api_list_imports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportOut"][];
+                };
+            };
+        };
+    };
+    wfm_telephony_api_import_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportOut"];
+                };
+            };
+        };
+    };
+    wfm_telephony_api_kpis: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_to: string;
+                queue_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KpiOut"];
+                };
+            };
+        };
+    };
+    wfm_telephony_api_list_months: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonthsOut"];
+                };
+            };
+        };
+    };
+    wfm_telephony_api_list_queues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueOut"][];
                 };
             };
         };
