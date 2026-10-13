@@ -254,6 +254,18 @@ Customers sign in with whatever their organisation already runs. The application
 | AUTH-14 | Employee-master import from HR / directory (DAT-06) is separate from sign-in, but links an employee to the user through the same stable subject or email | S |
 | AUTH-15 | Each provider type has tests at three levels: pure unit tests, protocol-level tests against a fake server, and at least one test against a real server container (OpenLDAP; Keycloak when added) | M |
 
+### 3.17 Feature switches (licensing)
+Modules are sold separately, so each one can be switched off for a customer that no longer pays for it, without a code change. The switch belongs to the software owner (VMK), not to the customer's Admin role: a customer must not be able to switch back on what it has not paid for.
+
+| ID | Requirement | Pri |
+|---|---|---|
+| FEAT-01 | Each sellable module is a named **feature**; a deployment setting (`WFM_FEATURES`: `all`, `none` or a list) says which are on. A feature declares what it depends on, and one cannot be on without them | M |
+| FEAT-02 | **Enforced by the API.** A disabled feature's endpoints answer 403 `feature.disabled`, even for an Admin. Every API operation must declare its feature (or `core`, always on); a test fails if one does not | M |
+| FEAT-03 | A mistake in the setting (unknown name, blank value, missing dependency) **stops the application starting**; it never silently enables or disables a module | M |
+| FEAT-04 | The UI hides menu items and screens of disabled features, using the list returned at sign-in. This is cosmetic: the API is the authority | M |
+| FEAT-05 | Switching a feature off **never deletes its data**; switching it back on restores it | M |
+| FEAT-06 | A **signed licence file** (modules + expiry, verified by the application) so VMK can grant, renew and lapse modules without redeploying; the customer's Admin sees what is licensed, read-only | S |
+
 ## 4. Non-functional requirements
 
 | ID | Requirement | Source |
@@ -295,6 +307,7 @@ Full QA/interaction scoring, HR onboarding lifecycle, field-engineer mobile disp
 6. Confirmed operating hours per queue and agent-to-queue eligibility matrix.
 7. Is UIF a second tenant of the same product (multi-tenant) or a separate deployment?
 9. Separate read-only **Auditor** role (so admins, who manage users, cannot also be the only people who see the audit trail), or Admin only? Retention period for audit events (default proposed: 5 years).
+10. Who runs each deployment: VMK (hosted) or the customer (on-premises)? It decides whether features are controlled by a **platform operator** role or by a **signed licence file** (FEAT-06), and whether VMK staff ever have access to a running system.
 8. Gijima legal / information officer review of the telemetry design (OBS-04 to OBS-08) and the staff notice before go-live. The design aims to be POPIA-aligned (purpose limitation, minimality, transparency); it is not legal advice.
 
 ## 8. Gaps found in the 12 Oct 2026 review

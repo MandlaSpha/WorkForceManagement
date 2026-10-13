@@ -104,8 +104,32 @@ N_req = ceil(N_raw / (1 − shrinkage))
 ```
 Computed iteratively in log space to avoid factorial overflow. Variance = scheduled_on_phone − N_req.
 
-### 4.3 Forecast
-Baseline (MVP): for each queue × weekday × interval, weighted average of the last *k* same-weekday intervals (recent weeks weighted higher), scaled by a monthly trend factor and event uplifts. AHT likewise. Accuracy = 1 − MAPE vs actuals once they arrive. Phase 2: gradient-boosted model (LightGBM) with calendar features, selectable per queue.
+### 4.3 Forecast (baseline built in Phase 1)
+**How it works.** For a target day, take the most recent *k* (default 4) earlier days with the same weekday **that have call data**, and take a weighted average per half-hour slot, newer days counting more (weights 1, 0.7, 0.49, ...). Handling time is the answered-volume-weighted average of the same days, falling back to the overall figure for a slot where nothing was answered. Versions are drafts until published; exactly one version per queue is live and publishing archives the previous one (FC-03). The staffing requirement per half-hour is Erlang C on the forecast (section 4.2), with the queue's assumptions recorded on the version.
+
+**Honesty rules (DAT-10), each tested.**
+- A day with no imported data is not a day with no calls: only observed days count; on an observed day a slot with no row really had zero calls.
+- Never peeks: only days before the target are used, in the forecast and in the accuracy backtest.
+- No history means no forecast, never a forecast of zero; days that could not be forecast are named, not filled.
+- The staffing assumptions (80% in 20 s, 85% occupancy ceiling, 30% shrinkage) are **unconfirmed defaults** until an admin confirms them, and the screen says so. A requirement that cannot be worked out is "-", never 0, and a maximum is not claimed when part of it is unknown.
+- A forecast built on call data 28 or more days older than its first day carries a warning.
+
+**Accuracy (FC-05), measured not modelled.** Each past day is forecast from only the days before it and scored two ways: per half-hour and on the day's total. The score is 100% minus the pooled absolute error over the pooled actual calls (not MAPE, which divides by the zero actuals of quiet half-hours).
+
+**What the real May and July reports show** (aggregates; baseline with no trend or seasonality):
+
+| Queue | Day total | Half-hour |
+|---|---|---|
+| TotalSA | 71.8% | 41.8% |
+| Platinumhealth | 68.8% | 12.3% |
+| Gijima | 59.6% | 0% |
+| NightShiftGijima | 48.3% | 0% |
+| NightShiftTotalSA | 48.2% | 0% |
+| PPECB | 42.9% | 0% |
+
+The half-hour score is low for small queues because a half-hour holds a call or two and chance alone moves it; the day score is the one staffing a day leans on, and even that is only moderate. **This is a first baseline, not a finished forecast.** Likely gains, in order: a trend factor and day-level (rather than slot-level) averaging, smoothing neighbouring half-hours for small queues, holiday and event uplifts (FC-04), then the Phase 7 machine-learning model (FC-07) judged against this backtest.
+
+**Not built yet:** the monthly trend factor, events and uplifts (FC-04), multi-channel (FC-06), ML (FC-07), per-queue and per-contract settings screens (ENG-05; the values exist on the queue but are changed in Configure, Phase 2). Whole days are assumed: an import that stops mid-day would make that day look quiet.
 
 ### 4.4 Auto-scheduler
 OR-Tools CP-SAT. Variables: employee × day × shift-template (+ queue). Hard constraints: skill, availability-unavailable, approved leave, one shift per day, ≥ 11h rest, max weekly hours / consecutive days (BCEA), contract hours. Objective: minimise Σ under-staffing (weighted ×3) + Σ over-staffing + preference violations + fairness spread. Time limit 10–30 s per queue-week; run as a job.
@@ -115,6 +139,15 @@ Greedy search over candidate moves (shift start ±30/60 min, swap template, add 
 
 ### 4.6 Overtime pricing (BCEA)
 Hourly rate = monthly salary / (weekly hours × 4.333). Overtime 1.5×; Sunday 2× (or 1.5× if ordinarily works Sundays); public holiday 2×. Configurable.
+
+## 11. Feature switches (licensing)
+Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
+
+- `WFM_FEATURES` is `all`, `none` or a list. Features declare dependencies (forecasting needs call data); a missing dependency, an unknown name or a blank value stops the application at start-up.
+- **API enforcement.** `RoleSessionAuth` cannot be built without a feature (or `CORE`), so no endpoint can ship outside the switch. A disabled feature answers 403 `feature.disabled`, even for an Admin. The role check comes first, so a role that may not use an endpoint learns nothing about the plan. Contract tests assert that every feature operation is refused when its feature is off and every core operation works with everything off.
+- **UI.** `/auth/me` and sign-in return the enabled features; the sidebar hides disabled screens, typing the address shows "not part of your plan". Cosmetic only; the API is the authority. The list of feature names in the web app is typed from the API schema, and a test fails if they drift.
+- **Data** is never deleted by switching off; switching on restores it.
+- **Who controls it.** The switch belongs to the software owner (VMK), not to the customer's Admin role. Open decision: if VMK hosts the deployment, add a separate **platform operator** role (no access to business data, every action audited and visible to the customer's Admin); if the customer hosts it, a **signed licence file** (modules and expiry) is the better control (FEAT-06).
 
 ## 5. Import specification — ACD Call Detail Report
 
