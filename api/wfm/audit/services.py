@@ -1,5 +1,9 @@
 """The only way to write audit events. Call it inside the same transaction as the change
-(AUD-08): a change without its audit event must be impossible."""
+(AUD-08): a change without its audit event must be impossible.
+
+Call it as the LAST write of the transaction. Inserting an event takes a database lock that is
+held until commit (it keeps the hash chain linear), so every other transaction that audits
+waits behind it. Doing the slow work first and recording last keeps that wait to milliseconds."""
 
 from __future__ import annotations
 

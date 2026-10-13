@@ -26,7 +26,13 @@ class Action(models.TextChoices):
     LOGIN_FAILED = "auth.login_failed", "Login failed"
     LOGIN_LOCKED = "auth.login_locked", "Login refused: account locked"
     LOGOUT = "auth.logout", "Logout"
+    SSO_LOGIN = "auth.sso_login", "Signed in through an identity provider"
+    SSO_DENIED = "auth.sso_denied", "Identity provider sign-in refused"
+    IDENTITY_PROVISIONED = "identity.provisioned", "User created from a provider sign-in"
+    IDENTITY_LINKED = "identity.linked", "Existing user linked to a provider identity"
+    ROLE_CHANGED = "identity.role_changed", "Role changed by the provider's group mapping"
     ACCESS_DENIED = "access.denied", "Access denied"
+    CHAIN_BROKEN = "audit.chain_broken", "Audit chain integrity check failed"
 
 
 class AuditEvent(models.Model):
@@ -52,6 +58,13 @@ class AuditEvent(models.Model):
     user_agent = models.CharField(max_length=300, blank=True)
     batch_id = models.UUIDField(null=True, blank=True, db_index=True)
 
+    # Tamper evidence (AUD-10). All four are filled in by a database trigger at insert, never by
+    # Python: see migrations/0003_hash_chain.py. Order of the chain is `chain_seq`, not `id`.
+    chain_seq = models.BigIntegerField(unique=True, editable=False)
+    prev_hash = models.CharField(max_length=64, editable=False)
+    hash = models.CharField(max_length=64, editable=False)
+    hash_version = models.PositiveSmallIntegerField(default=1, editable=False)
+
     class Meta:
         indexes = [models.Index(fields=["entity_type", "entity_id"], name="audit_entity_idx")]
 
@@ -66,6 +79,9 @@ class AuditChange(models.Model):
     field = models.CharField(max_length=80)
     old_value = models.TextField(null=True, blank=True)  # noqa: DJ001 - NULL means "not set"
     new_value = models.TextField(null=True, blank=True)  # noqa: DJ001
+    hash = models.CharField(
+        max_length=64, editable=False
+    )  # set by a trigger, covers the event's hash
 
     def __str__(self) -> str:
         return f"{self.entity_type}#{self.entity_id}.{self.field}"
