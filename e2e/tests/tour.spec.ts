@@ -21,6 +21,7 @@ const ROLES: Array<{ username: string; role: string; screens: string[] }> = [
       '/recommendations',
       '/capacity',
       '/scheduling',
+      '/imports',
       '/service-desk',
       '/leave',
       '/shift-swaps',
@@ -34,7 +35,11 @@ const ROLES: Array<{ username: string; role: string; screens: string[] }> = [
   },
   { username: 'lead', role: 'lead', screens: ['/', '/roster', '/leave', '/overtime', '/reports'] },
   { username: 'agent', role: 'agent', screens: ['/my-schedule', '/my-availability', '/leave'] },
-  { username: 'admin', role: 'admin', screens: ['/', '/configure', '/audit', '/planner'] },
+  {
+    username: 'admin',
+    role: 'admin',
+    screens: ['/', '/configure', '/audit', '/planner', '/imports'],
+  },
   {
     username: 'executive',
     role: 'executive',
@@ -46,6 +51,12 @@ const ROLES: Array<{ username: string; role: string; screens: string[] }> = [
 const name = (path: string) => (path === '/' ? 'home' : path.slice(1).replaceAll('/', '-'))
 
 async function shot(page: Page, file: string): Promise<void> {
+  // Let screens that fetch data finish, so the picture shows the screen and not "Loading…".
+  await page
+    .getByText(/^Loading/)
+    .first()
+    .waitFor({ state: 'detached', timeout: 5000 })
+    .catch(() => undefined)
   await page.screenshot({ path: `screenshots/tour/${file}.png`, fullPage: false })
 }
 

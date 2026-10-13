@@ -75,14 +75,24 @@ Every response carrying a KPI includes `{value, basis: "measured"|"modelled", co
 
 ## 4. Engine
 
-### 4.1 KPI definitions (must reconcile to DECK slide 2)
-Computed per queue over inbound calls (`Call Type = INBOUND`):
-- Offered = count; Answered = `Call Status = Agent`; Abandoned = `Call Status = Abandoned`
+### 4.1 KPI definitions (pinned by reconciling the real May and July reports to DECK slide 2)
+Computed per queue over **inbound** calls only (`Call Type = INBOUND`; outbound calls and transfer legs are other work):
+- Offered = count of inbound calls; Answered = `Call Status = Agent`; Abandoned = `Call Status = Abandoned`
 - Abandon % = abandoned / offered
-- SL@20s = answered with `Queue Wait Time ≤ 20s` / offered (confirm denominator against DECK: May 81.1%, July 89.8%)
-- ASA = mean queue wait of answered calls; AHT = mean (agent duration + disposition/wrap) of answered calls
+- SL@20s = answered with `Queue Wait Time ≤ 20 s` **÷ offered** (not ÷ answered: that gives 88.4% for May, the deck says 81.1%)
+- ASA = mean queue wait of answered calls
+- AHT = mean of (`Agent Duration` + `Disposition Duration`) of answered calls, i.e. talk plus wrap-up (talk alone gives 3:05 for May, the deck says 3:35)
 
-Acceptance test: May → offered 5,649 / answered 5,181 / abandoned 468 / 8.28% / SL 81.1% / ASA 18.5s / AHT 3:35; July → 4,837 / 4,632 / 205 / 4.24% / 89.8% / 11.7s / 3:22. (Note: raw `Call Status` counts differ slightly — 480 vs 468 abandoned in May — so the exact filters, e.g. short-abandon threshold or transfer handling, must be pinned down until these numbers match.)
+Acceptance (all matched exactly, verified against the real files by `api/wfm/telephony/tests/test_real_reports.py`):
+
+| | Offered | Answered | Abandoned | Abandon % | SL@20s | ASA | AHT |
+|---|---|---|---|---|---|---|---|
+| May | 5,649 | 5,181 | 468 | 8.28% | 81.1% | 18.5 s | 3:35 |
+| July | 4,837 | 4,632 | 205 | 4.24% | 89.8% | 11.7 s | 3:22 |
+
+The earlier puzzle (480 abandoned in the raw status column against 468 on the deck) is explained: the 480 counts abandoned rows of every call type; 468 of them are inbound.
+
+A ratio with nothing to divide by is **no figure**, never zero (DAT-10): an empty month must not read as perfect service.
 
 ### 4.2 Requirement (Erlang C) per interval
 ```
@@ -114,6 +124,17 @@ Secondary sheets: Call Disposition Details (remarks hold ITSM incident numbers, 
 Rules: dedupe on Call ID; reject a batch whose file hash or (min,max) date range + row count matches an existing batch (catches June=May); parse `HH:MM:SS` durations; map Agent string → login via regex `\((Agent\d+)\)` else the raw login; queues auto-created on first sight (flagged for admin to confirm); produce reconciliation report (§4.1).
 
 Observed queues: TotalSA, Platinumhealth, Gijima, PPECB, NightShiftTotalSA, NightShiftGijima, GHSA-Service-Desk (outbound only). 28–30 distinct agents per month, ~37 people overall.
+
+### 5.1 Findings from the real reports, and how the importer treats them (Phase 1, built)
+
+- **June is May again.** The June file has the same 5,971 call IDs as May, all dated 1-31 May, but different file bytes, so a file-hash check alone would not catch it. The importer also refuses a file whose first/last call time and row count match an earlier import (`import.duplicate_period`), and the real-data test proves June is refused after May. Real June data is still needed.
+- **A call is kept even when one cell is junk.** The May report has an inbound call abandoned the instant it started whose wait is written `-0:00:23`. The deck counts it, so rejecting the row would give 5,648 offered and 467 abandoned. Optional cells (waits, durations, secondary timestamps) that cannot be read are cleared and counted as warnings in the import report; only a missing call ID, type, queue, status or start time rejects a row.
+- **Data minimisation (POPIA).** The caller's number, the dialled number and the agent's display name are never read out of the workbook or stored; only the agent login (`Agent124`) is kept. A test searches every stored value, the import report and the audit trail for canary values.
+- **Only the "Call Record Report" sheet is read** in this version; the other six sheets are listed as "not read yet" in the import report instead of being silently dropped (DAT-01 asks for all seven).
+- **Reconciliation (DAT-02).** Every import proves, by three routes that share no arithmetic, that the stored data adds up: the engine from the file rows, SQL over the stored calls, and the rebuilt 30-minute intervals against SQL over the same span. The report says "reconciles" or "does not reconcile".
+- **Time zone.** The ACD writes local times with no zone. They are read as `WFM_CDR_SOURCE_TIMEZONE` (default Africa/Johannesburg), stored as UTC, and days are cut in South African time. To be confirmed with the ACD vendor.
+- **Concurrent uploads.** Unique constraints on call ID, file hash and (queue, interval) are the last line of defence behind the application's repeat checks; a double-clicked Upload ends with one import and a clear, audited 409.
+- **Untrusted upload.** XML is parsed with defusedxml (entity expansion and external entities are refused), size is capped (`WFM_CDR_MAX_UPLOAD_MB`), and file names are neutralised before they are stored or shown.
 
 ## 6. Security
 Role-based route guards on API and UI; row-level filtering for agents (own data only) and leads (own team); audit trail per §6.1; secrets via environment; HTTPS only; passwords bcrypt; POPIA export/delete endpoints for an employee.
@@ -236,7 +257,7 @@ Hosting for the demo and for the on-site install is **not decided**. We therefor
 
 | Environment | How it runs | Purpose |
 |---|---|---|
-| dev (local) | **.NET Aspire** AppHost (`infra/aspire/`) starts Django, Celery worker + beat, Postgres, Valkey and the Vue dev server on Docker Desktop; the Aspire dashboard shows traces, logs and metrics (OTLP) | Day-to-day work (decided 12 Oct 2026). Needs the .NET 10 SDK on each developer machine |
+| dev (local) | **.NET Aspire** AppHost (`infra/aspire/`) starts Django, Celery worker + beat, Postgres, Valkey and the Vue dev server on Docker Desktop; the Aspire dashboard shows traces, logs and metrics (OTLP); pgAdmin 4 (open source) on port 5050 browses the dev database, development only | Day-to-day work (decided 12 Oct 2026). Needs the .NET 10 SDK on each developer machine |
 | CI | Compose + Testcontainers on GitHub Actions runners (no Aspire; plain containers) | Tests (tech spec §7) |
 | Local Kubernetes (later) | Helm chart on Docker Desktop's built-in Kubernetes, smoke-tested with `kind` in CI | Proves the Kubernetes path before Gijima chooses |
 | Demo (later, location open) | Same Compose file on one VM, or the Helm chart on a cluster | Synthetic data only unless Gijima agrees otherwise in writing and it is hosted in South Africa; no open sign-up; nightly reset; "DEMO" banner |

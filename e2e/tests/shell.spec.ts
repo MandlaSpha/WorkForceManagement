@@ -94,6 +94,9 @@ test.describe('admin', () => {
 test.describe('theme', () => {
   test('dark mode applies, stays after a reload, and is accessible', async ({ page }) => {
     await signIn(page, 'planner')
+    // The dashboard fetches its figures. Let it finish before switching theme, or the colour
+    // check can run while the table is still being drawn.
+    await expect(page.getByText(/^Loading/)).toHaveCount(0)
     await page.getByRole('button', { name: 'Switch to dark mode' }).click()
     await expect(page.locator('html')).toHaveClass(/dark/)
     await page.screenshot({

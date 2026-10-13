@@ -30,7 +30,9 @@ export async function expectNoAccessibilityViolations(page: Page): Promise<void>
     .analyze()
   const summary = results.violations.map(
     (v) =>
-      `${v.id} (${v.impact}): ${v.help} -> ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`,
+      `${v.id} (${v.impact}): ${v.help} -> ${v.nodes
+        .map((n) => `${n.target.join(' ')} ${JSON.stringify(n.any[0]?.data ?? {})}`)
+        .join(' | ')}`,
   )
   expect(summary, summary.join('\n')).toEqual([])
 }

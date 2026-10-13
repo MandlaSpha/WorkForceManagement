@@ -12,7 +12,8 @@
         "ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL": "http://localhost:19888",
         "ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL": "http://localhost:19889",
         "ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:20888",
-        "ASPIRE_ALLOW_UNSECURED_TRANSPORT": "true"
+        "ASPIRE_ALLOW_UNSECURED_TRANSPORT": "true",
+        "ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS": "true"
       }
     }
   }

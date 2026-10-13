@@ -14,7 +14,8 @@ Django 5.2 + Django Ninja, PostgreSQL 16, Celery + Valkey, pure-Python `wfm_engi
 
 ## Commands
 Docker Desktop is installed per-user; if `docker` is not found in a shell, add its `resources/bin` folder (under `%LOCALAPPDATA%/Programs/DockerDesktop`) to PATH. `uv` and `just` live in the Python Scripts folder.
-- `just dev`: start everything under .NET Aspire (dashboard http://localhost:15888).
+- `just dev`: start everything under .NET Aspire (dashboard http://localhost:15888; pgAdmin data browser http://localhost:5050, already connected to the dev database; the dashboard needs no login in dev because it only listens on localhost).
+- The API and worker run with `--noreload` under Aspire: after a backend change, restart that resource in the Aspire dashboard (or `just dev` again). The Vue dev server hot-reloads.
 - `just verify`: format check, lint, strict types, engine + web unit tests, layer rules. Run before saying a change is done.
 - `just test-int`: API tests on a real Postgres in Testcontainers (needs Docker running).
 - `just e2e`: Playwright against a running `just dev` stack (needs WFM_BASE_URL and WFM_DEMO_PASSWORD, see the justfile).

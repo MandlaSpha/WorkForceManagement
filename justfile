@@ -79,7 +79,7 @@ e2e:
     {{pnpm}} exec playwright test
 
 # Start everything locally with .NET Aspire (Postgres, Valkey, migrations, demo logins, API,
-# worker and the Vue app). Dashboard: http://localhost:15888 (login link printed on start).
+# worker and the Vue app). Dashboard: http://localhost:15888 (no login in dev), pgAdmin: http://localhost:5050.
 dev:
     dotnet run --project infra/aspire/WfmAppHost --launch-profile http
 

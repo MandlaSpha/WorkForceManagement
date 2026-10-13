@@ -7,7 +7,13 @@ var builder = DistributedApplication.CreateBuilder(args);
 const string apiDir = "../../../api";
 const string webDir = "../../../web";
 
-var postgres = builder.AddPostgres("postgres").WithDataVolume("wfm-pgdata");
+// pgAdmin 4 (open source, PostgreSQL licence) is a development-only data browser. Aspire connects
+// it to the database automatically, so there is nothing to type in; the fixed port keeps the URL
+// the same between runs.
+var postgres = builder
+    .AddPostgres("postgres")
+    .WithDataVolume("wfm-pgdata")
+    .WithPgAdmin(pgAdmin => pgAdmin.WithHostPort(5050));
 var db = postgres.AddDatabase("wfm");
 var valkey = builder.AddValkey("valkey");
 
@@ -92,6 +98,15 @@ var seedDirectory = builder.AddPythonApp("seed-directory", apiDir, "manage.py")
     .WithEnvironment("LDAP_ADMIN_PASSWORD", ldapAdminPassword)
     .WithEnvironment("WFM_DEMO_PASSWORD", demoPassword)
     .WaitFor(ldap);
+
+// On demand (press Start in the dashboard): delete the synthetic data the browser tests import
+// into the "E2E Queue". Never touches another queue; the command refuses outside development.
+builder.AddPythonApp("purge-e2e-data", apiDir, "manage.py")
+    .WithUv()
+    .WithArgs("purge_e2e_data")
+    .WithEnvironment("DATABASE_URL", db.Resource.UriExpression)
+    .WaitForCompletion(migrate)
+    .WithExplicitStart();
 
 var api = builder.AddPythonApp("api", apiDir, "manage.py")
     .WithUv()
