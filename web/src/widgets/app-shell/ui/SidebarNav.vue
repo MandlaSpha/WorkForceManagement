@@ -11,7 +11,7 @@ import { visibleNav } from '../model/visible-nav'
 
 const session = useSessionStore()
 const route = useRoute()
-const groups = computed(() => (session.user ? visibleNav(session.user.role) : []))
+const groups = computed(() => (session.user ? visibleNav(session.user) : []))
 </script>
 
 <template>

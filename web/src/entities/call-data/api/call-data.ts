@@ -1,9 +1,13 @@
 import { api, unwrap } from '@/shared/api'
 
-import type { ImportReport, KpiSummary, Months } from '../model/types'
+import type { ImportReport, KpiSummary, Months, QueueInfo } from '../model/types'
 
 export async function fetchMonths(): Promise<Months> {
   return unwrap(await api.GET('/api/v1/telephony/months'))
+}
+
+export async function fetchQueues(): Promise<QueueInfo[]> {
+  return unwrap(await api.GET('/api/v1/telephony/queues'))
 }
 
 export async function fetchKpis(range: { from: string; to: string }): Promise<KpiSummary> {

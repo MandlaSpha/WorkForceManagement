@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
 import { api, ApiProblem, setUnauthorisedHandler, toProblem } from '@/shared/api'
+import type { FeatureKey } from '@/shared/config'
 import { setTelemetryRole } from '@/shared/telemetry'
 
 import { isRole, type Role } from './access'
@@ -10,14 +11,26 @@ export interface SessionUser {
   username: string
   displayName: string
   role: Role
+  /** Features switched on in this deployment (FEAT-01). Hiding the rest is cosmetic. */
+  features: ReadonlyArray<FeatureKey>
 }
 
 type Status = 'unknown' | 'anonymous' | 'authenticated'
 
-function toUser(data: { username: string; displayName: string; role: string }): SessionUser {
+function toUser(data: {
+  username: string
+  displayName: string
+  role: string
+  features: ReadonlyArray<FeatureKey>
+}): SessionUser {
   // A role the UI does not know is a front-end/back-end mismatch: refuse rather than guess.
   if (!isRole(data.role)) throw new Error(`Unknown role from API: ${data.role}`)
-  return { username: data.username, displayName: data.displayName, role: data.role }
+  return {
+    username: data.username,
+    displayName: data.displayName,
+    role: data.role,
+    features: data.features,
+  }
 }
 
 export const useSessionStore = defineStore('session', () => {

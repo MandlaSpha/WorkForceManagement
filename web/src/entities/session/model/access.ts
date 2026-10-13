@@ -1,4 +1,4 @@
-import type { NavKey } from '@/shared/config'
+import { NAV_ITEMS, type FeatureKey, type NavKey } from '@/shared/config'
 
 export const ROLES = ['agent', 'lead', 'planner', 'admin', 'executive', 'customer_ops'] as const
 export type Role = (typeof ROLES)[number]
@@ -54,6 +54,20 @@ export const ACCESS: Record<NavKey, readonly Role[]> = {
 
 export function canAccess(role: Role, key: NavKey): boolean {
   return ACCESS[key].includes(role)
+}
+
+/** Is the screen's feature switched on? Screens of the `core` feature always are. */
+export function isAvailable(features: ReadonlyArray<FeatureKey>, key: NavKey): boolean {
+  const feature = NAV_ITEMS.find((item) => item.key === key)?.feature
+  return feature === undefined || feature === 'core' || features.includes(feature)
+}
+
+/** May this person open the screen: the role allows it AND the feature is on. */
+export function canOpen(
+  user: { role: Role; features: ReadonlyArray<FeatureKey> },
+  key: NavKey,
+): boolean {
+  return canAccess(user.role, key) && isAvailable(user.features, key)
 }
 
 /** Where a role lands after signing in: agents get their own schedule, everyone else the dashboard. */

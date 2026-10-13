@@ -5,7 +5,7 @@ const model = defineModel<string>({ required: true })
 
 defineProps<{
   label: string
-  type?: 'text' | 'password'
+  type?: 'text' | 'password' | 'date'
   autocomplete?: string
   error?: string
 }>()

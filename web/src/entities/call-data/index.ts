@@ -6,5 +6,5 @@ export {
   formatPercent,
   formatSeconds,
 } from './model/format'
-export { callDataKeys, useImports, useKpis, useMonths } from './model/queries'
-export type { ImportReport, KpiSummary, Metric, Months, QueueKpis } from './model/types'
+export { callDataKeys, useImports, useKpis, useMonths, useQueues } from './model/queries'
+export type { ImportReport, KpiSummary, Metric, Months, QueueInfo, QueueKpis } from './model/types'

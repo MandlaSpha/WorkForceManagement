@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/vue-query'
 import userEvent from '@testing-library/user-event'
 import { screen, waitFor, within } from '@testing-library/vue'
 import { http, HttpResponse } from 'msw'
@@ -7,6 +8,15 @@ import { kpiSummary } from '@/test/call-data-fixtures'
 import { backend } from '@/test/fake-backend'
 import { renderApp } from '@/test/render-app'
 import { server } from '@/test/server'
+
+/** Queries that still hold an answer. A screen that is still mounted may start a fresh, empty
+ * query; that holds nothing of the previous person, which is what matters. */
+function cachedAnswers(client: QueryClient) {
+  return client
+    .getQueryCache()
+    .getAll()
+    .filter((query) => query.state.data !== undefined)
+}
 
 function signedInAs(role: string) {
   backend.signedIn = { username: role, displayName: `Test ${role}`, role }
@@ -24,11 +34,11 @@ describe("one person's figures never reach the next person on the same browser",
     const user = userEvent.setup()
     const { queryClient } = await renderApp('/')
     await screen.findByTestId('tile-offered')
-    expect(queryClient.getQueryCache().getAll().length).toBeGreaterThan(0)
+    expect(cachedAnswers(queryClient).length).toBeGreaterThan(0)
 
     await user.click(await screen.findByRole('button', { name: 'Sign out' }))
 
-    await waitFor(() => expect(queryClient.getQueryCache().getAll()).toHaveLength(0))
+    await waitFor(() => expect(cachedAnswers(queryClient)).toHaveLength(0))
   })
 
   it('empties the cache when the session expires under them', async () => {
@@ -50,7 +60,7 @@ describe("one person's figures never reach the next person on the same browser",
     await queryClient.refetchQueries({ queryKey: ['call-data', 'months'] })
 
     await waitFor(() => expect(router.currentRoute.value.name).toBe('login'))
-    await waitFor(() => expect(queryClient.getQueryCache().getAll()).toHaveLength(0))
+    await waitFor(() => expect(cachedAnswers(queryClient)).toHaveLength(0))
   })
 })
 

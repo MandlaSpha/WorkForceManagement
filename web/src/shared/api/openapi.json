@@ -1,6 +1,66 @@
 {
   "components": {
     "schemas": {
+      "AccuracyOut": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/DayAccuracyOut"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "decay": {
+            "title": "Decay",
+            "type": "number"
+          },
+          "overallAccuracyPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overallaccuracypct"
+          },
+          "overallDailyAccuracyPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overalldailyaccuracypct"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "weeks": {
+            "title": "Weeks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queueId",
+          "queue",
+          "overallAccuracyPct",
+          "overallDailyAccuracyPct",
+          "weeks",
+          "decay",
+          "days"
+        ],
+        "title": "AccuracyOut",
+        "type": "object"
+      },
       "Coverage": {
         "properties": {
           "intervalsTotal": {
@@ -17,6 +77,236 @@
           "intervalsTotal"
         ],
         "title": "Coverage",
+        "type": "object"
+      },
+      "DayAccuracyOut": {
+        "properties": {
+          "accuracyPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracypct"
+          },
+          "dailyAccuracyPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dailyaccuracypct"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "daysUsed": {
+            "title": "Daysused",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date",
+          "accuracyPct",
+          "dailyAccuracyPct",
+          "daysUsed"
+        ],
+        "title": "DayAccuracyOut",
+        "type": "object"
+      },
+      "Feature": {
+        "enum": [
+          "telephony",
+          "forecasting",
+          "scheduling",
+          "people",
+          "optimisation",
+          "overtime",
+          "insight",
+          "capacity",
+          "intraday",
+          "service_desk"
+        ],
+        "title": "Feature",
+        "type": "string"
+      },
+      "ForecastIntervalOut": {
+        "properties": {
+          "ahtS": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahts"
+          },
+          "daysUsed": {
+            "title": "Daysused",
+            "type": "integer"
+          },
+          "required": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required"
+          },
+          "requiredRaw": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredraw"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "volume": {
+            "title": "Volume",
+            "type": "number"
+          }
+        },
+        "required": [
+          "start",
+          "volume",
+          "ahtS",
+          "requiredRaw",
+          "required",
+          "daysUsed"
+        ],
+        "title": "ForecastIntervalOut",
+        "type": "object"
+      },
+      "ForecastVersionOut": {
+        "properties": {
+          "assumptionsConfirmed": {
+            "title": "Assumptionsconfirmed",
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "createdBy": {
+            "title": "Createdby",
+            "type": "string"
+          },
+          "dateFrom": {
+            "format": "date",
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "format": "date",
+            "title": "Dateto",
+            "type": "string"
+          },
+          "daysWithoutHistory": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Dayswithouthistory",
+            "type": "array"
+          },
+          "historyThrough": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Historythrough"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "intervalCount": {
+            "title": "Intervalcount",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "publishedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publishedat"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "queueId",
+          "queue",
+          "label",
+          "status",
+          "method",
+          "dateFrom",
+          "dateTo",
+          "createdAt",
+          "createdBy",
+          "publishedAt",
+          "intervalCount",
+          "assumptionsConfirmed",
+          "daysWithoutHistory",
+          "historyThrough",
+          "params"
+        ],
+        "title": "ForecastVersionOut",
         "type": "object"
       },
       "ImportOut": {
@@ -185,6 +475,13 @@
             "title": "Displayname",
             "type": "string"
           },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/Feature"
+            },
+            "title": "Features",
+            "type": "array"
+          },
           "role": {
             "title": "Role",
             "type": "string"
@@ -197,7 +494,8 @@
         "required": [
           "username",
           "displayName",
-          "role"
+          "role",
+          "features"
         ],
         "title": "MeOut",
         "type": "object"
@@ -368,14 +666,70 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "occupancyCeilingPct": {
+            "title": "Occupancyceilingpct",
+            "type": "number"
+          },
+          "settingsConfirmed": {
+            "title": "Settingsconfirmed",
+            "type": "boolean"
+          },
+          "shrinkagePct": {
+            "title": "Shrinkagepct",
+            "type": "number"
+          },
+          "slTargetPct": {
+            "title": "Sltargetpct",
+            "type": "number"
+          },
+          "slThresholdS": {
+            "title": "Slthresholds",
+            "type": "integer"
           }
         },
         "required": [
           "id",
           "name",
-          "confirmed"
+          "confirmed",
+          "slTargetPct",
+          "slThresholdS",
+          "occupancyCeilingPct",
+          "shrinkagePct",
+          "settingsConfirmed"
         ],
         "title": "QueueOut",
+        "type": "object"
+      },
+      "RunForecastIn": {
+        "properties": {
+          "dateFrom": {
+            "format": "date",
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "format": "date",
+            "title": "Dateto",
+            "type": "string"
+          },
+          "label": {
+            "default": "",
+            "maxLength": 100,
+            "title": "Label",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queueId",
+          "dateFrom",
+          "dateTo"
+        ],
+        "title": "RunForecastIn",
         "type": "object"
       },
       "WorkerPingOut": {
@@ -594,6 +948,206 @@
         "summary": "Begin SSO",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/api/v1/forecasting/accuracy": {
+      "get": {
+        "operationId": "wfm_forecasting_api_accuracy",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccuracyOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "How well the baseline would have predicted each past day (backtest)",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
+    "/api/v1/forecasting/versions": {
+      "get": {
+        "operationId": "wfm_forecasting_api_list_versions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Queue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ForecastVersionOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Forecast versions, newest first",
+        "tags": [
+          "forecasting"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_forecasting_api_run_forecast",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunForecastIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastVersionOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Run the baseline forecast for a queue and a range of days (a draft)",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
+    "/api/v1/forecasting/versions/{version_id}/intervals": {
+      "get": {
+        "operationId": "wfm_forecasting_api_version_intervals",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ForecastIntervalOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "The half-hour forecast and staffing requirement of a version",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
+    "/api/v1/forecasting/versions/{version_id}/publish": {
+      "post": {
+        "operationId": "wfm_forecasting_api_publish_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastVersionOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Make a draft the live forecast of its queue",
+        "tags": [
+          "forecasting"
         ]
       }
     },

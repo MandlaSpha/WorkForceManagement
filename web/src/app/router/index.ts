@@ -20,6 +20,7 @@ declare module 'vue-router' {
 const BUILT_SCREENS: Partial<Record<NavKey, RouteRecordRaw['component']>> = {
   dashboard: () => import('@/pages/dashboard'),
   imports: () => import('@/pages/imports'),
+  forecast: () => import('@/pages/forecast'),
 }
 
 const screens: RouteRecordRaw[] = NAV_ITEMS.map((item) => ({
@@ -44,6 +45,11 @@ const routes: RouteRecordRaw[] = [
     children: [
       ...screens,
       { path: '/forbidden', name: 'forbidden', component: () => import('@/pages/forbidden') },
+      {
+        path: '/unavailable',
+        name: 'unavailable',
+        component: () => import('@/pages/unavailable'),
+      },
       { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/pages/not-found') },
     ],
   },

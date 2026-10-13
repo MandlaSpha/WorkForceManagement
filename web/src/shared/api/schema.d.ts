@@ -123,6 +123,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/forecasting/accuracy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How well the baseline would have predicted each past day (backtest) */
+        get: operations["wfm_forecasting_api_accuracy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forecasting/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Forecast versions, newest first */
+        get: operations["wfm_forecasting_api_list_versions"];
+        put?: never;
+        /** Run the baseline forecast for a queue and a range of days (a draft) */
+        post: operations["wfm_forecasting_api_run_forecast"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forecasting/versions/{version_id}/intervals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The half-hour forecast and staffing requirement of a version */
+        get: operations["wfm_forecasting_api_version_intervals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forecasting/versions/{version_id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Make a draft the live forecast of its queue */
+        post: operations["wfm_forecasting_api_publish_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/ping-worker": {
         parameters: {
             query?: never;
@@ -221,12 +290,115 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccuracyOut */
+        AccuracyOut: {
+            /** Days */
+            days: components["schemas"]["DayAccuracyOut"][];
+            /** Decay */
+            decay: number;
+            /** Overallaccuracypct */
+            overallAccuracyPct: number | null;
+            /** Overalldailyaccuracypct */
+            overallDailyAccuracyPct: number | null;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+            /** Weeks */
+            weeks: number;
+        };
         /** Coverage */
         Coverage: {
             /** Intervalstotal */
             intervalsTotal: number;
             /** Intervalsused */
             intervalsUsed: number;
+        };
+        /** DayAccuracyOut */
+        DayAccuracyOut: {
+            /** Accuracypct */
+            accuracyPct: number | null;
+            /** Dailyaccuracypct */
+            dailyAccuracyPct: number | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Daysused */
+            daysUsed: number;
+        };
+        /**
+         * Feature
+         * @enum {string}
+         */
+        Feature: "telephony" | "forecasting" | "scheduling" | "people" | "optimisation" | "overtime" | "insight" | "capacity" | "intraday" | "service_desk";
+        /** ForecastIntervalOut */
+        ForecastIntervalOut: {
+            /** Ahts */
+            ahtS: number | null;
+            /** Daysused */
+            daysUsed: number;
+            /** Required */
+            required: number | null;
+            /** Requiredraw */
+            requiredRaw: number | null;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /** Volume */
+            volume: number;
+        };
+        /** ForecastVersionOut */
+        ForecastVersionOut: {
+            /** Assumptionsconfirmed */
+            assumptionsConfirmed: boolean;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Createdby */
+            createdBy: string;
+            /**
+             * Datefrom
+             * Format: date
+             */
+            dateFrom: string;
+            /**
+             * Dateto
+             * Format: date
+             */
+            dateTo: string;
+            /** Dayswithouthistory */
+            daysWithoutHistory: string[];
+            /** Historythrough */
+            historyThrough: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Intervalcount */
+            intervalCount: number;
+            /** Label */
+            label: string;
+            /** Method */
+            method: string;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Publishedat */
+            publishedAt: string | null;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+            /** Status */
+            status: string;
         };
         /** ImportOut */
         ImportOut: {
@@ -309,6 +481,8 @@ export interface components {
         MeOut: {
             /** Displayname */
             displayName: string;
+            /** Features */
+            features: components["schemas"]["Feature"][];
             /** Role */
             role: string;
             /** Username */
@@ -382,6 +556,36 @@ export interface components {
             id: number;
             /** Name */
             name: string;
+            /** Occupancyceilingpct */
+            occupancyCeilingPct: number;
+            /** Settingsconfirmed */
+            settingsConfirmed: boolean;
+            /** Shrinkagepct */
+            shrinkagePct: number;
+            /** Sltargetpct */
+            slTargetPct: number;
+            /** Slthresholds */
+            slThresholdS: number;
+        };
+        /** RunForecastIn */
+        RunForecastIn: {
+            /**
+             * Datefrom
+             * Format: date
+             */
+            dateFrom: string;
+            /**
+             * Dateto
+             * Format: date
+             */
+            dateTo: string;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /** Queueid */
+            queueId: number;
         };
         /** WorkerPingOut */
         WorkerPingOut: {
@@ -540,6 +744,118 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    wfm_forecasting_api_accuracy: {
+        parameters: {
+            query: {
+                queue_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccuracyOut"];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_list_versions: {
+        parameters: {
+            query?: {
+                queue_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastVersionOut"][];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_run_forecast: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunForecastIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastVersionOut"];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_version_intervals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastIntervalOut"][];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_publish_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastVersionOut"];
+                };
             };
         };
     };

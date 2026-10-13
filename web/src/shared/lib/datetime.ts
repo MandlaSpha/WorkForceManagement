@@ -24,3 +24,39 @@ export function formatDate(iso: string): string {
 export function formatDateTime(iso: string): string {
   return DATE_TIME.format(new Date(iso))
 }
+
+const DAY = new Intl.DateTimeFormat('en-CA', {
+  timeZone: ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+const TIME = new Intl.DateTimeFormat('en-ZA', {
+  timeZone: ZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
+
+/** The South African calendar day of a moment, as `YYYY-MM-DD`. */
+export function dayOf(iso: string): string {
+  return DAY.format(new Date(iso))
+}
+
+/** The South African clock time of a moment, as `HH:mm`. */
+export function timeOf(iso: string): string {
+  return TIME.format(new Date(iso))
+}
+
+const DAY_LABEL = new Intl.DateTimeFormat('en-ZA', {
+  timeZone: 'UTC',
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+})
+
+/** A plain calendar day (`YYYY-MM-DD`) for people: "Mon 25 May". No time zone is involved, so it
+ * can never slip to the neighbouring day. */
+export function formatDayLabel(day: string): string {
+  return DAY_LABEL.format(new Date(`${day}T12:00:00Z`)).replace(',', '')
+}

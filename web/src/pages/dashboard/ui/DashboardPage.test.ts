@@ -83,6 +83,26 @@ describe('the dashboard shows measured service figures', () => {
   })
 })
 
+describe('the queue table', () => {
+  it('lists only queues that had calls in the month, not rows of dashes', async () => {
+    backend.months = ['2026-05']
+    backend.kpisByMonth = {
+      '2026-05': kpiSummary({
+        queues: [
+          queueKpis({ queueId: 1, queue: 'QueueA' }),
+          queueKpis({ queueId: 3, queue: 'QuietQueue', offered: 0, answered: 0, abandoned: 0 }),
+        ],
+      }),
+    }
+    asRole('planner')
+    await renderApp('/')
+
+    const table = within(await screen.findByRole('table', { name: /Service by queue/ }))
+    expect(table.getByRole('rowheader', { name: /QueueA/ })).toBeVisible()
+    expect(table.queryByRole('rowheader', { name: /QuietQueue/ })).toBeNull()
+  })
+})
+
 describe('the dashboard never invents a figure', () => {
   it('shows no tiles and no zeros for a month without calls', async () => {
     withData()

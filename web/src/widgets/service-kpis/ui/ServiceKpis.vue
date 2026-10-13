@@ -13,6 +13,8 @@ import NoticeBox from '@/shared/ui/NoticeBox.vue'
 const props = defineProps<{ summary: KpiSummary; periodLabel: string }>()
 
 const total = computed(() => props.summary.total)
+// A queue with no calls this month is not a row of dashes; the month's totals already say so.
+const queuesWithCalls = computed(() => props.summary.queues.filter((q) => q.offered > 0))
 const coverage = computed(() => total.value.serviceLevelPct.coverage)
 
 const tiles = computed(() => [
@@ -106,7 +108,7 @@ const tiles = computed(() => [
           </thead>
           <tbody>
             <tr
-              v-for="q in summary.queues"
+              v-for="q in queuesWithCalls"
               :key="q.queueId ?? q.queue"
               class="border-b border-line"
             >

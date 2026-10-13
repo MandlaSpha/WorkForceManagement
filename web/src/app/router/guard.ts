@@ -1,6 +1,6 @@
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router'
 
-import { canAccess, homePathFor, type useSessionStore } from '@/entities/session'
+import { canAccess, homePathFor, isAvailable, type useSessionStore } from '@/entities/session'
 
 type SessionStore = ReturnType<typeof useSessionStore>
 
@@ -26,5 +26,7 @@ export async function authGuard(
     // "/" is the generic landing address: send each role to its own home instead of a 403.
     return to.path === '/' ? homePathFor(user.role) : { name: 'forbidden' }
   }
+  // The role may open it but the feature is switched off for this deployment (FEAT-04).
+  if (key && !isAvailable(user.features, key)) return { name: 'unavailable' }
   return true
 }

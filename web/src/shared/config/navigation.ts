@@ -4,7 +4,13 @@
  * entities/session (access rules), so this file stays plain data.
  */
 
+import type { components } from '@/shared/api'
+
 export type NavGroup = 'Home' | 'My work' | 'Operate' | 'People' | 'Insight' | 'Admin'
+
+/** A sellable module, or `core` for screens that are always on. Typed from the API schema, so a
+ * name the API does not know is a compile error. */
+export type FeatureKey = components['schemas']['Feature'] | 'core'
 
 export interface NavItem {
   readonly key: string
@@ -12,6 +18,8 @@ export interface NavItem {
   readonly label: string
   readonly group: NavGroup
   readonly icon: string
+  /** The feature this screen belongs to; when it is switched off the screen is unavailable. */
+  readonly feature: FeatureKey
   /** One plain sentence saying what the screen does (UI principle 1). */
   readonly subtitle: string
   /** Delivery phase that builds the real screen; 0 means it exists already. */
@@ -25,6 +33,7 @@ export const NAV_ITEMS = [
     label: 'Dashboard',
     group: 'Home',
     icon: 'home',
+    feature: 'core',
     phase: 0,
     subtitle:
       'Measured service across every queue, month by month. Coverage and headcount join once rosters exist.',
@@ -36,6 +45,7 @@ export const NAV_ITEMS = [
     label: 'My schedule',
     group: 'My work',
     icon: 'calendar',
+    feature: 'scheduling',
     phase: 3,
     subtitle: 'Your published shifts, breaks and leave.',
   },
@@ -45,6 +55,7 @@ export const NAV_ITEMS = [
     label: 'My availability',
     group: 'My work',
     icon: 'clock',
+    feature: 'people',
     phase: 3,
     subtitle: 'Tell the planner when you cannot or prefer to work.',
   },
@@ -55,6 +66,7 @@ export const NAV_ITEMS = [
     label: 'Planner',
     group: 'Operate',
     icon: 'layout-grid',
+    feature: 'scheduling',
     phase: 2,
     subtitle: 'Coverage against requirement at 30-minute resolution.',
   },
@@ -64,6 +76,7 @@ export const NAV_ITEMS = [
     label: 'Intraday',
     group: 'Operate',
     icon: 'activity',
+    feature: 'intraday',
     phase: 5,
     subtitle: "Today's volumes, coverage and alerts as the day unfolds.",
   },
@@ -73,6 +86,7 @@ export const NAV_ITEMS = [
     label: 'Roster',
     group: 'Operate',
     icon: 'calendar-days',
+    feature: 'scheduling',
     phase: 2,
     subtitle: 'Who works when. Assign or clear a shift and coverage updates instantly.',
   },
@@ -82,6 +96,7 @@ export const NAV_ITEMS = [
     label: 'Forecast',
     group: 'Operate',
     icon: 'trending-up',
+    feature: 'forecasting',
     phase: 1,
     subtitle: 'Per-interval contacts, then Erlang C and shrinkage, give the agents required.',
   },
@@ -91,6 +106,7 @@ export const NAV_ITEMS = [
     label: 'Recommendations',
     group: 'Operate',
     icon: 'sparkles',
+    feature: 'optimisation',
     phase: 4,
     subtitle: 'Concrete fixes for the day’s coverage gaps. Apply one and watch coverage close.',
   },
@@ -100,6 +116,7 @@ export const NAV_ITEMS = [
     label: 'Capacity',
     group: 'Operate',
     icon: 'layers',
+    feature: 'capacity',
     phase: 5,
     subtitle: 'Establishment, attrition and hiring over the planning horizon.',
   },
@@ -109,6 +126,7 @@ export const NAV_ITEMS = [
     label: 'Scheduling',
     group: 'Operate',
     icon: 'repeat',
+    feature: 'scheduling',
     phase: 4,
     subtitle: 'Availability, cross-queue flexing, standby rota and rotations.',
   },
@@ -118,6 +136,7 @@ export const NAV_ITEMS = [
     label: 'Data import',
     group: 'Operate',
     icon: 'upload',
+    feature: 'telephony',
     phase: 1,
     subtitle: 'Bring in the ACD call detail report. Calls already imported are skipped.',
   },
@@ -127,6 +146,7 @@ export const NAV_ITEMS = [
     label: 'Service desk',
     group: 'Operate',
     icon: 'ticket',
+    feature: 'service_desk',
     phase: 6,
     subtitle: 'Ticket and email workload alongside calls.',
   },
@@ -137,6 +157,7 @@ export const NAV_ITEMS = [
     label: 'Leave',
     group: 'People',
     icon: 'sun',
+    feature: 'people',
     phase: 3,
     subtitle:
       'Apply for or approve leave. Approval writes it into the schedule and updates coverage.',
@@ -147,6 +168,7 @@ export const NAV_ITEMS = [
     label: 'Shift swaps',
     group: 'People',
     icon: 'arrow-left-right',
+    feature: 'people',
     phase: 3,
     subtitle: 'Offer, accept and approve shift swaps within the scheduling rules.',
   },
@@ -156,6 +178,7 @@ export const NAV_ITEMS = [
     label: 'Employees',
     group: 'People',
     icon: 'users',
+    feature: 'people',
     phase: 1,
     subtitle: 'People, skills, contracts and the ACD logins mapped to each of them.',
   },
@@ -165,6 +188,7 @@ export const NAV_ITEMS = [
     label: 'Overtime',
     group: 'People',
     icon: 'moon',
+    feature: 'overtime',
     phase: 4,
     subtitle: 'Authorise premium pay, run the standby rota and reconcile worked against approved.',
   },
@@ -174,6 +198,7 @@ export const NAV_ITEMS = [
     label: 'Attendance',
     group: 'People',
     icon: 'clipboard-check',
+    feature: 'people',
     phase: 6,
     subtitle: 'What happened against what was planned.',
   },
@@ -184,6 +209,7 @@ export const NAV_ITEMS = [
     label: 'Analytics',
     group: 'Insight',
     icon: 'bar-chart-3',
+    feature: 'insight',
     phase: 5,
     subtitle: 'Executive KPIs and what-if planning, each labelled measured or modelled.',
   },
@@ -193,6 +219,7 @@ export const NAV_ITEMS = [
     label: 'Calibration',
     group: 'Insight',
     icon: 'sliders-horizontal',
+    feature: 'insight',
     phase: 5,
     subtitle: 'Compare modelled with measured results and tune shrinkage and handle time.',
   },
@@ -202,6 +229,7 @@ export const NAV_ITEMS = [
     label: 'Reports',
     group: 'Insight',
     icon: 'download',
+    feature: 'insight',
     phase: 5,
     subtitle: 'Daily, weekly and monthly packs, peaks and troughs, payroll export.',
   },
@@ -212,6 +240,7 @@ export const NAV_ITEMS = [
     label: 'Configure',
     group: 'Admin',
     icon: 'settings',
+    feature: 'core',
     phase: 2,
     subtitle: 'Shifts, queues, skills, adherence targets and reference data.',
   },
@@ -221,6 +250,7 @@ export const NAV_ITEMS = [
     label: 'Audit log',
     group: 'Admin',
     icon: 'shield-check',
+    feature: 'core',
     phase: 5,
     subtitle: 'Who did what, when, and with what outcome.',
   },
