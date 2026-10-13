@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "wfm.accounts",
     "wfm.identity",
     "wfm.audit",
+    "wfm.telephony",
 ]
 
 # No django.contrib.admin on purpose: it would be a write path that bypasses the audited
@@ -99,6 +100,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Tracing is on whenever an OTLP endpoint is configured (Aspire sets one in development).
 WFM_TELEMETRY = env_bool("WFM_TELEMETRY", default="OTEL_EXPORTER_OTLP_ENDPOINT" in os.environ)
+
+# Call data import (DAT-01..04). The ACD writes local times without a zone; this says which zone.
+# Confirm with the ACD vendor: if it exports UTC, set this to "UTC".
+WFM_CDR_SOURCE_TIMEZONE = os.environ.get("WFM_CDR_SOURCE_TIMEZONE", "Africa/Johannesburg")
+WFM_CDR_MAX_UPLOAD_MB = int(os.environ.get("WFM_CDR_MAX_UPLOAD_MB", "25"))
+# Service-level threshold used when intervals are built. Per-queue and per-contract targets
+# (ENG-05) come with the configuration screens; changing this needs the intervals rebuilt.
+WFM_SL_THRESHOLD_S = int(os.environ.get("WFM_SL_THRESHOLD_S", "20"))
 
 CELERY_BEAT_SCHEDULE = {
     # Nightly check that the audit trail's hash chain is intact (AUD-10).

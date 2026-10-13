@@ -32,6 +32,9 @@ class Action(models.TextChoices):
     IDENTITY_LINKED = "identity.linked", "Existing user linked to a provider identity"
     ROLE_CHANGED = "identity.role_changed", "Role changed by the provider's group mapping"
     ACCESS_DENIED = "access.denied", "Access denied"
+    CDR_IMPORTED = "import.cdr", "Call detail report imported"
+    CDR_IMPORT_REFUSED = "import.cdr_refused", "Call detail report import refused"
+    DEV_DATA_PURGED = "dev.data_purged", "Synthetic development data purged"
     CHAIN_BROKEN = "audit.chain_broken", "Audit chain integrity check failed"
 
 

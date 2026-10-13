@@ -20,6 +20,8 @@ dependencies = [
   "authlib>=1.8.0",
   "ldap3>=2.9.1",
   "requests>=2.34.2",
+  "openpyxl>=3.1.5",
+  "defusedxml>=0.7.1",
 ]
 
 [tool.uv.sources]
@@ -36,6 +38,7 @@ dev = [
   "django-stubs>=5.1",
   "import-linter>=2.1",
   "responses>=0.26.3",
+  "types-openpyxl>=3.1.5.20260827",
 ]
 
 [tool.ruff]

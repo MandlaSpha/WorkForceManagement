@@ -6,7 +6,7 @@ from __future__ import annotations
 from django.http import HttpRequest
 from ninja.security import SessionAuth
 
-from wfm.accounts.models import Role
+from wfm.accounts.models import Role, User
 
 from .errors import forbidden, unauthorised
 
@@ -35,6 +35,12 @@ class RoleSessionAuth(SessionAuth):
             )
             raise forbidden()
         return user
+
+
+def current_user(request: HttpRequest) -> User:
+    """The signed-in user of a request that passed `RoleSessionAuth` (the one place that knows the
+    authenticated user lives on `request.auth`)."""
+    return request.auth  # type: ignore[attr-defined, no-any-return]
 
 
 ANY_ROLE: tuple[Role, ...] = ()

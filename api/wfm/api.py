@@ -9,6 +9,7 @@ from wfm.accounts.api import router as auth_router
 from wfm.core.api import router as system_router
 from wfm.core.errors import ApiError, problem_response
 from wfm.identity.api import router as identity_router
+from wfm.telephony.api import router as telephony_router
 
 api = NinjaAPI(
     title="Gijima WFM API",
@@ -26,3 +27,4 @@ def handle_api_error(request: HttpRequest, exc: ApiError) -> HttpResponse:
 api.add_router("/auth", auth_router)
 api.add_router("/auth", identity_router)
 api.add_router("/system", system_router)
+api.add_router("/telephony", telephony_router)
