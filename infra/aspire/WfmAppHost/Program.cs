@@ -19,6 +19,55 @@ var demoPassword = builder.AddParameter(
     secret: true,
     persist: true);
 
+// A real LDAP directory for development, so directory sign-in is exercised end to end. It holds
+// synthetic people only (see `manage.py seed_demo_directory`). The admin password is generated
+// and kept in user secrets like the demo password.
+var ldapAdminPassword = builder.AddParameter(
+    "ldap-admin-password",
+    new GenerateParameterDefault { MinLength = 16, Special = false },
+    secret: true,
+    persist: true);
+
+var ldap = builder.AddContainer("openldap", "osixia/openldap", "1.5.0")
+    .WithEnvironment("LDAP_ORGANISATION", "Example")
+    .WithEnvironment("LDAP_DOMAIN", "example.org")
+    .WithEnvironment("LDAP_ADMIN_PASSWORD", ldapAdminPassword)
+    .WithEnvironment("LDAP_TLS", "false")
+    .WithEndpoint(port: 3890, targetPort: 389, name: "ldap", isProxied: false);
+
+// Identity providers offered on the login page (requirement AUTH-01..03). No secret appears
+// here: the directory provider names the environment variable that holds its bind password.
+const string identityProviders = """
+[
+  {
+    "kind": "ldap",
+    "key": "corp",
+    "label": "Company directory",
+    "server_uri": "ldap://localhost:3890",
+    "allow_insecure": true,
+    "bind_dn": "cn=admin,dc=example,dc=org",
+    "bind_password_env": "LDAP_BIND_PASSWORD",
+    "user_search_base": "ou=people,dc=example,dc=org",
+    "user_filter": "(uid={username})",
+    "subject_attribute": "entryUUID",
+    "username_attribute": "uid",
+    "group_base": "ou=groups,dc=example,dc=org",
+    "group_format": "cn",
+    "groups_from_member_of": false,
+    "provisioning": {
+      "mode": "auto",
+      "trust_attributes": true,
+      "role_rules": [
+        { "group": "WFM Admins", "role": "admin" },
+        { "group": "WFM Planners", "role": "planner" },
+        { "group": "WFM Leads", "role": "lead" },
+        { "group": "WFM Agents", "role": "agent" }
+      ]
+    }
+  }
+]
+""";
+
 // One-off: apply database migrations before anything else starts.
 var migrate = builder.AddPythonApp("migrate", apiDir, "manage.py")
     .WithUv()
@@ -35,6 +84,15 @@ var seed = builder.AddPythonApp("seed-demo", apiDir, "manage.py")
     .WithEnvironment("WFM_DEMO_PASSWORD", demoPassword)
     .WaitForCompletion(migrate);
 
+// One-off: put the synthetic people and groups into the directory (waits for it to start).
+var seedDirectory = builder.AddPythonApp("seed-directory", apiDir, "manage.py")
+    .WithUv()
+    .WithArgs("seed_demo_directory")
+    .WithEnvironment("LDAP_URI", "ldap://localhost:3890")
+    .WithEnvironment("LDAP_ADMIN_PASSWORD", ldapAdminPassword)
+    .WithEnvironment("WFM_DEMO_PASSWORD", demoPassword)
+    .WaitFor(ldap);
+
 var api = builder.AddPythonApp("api", apiDir, "manage.py")
     .WithUv()
     .WithArgs("runserver", "127.0.0.1:8000", "--noreload")
@@ -42,7 +100,10 @@ var api = builder.AddPythonApp("api", apiDir, "manage.py")
     .WithHttpHealthCheck("/readyz")
     .WithEnvironment("DATABASE_URL", db.Resource.UriExpression)
     .WithEnvironment("WFM_BROKER_URL", valkey.Resource.UriExpression)
+    .WithEnvironment("WFM_IDENTITY_PROVIDERS", identityProviders)
+    .WithEnvironment("LDAP_BIND_PASSWORD", ldapAdminPassword)
     .WaitForCompletion(seed)
+    .WaitForCompletion(seedDirectory)
     .WaitFor(valkey);
 
 // Windows has no prefork pool, so the dev worker uses the solo pool.
@@ -55,6 +116,15 @@ builder.AddPythonExecutable("worker", apiDir, "celery")
     .WaitFor(valkey);
 
 // The Vue app. Vite proxies /api to the Django API so cookies stay same-origin.
+// The scheduler: runs the nightly audit hash-chain check (CELERY_BEAT_SCHEDULE in settings).
+builder.AddPythonExecutable("beat", apiDir, "celery")
+    .WithUv()
+    .WithArgs("-A", "config", "beat", "-l", "info")
+    .WithEnvironment("DATABASE_URL", db.Resource.UriExpression)
+    .WithEnvironment("WFM_BROKER_URL", valkey.Resource.UriExpression)
+    .WaitForCompletion(migrate)
+    .WaitFor(valkey);
+
 // Browser spans go to /otlp on the web origin; Vite forwards them to the dashboard's OTLP/HTTP
 // port, so telemetry stays inside our own infrastructure and needs no CORS.
 var otlpHttp = builder.Configuration["ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL"]

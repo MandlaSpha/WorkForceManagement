@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { homePathFor, type SessionUser } from '@/entities/session'
-import { DemoLogins, SignInForm } from '@/features/sign-in'
+import {
+  DemoLogins,
+  fetchProviders,
+  LOCAL_ONLY,
+  SignInForm,
+  type SignInProvider,
+} from '@/features/sign-in'
 import { ThemeToggle } from '@/features/toggle-theme'
 import { safeRedirect } from '@/shared/lib/redirect'
 import BrandMark from '@/shared/ui/BrandMark.vue'
@@ -11,6 +17,16 @@ import BrandMark from '@/shared/ui/BrandMark.vue'
 const route = useRoute()
 const router = useRouter()
 const form = ref<InstanceType<typeof SignInForm> | null>(null)
+const providers = ref<readonly SignInProvider[]>(LOCAL_ONLY)
+const loaded = ref(false)
+
+// Where the user was heading; the same-site check also runs on the server before it is used.
+const next = safeRedirect(route.query.redirect, '/')
+
+onMounted(async () => {
+  providers.value = await fetchProviders()
+  loaded.value = true
+})
 
 async function onSignedIn(user: SessionUser): Promise<void> {
   await router.push(safeRedirect(route.query.redirect, homePathFor(user.role)))
@@ -31,10 +47,16 @@ async function onSignedIn(user: SessionUser): Promise<void> {
       </div>
 
       <section class="rounded-2xl border border-line bg-surface p-6 shadow-sm">
-        <SignInForm ref="form" @signed-in="onSignedIn" />
+        <SignInForm
+          ref="form"
+          :providers="providers"
+          :sso-error="route.query.error"
+          :next="next"
+          @signed-in="onSignedIn"
+        />
       </section>
 
-      <DemoLogins @pick="(u, p) => form?.fill(u, p)" />
+      <DemoLogins v-if="loaded" @pick="(u, p) => form?.fill(u, p)" />
 
       <p class="text-center text-[11px] text-ink-muted">
         A proudly South African company focused on customer service.

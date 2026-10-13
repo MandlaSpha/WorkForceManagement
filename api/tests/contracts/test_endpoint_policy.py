@@ -28,6 +28,9 @@ pytestmark = pytest.mark.django_db
 PUBLIC = {
     ("GET", "/api/v1/auth/csrf"),  # issues the CSRF token before anyone can sign in
     ("POST", "/api/v1/auth/login"),  # signing in; CSRF-protected explicitly
+    ("GET", "/api/v1/auth/providers"),  # the login page must know which methods to offer
+    ("GET", "/api/v1/auth/sso/{provider_id}/start"),  # begins SSO: the user is not signed in yet
+    ("GET", "/api/v1/auth/sso/{provider_id}/callback"),  # the identity provider's return address
 }
 
 
@@ -76,7 +79,10 @@ def test_every_operation_is_public_on_purpose_or_declares_roles(op: Operation) -
 
 @pytest.mark.parametrize("op", OPERATIONS, ids=lambda op: op.id)
 def test_no_path_parameters_without_matrix_coverage(op: Operation) -> None:
-    assert "{" not in op.path, f"{op.id}: extend the role matrix to cover path parameters"
+    # Public routes have no roles to exercise, so a path parameter is fine there.
+    assert "{" not in op.path or (op.method, op.path) in PUBLIC, (
+        f"{op.id}: extend the role matrix to cover path parameters"
+    )
 
 
 def request(client: Client, op: Operation):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from datetime import timedelta
 
 from django.conf import settings
@@ -21,7 +22,13 @@ class InvalidCredentialsError(Exception):
     """Deliberately generic: the caller must not learn whether the account exists or is locked."""
 
 
-def login(*, request: HttpRequest, username: str, password: str) -> User:
+def login(
+    *,
+    request: HttpRequest,
+    username: str,
+    password: str,
+    allowed_roles: Collection[str] = (),
+) -> User:
     """Sign in.
 
     A rejected attempt must still persist its failure counter and audit event, so the
@@ -29,13 +36,17 @@ def login(*, request: HttpRequest, username: str, password: str) -> User:
     inside the atomic block would roll the bookkeeping back and lockout would never trigger.
     """
     with transaction.atomic():
-        user = _attempt(request=request, username=username, password=password)
+        user = _attempt(
+            request=request, username=username, password=password, allowed_roles=allowed_roles
+        )
     if user is None:
         raise InvalidCredentialsError
     return user
 
 
-def _attempt(*, request: HttpRequest, username: str, password: str) -> User | None:
+def _attempt(
+    *, request: HttpRequest, username: str, password: str, allowed_roles: Collection[str]
+) -> User | None:
     user = User.objects.select_for_update().filter(username=username).first()
 
     if user is None:
@@ -64,6 +75,17 @@ def _attempt(*, request: HttpRequest, username: str, password: str) -> User | No
         audit.record(actor=user, action=Action.LOGIN_FAILED, outcome=Outcome.FAILED, reason=reason)
         return None
 
+    if allowed_roles and user.role not in allowed_roles:
+        # Local accounts are restricted to break-glass roles; the password was right but this
+        # account must sign in through the organisation's identity provider.
+        audit.record(
+            actor=user,
+            action=Action.LOGIN_FAILED,
+            outcome=Outcome.DENIED,
+            reason="local_login_not_allowed_for_role",
+        )
+        return None
+
     user.failed_login_count = 0
     user.locked_until = None
     user.save(update_fields=["failed_login_count", "locked_until"])
@@ -75,5 +97,5 @@ def _attempt(*, request: HttpRequest, username: str, password: str) -> User | No
 
 def logout(*, request: HttpRequest, actor: User) -> None:
     with transaction.atomic():
-        audit.record(actor=actor, action=Action.LOGOUT)
         auth.logout(request)
+        audit.record(actor=actor, action=Action.LOGOUT)  # last write: see audit.services

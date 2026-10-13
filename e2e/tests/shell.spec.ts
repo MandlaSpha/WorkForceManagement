@@ -13,7 +13,10 @@ test.describe('sign-in', () => {
   test('login page renders and is accessible', async ({ page }) => {
     await page.goto('/login')
     await expect(page.getByRole('heading', { name: 'Workforce Management' })).toBeVisible()
-    await page.screenshot({ path: 'screenshots/login-light.png', fullPage: true })
+    await page.screenshot({
+      path: 'screenshots/login-light.png',
+      fullPage: true,
+    })
     await expectNoAccessibilityViolations(page)
   })
 
@@ -46,7 +49,10 @@ test.describe('planner', () => {
     await expect(nav(page).getByRole('link', { name: 'Planner' })).toBeVisible()
     await expect(nav(page).getByRole('link', { name: 'Configure' })).toHaveCount(0)
     await expect(nav(page).getByRole('link', { name: 'Audit log' })).toHaveCount(0)
-    await page.screenshot({ path: 'screenshots/dashboard-planner-light.png', fullPage: true })
+    await page.screenshot({
+      path: 'screenshots/dashboard-planner-light.png',
+      fullPage: true,
+    })
     await expectNoAccessibilityViolations(page)
 
     await signOut(page)
@@ -90,7 +96,10 @@ test.describe('theme', () => {
     await signIn(page, 'planner')
     await page.getByRole('button', { name: 'Switch to dark mode' }).click()
     await expect(page.locator('html')).toHaveClass(/dark/)
-    await page.screenshot({ path: 'screenshots/dashboard-planner-dark.png', fullPage: true })
+    await page.screenshot({
+      path: 'screenshots/dashboard-planner-dark.png',
+      fullPage: true,
+    })
     await expectNoAccessibilityViolations(page)
 
     await page.reload()

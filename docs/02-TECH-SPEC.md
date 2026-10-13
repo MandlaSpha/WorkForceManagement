@@ -156,6 +156,17 @@ sequenceDiagram
     end
 ```
 
+### 6.2 Audit hash chain as built (AUD-10; verified 13 Oct 2026)
+
+- **Chain.** Every `AuditEvent` carries `chain_seq`, `prev_hash` and `hash = SHA-256(JSON array of its fields incl. prev_hash and chain_seq)`. A `BEFORE INSERT` trigger fills them, so Python cannot choose them (a test tries and is overruled). Each `AuditChange` row carries a hash covering its event's hash. The first event chains to 64 zeros. Hash version is stored so the field list can change later without breaking old rows.
+- **Order is `chain_seq`, not `id`.** Ids are allocated before the trigger runs, so two concurrent transactions could take ids in one order and chain in the other. `chain_seq` is assigned under a transaction-level advisory lock, after the previous event is visible.
+- **The lock is held until commit,** so every audited transaction queues behind the one writing the chain. **Rule: `audit.record()` is the last write in a transaction** (documented in `audit/services.py`; logout was reordered to follow it). A concurrency test proves the second transaction waits and the chain stays linear.
+- **What it detects** (all tested with the append-only triggers switched off, as a superuser would): an edited event, an edited change row, a deleted event in the middle, an inserted forged event, swapped order, and a re-hashed row (the next link breaks). A deleted *last* event cannot be seen by the chain alone; the daily export closes that gap.
+- **Verify:** `audit_verify_chain()` walks the chain inside the database. `manage.py audit_verify` exits 1 when broken; the Celery task `wfm.audit.verify_chain` runs at 03:00 (beat), logs CRITICAL and records `audit.chain_broken` as an audit event. Beat runs in Aspire as the `beat` resource.
+- **Export:** `manage.py audit_export <file> [--date]` writes one UTC day's heads as JSON lines and prints the file's SHA-256 (bytes are written directly so the digest matches on Windows too). Copying that file to immutable storage (Azure immutable blob / WORM) each day is a deployment step and is **not yet automated**: without it, someone who rewrites the database and recomputes every hash is not detectable.
+- **Existing rows** are chained by the migration's backfill (oldest first); checked on the live development database (51 events).
+- **Not covered:** deletion of a change row by itself (only altering one is detected); verification is a full scan (fine now, add `--since-seq` when the table is large).
+
 ## 7. Testing strategy
 
 Every phase ships with tests at all four levels; a phase is not done until its tests are green in CI.
@@ -269,3 +280,66 @@ What exists: browser → API → Celery worker → PostgreSQL as one trace (OBS-
   - `openapi-fetch` and tracing both rely on `fetch` being resolved per call (see 9.2).
 - **`POST /api/v1/system/ping-worker`** (admin) round-trips a task through Valkey and Celery, which also runs a database query, and returns the API and worker trace ids. Both must equal the browser's; the e2e test asserts it. It doubles as an "is the worker alive" check. Valkey now also serves as Celery's result backend (results expire after one hour).
 - **Not built yet:** metrics (Prometheus), Jaeger or another long-term trace store, the collector's PII-stripping stage, per-user-action root spans, retention settings, and the privacy-safe usage-event tracker (separate pipeline, OBS-03 to OBS-09).
+
+## 10. Identity and sign-in as built (AUTH-01 to AUTH-15; verified 13 Oct 2026)
+
+Decision record: `docs/adr/0001-pluggable-identity-framework.md`.
+
+```mermaid
+flowchart LR
+    subgraph Adapters["Adapters: only translate a foreign login into an Identity"]
+        LOC["local<br/>username + password"]
+        LDAP["ldap<br/>search, then bind as the user<br/>(ldap3)"]
+        OIDC["oidc<br/>code flow + PKCE<br/>(Authlib)"]
+        SAML["saml<br/>extension point, not built"]
+    end
+    ID["Identity<br/>provider, stable subject, username,<br/>email, groups"]
+    SVC["identity.services.complete_login<br/>link, provision, map groups to role,<br/>sign in, audit"]
+    DB[("User + IdentityLink<br/>(provider, subject)")]
+    AUD[("Audit trail")]
+    LDAP --> ID
+    OIDC --> ID
+    SAML -.-> ID
+    ID --> SVC
+    SVC --> DB
+    SVC --> AUD
+    LOC --> ACC["accounts.services.login<br/>(lockout, break-glass roles)"]
+    ACC --> AUD
+```
+
+**Configuration** is code, not database rows: the `WFM_IDENTITY_PROVIDERS` setting (JSON, or a file named by `WFM_IDENTITY_CONFIG`) lists providers, validated at first use with unknown keys rejected so a typo in a security setting is an error. Secrets are never in it: a provider names the environment variable that holds its secret (`client_secret_env`, `bind_password_env`). The local provider is always present so a broken SSO setup can be recovered from. `GET /api/v1/auth/providers` tells the login page what to offer, and exposes no configuration.
+
+**One shared service** (`identity/services.py`) does everything that matters for security, so it is true for every provider:
+- Accounts are linked by **(provider, stable subject)**: Entra `oid`, LDAP `entryUUID`/`objectGUID`. Renaming someone in the directory neither duplicates nor hijacks the account.
+- First sign-in policy per provider: `auto` (create the user) or `linked_only`. The default is `linked_only`, no default role, no account merging, no trusted attributes: a new provider grants nothing until someone decides it should.
+- Directory groups map to roles with explicit precedence (admin > planner > lead > customer_ops > executive > agent). **No match and no default role means refusal**, not a guess. For a directory-managed role (`role_source = directory`) the role is recomputed at every sign-in, so removing someone from a group demotes them, audited with old and new value.
+- Linking an existing account by email or username needs `match_existing_by` plus `trust_attributes`, and for email a verified address. An account already linked to a different subject at that provider is **never** taken over (`conflicting_link`), and two matching accounts are refused as ambiguous.
+- **A refusal creates nothing.** Every check (policy, active, role) runs before the first row is written, and the denial audit event commits on its own. A test covers this; an earlier draft would have committed a half-created user together with the denial.
+- Directory users get an unusable local password.
+
+**LDAP** (`providers/ldap.py`): search with a service account, then bind as the user; empty password refused before any bind; input escaped in filters (wildcard and injection tests); TLS required (`ldaps://` or `start_tls`, certificate validated) unless `allow_insecure` for development; timeouts; zero or several matches refused; groups from `memberOf` or a group search, as DN or CN, nested AD groups via the matching-rule filter. A directory error becomes a refusal, never a 500.
+
+**OIDC** (`providers/oidc.py`): authorisation-code flow with PKCE (S256), `state` and `nonce` held in the server session. Authlib validates the id-token signature (provider keys), issuer, audience and expiry. The adapter pins the Entra tenant (`tid`), applies an optional email-domain allow-list, and reads groups from a configurable claim (prefer Entra app roles over `groups`; the 200-group overage is detected, logged and treated as no groups). Browser-facing endpoints: `GET /auth/sso/{id}/start` and `/callback`. Every failure redirects to `/login?error=sso_failed`, one generic message, while the audit trail records the real reason code. The callback address comes from `WFM_PUBLIC_BASE_URL` when set (needed behind a proxy). The post-sign-in `next` is validated as a same-site path on both client and server.
+
+**Local accounts** can be restricted to break-glass roles (`allowed_roles`) so production forces SSO but keeps an emergency admin; the login page then tucks the form behind "Emergency administrator sign-in".
+
+**Audit:** `auth.sso_login`, `auth.sso_denied` (reason `provider:code`), `identity.provisioned`, `identity.linked`, `identity.role_changed` (field-level). Reasons never contain emails, names or groups. Failure responses are byte-for-byte identical across wrong password, unknown user, unknown provider and a redirect-only provider.
+
+**How to add a provider kind** (for example SAML): write an adapter that returns an `Identity`, add its config model to `identity/config.py`, register it in `identity/registry.py` and the API, and add tests at the three levels in AUTH-15. Nothing about users, roles or audit changes.
+
+**Tests:** role mapping and config (unit); the shared service (DB); LDAP against ldap3's in-memory server and against a **real OpenLDAP container** (including the dev seed command run twice); OIDC against a fake provider that signs real RSA id-tokens through `responses` (tampered state, wrong nonce, expired, wrong audience/issuer/tenant/key, replay, provider outage, PKCE verifier matches challenge); API tests that failures are indistinguishable; web tests for the provider-aware login; and Playwright against the real directory in the Aspire stack (every role outcome, plus "a directory person cannot use that password locally").
+
+**Dev stack:** `just dev` also starts OpenLDAP (`osixia/openldap:1.5.0`), seeds synthetic people (`pat` planner, `lee` lead, `alex` agent, `ash` admin, `nina` with no group) with the demo password, and offers "Company directory" on the login page.
+
+**Findings worth remembering**
+- Authlib 1.8 raises token-validation errors from a new library, `joserfc`; catching only `authlib.jose` errors classified every bad token as a generic provider error.
+- `ldap3` refuses to send an empty-password bind itself (`LDAPPasswordIsMandatoryError`), so it protects us too. The adapter's own rule stays because that guard belongs to the library, not the protocol (RFC 4513 allows servers to treat it as an unauthenticated bind).
+- A dropdown bound to an empty value renders blank in the browser. Unit tests missed it; a screenshot caught it.
+- Entra sends no `email_verified` claim. With the tenant pinned and `trust_attributes` on, the address counts as verified.
+
+**Not built yet**
+- SAML 2.0 (needs native XML-signature libraries; awkward on Windows developer machines).
+- A real OIDC end-to-end test against a live provider (a Keycloak container): the OIDC flow is proven against a fake provider that signs real tokens, not yet against a real one.
+- Directory sync or SCIM to deactivate leavers sooner than their next sign-in (the 30-minute idle timeout bounds exposure meanwhile; AUTH-13).
+- An admin screen for providers, group-mapping preview and a "test connection" button; per-username throttling for directory sign-ins (the directory's own lockout applies).
+- Microsoft Graph fallback for Entra group overage.

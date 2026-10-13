@@ -30,8 +30,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Sign in */
-        post: operations["wfm_accounts_api_login"];
+        /** Sign in with a username and password */
+        post: operations["wfm_identity_api_login"];
         delete?: never;
         options?: never;
         head?: never;
@@ -72,6 +72,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sign-in methods on offer */
+        get: operations["wfm_identity_api_list_providers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/sso/{provider_id}/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Finish SSO */
+        get: operations["wfm_identity_api_sso_callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/sso/{provider_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Begin SSO */
+        get: operations["wfm_identity_api_sso_start"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/ping-worker": {
         parameters: {
             query?: never;
@@ -101,6 +152,11 @@ export interface components {
         LoginIn: {
             /** Password */
             password: string;
+            /**
+             * Provider
+             * @default local
+             */
+            provider: string;
             /** Username */
             username: string;
         };
@@ -112,6 +168,24 @@ export interface components {
             role: string;
             /** Username */
             username: string;
+        };
+        /** ProviderOut */
+        ProviderOut: {
+            /** Flow */
+            flow: string;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /**
+             * Restricted
+             * @default false
+             */
+            restricted: boolean;
+            /** Starturl */
+            startUrl?: string | null;
         };
         /** WorkerPingOut */
         WorkerPingOut: {
@@ -149,7 +223,7 @@ export interface operations {
             };
         };
     };
-    wfm_accounts_api_login: {
+    wfm_identity_api_login: {
         parameters: {
             query?: never;
             header?: never;
@@ -208,6 +282,68 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["MeOut"];
                 };
+            };
+        };
+    };
+    wfm_identity_api_list_providers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderOut"][];
+                };
+            };
+        };
+    };
+    wfm_identity_api_sso_callback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    wfm_identity_api_sso_start: {
+        parameters: {
+            query?: {
+                next?: string;
+            };
+            header?: never;
+            path: {
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

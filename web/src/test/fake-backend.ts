@@ -26,12 +26,35 @@ export const ACCOUNTS: Record<string, { password: string; user: FakeUser }> = {
   },
 }
 
+export interface FakeProvider {
+  id: string
+  kind: string
+  label: string
+  flow: 'credentials' | 'redirect'
+  startUrl: string | null
+  restricted: boolean
+}
+
+export const LOCAL_PROVIDER: FakeProvider = {
+  id: 'local',
+  kind: 'local',
+  label: 'Username and password',
+  flow: 'credentials',
+  startUrl: null,
+  restricted: false,
+}
+
 export const backend = {
   signedIn: null as FakeUser | null,
+  providers: [LOCAL_PROVIDER] as FakeProvider[],
+  /** The provider named in the last login request. */
+  lastProvider: null as string | null,
   requests: [] as Array<{ method: string; path: string; csrf: string | null }>,
   reset(): void {
     this.signedIn = null
     this.requests = []
+    this.providers = [LOCAL_PROVIDER]
+    this.lastProvider = null
   },
 }
 
@@ -51,11 +74,18 @@ export const handlers = [
     return HttpResponse.json({ csrfToken: CSRF_TOKEN })
   }),
 
+  http.get('*/api/v1/auth/providers', () => HttpResponse.json(backend.providers)),
+
   http.post('*/api/v1/auth/login', async ({ request }) => {
     const csrf = request.headers.get('X-CSRFToken')
     backend.requests.push({ method: 'POST', path: '/api/v1/auth/login', csrf })
     if (csrf !== CSRF_TOKEN) return problem(403, 'auth.csrf', 'CSRF check failed')
-    const body = (await request.json()) as { username: string; password: string }
+    const body = (await request.json()) as {
+      username: string
+      password: string
+      provider?: string
+    }
+    backend.lastProvider = body.provider ?? null
     const account = ACCOUNTS[body.username]
     if (!account || account.password !== body.password) {
       return problem(401, 'auth.invalid_credentials', 'Invalid credentials')

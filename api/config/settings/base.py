@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
+
 from ._env import broker_url_from_env, database_from_env, env, env_bool, env_list
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -21,6 +23,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "wfm.core",
     "wfm.accounts",
+    "wfm.identity",
     "wfm.audit",
 ]
 
@@ -73,6 +76,14 @@ SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_HTTPONLY = False  # the SPA reads the token and sends it as X-CSRFToken
 
+# Identity providers (AUTH-01..03): JSON list, or the path of a JSON file in WFM_IDENTITY_CONFIG.
+# Secrets are never in it; a provider names the environment variable that holds its secret.
+WFM_IDENTITY_PROVIDERS = (
+    Path(os.environ["WFM_IDENTITY_CONFIG"]).read_text(encoding="utf-8")
+    if os.environ.get("WFM_IDENTITY_CONFIG")
+    else os.environ.get("WFM_IDENTITY_PROVIDERS", "")
+)
+
 # Login lockout (gap G7)
 LOGIN_MAX_FAILURES = 5
 LOGIN_LOCKOUT_MINUTES = 15
@@ -88,6 +99,14 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Tracing is on whenever an OTLP endpoint is configured (Aspire sets one in development).
 WFM_TELEMETRY = env_bool("WFM_TELEMETRY", default="OTEL_EXPORTER_OTLP_ENDPOINT" in os.environ)
+
+CELERY_BEAT_SCHEDULE = {
+    # Nightly check that the audit trail's hash chain is intact (AUD-10).
+    "audit-verify-chain": {
+        "task": "wfm.audit.verify_chain",
+        "schedule": crontab(hour=3, minute=0),
+    },
+}
 
 CELERY_BROKER_URL = broker_url_from_env()
 # Results are only used for short round trips (the worker ping); real jobs report through the

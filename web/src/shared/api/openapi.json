@@ -7,6 +7,11 @@
             "title": "Password",
             "type": "string"
           },
+          "provider": {
+            "default": "local",
+            "title": "Provider",
+            "type": "string"
+          },
           "username": {
             "title": "Username",
             "type": "string"
@@ -40,6 +45,50 @@
           "role"
         ],
         "title": "MeOut",
+        "type": "object"
+      },
+      "ProviderOut": {
+        "properties": {
+          "flow": {
+            "title": "Flow",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "restricted": {
+            "default": false,
+            "title": "Restricted",
+            "type": "boolean"
+          },
+          "startUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Starturl"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "label",
+          "flow"
+        ],
+        "title": "ProviderOut",
         "type": "object"
       },
       "WorkerPingOut": {
@@ -98,7 +147,7 @@
     },
     "/api/v1/auth/login": {
       "post": {
-        "operationId": "wfm_accounts_api_login",
+        "operationId": "wfm_identity_api_login",
         "parameters": [],
         "requestBody": {
           "content": {
@@ -122,7 +171,7 @@
             "description": "OK"
           }
         },
-        "summary": "Sign in",
+        "summary": "Sign in with a username and password",
         "tags": [
           "auth"
         ]
@@ -170,6 +219,92 @@
           }
         ],
         "summary": "The signed-in user",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/providers": {
+      "get": {
+        "operationId": "wfm_identity_api_list_providers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProviderOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "Sign-in methods on offer",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/sso/{provider_id}/callback": {
+      "get": {
+        "operationId": "wfm_identity_api_sso_callback",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider_id",
+            "required": true,
+            "schema": {
+              "title": "Provider Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Finish SSO",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/sso/{provider_id}/start": {
+      "get": {
+        "operationId": "wfm_identity_api_sso_start",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider_id",
+            "required": true,
+            "schema": {
+              "title": "Provider Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "next",
+            "required": false,
+            "schema": {
+              "default": "/",
+              "title": "Next",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "summary": "Begin SSO",
         "tags": [
           "auth"
         ]

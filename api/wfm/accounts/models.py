@@ -13,10 +13,20 @@ class Role(models.TextChoices):
     CUSTOMER_OPS = "customer_ops", "Customer operations manager"
 
 
+class RoleSource(models.TextChoices):
+    LOCAL = "local", "Managed in the application"
+    DIRECTORY = "directory", "Managed by the identity provider"
+
+
 class User(AbstractUser):
     """Application user. `role` drives every permission and scoping decision."""
 
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.AGENT)
+    role_source = models.CharField(
+        max_length=10, choices=RoleSource.choices, default=RoleSource.LOCAL
+    )
+    """Who decides the role. "directory" means a provider's group mapping sets it at every sign-in
+    and the application must not offer to edit it by hand (AUTH-06)."""
     failed_login_count = models.PositiveSmallIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
 

@@ -207,3 +207,65 @@ describe('honest empty states', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(/built in Phase 2/)
   })
 })
+
+describe('sign-in methods on the login page', () => {
+  const entra = {
+    id: 'entra',
+    kind: 'oidc',
+    label: 'Microsoft',
+    flow: 'redirect' as const,
+    startUrl: '/api/v1/auth/sso/entra/start',
+    restricted: false,
+  }
+
+  it('offers SSO next to the password form, carrying the page the user wanted', async () => {
+    backend.providers = [...backend.providers, entra]
+    await renderApp('/login?redirect=/roster')
+
+    const link = await screen.findByRole('link', { name: 'Sign in with Microsoft' })
+    expect(link).toHaveAttribute('href', '/api/v1/auth/sso/entra/start?next=%2Froster')
+    expect(screen.getByLabelText('Username')).toBeVisible()
+  })
+
+  it('shows one generic message after a failed SSO round trip', async () => {
+    backend.providers = [...backend.providers, entra]
+    await renderApp('/login?error=sso_failed')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "Signing in with your organisation account didn't work",
+    )
+  })
+
+  it('still signs in with the password form when SSO is also offered', async () => {
+    backend.providers = [...backend.providers, entra]
+    const user = userEvent.setup()
+    const { router } = await renderApp('/login')
+    await screen.findByRole('link', { name: 'Sign in with Microsoft' })
+
+    await signIn(user, 'planner')
+
+    await waitFor(() => expect(router.currentRoute.value.name).toBe('dashboard'))
+  })
+})
+
+describe('which sidebar entry is highlighted', () => {
+  it('marks only the screen the user is on, and never the dashboard everywhere', async () => {
+    backend.signedIn = { username: 'planner', displayName: 'Pat Planner', role: 'planner' }
+    await renderApp('/roster')
+
+    const roster = await sidebar().findByRole('link', { name: 'Roster' })
+    expect(roster).toHaveAttribute('aria-current', 'page')
+    expect(sidebar().getByRole('link', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
+    expect(sidebar().getByRole('link', { name: 'Forecast' })).not.toHaveAttribute('aria-current')
+  })
+
+  it('marks the dashboard on the dashboard', async () => {
+    backend.signedIn = { username: 'planner', displayName: 'Pat Planner', role: 'planner' }
+    await renderApp('/')
+
+    expect(await sidebar().findByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+  })
+})

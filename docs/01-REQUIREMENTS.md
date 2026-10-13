@@ -233,6 +233,27 @@ Goal: for any change or sensitive access, be able to answer **what happened, whe
 | AUD-13 | **Retention:** configurable; default 5 years for change events, 12 months for sensitive-read events (to confirm with HR/legal; BCEA record-keeping minimums apply to time and pay records). Personal values in old events are pseudonymised after retention if a POPIA erasure request applies | M |
 | AUD-14 | **Not a substitute for telemetry:** the audit log holds who/what/when for accountability; usage analytics (OBS) never read from it | M |
 
+### 3.16 Identity and sign-in (pluggable)
+Customers sign in with whatever their organisation already runs. The application never depends on one product: every sign-in method is an adapter that produces the same neutral identity.
+
+| ID | Requirement | Pri |
+|---|---|---|
+| AUTH-01 | Sign-in methods are **pluggable providers** behind one interface: local accounts, **OpenID Connect** (Microsoft Entra ID / Azure AD, Okta, Keycloak, Google, Auth0 and any other OIDC provider), **LDAP / Active Directory**. **SAML 2.0** is a defined extension point, built when a customer needs it | M (local, OIDC, LDAP); S (SAML) |
+| AUTH-02 | Several providers can be enabled together; the login page offers each (SSO buttons and/or a username-password form) | M |
+| AUTH-03 | Providers are **configuration as code** per deployment. Secrets (client secret, LDAP bind password) are referenced by environment-variable or vault name and are never stored in the database or the repository | M |
+| AUTH-04 | A provider returns a neutral identity (stable subject, username, email, display name, groups). Accounts are linked to it by **(provider, stable subject)**, not by a mutable name | M |
+| AUTH-05 | First-login policy per provider: **auto-provision** a user, or **linked-only** (the user must already exist). A user with no mapped role and no default role is refused, not given a guess | M |
+| AUTH-06 | **Directory groups map to the six application roles**. For a directory-managed provider the role is recomputed at every sign-in, so removing someone from a group demotes them at their next sign-in. Every role change is audited with old and new value | M |
+| AUTH-07 | **Safe account linking:** an existing user is matched by email or username only when the provider is configured as trusted for that attribute and, for OIDC, the email is verified. Otherwise a second account is not silently merged into the first | M |
+| AUTH-08 | **OIDC security:** authorisation-code flow with PKCE, `state` and `nonce`; id-token signature, issuer, audience, expiry and (for Entra) tenant are validated; optional allowed email domains | M |
+| AUTH-09 | **LDAP security:** TLS required (certificate validated) unless explicitly allowed for development; user input escaped in search filters; **empty passwords rejected** (an empty simple bind succeeds anonymously on many servers); search with a service account then bind as the user; connection timeouts; optional nested-group lookup for Active Directory | M |
+| AUTH-10 | Local accounts can be **restricted to break-glass roles** (e.g. admin only) so a production deployment can force SSO while keeping an emergency login. Local lockout (G7) still applies | M |
+| AUTH-11 | Every outcome is audited (success, failure with a reason code, provisioning, linking, role change, denied for no role). Users see **generic** errors that do not reveal whether an account exists or why a directory refused it | M |
+| AUTH-12 | Post-sign-in redirects accept only same-site paths | M |
+| AUTH-13 | A user deactivated in the directory is refused at their next sign-in; the 30-minute idle timeout bounds the exposure. Scheduled directory sync / SCIM to deactivate sooner is a later increment | S |
+| AUTH-14 | Employee-master import from HR / directory (DAT-06) is separate from sign-in, but links an employee to the user through the same stable subject or email | S |
+| AUTH-15 | Each provider type has tests at three levels: pure unit tests, protocol-level tests against a fake server, and at least one test against a real server container (OpenLDAP; Keycloak when added) | M |
+
 ## 4. Non-functional requirements
 
 | ID | Requirement | Source |

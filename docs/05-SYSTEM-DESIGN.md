@@ -146,7 +146,7 @@ flowchart LR
 | Agent reads other agents' leave/pay/schedule | Scoping layer + role serialisers; permission-matrix integration test per endpoint × role |
 | UI bypass / forged requests | All checks server-side; UI hiding is cosmetic only |
 | CSRF / XSS | Cookie sessions with CSRF token; strict CSP; no `v-html`/`dangerouslySetInnerHTML` on user text |
-| Credential theft | SSO in production; bcrypt/Argon2 locally; lockout + rate limit on login |
+| Credential theft | Pluggable SSO (OIDC for Entra, Okta, Keycloak, Google; LDAP/AD; SAML later), with local accounts restricted to break-glass roles in production, Argon2 locally and lockout on login: tech spec section 10 |
 | Data exfiltration through reports/exports | Exports run through the same scoped querysets; export events audited |
 | Malicious upload (xlsx) | Size/type limit, parse with openpyxl in read-only mode, no macros executed, processed in worker not web process |
 | Tenant mix-up (if UIF becomes a second deployment) | Separate deployment per customer (single-tenant), not shared tables — open question #7 in requirements |

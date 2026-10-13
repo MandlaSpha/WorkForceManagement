@@ -29,7 +29,8 @@ export async function expectNoAccessibilityViolations(page: Page): Promise<void>
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
     .analyze()
   const summary = results.violations.map(
-    (v) => `${v.id} (${v.impact}): ${v.help} -> ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`,
+    (v) =>
+      `${v.id} (${v.impact}): ${v.help} -> ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`,
   )
   expect(summary, summary.join('\n')).toEqual([])
 }

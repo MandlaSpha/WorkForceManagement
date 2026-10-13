@@ -53,11 +53,15 @@ export const useSessionStore = defineStore('session', () => {
     status.value = 'anonymous'
   }
 
-  async function signIn(username: string, password: string): Promise<SessionUser> {
+  async function signIn(
+    username: string,
+    password: string,
+    provider = 'local',
+  ): Promise<SessionUser> {
     // Fetch a CSRF token first; the cookie it sets is read by the API client on the POST.
     await api.GET('/api/v1/auth/csrf')
     const { data, error, response } = await api.POST('/api/v1/auth/login', {
-      body: { username, password },
+      body: { username, password, provider },
     })
     if (!response.ok || !data) throw toProblem(error, response)
     user.value = toUser(data)

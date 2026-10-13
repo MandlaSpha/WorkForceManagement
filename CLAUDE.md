@@ -26,11 +26,12 @@ Docker Desktop is installed per-user; if `docker` is not found in a shell, add i
 ## Hard rules
 - **Never commit or copy real data.** `Files/` holds real caller numbers, staff names and confidential documents; it is git-ignored. Tests use anonymised fixtures only. No personal data in logs, traces, analytics, errors or fixtures (POPIA).
 - `Files/Call Detail Report - June.xlsx` is a duplicate of May; don't treat it as June.
-- Writes go through module `services.py` and must call `audit.record()` in the same transaction. Reads go through `selectors.py` starting from `Model.objects.for_user(user)`. Never use raw `Model.objects` in views.
+- Writes go through module `services.py` and must call `audit.record()` in the same transaction, as the LAST write (the audit insert holds a lock until commit that keeps the hash chain linear; recording first would make every other audited transaction wait for your slow work). Never edit or delete audit rows; the chain detects it. `manage.py audit_verify` checks the chain; `audit_export` writes a day's heads for immutable storage. Reads go through `selectors.py` starting from `Model.objects.for_user(user)`. Never use raw `Model.objects` in views.
 - `wfm_engine` must not import Django, read the clock or do I/O.
 - Every new or changed endpoint needs an integration test for every role, both allowed and refused. Out-of-scope records return 404.
 - Store UTC, display Africa/Johannesburg. Money is `Decimal`. Units go in names (`aht_s`, `sl_target_pct`).
 - Web: Feature-Sliced Design layers (app > pages > widgets > features > entities > shared); import other slices only via their `index.ts`. Never `v-html`. UI role checks are cosmetic; the API enforces access.
+- Identity: sign-in methods are adapters that return an `Identity`; linking, provisioning, group-to-role mapping and auditing live ONLY in `wfm/identity/services.py`. Never put a secret in provider config (name an environment variable). Failures shown to users must be generic; the reason goes to the audit trail. See docs/adr/0001 and tech spec section 10.
 - Telemetry: spans and logs carry the role and request id only. Never put a name, username, id of a person, pay value, query string or request body in a span, log line or analytics event. Scrubbing lives in `wfm/core/telemetry.py` and `web/src/shared/telemetry`; both have tests that search spans for leaked values.
 - The Copilot / AI assistant is **parked**: don't build it.
 - Don't skip hooks (`--no-verify`); fix the failure.
