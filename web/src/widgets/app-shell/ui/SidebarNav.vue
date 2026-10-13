@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 
 import { useSessionStore } from '@/entities/session'
 import BrandMark from '@/shared/ui/BrandMark.vue'
 
+import { isActivePath } from '../model/active'
 import { NAV_ICONS } from '../model/icons'
 import { visibleNav } from '../model/visible-nav'
 
 const session = useSessionStore()
+const route = useRoute()
 const groups = computed(() => (session.user ? visibleNav(session.user.role) : []))
 </script>
 
@@ -31,9 +33,15 @@ const groups = computed(() => (session.user ? visibleNav(session.user.role) : []
           <li v-for="item in g.items" :key="item.key">
             <RouterLink
               :to="item.path"
-              class="flex min-h-9 items-center gap-3 rounded-lg px-2 text-sm text-ink-muted hover:bg-surface-muted hover:text-ink"
-              active-class="!bg-brand-soft !text-brand-ink font-medium"
-              exact-active-class="aria-[current=page]:font-semibold"
+              class="flex min-h-9 items-center gap-3 rounded-lg px-2 text-sm"
+              :class="
+                isActivePath(item.path, route.path)
+                  ? 'bg-brand-soft font-medium text-brand-ink'
+                  : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
+              "
+              :aria-current="isActivePath(item.path, route.path) ? 'page' : undefined"
+              active-class=""
+              exact-active-class=""
             >
               <component :is="NAV_ICONS[item.icon]" :size="16" aria-hidden="true" />
               {{ item.label }}

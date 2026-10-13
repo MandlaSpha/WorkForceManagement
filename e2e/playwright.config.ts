@@ -19,7 +19,9 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'desktop', use: { ...devices['Desktop Chrome'] }, grepInvert: /@mobile/ },
+    { name: 'desktop', use: { ...devices['Desktop Chrome'] }, grepInvert: /@mobile|@tour/ },
     { name: 'mobile', use: { ...devices['Pixel 7'] }, grep: /@mobile/ },
+    // On demand only: `playwright test --project=tour` saves a screenshot of every screen per role.
+    { name: 'tour', use: { ...devices['Desktop Chrome'] }, grep: /@tour/ },
   ],
 })

@@ -47,3 +47,9 @@ obj/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Celery beat scheduler state
+celerybeat-schedule*
+
+# Playwright MCP session output (snapshots, console logs)
+/.playwright-mcp/
