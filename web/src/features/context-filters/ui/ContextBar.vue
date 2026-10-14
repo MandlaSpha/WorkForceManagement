@@ -4,10 +4,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import SelectField from '@/shared/ui/SelectField.vue'
 
 import { useContextStore } from '../model/store'
+import { useSyncQueues } from '../model/useSyncQueues'
 
 withDefaults(defineProps<{ showScope?: boolean }>(), { showScope: true })
 
 const context = useContextStore()
+useSyncQueues()
 </script>
 
 <template>

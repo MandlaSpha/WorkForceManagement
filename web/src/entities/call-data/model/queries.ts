@@ -33,8 +33,12 @@ export function useKpis(month: Ref<string | null>) {
 }
 
 /** The queues this role may see, with their staffing assumptions. */
-export function useQueues() {
-  return useQuery({ queryKey: callDataKeys.queues, queryFn: fetchQueues })
+export function useQueues(enabled: MaybeRef<boolean> = true) {
+  return useQuery({
+    queryKey: callDataKeys.queues,
+    queryFn: fetchQueues,
+    enabled: computed(() => toValue(enabled)),
+  })
 }
 
 export function useImports() {

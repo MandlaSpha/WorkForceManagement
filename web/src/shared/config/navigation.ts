@@ -178,7 +178,7 @@ export const NAV_ITEMS = [
     label: 'Employees',
     group: 'People',
     icon: 'users',
-    feature: 'people',
+    feature: 'scheduling',
     phase: 1,
     subtitle: 'People, skills, contracts and the ACD logins mapped to each of them.',
   },

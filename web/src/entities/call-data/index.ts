@@ -1,4 +1,5 @@
-export { uploadReport } from './api/call-data'
+export { saveQueueSettings, uploadReport } from './api/call-data'
+export type { QueueSettings } from './api/call-data'
 export {
   NO_FIGURE,
   formatCount,

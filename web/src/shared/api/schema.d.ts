@@ -192,6 +192,179 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/employees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Employees */
+        get: operations["wfm_scheduling_api_list_employees"];
+        put?: never;
+        /** Add an employee */
+        post: operations["wfm_scheduling_api_create_employee"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/employees/{employee_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change an employee */
+        put: operations["wfm_scheduling_api_update_employee"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Scheduled against required, per half-hour */
+        get: operations["wfm_scheduling_api_plan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/roster": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One queue's roster for a week */
+        get: operations["wfm_scheduling_api_roster"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/roster/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put a person on a shift, or clear it */
+        put: operations["wfm_scheduling_api_assign"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/roster/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export a week's roster as CSV */
+        get: operations["wfm_scheduling_api_export_roster"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/roster/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish a week's roster */
+        post: operations["wfm_scheduling_api_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/roster/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Return a published week to draft */
+        post: operations["wfm_scheduling_api_reopen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/shifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The shift library */
+        get: operations["wfm_scheduling_api_list_shifts"];
+        put?: never;
+        /** Add a shift */
+        post: operations["wfm_scheduling_api_create_shift"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/shifts/{shift_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change a shift */
+        put: operations["wfm_scheduling_api_update_shift"];
+        post?: never;
+        /** Delete a shift */
+        delete: operations["wfm_scheduling_api_delete_shift"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/ping-worker": {
         parameters: {
             query?: never;
@@ -286,6 +459,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/telephony/queues/{queue_id}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set and confirm a queue's staffing assumptions */
+        put: operations["wfm_telephony_api_set_queue_settings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -307,6 +497,36 @@ export interface components {
             /** Weeks */
             weeks: number;
         };
+        /** AssignIn */
+        AssignIn: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Queueid */
+            queueId: number;
+            /** Templateid */
+            templateId?: number | null;
+        };
+        /** AssignOut */
+        AssignOut: {
+            /** Code */
+            code: string | null;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Shiftid */
+            shiftId: number | null;
+            /** Weekstatus */
+            weekStatus: string;
+        };
         /** Coverage */
         Coverage: {
             /** Intervalstotal */
@@ -327,6 +547,54 @@ export interface components {
             date: string;
             /** Daysused */
             daysUsed: number;
+        };
+        /** EmployeeIn */
+        EmployeeIn: {
+            /**
+             * Contracttype
+             * @default permanent
+             */
+            contractType: string;
+            /** Empno */
+            empNo: string;
+            /** Enddate */
+            endDate?: string | null;
+            /** Name */
+            name: string;
+            /** Skills */
+            skills?: components["schemas"]["SkillIn"][];
+            /** Startdate */
+            startDate?: string | null;
+            /** Weeklyhours */
+            weeklyHours?: number | string | null;
+            /**
+             * Workmode
+             * @default office
+             */
+            workMode: string;
+        };
+        /** EmployeeOut */
+        EmployeeOut: {
+            /** Contracttype */
+            contractType: string;
+            /** Empno */
+            empNo: string;
+            /** Enddate */
+            endDate: string | null;
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Skills */
+            skills: components["schemas"]["SkillOut"][];
+            /** Startdate */
+            startDate: string | null;
+            /** Weeklyhours */
+            weeklyHours: number;
+            /** Weeklyhoursisdefault */
+            weeklyHoursIsDefault: boolean;
+            /** Workmode */
+            workMode: string;
         };
         /**
          * Feature
@@ -511,6 +779,66 @@ export interface components {
             /** Months */
             months: string[];
         };
+        /** PlanCellOut */
+        PlanCellOut: {
+            /** Required */
+            required: number | null;
+            /** Scheduled */
+            scheduled: number;
+            /** Slot */
+            slot: number;
+            /** State */
+            state: string | null;
+            /** Variance */
+            variance: number | null;
+        };
+        /** PlanForecastOut */
+        PlanForecastOut: {
+            /** Assumptionsconfirmed */
+            assumptionsConfirmed: boolean;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Publishedat */
+            publishedAt: string | null;
+        };
+        /** PlanOut */
+        PlanOut: {
+            /** Cells */
+            cells: {
+                [key: string]: components["schemas"]["PlanCellOut"][];
+            };
+            /** Days */
+            days: string[];
+            forecast: components["schemas"]["PlanForecastOut"] | null;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+            /** Rosterstatus */
+            rosterStatus: string;
+            summary: components["schemas"]["PlanSummaryOut"];
+            /**
+             * Weekstart
+             * Format: date
+             */
+            weekStart: string;
+        };
+        /** PlanSummaryOut */
+        PlanSummaryOut: {
+            /** Gap */
+            gap: number;
+            /** Intervalsknown */
+            intervalsKnown: number;
+            /** Requiredtotal */
+            requiredTotal: number;
+            /** Scheduledtotal */
+            scheduledTotal: number;
+            /** Underintervals */
+            underIntervals: number;
+            worst: components["schemas"]["WorstOut"] | null;
+        };
         /** ProviderOut */
         ProviderOut: {
             /** Flow */
@@ -567,6 +895,72 @@ export interface components {
             /** Slthresholds */
             slThresholdS: number;
         };
+        /** QueueSettingsIn */
+        QueueSettingsIn: {
+            /** Occupancyceilingpct */
+            occupancyCeilingPct: number | string;
+            /** Shrinkagepct */
+            shrinkagePct: number | string;
+            /** Sltargetpct */
+            slTargetPct: number | string;
+            /** Slthresholds */
+            slThresholdS: number;
+        };
+        /** RosterCellOut */
+        RosterCellOut: {
+            /** Code */
+            code: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Shiftid */
+            shiftId: number;
+        };
+        /** RosterOut */
+        RosterOut: {
+            /** Days */
+            days: string[];
+            /** Oncounts */
+            onCounts: {
+                [key: string]: number;
+            };
+            /** Publishedat */
+            publishedAt: string | null;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+            /** Rows */
+            rows: components["schemas"]["RosterRowOut"][];
+            /** Shifts */
+            shifts: components["schemas"]["ShiftOut"][];
+            /** Status */
+            status: string;
+            /**
+             * Weekstart
+             * Format: date
+             */
+            weekStart: string;
+        };
+        /** RosterRowOut */
+        RosterRowOut: {
+            /** Cells */
+            cells: components["schemas"]["RosterCellOut"][];
+            /** Daysworked */
+            daysWorked: number;
+            /** Empno */
+            empNo: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Name */
+            name: string;
+            /** Paidminutes */
+            paidMinutes: number;
+            /** Weeklyhours */
+            weeklyHours: number;
+        };
         /** RunForecastIn */
         RunForecastIn: {
             /**
@@ -587,6 +981,85 @@ export interface components {
             /** Queueid */
             queueId: number;
         };
+        /** ShiftIn */
+        ShiftIn: {
+            /** Code */
+            code: string;
+            /**
+             * Endtime
+             * Format: time
+             */
+            endTime: string;
+            /** Paidminutes */
+            paidMinutes: number;
+            /**
+             * Starttime
+             * Format: time
+             */
+            startTime: string;
+        };
+        /** ShiftOut */
+        ShiftOut: {
+            /** Code */
+            code: string;
+            /** Endtime */
+            endTime: string;
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Minutes */
+            minutes: number;
+            /** Overnight */
+            overnight: boolean;
+            /** Paidminutes */
+            paidMinutes: number;
+            /** Starttime */
+            startTime: string;
+        };
+        /** SkillIn */
+        SkillIn: {
+            /**
+             * Level
+             * @default 1
+             */
+            level: number;
+            /** Queueid */
+            queueId: number;
+        };
+        /** SkillOut */
+        SkillOut: {
+            /** Level */
+            level: number;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+        };
+        /** WeekIn */
+        WeekIn: {
+            /** Queueid */
+            queueId: number;
+            /**
+             * Weekstart
+             * Format: date
+             */
+            weekStart: string;
+        };
+        /** WeekOut */
+        WeekOut: {
+            /** Publishedat */
+            publishedAt: string | null;
+            /** Queueid */
+            queueId: number;
+            /** Status */
+            status: string;
+            /**
+             * Weekstart
+             * Format: date
+             */
+            weekStart: string;
+        };
         /** WorkerPingOut */
         WorkerPingOut: {
             /** Apitraceid */
@@ -595,6 +1068,18 @@ export interface components {
             ok: boolean;
             /** Workertraceid */
             workerTraceId: string;
+        };
+        /** WorstOut */
+        WorstOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Slot */
+            slot: number;
+            /** Variance */
+            variance: number;
         };
     };
     responses: never;
@@ -859,6 +1344,311 @@ export interface operations {
             };
         };
     };
+    wfm_scheduling_api_list_employees: {
+        parameters: {
+            query?: {
+                queue_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeOut"][];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_create_employee: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_update_employee: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                employee_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_plan: {
+        parameters: {
+            query: {
+                queue_id: number;
+                week_start: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_roster: {
+        parameters: {
+            query: {
+                queue_id: number;
+                week_start: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RosterOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_export_roster: {
+        parameters: {
+            query: {
+                queue_id: number;
+                week_start: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    wfm_scheduling_api_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WeekIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeekOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_reopen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WeekIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeekOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_list_shifts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftOut"][];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_create_shift: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShiftIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_update_shift: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shift_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShiftIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_delete_shift: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shift_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+        };
+    };
     wfm_core_api_ping_worker: {
         parameters: {
             query?: never;
@@ -989,6 +1779,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QueueOut"][];
+                };
+            };
+        };
+    };
+    wfm_telephony_api_set_queue_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                queue_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QueueSettingsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueOut"];
                 };
             };
         };

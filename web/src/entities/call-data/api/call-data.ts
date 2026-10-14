@@ -10,6 +10,26 @@ export async function fetchQueues(): Promise<QueueInfo[]> {
   return unwrap(await api.GET('/api/v1/telephony/queues'))
 }
 
+export interface QueueSettings {
+  slTargetPct: number
+  slThresholdS: number
+  occupancyCeilingPct: number
+  shrinkagePct: number
+}
+
+/** Set a queue's staffing assumptions and confirm them (admin). */
+export async function saveQueueSettings(
+  queueId: number,
+  settings: QueueSettings,
+): Promise<QueueInfo> {
+  return unwrap(
+    await api.PUT('/api/v1/telephony/queues/{queue_id}/settings', {
+      params: { path: { queue_id: queueId } },
+      body: settings,
+    }),
+  )
+}
+
 export async function fetchKpis(range: { from: string; to: string }): Promise<KpiSummary> {
   return unwrap(
     await api.GET('/api/v1/telephony/kpis', {

@@ -61,6 +61,89 @@
         "title": "AccuracyOut",
         "type": "object"
       },
+      "AssignIn": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "templateId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templateid"
+          }
+        },
+        "required": [
+          "queueId",
+          "employeeId",
+          "day"
+        ],
+        "title": "AssignIn",
+        "type": "object"
+      },
+      "AssignOut": {
+        "properties": {
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "shiftId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shiftid"
+          },
+          "weekStatus": {
+            "title": "Weekstatus",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "day",
+          "shiftId",
+          "code",
+          "weekStatus"
+        ],
+        "title": "AssignOut",
+        "type": "object"
+      },
       "Coverage": {
         "properties": {
           "intervalsTotal": {
@@ -120,6 +203,158 @@
           "daysUsed"
         ],
         "title": "DayAccuracyOut",
+        "type": "object"
+      },
+      "EmployeeIn": {
+        "properties": {
+          "contractType": {
+            "default": "permanent",
+            "title": "Contracttype",
+            "type": "string"
+          },
+          "empNo": {
+            "maxLength": 20,
+            "title": "Empno",
+            "type": "string"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "name": {
+            "maxLength": 100,
+            "title": "Name",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillIn"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startdate"
+          },
+          "weeklyHours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weeklyhours"
+          },
+          "workMode": {
+            "default": "office",
+            "title": "Workmode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "empNo",
+          "name"
+        ],
+        "title": "EmployeeIn",
+        "type": "object"
+      },
+      "EmployeeOut": {
+        "properties": {
+          "contractType": {
+            "title": "Contracttype",
+            "type": "string"
+          },
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "$ref": "#/components/schemas/SkillOut"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "startDate": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startdate"
+          },
+          "weeklyHours": {
+            "title": "Weeklyhours",
+            "type": "number"
+          },
+          "weeklyHoursIsDefault": {
+            "title": "Weeklyhoursisdefault",
+            "type": "boolean"
+          },
+          "workMode": {
+            "title": "Workmode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "empNo",
+          "name",
+          "contractType",
+          "workMode",
+          "weeklyHours",
+          "weeklyHoursIsDefault",
+          "startDate",
+          "endDate",
+          "skills"
+        ],
+        "title": "EmployeeOut",
         "type": "object"
       },
       "Feature": {
@@ -548,6 +783,204 @@
         "title": "MonthsOut",
         "type": "object"
       },
+      "PlanCellOut": {
+        "properties": {
+          "required": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required"
+          },
+          "scheduled": {
+            "title": "Scheduled",
+            "type": "integer"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "variance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variance"
+          }
+        },
+        "required": [
+          "slot",
+          "scheduled",
+          "required",
+          "variance",
+          "state"
+        ],
+        "title": "PlanCellOut",
+        "type": "object"
+      },
+      "PlanForecastOut": {
+        "properties": {
+          "assumptionsConfirmed": {
+            "title": "Assumptionsconfirmed",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "publishedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publishedat"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "publishedAt",
+          "assumptionsConfirmed"
+        ],
+        "title": "PlanForecastOut",
+        "type": "object"
+      },
+      "PlanOut": {
+        "properties": {
+          "cells": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/PlanCellOut"
+              },
+              "type": "array"
+            },
+            "title": "Cells",
+            "type": "object"
+          },
+          "days": {
+            "items": {
+              "format": "date",
+              "type": "string"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "forecast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanForecastOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "rosterStatus": {
+            "title": "Rosterstatus",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/PlanSummaryOut"
+          },
+          "weekStart": {
+            "format": "date",
+            "title": "Weekstart",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueId",
+          "queue",
+          "weekStart",
+          "days",
+          "rosterStatus",
+          "forecast",
+          "cells",
+          "summary"
+        ],
+        "title": "PlanOut",
+        "type": "object"
+      },
+      "PlanSummaryOut": {
+        "properties": {
+          "gap": {
+            "title": "Gap",
+            "type": "integer"
+          },
+          "intervalsKnown": {
+            "title": "Intervalsknown",
+            "type": "integer"
+          },
+          "requiredTotal": {
+            "title": "Requiredtotal",
+            "type": "integer"
+          },
+          "scheduledTotal": {
+            "title": "Scheduledtotal",
+            "type": "integer"
+          },
+          "underIntervals": {
+            "title": "Underintervals",
+            "type": "integer"
+          },
+          "worst": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorstOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "intervalsKnown",
+          "underIntervals",
+          "gap",
+          "requiredTotal",
+          "scheduledTotal",
+          "worst"
+        ],
+        "title": "PlanSummaryOut",
+        "type": "object"
+      },
       "ProviderOut": {
         "properties": {
           "flow": {
@@ -701,6 +1134,200 @@
         "title": "QueueOut",
         "type": "object"
       },
+      "QueueSettingsIn": {
+        "properties": {
+          "occupancyCeilingPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Occupancyceilingpct"
+          },
+          "shrinkagePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Shrinkagepct"
+          },
+          "slTargetPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Sltargetpct"
+          },
+          "slThresholdS": {
+            "title": "Slthresholds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slTargetPct",
+          "slThresholdS",
+          "occupancyCeilingPct",
+          "shrinkagePct"
+        ],
+        "title": "QueueSettingsIn",
+        "type": "object"
+      },
+      "RosterCellOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "shiftId": {
+            "title": "Shiftid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "shiftId",
+          "code"
+        ],
+        "title": "RosterCellOut",
+        "type": "object"
+      },
+      "RosterOut": {
+        "properties": {
+          "days": {
+            "items": {
+              "format": "date",
+              "type": "string"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "onCounts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Oncounts",
+            "type": "object"
+          },
+          "publishedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publishedat"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/RosterRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "shifts": {
+            "items": {
+              "$ref": "#/components/schemas/ShiftOut"
+            },
+            "title": "Shifts",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "weekStart": {
+            "format": "date",
+            "title": "Weekstart",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueId",
+          "queue",
+          "weekStart",
+          "days",
+          "status",
+          "publishedAt",
+          "rows",
+          "onCounts",
+          "shifts"
+        ],
+        "title": "RosterOut",
+        "type": "object"
+      },
+      "RosterRowOut": {
+        "properties": {
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/RosterCellOut"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "daysWorked": {
+            "title": "Daysworked",
+            "type": "integer"
+          },
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "paidMinutes": {
+            "title": "Paidminutes",
+            "type": "integer"
+          },
+          "weeklyHours": {
+            "title": "Weeklyhours",
+            "type": "number"
+          }
+        },
+        "required": [
+          "employeeId",
+          "empNo",
+          "name",
+          "weeklyHours",
+          "daysWorked",
+          "paidMinutes",
+          "cells"
+        ],
+        "title": "RosterRowOut",
+        "type": "object"
+      },
       "RunForecastIn": {
         "properties": {
           "dateFrom": {
@@ -732,6 +1359,182 @@
         "title": "RunForecastIn",
         "type": "object"
       },
+      "ShiftIn": {
+        "properties": {
+          "code": {
+            "maxLength": 10,
+            "title": "Code",
+            "type": "string"
+          },
+          "endTime": {
+            "format": "time",
+            "title": "Endtime",
+            "type": "string"
+          },
+          "paidMinutes": {
+            "title": "Paidminutes",
+            "type": "integer"
+          },
+          "startTime": {
+            "format": "time",
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "startTime",
+          "endTime",
+          "paidMinutes"
+        ],
+        "title": "ShiftIn",
+        "type": "object"
+      },
+      "ShiftOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "endTime": {
+            "title": "Endtime",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "overnight": {
+            "title": "Overnight",
+            "type": "boolean"
+          },
+          "paidMinutes": {
+            "title": "Paidminutes",
+            "type": "integer"
+          },
+          "startTime": {
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "startTime",
+          "endTime",
+          "paidMinutes",
+          "minutes",
+          "overnight",
+          "kind"
+        ],
+        "title": "ShiftOut",
+        "type": "object"
+      },
+      "SkillIn": {
+        "properties": {
+          "level": {
+            "default": 1,
+            "title": "Level",
+            "type": "integer"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queueId"
+        ],
+        "title": "SkillIn",
+        "type": "object"
+      },
+      "SkillOut": {
+        "properties": {
+          "level": {
+            "title": "Level",
+            "type": "integer"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queueId",
+          "queue",
+          "level"
+        ],
+        "title": "SkillOut",
+        "type": "object"
+      },
+      "WeekIn": {
+        "properties": {
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "weekStart": {
+            "format": "date",
+            "title": "Weekstart",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueId",
+          "weekStart"
+        ],
+        "title": "WeekIn",
+        "type": "object"
+      },
+      "WeekOut": {
+        "properties": {
+          "publishedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publishedat"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "weekStart": {
+            "format": "date",
+            "title": "Weekstart",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueId",
+          "weekStart",
+          "status",
+          "publishedAt"
+        ],
+        "title": "WeekOut",
+        "type": "object"
+      },
       "WorkerPingOut": {
         "properties": {
           "apiTraceId": {
@@ -753,6 +1556,30 @@
           "workerTraceId"
         ],
         "title": "WorkerPingOut",
+        "type": "object"
+      },
+      "WorstOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          },
+          "variance": {
+            "title": "Variance",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "slot",
+          "variance"
+        ],
+        "title": "WorstOut",
         "type": "object"
       }
     },
@@ -1151,6 +1978,533 @@
         ]
       }
     },
+    "/api/v1/scheduling/employees": {
+      "get": {
+        "operationId": "wfm_scheduling_api_list_employees",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Queue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EmployeeOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Employees",
+        "tags": [
+          "scheduling"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_scheduling_api_create_employee",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmployeeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Add an employee",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/employees/{employee_id}": {
+      "put": {
+        "operationId": "wfm_scheduling_api_update_employee",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employee_id",
+            "required": true,
+            "schema": {
+              "title": "Employee Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmployeeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Change an employee",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/plan": {
+      "get": {
+        "operationId": "wfm_scheduling_api_plan",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Week Start",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Scheduled against required, per half-hour",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster": {
+      "get": {
+        "operationId": "wfm_scheduling_api_roster",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Week Start",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RosterOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "One queue's roster for a week",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster/assignments": {
+      "put": {
+        "operationId": "wfm_scheduling_api_assign",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Put a person on a shift, or clear it",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster/export.csv": {
+      "get": {
+        "operationId": "wfm_scheduling_api_export_roster",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Week Start",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Export a week's roster as CSV",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster/publish": {
+      "post": {
+        "operationId": "wfm_scheduling_api_publish",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeekIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeekOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Publish a week's roster",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster/reopen": {
+      "post": {
+        "operationId": "wfm_scheduling_api_reopen",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeekIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeekOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Return a published week to draft",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/shifts": {
+      "get": {
+        "operationId": "wfm_scheduling_api_list_shifts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ShiftOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "The shift library",
+        "tags": [
+          "scheduling"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_scheduling_api_create_shift",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShiftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShiftOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Add a shift",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/shifts/{shift_id}": {
+      "delete": {
+        "operationId": "wfm_scheduling_api_delete_shift",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shift_id",
+            "required": true,
+            "schema": {
+              "title": "Shift Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Delete a shift",
+        "tags": [
+          "scheduling"
+        ]
+      },
+      "put": {
+        "operationId": "wfm_scheduling_api_update_shift",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shift_id",
+            "required": true,
+            "schema": {
+              "title": "Shift Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShiftIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShiftOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Change a shift",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
     "/api/v1/system/ping-worker": {
       "post": {
         "description": "Is the worker alive, and does trace context survive the queue? Both trace ids should match\nwhen tracing is on.",
@@ -1374,6 +2728,53 @@
           }
         ],
         "summary": "Queues the signed-in role may see",
+        "tags": [
+          "telephony"
+        ]
+      }
+    },
+    "/api/v1/telephony/queues/{queue_id}/settings": {
+      "put": {
+        "operationId": "wfm_telephony_api_set_queue_settings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QueueSettingsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set and confirm a queue's staffing assumptions",
         "tags": [
           "telephony"
         ]

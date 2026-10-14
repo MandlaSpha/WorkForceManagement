@@ -20,8 +20,15 @@ export const useContextStore = defineStore('context', () => {
   const queueId = ref('')
   const weekStart = ref(weekStartOf(todayInJohannesburg()))
 
+  /** The chosen queue as the number the API uses; null when none is chosen. */
+  const queueNumber = computed(() => (queueId.value === '' ? null : Number(queueId.value)))
   const weekLabel = computed(() => formatWeekRange(weekStart.value))
 
+  /** Forget the lists: they belong to whoever was signed in. */
+  function clearScope(): void {
+    setSites([])
+    setQueues([])
+  }
   function previousWeek(): void {
     weekStart.value = addWeeks(weekStart.value, -1)
   }
@@ -42,11 +49,13 @@ export const useContextStore = defineStore('context', () => {
     queues,
     siteId,
     queueId,
+    queueNumber,
     weekStart,
     weekLabel,
     previousWeek,
     nextWeek,
     setSites,
     setQueues,
+    clearScope,
   }
 })

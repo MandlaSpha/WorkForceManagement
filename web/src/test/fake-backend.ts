@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 
 import type { ImportReport, KpiSummary, QueueInfo } from '@/entities/call-data'
 import type { ForecastAccuracy, ForecastInterval, ForecastVersion } from '@/entities/forecast'
+import type { Employee, Plan, Roster, Shift } from '@/entities/scheduling'
 
 import { emptySummary } from './call-data-fixtures'
 
@@ -86,6 +87,17 @@ export const backend = {
     ForecastVersion | { status: number; code: string; title: string; detail: string } | null,
   /** The JSON bodies the app sent to run a forecast, with the CSRF header it carried. */
   runs: [] as Array<{ body: Record<string, unknown>; csrf: string | null }>,
+  /** Scheduling: what the roster, plan, shift and employee endpoints answer. */
+  shifts: [] as Shift[],
+  employees: [] as Employee[],
+  roster: null as Roster | null,
+  plan: null as Plan | null,
+  /** Every write the app sent to scheduling or queue settings, with the CSRF header it carried. */
+  writes: [] as Array<{ method: string; path: string; body: unknown; csrf: string | null }>,
+  /** When set, the next scheduling write is refused with this problem (and then cleared). */
+  nextProblem: null as { status: number; code: string; title: string; detail: string } | null,
+  /** Lets a test change the fake world when an assignment is accepted, e.g. move the plan. */
+  onAssign: null as ((body: Record<string, unknown>) => void) | null,
   reset(): void {
     this.signedIn = null
     this.features = [...ALL_FEATURES]
@@ -101,6 +113,13 @@ export const backend = {
     this.accuracy = null
     this.runOutcome = null
     this.runs = []
+    this.shifts = []
+    this.employees = []
+    this.roster = null
+    this.plan = null
+    this.writes = []
+    this.nextProblem = null
+    this.onAssign = null
   },
 }
 
@@ -219,4 +238,74 @@ export const handlers = [
     )
     return HttpResponse.json(backend.versions.find((v) => v.id === version.id))
   }),
+
+  http.get('*/api/v1/scheduling/shifts', () => HttpResponse.json(backend.shifts)),
+
+  http.get('*/api/v1/scheduling/employees', () => HttpResponse.json(backend.employees)),
+
+  http.get('*/api/v1/scheduling/roster', () =>
+    backend.roster
+      ? HttpResponse.json(backend.roster)
+      : problem(404, 'resource.not_found', 'Not found'),
+  ),
+
+  http.get('*/api/v1/scheduling/plan', () =>
+    backend.plan
+      ? HttpResponse.json(backend.plan)
+      : problem(404, 'resource.not_found', 'Not found'),
+  ),
+
+  http.post('*/api/v1/scheduling/shifts', (info) => schedulingWrite(info, 'POST', 201)),
+  http.delete('*/api/v1/scheduling/shifts/:id', (info) => schedulingWrite(info, 'DELETE')),
+  http.post('*/api/v1/scheduling/employees', (info) => schedulingWrite(info, 'POST', 201)),
+  http.put('*/api/v1/scheduling/employees/:id', (info) => schedulingWrite(info, 'PUT')),
+  http.put('*/api/v1/scheduling/roster/assignments', (info) => schedulingWrite(info, 'PUT')),
+  http.post('*/api/v1/scheduling/roster/publish', (info) => schedulingWrite(info, 'POST')),
+  http.post('*/api/v1/scheduling/roster/reopen', (info) => schedulingWrite(info, 'POST')),
+  http.put('*/api/v1/telephony/queues/:id/settings', (info) => schedulingWrite(info, 'PUT')),
 ]
+
+/** Every scheduling write: demand the CSRF token, record the request, refuse when a test says so,
+ * otherwise echo what a real server would return for it. */
+async function schedulingWrite(
+  { request }: { request: Request },
+  method: string,
+  status = 200,
+): Promise<Response> {
+  const csrf = request.headers.get('X-CSRFToken')
+  if (csrf !== CSRF_TOKEN) return problem(403, 'auth.csrf', 'CSRF check failed')
+  const path = new URL(request.url).pathname
+  const body = method === 'DELETE' ? null : ((await request.json()) as Record<string, unknown>)
+  backend.writes.push({ method, path, body, csrf })
+
+  const refusal = backend.nextProblem
+  if (refusal) {
+    backend.nextProblem = null
+    return HttpResponse.json(
+      { type: `https://wfm.local/problems/${refusal.code}`, ...refusal },
+      { status: refusal.status, headers: { 'Content-Type': 'application/problem+json' } },
+    )
+  }
+  const settingsFor = /\/queues\/(\d+)\/settings$/.exec(path)
+  if (settingsFor)
+    backend.queues = backend.queues.map((q) =>
+      q.id === Number(settingsFor[1]) ? { ...q, ...body, settingsConfirmed: true } : q,
+    )
+  if (path.endsWith('/roster/assignments')) backend.onAssign?.(body ?? {})
+  if (path.endsWith('/roster/publish') && backend.roster)
+    backend.roster = { ...backend.roster, status: 'published' }
+  if (path.endsWith('/roster/reopen') && backend.roster)
+    backend.roster = { ...backend.roster, status: 'draft' }
+  return HttpResponse.json(
+    path.endsWith('/roster/assignments')
+      ? {
+          employeeId: body?.employeeId,
+          day: body?.day,
+          shiftId: body?.templateId,
+          code: null,
+          weekStatus: 'draft',
+        }
+      : (body ?? { ok: true }),
+    { status },
+  )
+}
