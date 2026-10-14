@@ -1,0 +1,128 @@
+# Walkthrough: what each phase does, and how to see it
+
+Plain-language tour of what is built, in the order it was built. Each section says who uses it,
+where to click, what you should see, and the rule behind it. Screens are in the left menu.
+Everything here is synthetic or your own imported data; nothing comes from `Files/`.
+
+**Sign in** at the web address shown in the Aspire dashboard (http://localhost:15888). The demo
+logins (made by `seed_demo`) are `planner`, `lead`, `agent`, `admin`, `executive`, `customerops`,
+all with the demo password. Sign in as different roles to see how the menu and the data change.
+
+## The idea in one paragraph
+
+Call volumes come in (imported from the telephony reports). The system **forecasts** how many calls
+and how long they will take, works out **how many people each half hour needs**, lets a planner
+build a **roster** against that, shows where it is **short or over-staffed**, and now lets staff
+**ask for leave** that flows back into the roster. Every change is written to a tamper-evident
+**audit trail**. Which screens exist depends on the customer's **feature switches**.
+
+## Phase 0-1: Foundations (no screen of their own)
+
+| Piece | What it gives you | See it |
+|---|---|---|
+| Roles and sign-in | Six roles; each sees only what it may. Out-of-scope records answer "not found". | Sign in as `agent`, then `executive`: different menus. Open a URL you may not see: "You don't have access". |
+| Audit trail | Who did what, when. Chained hashes so editing or deleting a row is detected. | Admin, **Audit log**. Do anything, then find it here. |
+| Feature switches | VMK turns modules on or off per customer; a switched-off module disappears and its API refuses. | Admin, **Configure**. |
+| Data import | Reads the telephony call-detail workbook into half-hour call volumes and handling times. | **Data import**: upload a workbook, see rows read and rows refused with reasons. |
+| Engine | The maths (Erlang C staffing, shrinkage, service level), pure code with hand-worked tests. | Not a screen; it drives every number below. |
+
+## Phase 1: Forecast
+
+**Who:** planner. **Screen:** Forecast.
+1. Pick a queue. The chart shows past volume and the forecast ahead.
+2. Tabs: forecast, **accuracy** (how close past forecasts were, per day), **Calibration** (tune how
+   much history to trust; it suggests a multiplier that removes bias), **Events** (a promotion or
+   outage that should lift or lower volume).
+3. The system uses the Prophet model only when it beats the simple baseline in a back-test,
+   otherwise it falls back. The screen says which one it used.
+
+Why it matters: the forecast is the demand that every staffing number rests on.
+
+## Phase 2: Roster and coverage
+
+**Who:** planner builds, lead reads, agent sees their own.
+1. **Roster**: pick a week, assign people to shift patterns. The chart shows required vs rostered
+   people per half hour: red where short, blue where over.
+2. The roster refuses rule breaks with a reason (rest hours between shifts, too many days in a row,
+   person on approved leave).
+3. **Publish** a week to make it visible to staff. Changing a published week is audited.
+
+## Phase 2: Capacity, scenarios, dashboard, service desk
+
+- **Capacity:** the permanent 100 plus seasonal 250 against required hours, with overflow shown.
+  Try a scenario ("what if volume is 15% higher") and see the gap change without touching the
+  real roster.
+- **Dashboard:** coverage per queue and a plain "needs attention" list (rule-based, no AI).
+- **Service desk:** workload for ticket-style work by resource pool, based on effort, not calls.
+
+## Phase 3: Leave and approvals (newest)
+
+**Agent** (`agent`):
+1. **Leave**: balances per kind ("11 of 15 days left"; unpaid shows "no limit").
+2. Ask for leave: kind and dates. It tells you how many *working* days were counted (weekends and
+   South African public holidays excluded). There is no reason field on purpose, so medical detail
+   is never stored.
+3. Cancel a waiting request, or approved leave that has not finished.
+
+**Lead / planner** (`lead`):
+1. **Leave > Approvals**: waiting requests.
+2. **Show coverage impact** first: shifts and hours given up, half-hours that become short.
+   Looking decides nothing.
+3. Approve or reject. You cannot decide your own request.
+4. Approval removes that person's shifts on those days; the Roster then shows the gap and refuses
+   to rota them. Cancelling approved leave puts shifts back where the person is still free and
+   tells you how many could not go back.
+
+**Admin:** **Leave > Entitlements** sets days per year. Defaults are South African (BCEA) and are
+marked "not confirmed" until saved.
+
+Five-minute demo script: agent asks for Mon-Tue leave; sign in as lead; open impact; approve; open
+the Roster for that week and see the shifts gone; sign in as agent and cancel.
+
+## Not built yet (so you are not looking for it)
+
+Shift swaps, employee availability, agent "my schedule" and "my availability" pages, blackout
+periods, team-scoped lead views (a lead currently decides for everyone), auto-scheduler,
+recommendations, overtime pricing, scheduled reports, intraday, adherence, ITSM and Azure AD
+integration. The menu lists some of these as placeholders.
+
+## Loading the demo data
+
+Everything below needs data. `seed_demo_data` fills an empty development database with an
+invented contact centre (no real data anywhere). In order:
+
+1. `just dev`, then in the Aspire dashboard (http://localhost:15888) press **Start** on the
+   `seed-demo-data` resource. It runs once and refuses to run twice or outside development.
+   (Or: `uv run python manage.py seed_demo_data` in `api/`, with the database settings set.)
+2. It takes about 30 seconds and prints each step.
+
+### What you get, and the real-life story each part tells
+
+| Data | Real-life situation it shows |
+|---|---|
+| **Demo Support**: 12 weeks of calls, 40 staff | The everyday queue. Morning and afternoon peaks, a busy Monday and a quiet Friday, thin weekends. |
+| **Demo Billing**: 16 staff, weekdays 08:00-17:00 | Month-end pressure. It is **short all week**: the case for seasonal help (see Capacity). |
+| **Demo Night Desk**: 8 staff, 18:00-06:00 | Overnight shifts that run past midnight, with the rest rules between them. |
+| Public holidays in the history | Volume dips on holidays; the forecast does not treat them as normal days. |
+| One **outage day** (about double the calls, many dropped) | A bad day inside the history. Look at Accuracy: the forecast cannot predict it. |
+| One day with **no rows** (the recorder was down) | "No data" is not the same as "no calls". The forecast skips it rather than learning zero. |
+| Two events: month-end billing run (+30%), SMS campaign (+20%) | Known reasons for demand to change; forecasts after them include the lift. |
+| Forecasts for 4 weeks, published | The demand every roster is measured against. |
+| **This week and next** rostered and published | Real rosters with contract hours, rest rules and part-timers. |
+| **Next Monday** deliberately short, **next Thursday** over-staffed | Open the Roster and Dashboard: red on Monday morning, blue on Thursday. |
+| The week after: a **draft**; the fourth week: **not started** | The planner's work in progress, and what is still to do. |
+| 4 part-timers, 6 seasonal staff (contract ends in 75 days), 2 who cover two queues | Contract types, seasonal end dates, and why one person cannot be on two queues the same day. |
+| Leave: approved, waiting (two), rejected, cancelled, already taken | Every state. The approved one is already **off the roster**; the waiting one over the short Monday shows a real coverage cost in the impact panel. |
+| Service desk: 270 tickets in two pools, some overdue, some closed | Backlog and workload by effort. |
+| `agent` login | The demo agent is on the Support roster and can ask for leave. |
+
+Staff names are made from word lists and numbered `DEMO-nnn`. The numbers are repeatable: the
+generator is seeded, so two fresh databases look the same.
+
+## Known gaps in the demo
+
+- Accuracy figures come from invented data, so they say nothing about the real queues.
+- Billing's shortfall is a result of the data (14 people, month-end load), not a bug; use it to
+  demonstrate Capacity and What-if.
+- The Data import screen is empty: the history was written directly, not imported from a file.
+  Import your own workbook there to show that screen.

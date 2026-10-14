@@ -58,6 +58,8 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM", "N", "RUF", "PT", "S", "DJ"]
 "conftest.py" = ["S101", "S105", "S106"]
 # Django idiom: Meta.indexes / Meta.constraints are class-level lists.
 "**/models.py" = ["RUF012"]
+# Invented demo data: a seeded generator is the point, nothing here is a secret.
+"wfm/devtools/**" = ["S311"]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings.test"

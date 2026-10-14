@@ -108,6 +108,16 @@ builder.AddPythonApp("purge-e2e-data", apiDir, "manage.py")
     .WaitForCompletion(migrate)
     .WithExplicitStart();
 
+// On demand (press Start in the dashboard): fill the database with an invented, believable
+// contact centre (history, staff, forecasts, rosters, leave, tickets) for demonstrations. It
+// refuses outside development and when the demo data is already there.
+builder.AddPythonApp("seed-demo-data", apiDir, "manage.py")
+    .WithUv()
+    .WithArgs("seed_demo_data")
+    .WithEnvironment("DATABASE_URL", db.Resource.UriExpression)
+    .WaitForCompletion(seed)
+    .WithExplicitStart();
+
 var api = builder.AddPythonApp("api", apiDir, "manage.py")
     .WithUv()
     .WithArgs("runserver", "127.0.0.1:8000", "--noreload")
