@@ -1,7 +1,9 @@
 import { api, unwrap } from '@/shared/api'
 
 import type {
+  EventRequest,
   ForecastAccuracy,
+  ForecastEvent,
   ForecastInterval,
   ForecastVersion,
   RunForecastRequest,
@@ -37,6 +39,26 @@ export async function publishVersion(versionId: string): Promise<ForecastVersion
   return unwrap(
     await api.POST('/api/v1/forecasting/versions/{version_id}/publish', {
       params: { path: { version_id: versionId } },
+    }),
+  )
+}
+
+export async function fetchEvents(queueId: number | null): Promise<ForecastEvent[]> {
+  return unwrap(
+    await api.GET('/api/v1/forecasting/events', {
+      params: { query: queueId === null ? {} : { queue_id: queueId } },
+    }),
+  )
+}
+
+export async function createEvent(body: EventRequest): Promise<ForecastEvent> {
+  return unwrap(await api.POST('/api/v1/forecasting/events', { body }))
+}
+
+export async function deleteEvent(eventId: number): Promise<void> {
+  unwrap(
+    await api.DELETE('/api/v1/forecasting/events/{event_id}', {
+      params: { path: { event_id: eventId } },
     }),
   )
 }

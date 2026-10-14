@@ -129,7 +129,16 @@ Computed iteratively in log space to avoid factorial overflow. Variance = schedu
 
 The half-hour score is low for small queues because a half-hour holds a call or two and chance alone moves it; the day score is the one staffing a day leans on, and even that is only moderate. **This is a first baseline, not a finished forecast.** Likely gains, in order: a trend factor and day-level (rather than slot-level) averaging, smoothing neighbouring half-hours for small queues, holiday and event uplifts (FC-04), then the Phase 7 machine-learning model (FC-07) judged against this backtest.
 
-**Not built yet:** the monthly trend factor, events and uplifts (FC-04), multi-channel (FC-06), ML (FC-07), per-queue and per-contract settings screens (ENG-05; the values exist on the queue but are changed in Configure, Phase 2). Whole days are assumed: an import that stops mid-day would make that day look quiet.
+**Not built yet:** the monthly trend factor, multi-channel (FC-06), ML (FC-07), per-queue and per-contract settings screens (ENG-05; the values exist on the queue but are changed in Configure, Phase 2). Whole days are assumed: an import that stops mid-day would make that day look quiet.
+
+### 4.3c Events calendar (Phase 2.5, built)
+A planner or admin enters a planned reason for demand to differ: a name, the first and last day, one queue or all queues, and a change in calls from -100% (closed) to +500%. Forecasts run **after** that apply it to every covered day, for the baseline and for Prophet alike; the staffing requirement is then worked out from the adjusted volume.
+
+- Overlapping events **compound** (a +20% campaign during a -50% outage is x1.2 x0.5 = x0.6), and the Prophet range scales with the day.
+- The event is a manual adjustment on top of the model, so Prophet is **not** given events to learn from (that would count a past campaign twice). Learning event effects from history is a later step, once there is enough history for it to be meaningful.
+- A forecast already run keeps what it used: the events that touched it are stored on the version (`params.events`, with the days) and shown on the screen, so removing an event later never rewrites a published forecast.
+- Roles: admin and planner change the calendar, leads read it, nobody else sees it. Create, change and remove are audited with the before and after values; saving without changes records nothing.
+- Edit has an API (`PUT`) but no screen yet; add and remove cover the planner's need.
 
 ### 4.3b Roster and plan (Phase 2, built)
 **Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
@@ -275,7 +284,7 @@ Other rules:
 - **Where it runs:** in the API layer (`wfm/forecasting/prophet_model.py`, `modeling.py`), not in `wfm_engine`, which stays free of Django, the clock and I/O. Built (14 Oct 2026): a run with its backtest takes a few seconds and stays inside the request; it moves to the Celery worker behind the job API when runs grow. The model sits behind the same forecast-version interface as the baseline, so publishing, audit and the accuracy backtest are unchanged. Decision record: `docs/adr/0002-prophet-for-daily-totals.md`.
 - **Rule from the tender text:** Prophet must beat the baseline on the rolling backtest, or the version says it did not and uses the baseline. Accuracy is shown per model.
 - **Data limit:** only May and July are real today. With under a year of history yearly seasonality is switched off and the screen says so; weekly pattern, holidays and month-end still apply.
-- **Cost:** none beyond the wheel: Prophet 1.5 ships the compiled model, so no compiler or cmdstan build is needed on Windows or in a glibc Linux image (ADR 0002). Still to build in this phase: SA holidays are in, but the editable events calendar (FC-04) and the 350-agent capacity view (CAP-01) are not.
+- **Cost:** none beyond the wheel: Prophet 1.5 ships the compiled model, so no compiler or cmdstan build is needed on Windows or in a glibc Linux image (ADR 0002). Built since: the events calendar (section 4.3c). Still to build in this phase: the 350-agent capacity view (CAP-01) and scenarios.
 
 The Copilot (requirements §3.12) is **parked**: not in any phase and not in the test plan. If it is ever requested, it comes after the role-scoping layer and the endpoint × role test matrix exist, and reuses them rather than adding a new data path.
 

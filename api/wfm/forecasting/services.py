@@ -20,7 +20,7 @@ from wfm.audit.models import Action, Outcome
 from wfm.core.errors import ApiError, not_found
 from wfm.telephony.models import Queue
 
-from . import modeling
+from . import modeling, selectors
 from .history import load_history
 from .models import ForecastInterval, ForecastStatus, ForecastVersion
 
@@ -59,6 +59,7 @@ def run_forecast(
     history, observed = load_history(queue)
     days = [date_from + timedelta(days=n) for n in range((date_to - date_from).days + 1)]
     built = modeling.build(history, observed, days, method)
+    modeling.apply_uplifts(built, selectors.event_uplifts(user, queue, date_from, date_to))
     forecastable = built.days
     if not forecastable:
         raise _refused(

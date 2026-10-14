@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from collections.abc import Collection, Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import Any
 
@@ -130,3 +130,58 @@ def _fell_back(
         **(evidence or {}),
     }
     return baseline
+
+
+@dataclass(frozen=True, slots=True)
+class Uplift:
+    """An event's effect on demand: `pct` per cent more (or less) calls on each day of the range."""
+
+    event_id: int
+    name: str
+    date_from: date
+    date_to: date
+    pct: float
+
+    def covers(self, day: date) -> bool:
+        return self.date_from <= day <= self.date_to
+
+
+def day_factor(day: date, uplifts: Iterable[Uplift]) -> float:
+    """What the model's forecast for `day` is multiplied by. Events that overlap compound, so a
+    +20% campaign during a -50% outage is 1.2 x 0.5 = 0.6."""
+    factor = 1.0
+    for uplift in uplifts:
+        if uplift.covers(day):
+            factor *= 1 + uplift.pct / 100
+    return factor
+
+
+def apply_uplifts(built: Built, uplifts: list[Uplift]) -> list[dict[str, Any]]:
+    """Scale the forecast days the events cover, in place, and describe what was applied so the
+    version can show it (params["events"]). Events outside the forecast days change nothing and
+    are not reported."""
+    applied: list[dict[str, Any]] = []
+    for uplift in uplifts:
+        days = sorted(d for d in built.days if uplift.covers(d))
+        if days:
+            applied.append(
+                {
+                    "id": uplift.event_id,
+                    "name": uplift.name,
+                    "dateFrom": uplift.date_from.isoformat(),
+                    "dateTo": uplift.date_to.isoformat(),
+                    "upliftPct": uplift.pct,
+                    "days": [d.isoformat() for d in days],
+                }
+            )
+    for day, forecast in list(built.days.items()):
+        factor = day_factor(day, uplifts)
+        if factor != 1.0:
+            built.days[day] = DayForecast(
+                [replace(s, volume=s.volume * factor) for s in forecast.slots],
+                None if forecast.lower is None else forecast.lower * factor,
+                None if forecast.upper is None else forecast.upper * factor,
+            )
+    if applied:
+        built.params["events"] = applied
+    return applied

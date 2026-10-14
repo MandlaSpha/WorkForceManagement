@@ -401,3 +401,176 @@ describe('which model made the forecast', () => {
     expect(notice).toHaveTextContent('did not beat the baseline')
   })
 })
+
+describe('the events calendar', () => {
+  const payment = {
+    id: 1,
+    name: 'Payment run',
+    queueId: null,
+    queue: null,
+    dateFrom: '2026-05-25',
+    dateTo: '2026-05-27',
+    upliftPct: 20,
+  }
+
+  it('lists events with their days, queue and signed change', async () => {
+    withLiveForecast()
+    backend.events = [
+      payment,
+      {
+        ...payment,
+        id: 2,
+        name: 'Outage',
+        queueId: 1,
+        queue: 'QueueA',
+        dateTo: '2026-05-25',
+        upliftPct: -50,
+      },
+    ]
+    asRole('planner')
+    await renderApp('/forecast')
+
+    const table = await screen.findByRole('table', { name: 'Events' })
+    const run = within(within(table).getByRole('rowheader', { name: 'Payment run' }).closest('tr')!)
+    expect(run.getByText('All queues')).toBeVisible()
+    expect(run.getByText('+20%')).toBeVisible()
+    expect(run.getByText(/to Wed 27 May/)).toBeVisible()
+    const outage = within(within(table).getByRole('rowheader', { name: 'Outage' }).closest('tr')!)
+    expect(outage.getByText('QueueA')).toBeVisible()
+    expect(outage.getByText('−50%')).toBeVisible() // a real minus sign
+  })
+
+  it('adds an event for the chosen queue with the CSRF token, and lists it', async () => {
+    withLiveForecast()
+    asRole('planner')
+    const u = user()
+    await renderApp('/forecast')
+
+    const form = await screen.findByRole('form', { name: 'Add an event' })
+    await u.type(within(form).getByLabelText('Name'), 'Campaign')
+    await u.clear(within(form).getByLabelText('First day'))
+    await u.type(within(form).getByLabelText('First day'), '2026-06-01')
+    await u.clear(within(form).getByLabelText('Last day'))
+    await u.type(within(form).getByLabelText('Last day'), '2026-06-03')
+    await u.selectOptions(within(form).getByLabelText('Applies to'), 'QueueA')
+    await u.clear(within(form).getByLabelText('Change in calls (%)'))
+    await u.type(within(form).getByLabelText('Change in calls (%)'), '-30')
+    await u.click(within(form).getByRole('button', { name: 'Add event' }))
+
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]).toEqual({
+      method: 'POST',
+      path: '/api/v1/forecasting/events',
+      body: {
+        name: 'Campaign',
+        queueId: 1,
+        dateFrom: '2026-06-01',
+        dateTo: '2026-06-03',
+        upliftPct: -30,
+      },
+      csrf: 'test-csrf-token',
+    })
+    expect(await screen.findByRole('rowheader', { name: 'Campaign' })).toBeVisible()
+    await waitFor(() => expect(within(form).getByLabelText('Name')).toHaveValue(''))
+  })
+
+  it('sends every queue as no queue at all', async () => {
+    withLiveForecast()
+    asRole('planner')
+    const u = user()
+    await renderApp('/forecast')
+
+    const form = await screen.findByRole('form', { name: 'Add an event' })
+    expect(within(form).getByLabelText('Applies to')).toHaveValue('')
+    await u.type(within(form).getByLabelText('Name'), 'Everywhere')
+    await u.click(within(form).getByRole('button', { name: 'Add event' }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]?.body).toMatchObject({ queueId: null })
+  })
+
+  it('shows why an event was refused and keeps what was typed', async () => {
+    withLiveForecast()
+    backend.nextProblem = {
+      status: 422,
+      code: 'event.uplift_invalid',
+      title: 'Invalid request',
+      detail: 'The change is between -100% and +500%.',
+    }
+    asRole('planner')
+    const u = user()
+    await renderApp('/forecast')
+
+    const form = await screen.findByRole('form', { name: 'Add an event' })
+    await u.type(within(form).getByLabelText('Name'), 'Too much')
+    await u.click(within(form).getByRole('button', { name: 'Add event' }))
+
+    expect(await screen.findByTestId('event-error')).toHaveTextContent(/between -100% and \+500%/)
+    expect(within(form).getByLabelText('Name')).toHaveValue('Too much')
+  })
+
+  it('cannot add an event without a name', async () => {
+    withLiveForecast()
+    asRole('planner')
+    await renderApp('/forecast')
+    const form = await screen.findByRole('form', { name: 'Add an event' })
+    expect(within(form).getByRole('button', { name: 'Add event' })).toBeDisabled()
+  })
+
+  it('removes an event', async () => {
+    withLiveForecast()
+    backend.events = [payment]
+    asRole('planner')
+    const u = user()
+    await renderApp('/forecast')
+
+    await u.click(await screen.findByRole('button', { name: 'Remove event Payment run' }))
+
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]).toMatchObject({
+      method: 'DELETE',
+      path: '/api/v1/forecasting/events/1',
+      csrf: 'test-csrf-token',
+    })
+    expect(await screen.findByText(/No events yet/)).toBeVisible()
+  })
+
+  it('lets a lead read the calendar but gives no way to change it', async () => {
+    withLiveForecast()
+    backend.events = [payment]
+    asRole('lead')
+    await renderApp('/forecast')
+
+    expect(await screen.findByRole('rowheader', { name: 'Payment run' })).toBeVisible()
+    expect(screen.queryByRole('form', { name: 'Add an event' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Remove event/ })).toBeNull()
+  })
+
+  it('tells the reader which events adjusted the forecast they are looking at', async () => {
+    withLiveForecast({
+      params: {
+        slTargetPct: 80,
+        slThresholdS: 20,
+        occupancyCeilingPct: 85,
+        shrinkagePct: 30,
+        events: [
+          { id: 1, name: 'Payment run', upliftPct: 20, days: ['2026-05-25'] },
+          { id: 2, name: 'Outage', upliftPct: -50, days: ['2026-05-26'] },
+        ],
+      },
+    })
+    asRole('planner')
+    await renderApp('/forecast')
+
+    const notice = await screen.findByTestId('events-notice')
+    expect(notice).toHaveTextContent('Payment run (+20%)')
+    expect(notice).not.toHaveTextContent('Outage') // that one is for another day
+  })
+
+  it('says nothing about events when none adjusted the forecast', async () => {
+    withLiveForecast()
+    asRole('planner')
+    await renderApp('/forecast')
+    await screen.findByTestId('total-calls')
+    expect(screen.queryByTestId('events-notice')).toBeNull()
+  })
+})

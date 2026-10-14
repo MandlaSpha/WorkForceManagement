@@ -103,3 +103,45 @@ class ForecastInterval(models.Model):
 
     def __str__(self) -> str:
         return f"{self.version_id} {self.interval_start:%Y-%m-%d %H:%M}"
+
+
+class ForecastEventQuerySet(ScopedQuerySet):
+    def for_user(self, user: Any) -> Self:
+        return self if user.role in READ_ROLES else self.none()
+
+
+class ForecastEvent(models.Model):
+    """A planned reason for demand to differ from the pattern: a campaign, an outage, a payment
+    run (FC-04). It adjusts forecasts run AFTER it is entered by a percentage on a range of days,
+    for one queue or, with no queue, for all of them. Forecasts already run keep what they used."""
+
+    name = models.CharField(max_length=100)
+    queue = models.ForeignKey(
+        Queue, null=True, blank=True, on_delete=models.CASCADE, related_name="+"
+    )
+    date_from = models.DateField()
+    date_to = models.DateField()
+    # +20 is a fifth more calls; -100 is none at all (the queue is closed).
+    uplift_pct = models.DecimalField(max_digits=6, decimal_places=2)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(
+        db_default=models.Func(function="now", output_field=models.DateTimeField())
+    )
+
+    objects = ForecastEventQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(date_to__gte=models.F("date_from")),
+                name="forecasting_event_dates_ordered",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(uplift_pct__gte=-100) & models.Q(uplift_pct__lte=500),
+                name="forecasting_event_uplift_range",
+            ),
+        ]
+        ordering = ["date_from", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.name} {self.date_from}..{self.date_to} ({self.uplift_pct:+}%)"

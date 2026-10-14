@@ -2,6 +2,7 @@
 import { computed, ref, toRef } from 'vue'
 
 import {
+  changeLabel,
   dayPoints,
   forecastDays,
   historyAgeDays,
@@ -46,6 +47,15 @@ const evidence = computed(() => points.value[0]?.daysUsed ?? 0)
 const missingDays = toRef(() => props.version.daysWithoutHistory)
 
 // Which model made this forecast, and when Prophet was asked for but not used, why (ADR 0002).
+// Events that adjusted the chosen day, recorded on the version when it was run.
+const appliedEvents = computed(() => {
+  const all = (props.version.params.events ?? []) as Array<{
+    name: string
+    upliftPct: number
+    days: string[]
+  }>
+  return all.filter((e) => e.days.includes(day.value))
+})
 const usedProphet = computed(() => props.version.method.startsWith('prophet'))
 const fallbackMessage = computed(() => {
   const message = props.version.fallback?.message
@@ -87,6 +97,11 @@ const chartSummary = computed(
 
     <NoticeBox v-if="fallbackMessage" data-testid="fallback-notice">
       This forecast uses the baseline, not Prophet. {{ fallbackMessage }}
+    </NoticeBox>
+
+    <NoticeBox v-if="appliedEvents.length > 0" data-testid="events-notice">
+      Adjusted for:
+      {{ appliedEvents.map((e) => `${e.name} (${changeLabel(e.upliftPct)})`).join(', ') }}.
     </NoticeBox>
 
     <NoticeBox v-if="stale" tone="warn" data-testid="stale-notice">

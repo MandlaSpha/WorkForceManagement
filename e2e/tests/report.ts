@@ -91,3 +91,18 @@ export async function buildReport(options: {
   })
   return Buffer.from(await book.xlsx.writeBuffer())
 }
+
+/** Ten answered calls in the 10:00 half-hour. The importer refuses a second file with the same
+ * first call, last call and row count, so the first call's second is random: every run's file is
+ * its own (the half-hour, and so the hand-worked numbers, do not change). */
+export function tenCalls(): Call[] {
+  const seconds = String(1 + rand(59)).padStart(2, '0') // never :00, which earlier runs used
+  return Array.from({ length: 10 }, (_, i) => ({
+    type: 'INBOUND',
+    status: 'Agent',
+    clock: `10:0${i}:${i === 0 ? seconds : '00'}`,
+    wait: 0,
+    talk: 150,
+    wrap: 30,
+  }))
+}

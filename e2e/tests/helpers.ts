@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page } from '@playwright/test'
 
+import { addDays, buildReport, randomFirstId, tenCalls, XLSX } from './report'
+
 export const PASSWORD = process.env.WFM_DEMO_PASSWORD ?? ''
 
 /** Signs in and, unless told the attempt should fail, waits until the session really exists. A
@@ -35,4 +37,22 @@ export async function expectNoAccessibilityViolations(page: Page): Promise<void>
         .join(' | ')}`,
   )
   expect(summary, summary.join('\n')).toEqual([])
+}
+
+/** The Monday after today's week, in the same zone the app shows. */
+export function nextMonday(): string {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
+  const day = new Date(`${today}T00:00:00Z`)
+  const toMonday = (8 - day.getUTCDay()) % 7 || 7
+  return addDays(today, toMonday)
+}
+
+export async function importDay(page: Page, date: string, queue: string): Promise<void> {
+  const buffer = await buildReport({ date, firstId: randomFirstId(), calls: tenCalls(), queue })
+  await page.goto('/imports')
+  await page
+    .getByLabel('Call detail report (.xlsx)')
+    .setInputFiles({ name: `${date}.xlsx`, mimeType: XLSX, buffer })
+  await page.getByRole('button', { name: 'Import report' }).click()
+  await expect(page.getByTestId('reconciles')).toBeVisible()
 }

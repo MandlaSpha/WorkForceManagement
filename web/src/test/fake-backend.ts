@@ -1,7 +1,12 @@
 import { http, HttpResponse } from 'msw'
 
 import type { ImportReport, KpiSummary, QueueInfo } from '@/entities/call-data'
-import type { ForecastAccuracy, ForecastInterval, ForecastVersion } from '@/entities/forecast'
+import type {
+  ForecastAccuracy,
+  ForecastEvent,
+  ForecastInterval,
+  ForecastVersion,
+} from '@/entities/forecast'
 import type { Employee, Plan, Roster, Shift } from '@/entities/scheduling'
 
 import { emptySummary } from './call-data-fixtures'
@@ -87,6 +92,8 @@ export const backend = {
     ForecastVersion | { status: number; code: string; title: string; detail: string } | null,
   /** The JSON bodies the app sent to run a forecast, with the CSRF header it carried. */
   runs: [] as Array<{ body: Record<string, unknown>; csrf: string | null }>,
+  /** The events calendar. */
+  events: [] as ForecastEvent[],
   /** Scheduling: what the roster, plan, shift and employee endpoints answer. */
   shifts: [] as Shift[],
   employees: [] as Employee[],
@@ -113,6 +120,7 @@ export const backend = {
     this.accuracy = null
     this.runOutcome = null
     this.runs = []
+    this.events = []
     this.shifts = []
     this.employees = []
     this.roster = null
@@ -237,6 +245,40 @@ export const handlers = [
           : v,
     )
     return HttpResponse.json(backend.versions.find((v) => v.id === version.id))
+  }),
+
+  http.get('*/api/v1/forecasting/events', ({ request }) => {
+    const queue = new URL(request.url).searchParams.get('queue_id')
+    return HttpResponse.json(
+      backend.events.filter((e) => queue === null || e.queueId === null || e.queueId === +queue),
+    )
+  }),
+
+  http.post('*/api/v1/forecasting/events', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, unknown>
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (response.ok) {
+      const queueId = (sent.queueId as number | null) ?? null
+      backend.events = [
+        ...backend.events,
+        {
+          id: 100 + backend.events.length,
+          name: String(sent.name),
+          queueId,
+          queue: backend.queues.find((q) => q.id === queueId)?.name ?? null,
+          dateFrom: String(sent.dateFrom),
+          dateTo: String(sent.dateTo),
+          upliftPct: Number(sent.upliftPct),
+        },
+      ]
+    }
+    return response
+  }),
+
+  http.delete('*/api/v1/forecasting/events/:id', async (info) => {
+    const response = await schedulingWrite(info, 'DELETE')
+    if (response.ok) backend.events = backend.events.filter((e) => e.id !== +String(info.params.id))
+    return response
   }),
 
   http.get('*/api/v1/scheduling/shifts', () => HttpResponse.json(backend.shifts)),

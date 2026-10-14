@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
-from django.db.models import Count
+from django.db.models import Count, Q
 from wfm_engine.forecast import DEFAULT_DECAY, DEFAULT_WEEKS, DayAccuracy, backtest
 
 from wfm.accounts.models import User
@@ -14,7 +15,7 @@ from wfm.telephony.models import Queue
 
 from . import modeling
 from .history import load_history
-from .models import ForecastInterval, ForecastVersion
+from .models import ForecastEvent, ForecastInterval, ForecastVersion
 
 
 def list_versions(user: User, queue_id: int | None = None) -> list[ForecastVersion]:
@@ -64,3 +65,25 @@ def forecast_accuracy(user: User, queue_id: int, method: str = "baseline") -> Ac
     return Accuracy(
         queue, result.interval_pct, result.daily_pct, result.days, DEFAULT_WEEKS, DEFAULT_DECAY
     )
+
+
+def list_events(user: User, queue_id: int | None = None) -> list[ForecastEvent]:
+    """Events, soonest first. With a queue: that queue's own and those for all queues."""
+    events = ForecastEvent.objects.for_user(user).select_related("queue")
+    if queue_id is not None:
+        events = events.filter(Q(queue_id=queue_id) | Q(queue__isnull=True))
+    return list(events)
+
+
+def event_uplifts(
+    user: User, queue: Queue, date_from: date, date_to: date
+) -> list[modeling.Uplift]:
+    """The events that touch the days a forecast covers, as the uplifts it applies."""
+    events = (
+        ForecastEvent.objects.for_user(user)
+        .filter(Q(queue=queue) | Q(queue__isnull=True))
+        .filter(date_from__lte=date_to, date_to__gte=date_from)
+    )
+    return [
+        modeling.Uplift(e.pk, e.name, e.date_from, e.date_to, float(e.uplift_pct)) for e in events
+    ]

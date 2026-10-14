@@ -140,6 +140,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/forecasting/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The events calendar, soonest first */
+        get: operations["wfm_forecasting_api_list_events"];
+        put?: never;
+        /** Add an event */
+        post: operations["wfm_forecasting_api_create_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forecasting/events/{event_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change an event */
+        put: operations["wfm_forecasting_api_update_event"];
+        post?: never;
+        /** Remove an event */
+        delete: operations["wfm_forecasting_api_delete_event"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/forecasting/versions": {
         parameters: {
             query?: never;
@@ -595,6 +631,48 @@ export interface components {
             weeklyHoursIsDefault: boolean;
             /** Workmode */
             workMode: string;
+        };
+        /** EventIn */
+        EventIn: {
+            /**
+             * Datefrom
+             * Format: date
+             */
+            dateFrom: string;
+            /**
+             * Dateto
+             * Format: date
+             */
+            dateTo: string;
+            /** Name */
+            name: string;
+            /** Queueid */
+            queueId?: number | null;
+            /** Upliftpct */
+            upliftPct: number | string;
+        };
+        /** EventOut */
+        EventOut: {
+            /**
+             * Datefrom
+             * Format: date
+             */
+            dateFrom: string;
+            /**
+             * Dateto
+             * Format: date
+             */
+            dateTo: string;
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Queue */
+            queue: string | null;
+            /** Queueid */
+            queueId: number | null;
+            /** Upliftpct */
+            upliftPct: number;
         };
         /**
          * Feature
@@ -1265,6 +1343,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccuracyOut"];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_list_events: {
+        parameters: {
+            query?: {
+                queue_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"][];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_create_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_update_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_delete_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
                 };
             };
         };

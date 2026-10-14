@@ -9,12 +9,14 @@ from ninja import Router, Status
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
-from . import selectors, services
-from .models import ForecastInterval, ForecastVersion
+from . import event_services, selectors, services
+from .models import ForecastEvent, ForecastInterval, ForecastVersion
 from .policy import READ_ROLES, WRITE_ROLES
 from .schemas import (
     AccuracyOut,
     DayAccuracyOut,
+    EventIn,
+    EventOut,
     ForecastIntervalOut,
     ForecastVersionOut,
     RunForecastIn,
@@ -104,6 +106,60 @@ def accuracy(
             )
             for d in result.days
         ],
+    )
+
+
+@router.get(
+    "/events", auth=READ, response=list[EventOut], summary="The events calendar, soonest first"
+)
+def list_events(request: HttpRequest, queue_id: int | None = None) -> list[EventOut]:
+    return [_event_out(e) for e in selectors.list_events(current_user(request), queue_id)]
+
+
+@router.post("/events", auth=WRITE, response={201: EventOut}, summary="Add an event")
+def create_event(request: HttpRequest, body: EventIn) -> Status[EventOut]:
+    event = event_services.create_event(
+        user=current_user(request),
+        name=body.name,
+        queue_id=body.queueId,
+        date_from=body.dateFrom,
+        date_to=body.dateTo,
+        uplift_pct=body.upliftPct,
+    )
+    return Status(201, _event_out(event))
+
+
+@router.put("/events/{event_id}", auth=WRITE, response=EventOut, summary="Change an event")
+def update_event(request: HttpRequest, event_id: int, body: EventIn) -> EventOut:
+    event = event_services.update_event(
+        user=current_user(request),
+        event_id=event_id,
+        name=body.name,
+        queue_id=body.queueId,
+        date_from=body.dateFrom,
+        date_to=body.dateTo,
+        uplift_pct=body.upliftPct,
+    )
+    return _event_out(event)
+
+
+@router.delete(
+    "/events/{event_id}", auth=WRITE, response=dict[str, bool], summary="Remove an event"
+)
+def delete_event(request: HttpRequest, event_id: int) -> dict[str, bool]:
+    event_services.delete_event(user=current_user(request), event_id=event_id)
+    return {"ok": True}
+
+
+def _event_out(event: ForecastEvent) -> EventOut:
+    return EventOut(
+        id=event.pk,
+        name=event.name,
+        queueId=event.queue_id,
+        queue=event.queue.name if event.queue else None,
+        dateFrom=event.date_from,
+        dateTo=event.date_to,
+        upliftPct=float(event.uplift_pct),
     )
 
 

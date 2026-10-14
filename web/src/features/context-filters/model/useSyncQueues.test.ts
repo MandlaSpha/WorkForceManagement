@@ -36,5 +36,7 @@ describe('the top-bar queue picker', () => {
 
     await waitFor(() => expect(useContextStore(view.pinia).queues).toEqual([]))
     expect(useContextStore(view.pinia).queueNumber).toBeNull()
+    // Let the sign-in page it redirects to finish loading before the test ends.
+    await screen.findByLabelText('Username')
   })
 })

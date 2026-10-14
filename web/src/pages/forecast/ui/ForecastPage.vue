@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { useQueues } from '@/entities/call-data'
 import { useVersions } from '@/entities/forecast'
 import { useSessionStore } from '@/entities/session'
+import { EventsPanel } from '@/features/manage-events'
 import { RunForecastForm } from '@/features/run-forecast'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
@@ -83,6 +84,8 @@ function show(id: string): void {
         />
         <VersionDetail v-if="selected" :key="selected.id" :version="selected" />
       </template>
+
+      <EventsPanel :queue-id="queueId" :can-change="canChange" />
 
       <AccuracyPanel v-if="queueId !== null" :queue-id="queueId" />
     </template>

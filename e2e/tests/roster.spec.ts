@@ -1,7 +1,14 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import { expectNoAccessibilityViolations, PASSWORD, signIn, signOut } from './helpers'
-import { addDays, buildReport, rand, randomFirstId, XLSX, type Call } from './report'
+import {
+  expectNoAccessibilityViolations,
+  importDay,
+  nextMonday,
+  PASSWORD,
+  signIn,
+  signOut,
+} from './helpers'
+import { addDays, rand } from './report'
 
 /**
  * Shifts, people, roster and the planner heatmap, against the real stack (SCH-01..05, ENG-01,
@@ -21,39 +28,6 @@ import { addDays, buildReport, rand, randomFirstId, XLSX, type Call } from './re
 test.beforeAll(() => {
   if (!PASSWORD) throw new Error('Set WFM_DEMO_PASSWORD to the demo account password.')
 })
-
-/** Ten answered calls in the 10:00 half-hour. The importer refuses a second file with the same
- * first call, last call and row count, so the first call's second is random: every run's file is
- * its own (the half-hour, and so the hand-worked numbers, do not change). */
-function tenCalls(): Call[] {
-  const seconds = String(1 + rand(59)).padStart(2, '0') // never :00, which earlier runs used
-  return Array.from({ length: 10 }, (_, i) => ({
-    type: 'INBOUND',
-    status: 'Agent',
-    clock: `10:0${i}:${i === 0 ? seconds : '00'}`,
-    wait: 0,
-    talk: 150,
-    wrap: 30,
-  }))
-}
-
-/** The Monday after today's week, in the same zone the app shows. */
-function nextMonday(): string {
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
-  const day = new Date(`${today}T00:00:00Z`)
-  const toMonday = (8 - day.getUTCDay()) % 7 || 7
-  return addDays(today, toMonday)
-}
-
-async function importDay(page: Page, date: string, queue: string): Promise<void> {
-  const buffer = await buildReport({ date, firstId: randomFirstId(), calls: tenCalls(), queue })
-  await page.goto('/imports')
-  await page
-    .getByLabel('Call detail report (.xlsx)')
-    .setInputFiles({ name: `${date}.xlsx`, mimeType: XLSX, buffer })
-  await page.getByRole('button', { name: 'Import report' }).click()
-  await expect(page.getByTestId('reconciles')).toBeVisible()
-}
 
 async function addEmployee(page: Page, empNo: string, name: string, queue: string): Promise<void> {
   const form = page.getByRole('form', { name: 'Add an employee' })

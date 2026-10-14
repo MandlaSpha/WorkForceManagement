@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any, Literal
 from uuid import UUID
 
@@ -62,3 +63,21 @@ class AccuracyOut(Schema):
     weeks: int
     decay: float
     days: list[DayAccuracyOut]
+
+
+class EventIn(Schema):
+    name: str = Field(..., max_length=100)
+    queueId: int | None = None  # noqa: N815 - none means every queue
+    dateFrom: date  # noqa: N815
+    dateTo: date  # noqa: N815
+    upliftPct: Decimal  # noqa: N815 - +20 is a fifth more calls, -100 is none
+
+
+class EventOut(Schema):
+    id: int
+    name: str
+    queueId: int | None  # noqa: N815
+    queue: str | None
+    dateFrom: date  # noqa: N815
+    dateTo: date  # noqa: N815
+    upliftPct: float  # noqa: N815
