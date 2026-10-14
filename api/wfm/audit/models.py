@@ -38,6 +38,18 @@ class Action(models.TextChoices):
     FORECAST_RUN = "forecast.run", "Forecast run"
     FORECAST_PUBLISHED = "forecast.published", "Forecast published"
     FORECAST_REFUSED = "forecast.refused", "Forecast request refused"
+    SHIFT_CREATED = "shift.created", "Shift template created"
+    SHIFT_CHANGED = "shift.changed", "Shift template changed"
+    SHIFT_DELETED = "shift.deleted", "Shift template deleted"
+    EMPLOYEE_CREATED = "employee.created", "Employee created"
+    EMPLOYEE_CHANGED = "employee.changed", "Employee changed"
+    ROSTER_ASSIGNED = "roster.assigned", "Shift assigned"
+    ROSTER_CLEARED = "roster.cleared", "Shift cleared"
+    ROSTER_PUBLISHED = "roster.published", "Roster published"
+    ROSTER_REOPENED = "roster.reopened", "Roster returned to draft"
+    ROSTER_REFUSED = "roster.refused", "Roster change refused"
+    ROSTER_EXPORTED = "roster.exported", "Roster exported"
+    QUEUE_SETTINGS_CHANGED = "queue.settings_changed", "Queue staffing settings changed"
     CHAIN_BROKEN = "audit.chain_broken", "Audit chain integrity check failed"
 
 

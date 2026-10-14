@@ -87,9 +87,10 @@ SAMPLE_ID = "00000000-0000-4000-8000-000000000000"
 
 def request(client: Client, op: Operation):
     path = re.sub(r"\{[^}]+\}", SAMPLE_ID, op.path)
-    if op.method == "GET":
-        return client.get(path)
-    return client.post(path, content_type="application/json", data={})
+    send = getattr(client, op.method.lower())  # the real method: PUT and DELETE are covered too
+    if op.method in {"GET", "DELETE"}:
+        return send(path)
+    return send(path, content_type="application/json", data={})
 
 
 @pytest.mark.parametrize("op", PROTECTED, ids=lambda op: op.id)
@@ -152,3 +153,22 @@ def test_every_feature_operation_is_refused_when_its_feature_is_off(
 def test_core_operations_work_with_every_feature_off(op: Operation, settings: Any) -> None:
     settings.WFM_FEATURES = "none"
     assert request(allowed_client(op), op).status_code not in {401, 403}
+
+
+# Which sellable feature each module's routes must belong to. Without this a route could be marked
+# "core" (always on) and slip outside the licence switch while still passing the other tests.
+MODULE_FEATURE = {
+    "/api/v1/telephony": "telephony",
+    "/api/v1/forecasting": "forecasting",
+    "/api/v1/scheduling": "scheduling",
+}
+
+
+@pytest.mark.parametrize("op", PROTECTED, ids=lambda op: op.id)
+def test_each_module_belongs_to_its_own_feature(op: Operation) -> None:
+    for prefix, feature in MODULE_FEATURE.items():
+        if op.path.startswith(prefix + "/"):
+            assert op.feature == feature, (
+                f"{op.id} must be in the {feature} feature, not {op.feature}: "
+                "otherwise switching the feature off would not switch it off"
+            )

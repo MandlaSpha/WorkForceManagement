@@ -10,6 +10,7 @@ from wfm.core.api import router as system_router
 from wfm.core.errors import ApiError, problem_response
 from wfm.forecasting.api import router as forecasting_router
 from wfm.identity.api import router as identity_router
+from wfm.scheduling.api import router as scheduling_router
 from wfm.telephony.api import router as telephony_router
 
 api = NinjaAPI(
@@ -30,3 +31,4 @@ api.add_router("/auth", identity_router)
 api.add_router("/system", system_router)
 api.add_router("/telephony", telephony_router)
 api.add_router("/forecasting", forecasting_router)
+api.add_router("/scheduling", scheduling_router)

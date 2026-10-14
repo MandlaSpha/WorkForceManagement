@@ -7,12 +7,13 @@ from django.http import HttpRequest
 from ninja import File, Router, Status
 from ninja.files import UploadedFile
 
+from wfm.accounts.models import Role
 from wfm.core.errors import ApiError
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
 from . import selectors, services
-from .models import ImportBatch
+from .models import ImportBatch, Queue
 from .policy import IMPORT_ROLES, VIEW_ROLES
 from .schemas import (
     Coverage,
@@ -22,6 +23,7 @@ from .schemas import (
     MonthsOut,
     QueueKpisOut,
     QueueOut,
+    QueueSettingsIn,
 )
 
 router = Router(tags=["telephony"])
@@ -68,19 +70,25 @@ def list_imports(request: HttpRequest) -> list[ImportOut]:
 )
 def list_queues(request: HttpRequest) -> list[QueueOut]:
     user = current_user(request)
-    return [
-        QueueOut(
-            id=q.pk,
-            name=q.name,
-            confirmed=q.confirmed,
-            slTargetPct=float(q.sl_target_pct),
-            slThresholdS=q.sl_threshold_s,
-            occupancyCeilingPct=float(q.occupancy_ceiling_pct),
-            shrinkagePct=float(q.shrinkage_pct),
-            settingsConfirmed=q.settings_confirmed,
-        )
-        for q in selectors.visible_queues(user)
-    ]
+    return [_queue_out(q) for q in selectors.visible_queues(user)]
+
+
+@router.put(
+    "/queues/{queue_id}/settings",
+    auth=RoleSessionAuth(Role.ADMIN, feature=Feature.TELEPHONY),
+    response=QueueOut,
+    summary="Set and confirm a queue's staffing assumptions",
+)
+def set_queue_settings(request: HttpRequest, queue_id: int, body: QueueSettingsIn) -> QueueOut:
+    queue = services.update_queue_settings(
+        user=current_user(request),
+        queue_id=queue_id,
+        sl_target_pct=body.slTargetPct,
+        sl_threshold_s=body.slThresholdS,
+        occupancy_ceiling_pct=body.occupancyCeilingPct,
+        shrinkage_pct=body.shrinkagePct,
+    )
+    return _queue_out(queue)
 
 
 @router.get(
@@ -164,4 +172,17 @@ def _import_out(batch: ImportBatch) -> ImportOut:
         sheetsIgnored=batch.sheets_ignored,
         reconciles=bool(batch.reconciliation.get("matches")),
         reconciliation=batch.reconciliation,
+    )
+
+
+def _queue_out(q: Queue) -> QueueOut:
+    return QueueOut(
+        id=q.pk,
+        name=q.name,
+        confirmed=q.confirmed,
+        slTargetPct=float(q.sl_target_pct),
+        slThresholdS=q.sl_threshold_s,
+        occupancyCeilingPct=float(q.occupancy_ceiling_pct),
+        shrinkagePct=float(q.shrinkage_pct),
+        settingsConfirmed=q.settings_confirmed,
     )

@@ -184,4 +184,5 @@ class TestNoCallLevelSurface:
             "/api/v1/telephony/kpis",
             "/api/v1/telephony/months",
             "/api/v1/telephony/queues",
+            "/api/v1/telephony/queues/{queue_id}/settings",
         ]

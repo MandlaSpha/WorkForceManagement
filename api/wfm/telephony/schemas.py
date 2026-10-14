@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Literal
 from uuid import UUID
 
@@ -18,6 +19,13 @@ class QueueOut(Schema):
     occupancyCeilingPct: float  # noqa: N815
     shrinkagePct: float  # noqa: N815
     settingsConfirmed: bool  # noqa: N815
+
+
+class QueueSettingsIn(Schema):
+    slTargetPct: Decimal  # noqa: N815
+    slThresholdS: int  # noqa: N815
+    occupancyCeilingPct: Decimal  # noqa: N815
+    shrinkagePct: Decimal  # noqa: N815
 
 
 class ImportOut(Schema):

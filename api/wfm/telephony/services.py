@@ -14,6 +14,7 @@ import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
@@ -24,7 +25,7 @@ from wfm_engine.kpi import INTERVAL_MINUTES, interval_start
 from wfm.accounts.models import User
 from wfm.audit import services as audit
 from wfm.audit.models import Action, Outcome
-from wfm.core.errors import ApiError
+from wfm.core.errors import ApiError, not_found
 
 from . import intervals, reconciliation
 from .models import CallRecord, ImportBatch, Queue
@@ -262,3 +263,66 @@ def _insert_calls(
                 for c in calls[at : at + INSERT_CHUNK]
             ]
         )
+
+
+def update_queue_settings(
+    *,
+    user: User,
+    queue_id: int,
+    sl_target_pct: Decimal,
+    sl_threshold_s: int,
+    occupancy_ceiling_pct: Decimal,
+    shrinkage_pct: Decimal,
+) -> Queue:
+    """Set a queue's staffing assumptions and mark them confirmed (ENG-01, ENG-02, ENG-05).
+
+    Until someone does this the values are unconfirmed defaults and every screen that rests on them
+    says so (DAT-10). Forecasts already run keep the values they were made with."""
+    if not Decimal(0) < sl_target_pct <= Decimal(100):
+        raise _bad(
+            "queue.sl_target_invalid", "The service-level target is above 0 and at most 100%."
+        )
+    if not 1 <= sl_threshold_s <= 600:
+        raise _bad("queue.sl_threshold_invalid", "The service-level threshold is 1 to 600 seconds.")
+    if not Decimal(0) < occupancy_ceiling_pct <= Decimal(100):
+        raise _bad("queue.occupancy_invalid", "The occupancy ceiling is above 0 and at most 100%.")
+    if not Decimal(0) <= shrinkage_pct < Decimal(100):
+        raise _bad("queue.shrinkage_invalid", "Shrinkage is 0% or more and under 100%.")
+
+    with transaction.atomic():
+        queue: Queue | None = (
+            Queue.objects.select_for_update().for_user(user).filter(pk=queue_id).first()
+        )
+        if queue is None:
+            raise not_found("No such queue.")
+        wanted = {
+            "sl_target_pct": sl_target_pct,
+            "sl_threshold_s": sl_threshold_s,
+            "occupancy_ceiling_pct": occupancy_ceiling_pct,
+            "shrinkage_pct": shrinkage_pct,
+        }
+        changes = [
+            audit.FieldChange("queue", str(queue.pk), name, str(getattr(queue, name)), str(value))
+            for name, value in wanted.items()
+            if Decimal(str(getattr(queue, name))) != Decimal(str(value))
+        ]
+        if not queue.settings_confirmed:
+            changes.append(
+                audit.FieldChange("queue", str(queue.pk), "settings_confirmed", "False", "True")
+            )
+        for name, value in wanted.items():
+            setattr(queue, name, value)
+        queue.settings_confirmed = True
+        queue.save()
+        audit.record(  # last write of the transaction
+            actor=user,
+            action=Action.QUEUE_SETTINGS_CHANGED,
+            entity_type="queue",
+            entity_id=str(queue.pk),
+            changes=changes,
+        )
+    return queue
+
+
+def _bad(code: str, detail: str) -> ApiError:
+    return ApiError(422, code, "Invalid request", detail)
