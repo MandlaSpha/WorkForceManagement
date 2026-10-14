@@ -8,9 +8,14 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './tests',
   outputDir: './test-results',
-  fullyParallel: false, // the demo accounts share one database and one login lockout counter
-  workers: 1,
-  retries: process.env.CI ? 1 : 0,
+  // Spec files run side by side; the tests inside one file stay in order. Each spec works on its
+  // own queue and on dates no other spec uses, so they do not meet. Set E2E_WORKERS=1 to run
+  // them one at a time when chasing a failure.
+  fullyParallel: false,
+  workers: Number(process.env.E2E_WORKERS ?? 4),
+  // Pages are slower when four specs share the stack, so every wait is allowed 15 seconds.
+  expect: { timeout: 15_000 },
+  retries: 1, // a test that needed the retry is listed as "flaky", so it is not hidden
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
   use: {
     baseURL: process.env.WFM_BASE_URL ?? 'http://localhost:5173',

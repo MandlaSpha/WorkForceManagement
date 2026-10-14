@@ -53,10 +53,11 @@ verify-web:
     {{pnpm}} typecheck
     {{pnpm}} test
 
-# API tests on a real PostgreSQL in Testcontainers (needs Docker Desktop running).
+# API tests on a real PostgreSQL in Testcontainers (needs Docker Desktop running). Parallel: one
+# database per worker on a single container.
 [working-directory: 'api']
 test-int:
-    uv run pytest -q
+    uv run pytest -q -n auto
 
 # Regenerate the web app's typed API client from the Django API's OpenAPI schema.
 api-types:
@@ -84,4 +85,7 @@ dev:
     dotnet run --project infra/aspire/WfmAppHost --launch-profile http
 
 # Everything CI runs (grows as security and CI-only checks are added).
+# The two halves are independent (lint/types/unit tests; API tests on their own Postgres), so they
+# run side by side. About 2 minutes instead of 5.
+[parallel]
 verify-full: verify test-int

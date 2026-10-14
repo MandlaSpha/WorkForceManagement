@@ -5,15 +5,17 @@ from uuid import UUID
 
 from django.http import HttpRequest
 from ninja import Router, Status
+from wfm_engine.forecast import Backtest
 
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
-from . import event_services, scenario, selectors, services
+from . import event_services, modeling, scenario, selectors, services
 from .models import ForecastEvent, ForecastInterval, ForecastVersion
 from .policy import READ_ROLES, WRITE_ROLES
 from .schemas import (
     AccuracyOut,
+    BacktestOut,
     DayAccuracyOut,
     EventIn,
     EventOut,
@@ -24,6 +26,9 @@ from .schemas import (
     ScenarioDayOut,
     ScenarioIn,
     ScenarioOut,
+    ScoreOut,
+    TuningIn,
+    TuningOut,
 )
 from .staffing import Assumptions
 
@@ -102,6 +107,7 @@ def accuracy(
         overallDailyAccuracyPct=result.overall_daily_pct,
         weeks=result.weeks,
         decay=result.decay,
+        biasPct=result.bias_pct,
         days=[
             DayAccuracyOut(
                 date=d.day,
@@ -111,6 +117,79 @@ def accuracy(
             )
             for d in result.days
         ],
+    )
+
+
+@router.get("/tuning", auth=READ, response=TuningOut, summary="How a queue's forecast is tuned")
+def get_tuning(request: HttpRequest, queue_id: int) -> TuningOut:
+    user = current_user(request)
+    queue = selectors.queue_for(user, queue_id)
+    tuning, saved = selectors.tuning_of(user, queue)
+    return _tuning_out(queue.pk, queue.name, tuning, saved)
+
+
+@router.put(
+    "/tuning", auth=WRITE, response=TuningOut, summary="Save how a queue's forecast is tuned"
+)
+def put_tuning(request: HttpRequest, body: TuningIn) -> TuningOut:
+    row = services.set_tuning(
+        user=current_user(request),
+        queue_id=body.queueId,
+        tuning=modeling.Tuning(body.weeks, body.decay, body.volumeMultiplier, body.ahtMultiplier),
+    )
+    tuning, _ = selectors.tuning_of(current_user(request), row.queue)
+    return _tuning_out(row.queue_id, row.queue.name, tuning, True)
+
+
+@router.get(
+    "/tuning/backtest",
+    auth=READ,
+    response=BacktestOut,
+    summary="Score a tuning against what really happened, next to the saved one (nothing is saved)",
+)
+def backtest_tuning(
+    request: HttpRequest,
+    queue_id: int,
+    weeks: int | None = None,
+    decay: float | None = None,
+    volume_multiplier: float | None = None,
+    aht_multiplier: float | None = None,
+) -> BacktestOut:
+    user = current_user(request)
+    saved, _ = selectors.tuning_of(user, selectors.queue_for(user, queue_id))
+    candidate = modeling.Tuning(
+        saved.weeks if weeks is None else weeks,
+        saved.decay if decay is None else decay,
+        saved.volume_multiplier if volume_multiplier is None else volume_multiplier,
+        saved.aht_multiplier if aht_multiplier is None else aht_multiplier,
+    )
+    trial = selectors.try_tuning(user, queue_id, candidate)
+    return BacktestOut(
+        queueId=trial.queue.pk,
+        candidate=_score_out(trial.candidate),
+        current=_score_out(trial.current),
+        suggestedVolumeMultiplier=trial.suggested_volume_multiplier,
+    )
+
+
+def _tuning_out(queue_id: int, queue: str, tuning: modeling.Tuning, saved: bool) -> TuningOut:
+    return TuningOut(
+        queueId=queue_id,
+        queue=queue,
+        weeks=tuning.weeks,
+        decay=tuning.decay,
+        volumeMultiplier=tuning.volume_multiplier,
+        ahtMultiplier=tuning.aht_multiplier,
+        saved=saved,
+    )
+
+
+def _score_out(result: Backtest) -> ScoreOut:
+    return ScoreOut(
+        dailyPct=result.daily_pct,
+        intervalPct=result.interval_pct,
+        biasPct=result.bias_pct,
+        days=len(result.days),
     )
 
 

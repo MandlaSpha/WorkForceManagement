@@ -50,6 +50,7 @@ test('an event adjusts the forecasts run after it, and removing it stops that', 
   await expect(page.getByTestId('events-notice')).toHaveCount(0)
 
   // The planner adds the event for this queue only.
+  await page.getByRole('tab', { name: 'Events' }).click()
   const add = page.getByRole('form', { name: 'Add an event' })
   await add.getByLabel('Name').fill(eventName)
   await add.getByLabel('First day').fill(target)
@@ -83,6 +84,7 @@ test('a lead reads the calendar but cannot change it, in the screen or in the AP
 }) => {
   await signIn(page, 'lead')
   await page.getByRole('link', { name: 'Forecast' }).click()
+  await page.getByRole('tab', { name: 'Events' }).click()
   await expect(page.getByRole('heading', { name: 'Events' })).toBeVisible()
   await expect(page.getByRole('form', { name: 'Add an event' })).toHaveCount(0)
 

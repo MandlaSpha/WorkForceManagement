@@ -7,12 +7,14 @@ that explain them, so the choice between Prophet and the baseline can be tested 
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Collection, Iterable
+from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import Any
 
 from wfm_engine.forecast import (
+    DEFAULT_DECAY,
+    DEFAULT_WEEKS,
     Backtest,
     SlotForecast,
     SlotHistory,
@@ -20,6 +22,8 @@ from wfm_engine.forecast import (
     baseline_day,
     spread_day_total,
 )
+
+from wfm.core.errors import ApiError
 
 from . import prophet_model
 
@@ -43,6 +47,64 @@ class Built:
     params: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class Tuning:
+    """How a queue's forecast is tuned (requirement RPT-07). The defaults are what the baseline
+    always did; a queue keeps its own only once someone has saved one."""
+
+    weeks: int = DEFAULT_WEEKS  # how many earlier same-weekday days the forecast looks back over
+    decay: float = DEFAULT_DECAY  # how much less each older day counts (1 = all alike)
+    volume_multiplier: float = 1.0  # corrects a forecast that runs high or low
+    aht_multiplier: float = 1.0  # corrects the handling time
+
+    def scaled(self, slots: list[SlotForecast]) -> list[SlotForecast]:
+        """The forecast with the multipliers applied; unchanged when both are 1."""
+        if self.volume_multiplier == 1.0 and self.aht_multiplier == 1.0:
+            return slots
+        return [
+            replace(
+                s,
+                volume=s.volume * self.volume_multiplier,
+                aht_s=None if s.aht_s is None else s.aht_s * self.aht_multiplier,
+            )
+            for s in slots
+        ]
+
+    def as_params(self) -> dict[str, float | int]:
+        return {
+            "weeks": self.weeks,
+            "decay": self.decay,
+            "volumeMultiplier": self.volume_multiplier,
+            "ahtMultiplier": self.aht_multiplier,
+        }
+
+
+DEFAULT_TUNING = Tuning()
+
+MIN_WEEKS, MAX_WEEKS = 1, 12
+MIN_DECAY, MAX_DECAY = 0.1, 1.0
+MIN_MULTIPLIER, MAX_MULTIPLIER = 0.5, 2.0
+
+
+def check_tuning(tuning: Tuning) -> None:
+    def refuse(code: str, detail: str) -> ApiError:
+        return ApiError(422, code, "Invalid tuning", detail)
+
+    if not MIN_WEEKS <= tuning.weeks <= MAX_WEEKS:
+        raise refuse("tuning.weeks_invalid", f"Look back over {MIN_WEEKS} to {MAX_WEEKS} weeks.")
+    if not MIN_DECAY <= tuning.decay <= MAX_DECAY:
+        raise refuse("tuning.decay_invalid", f"Recency weight is {MIN_DECAY} to {MAX_DECAY}.")
+    for name, value in (
+        ("volume", tuning.volume_multiplier),
+        ("aht", tuning.aht_multiplier),
+    ):
+        if not MIN_MULTIPLIER <= value <= MAX_MULTIPLIER:
+            raise refuse(
+                f"tuning.{name}_multiplier_invalid",
+                f"The {name} multiplier is {MIN_MULTIPLIER} to {MAX_MULTIPLIER}.",
+            )
+
+
 def daily_totals(history: Iterable[SlotHistory]) -> dict[date, float]:
     totals: dict[date, float] = defaultdict(float)
     for row in history:
@@ -50,15 +112,38 @@ def daily_totals(history: Iterable[SlotHistory]) -> dict[date, float]:
     return dict(totals)
 
 
+def baseline_forecaster(
+    history: list[SlotHistory], observed: Collection[date], tuning: Tuning
+) -> Callable[[date], list[SlotForecast] | None]:
+    """The tuned baseline as a function of the day, for forecasting and for scoring."""
+
+    def forecast(day: date) -> list[SlotForecast] | None:
+        slots = baseline_day(history, observed, day, weeks=tuning.weeks, decay=tuning.decay)
+        return None if slots is None else tuning.scaled(slots)
+
+    return forecast
+
+
 def baseline_days(
-    history: list[SlotHistory], observed: Collection[date], days: Iterable[date]
+    history: list[SlotHistory],
+    observed: Collection[date],
+    days: Iterable[date],
+    tuning: Tuning = DEFAULT_TUNING,
 ) -> dict[date, DayForecast]:
-    forecasts = ((day, baseline_day(history, observed, day)) for day in days)
+    forecast = baseline_forecaster(history, observed, tuning)
+    forecasts = ((day, forecast(day)) for day in days)
     return {day: DayForecast(slots) for day, slots in forecasts if slots is not None}
 
 
+def baseline_backtest(
+    history: list[SlotHistory], observed: Collection[date], tuning: Tuning = DEFAULT_TUNING
+) -> Backtest:
+    """The tuned baseline scored on every past day it could have forecast."""
+    return backtest_with(history, observed, baseline_forecaster(history, observed, tuning))
+
+
 def prophet_backtest(
-    history: list[SlotHistory], observed: Collection[date]
+    history: list[SlotHistory], observed: Collection[date], tuning: Tuning = DEFAULT_TUNING
 ) -> tuple[Backtest, Backtest]:
     """Prophet and the baseline, each forecasting the same past days from only the days before
     them. Returns (prophet, baseline). Days Prophet could not forecast are in neither."""
@@ -66,20 +151,36 @@ def prophet_backtest(
     said = prophet_model.rolling_forecasts(totals, observed)
 
     def prophet_day(day: date) -> list[SlotForecast] | None:
-        return spread_day_total(history, observed, day, said[day].expected) if day in said else None
+        if day not in said:
+            return None
+        slots = spread_day_total(
+            history, observed, day, said[day].expected, weeks=tuning.weeks, decay=tuning.decay
+        )
+        return None if slots is None else tuning.scaled(slots)
 
     scored = set(said)
     prophet = backtest_with(history, observed, prophet_day, only_days=scored)
     baseline = backtest_with(
-        history, observed, lambda d: baseline_day(history, observed, d), only_days=scored
+        history, observed, baseline_forecaster(history, observed, tuning), only_days=scored
     )
     return prophet, baseline
 
 
-def build(history: list[SlotHistory], observed: set[date], days: list[date], method: str) -> Built:
+def build(
+    history: list[SlotHistory],
+    observed: set[date],
+    days: list[date],
+    method: str,
+    tuning: Tuning = DEFAULT_TUNING,
+) -> Built:
     """Forecast `days` with the requested model, or with the baseline when Prophet cannot show
-    that it does better (recorded in `params["fallback"]`, never silent)."""
-    baseline = Built(BASELINE, baseline_days(history, observed, days))
+    that it does better (recorded in `params["fallback"]`, never silent). The queue's tuning
+    shapes both, and is recorded with the forecast so it can be explained later."""
+    baseline = Built(
+        BASELINE,
+        baseline_days(history, observed, days, tuning),
+        {"tuning": tuning.as_params()},
+    )
     if method != "prophet":
         return baseline
 
@@ -92,7 +193,7 @@ def build(history: list[SlotHistory], observed: set[date], days: list[date], met
             f"Prophet needs at least {prophet_model.MIN_TRAIN_DAYS} days of call data.",
         )
 
-    prophet_bt, baseline_bt = prophet_backtest(history, observed)
+    prophet_bt, baseline_bt = prophet_backtest(history, observed, tuning)
     evidence = {
         "prophetDailyPct": prophet_bt.daily_pct,
         "baselineDailyPct": baseline_bt.daily_pct,
@@ -114,10 +215,20 @@ def build(history: list[SlotHistory], observed: set[date], days: list[date], met
     totals_by_day, settings = fitted
     spread: dict[date, DayForecast] = {}
     for day, total in totals_by_day.items():
-        slots = spread_day_total(history, observed, day, total.expected)
+        slots = spread_day_total(
+            history, observed, day, total.expected, weeks=tuning.weeks, decay=tuning.decay
+        )
         if slots is not None:
-            spread[day] = DayForecast(slots, total.lower, total.upper)
-    return Built(prophet_model.MODEL, spread, {"model": settings, "backtest": evidence})
+            spread[day] = DayForecast(
+                tuning.scaled(slots),
+                total.lower * tuning.volume_multiplier,
+                total.upper * tuning.volume_multiplier,
+            )
+    return Built(
+        prophet_model.MODEL,
+        spread,
+        {"model": settings, "backtest": evidence, "tuning": tuning.as_params()},
+    )
 
 
 def _fell_back(

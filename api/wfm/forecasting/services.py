@@ -4,6 +4,7 @@ as the LAST write (hard rule: the audit insert holds the audit-chain lock until 
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -20,7 +21,7 @@ from wfm.telephony.models import Queue
 
 from . import modeling, selectors
 from .history import load_history
-from .models import ForecastInterval, ForecastStatus, ForecastVersion
+from .models import ForecastInterval, ForecastStatus, ForecastTuning, ForecastVersion
 from .staffing import Assumptions, requirement
 
 MAX_DAYS = 31
@@ -56,7 +57,8 @@ def run_forecast(
 
     history, observed = load_history(queue)
     days = [date_from + timedelta(days=n) for n in range((date_to - date_from).days + 1)]
-    built = modeling.build(history, observed, days, method)
+    tuning, _ = selectors.tuning_of(user, queue)
+    built = modeling.build(history, observed, days, method, tuning)
     modeling.apply_uplifts(built, selectors.event_uplifts(user, queue, date_from, date_to))
     forecastable = built.days
     if not forecastable:
@@ -129,7 +131,7 @@ def publish_forecast(*, user: User, version_id: Any) -> ForecastVersion:
         with transaction.atomic():
             found: ForecastVersion | None = (
                 ForecastVersion.objects.for_user(user)
-                .select_for_update()
+                .select_for_update(no_key=True)
                 .select_related("queue")
                 .filter(pk=version_id)
                 .first()
@@ -184,6 +186,55 @@ def publish_forecast(*, user: User, version_id: Any) -> ForecastVersion:
             "forecast.conflict",
             "Another forecast was published at the same moment.",
         ) from None
+
+
+def set_tuning(*, user: User, queue_id: int, tuning: modeling.Tuning) -> ForecastTuning:
+    """Save how a queue's forecast is tuned. Forecasts already run are not changed."""
+    modeling.check_tuning(tuning)
+    with transaction.atomic():
+        queue: Queue | None = (
+            Queue.objects.select_for_update(no_key=True).for_user(user).filter(pk=queue_id).first()
+        )
+        if queue is None:
+            raise not_found("No such queue.")
+        row = ForecastTuning.objects.select_for_update(no_key=True).filter(queue=queue).first()
+        before = modeling.DEFAULT_TUNING if row is None else _tuning_of_row(row)
+        changes = [
+            audit.FieldChange("forecast_tuning", str(queue.pk), name, str(old), str(new))
+            for name, old, new in (
+                ("weeks", before.weeks, tuning.weeks),
+                ("decay", before.decay, tuning.decay),
+                ("volume_multiplier", before.volume_multiplier, tuning.volume_multiplier),
+                ("aht_multiplier", before.aht_multiplier, tuning.aht_multiplier),
+            )
+            if old != new
+        ]
+        if row is None:
+            changes.append(
+                audit.FieldChange("forecast_tuning", str(queue.pk), "saved", "False", "True")
+            )
+            row = ForecastTuning(queue=queue)
+        row.weeks = tuning.weeks
+        row.decay = Decimal(str(tuning.decay))
+        row.volume_multiplier = Decimal(str(tuning.volume_multiplier))
+        row.aht_multiplier = Decimal(str(tuning.aht_multiplier))
+        row.updated_by = user
+        row.save()
+        if changes:
+            audit.record(  # last write of the transaction
+                actor=user,
+                action=Action.FORECAST_TUNING_CHANGED,
+                entity_type="forecast_tuning",
+                entity_id=str(queue.pk),
+                changes=changes,
+            )
+    return row
+
+
+def _tuning_of_row(row: ForecastTuning) -> modeling.Tuning:
+    return modeling.Tuning(
+        row.weeks, float(row.decay), float(row.volume_multiplier), float(row.aht_multiplier)
+    )
 
 
 # --- helpers ---------------------------------------------------------------------------------

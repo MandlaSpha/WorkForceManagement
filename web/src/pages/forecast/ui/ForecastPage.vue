@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import { useQueues } from '@/entities/call-data'
 import { useVersions } from '@/entities/forecast'
@@ -11,6 +12,7 @@ import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import TabBar from '@/shared/ui/TabBar.vue'
 
 import AccuracyPanel from './AccuracyPanel.vue'
 import VersionDetail from './VersionDetail.vue'
@@ -40,6 +42,25 @@ const selected = computed(
     list.value[0] ??
     null,
 )
+
+// The open tab lives in the address (?tab=events), so a link or a reload lands on the same tab.
+const TABS = [
+  { key: 'versions', label: 'Versions' },
+  { key: 'events', label: 'Events' },
+  { key: 'scenarios', label: 'What if' },
+  { key: 'accuracy', label: 'Accuracy' },
+]
+const route = useRoute()
+const router = useRouter()
+const tab = computed({
+  get: () => {
+    const asked = String(route.query.tab ?? '')
+    return TABS.some((t) => t.key === asked) ? asked : 'versions'
+  },
+  set: (value: string) => {
+    void router.replace({ query: { ...route.query, tab: value } })
+  },
+})
 
 function show(id: string): void {
   chosenVersion.value = id
@@ -76,20 +97,55 @@ function show(id: string): void {
       <NoticeBox v-else-if="list.length === 0">
         No forecast has been run for this queue yet.
       </NoticeBox>
-      <template v-else>
+      <VersionDetail v-else-if="selected" :key="selected.id" :version="selected" />
+
+      <TabBar v-model="tab" :tabs="TABS" label="Forecast sections" id-prefix="forecast" />
+
+      <div
+        v-if="tab === 'versions'"
+        id="forecast-panel-versions"
+        role="tabpanel"
+        aria-labelledby="forecast-tab-versions"
+      >
         <VersionsTable
+          v-if="list.length > 0"
           :versions="list"
           :selected-id="selected?.id ?? null"
           :can-publish="canChange"
           @select="show"
         />
-        <VersionDetail v-if="selected" :key="selected.id" :version="selected" />
+        <NoticeBox v-else-if="!versions.isPending.value && !versions.isError.value">
+          Versions appear here once a forecast has been run.
+        </NoticeBox>
+      </div>
+
+      <div
+        v-else-if="tab === 'events'"
+        id="forecast-panel-events"
+        role="tabpanel"
+        aria-labelledby="forecast-tab-events"
+      >
+        <EventsPanel :queue-id="queueId" :can-change="canChange" />
+      </div>
+
+      <div
+        v-else-if="tab === 'scenarios'"
+        id="forecast-panel-scenarios"
+        role="tabpanel"
+        aria-labelledby="forecast-tab-scenarios"
+      >
         <ScenarioPanel v-if="selected" :key="`scenario-${selected.id}`" :version="selected" />
-      </template>
+        <NoticeBox v-else>Run a forecast first: a what-if asks about one forecast.</NoticeBox>
+      </div>
 
-      <EventsPanel :queue-id="queueId" :can-change="canChange" />
-
-      <AccuracyPanel v-if="queueId !== null" :queue-id="queueId" />
+      <div
+        v-else
+        id="forecast-panel-accuracy"
+        role="tabpanel"
+        aria-labelledby="forecast-tab-accuracy"
+      >
+        <AccuracyPanel v-if="queueId !== null" :queue-id="queueId" />
+      </div>
     </template>
   </div>
 </template>

@@ -41,9 +41,10 @@ async function report(page?: Page): Promise<{ buffer: Buffer; month: string }> {
   const used = new Set<string>(
     response ? ((await response.json()) as { months: string[] }).months : [],
   )
-  let date = randomMonday()
+  // The 1990s: no other spec imports there, so none can add calls to this month while it runs.
+  let date = randomMonday(1990, 10)
   for (let attempt = 0; attempt < 200 && used.has(date.slice(0, 7)); attempt++) {
-    date = randomMonday()
+    date = randomMonday(1990, 10)
   }
   const buffer = await buildReport({
     date,

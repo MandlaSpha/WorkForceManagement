@@ -9,57 +9,50 @@ import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import TabBar from '@/shared/ui/TabBar.vue'
 
 const screen = NAV_ITEMS.find((item) => item.key === 'configure')
-const tab = ref<'shifts' | 'queues' | 'workforce'>('shifts')
+const tab = ref('shifts')
 const queues = useQueues()
 
 const TABS = [
   { key: 'shifts', label: 'Shifts' },
   { key: 'queues', label: 'Queues' },
   { key: 'workforce', label: 'Workforce' },
-] as const
+]
 </script>
 
 <template>
   <PageHeader eyebrow="Admin" :title="screen?.label ?? 'Configure'" :subtitle="screen?.subtitle" />
 
   <div class="space-y-6">
-    <div class="flex gap-1 border-b border-line" role="tablist" aria-label="Configuration">
-      <button
-        v-for="t in TABS"
-        :id="`tab-${t.key}`"
-        :key="t.key"
-        type="button"
-        role="tab"
-        class="-mb-px border-b-2 px-4 py-2 text-sm font-medium"
-        :class="
-          tab === t.key
-            ? 'border-brand text-brand-ink'
-            : 'border-transparent text-ink-muted hover:text-ink'
-        "
-        :aria-selected="tab === t.key"
-        :aria-controls="`panel-${t.key}`"
-        @click="tab = t.key"
-      >
-        {{ t.label }}
-      </button>
-    </div>
+    <TabBar v-model="tab" :tabs="TABS" label="Configuration" id-prefix="configure" />
 
-    <div v-if="tab === 'shifts'" id="panel-shifts" role="tabpanel" aria-labelledby="tab-shifts">
+    <div
+      v-if="tab === 'shifts'"
+      id="configure-panel-shifts"
+      role="tabpanel"
+      aria-labelledby="configure-tab-shifts"
+    >
       <ShiftLibrary />
     </div>
 
     <div
       v-else-if="tab === 'workforce'"
-      id="panel-workforce"
+      id="configure-panel-workforce"
       role="tabpanel"
-      aria-labelledby="tab-workforce"
+      aria-labelledby="configure-tab-workforce"
     >
       <LimitsForm />
     </div>
 
-    <div v-else id="panel-queues" role="tabpanel" aria-labelledby="tab-queues" class="space-y-4">
+    <div
+      v-else
+      id="configure-panel-queues"
+      role="tabpanel"
+      aria-labelledby="configure-tab-queues"
+      class="space-y-4"
+    >
       <p class="text-sm text-ink-muted">
         The staffing assumptions behind every requirement. Until an admin confirms them they are
         defaults, and every screen that rests on them says so.

@@ -58,10 +58,14 @@ def volumes(version_id: str) -> list[tuple[float, int | None]]:
 
 
 class TestWhenProphetWins:
-    def test_growing_demand_is_forecast_by_prophet_and_says_so(self) -> None:
+    """One Prophet run on a growing queue, looked at from every side. Each run is a full back-test
+    and a real fit (seconds), so the checks that share a scenario share the run."""
+
+    def test_growing_demand_is_forecast_by_prophet_with_its_evidence_range_and_audit(self) -> None:
         queue = add_days("QueueGrow", growing())
         response = run(login(), queue)
 
+        # It was used, and says why it earned the place.
         assert response.status_code == 201, response.content
         version = response.json()
         assert version["method"] == "prophet-v1"
@@ -76,63 +80,54 @@ class TestWhenProphetWins:
         assert model["yearlySeasonality"] is False  # under two years of history
         assert model["monthlySeasonality"] is False  # under three months
 
-    def test_the_day_total_follows_the_trend_the_baseline_lags_behind(self) -> None:
-        queue = add_days("QueueGrow", growing())
-        prophet = run(login(), queue).json()
+        # The day total follows the trend the baseline lags behind (day 84: 200 + 4 * 84 = 536).
         baseline = run(login(), queue, method="baseline").json()
-
-        truth = 200 + 4 * 84  # 536
-        prophet_total = day_total(prophet["id"], TARGET)
+        truth = 200 + 4 * 84
+        prophet_total = day_total(version["id"], TARGET)
         baseline_total = day_total(baseline["id"], TARGET)
         assert abs(prophet_total - truth) / truth < 0.02
         assert abs(prophet_total - truth) < abs(baseline_total - truth)
 
-    def test_each_half_hour_has_a_range_around_the_forecast(self) -> None:
-        queue = add_days("QueueGrow", growing())
-        version = run(login(), queue).json()
+        # Every busy half-hour has a range around the forecast, and it reaches the API.
         busy = ForecastInterval.objects.filter(version_id=version["id"], volume__gt=1)
         assert busy.exists()
         for row in busy:
             assert row.volume_lower is not None
             assert row.volume_upper is not None
             assert 0 <= row.volume_lower <= row.volume <= row.volume_upper
-
-    def test_the_range_reaches_the_screen_through_the_api(self) -> None:
-        queue = add_days("QueueGrow", growing())
-        version = run(login(), queue).json()
         rows = login().get(f"{VERSIONS}/{version['id']}/intervals").json()
         assert all(r["volumeLower"] is not None for r in rows)
 
-    def test_the_audit_trail_records_the_model_used(self) -> None:
-        queue = add_days("QueueGrow", growing())
-        run(login(), queue)
-        event = AuditEvent.objects.get(action=Action.FORECAST_RUN)
+        # The audit trail records the model used, and no fallback.
+        event = AuditEvent.objects.filter(action=Action.FORECAST_RUN).earliest("chain_seq")
         changes = {c.field: c.new_value for c in AuditChange.objects.filter(event=event)}
         assert changes["method"] == "prophet-v1"
         assert "fallback" not in changes
 
 
 class TestWhenProphetIsNotUsed:
-    def test_the_baseline_is_used_when_it_is_already_perfect(self) -> None:
-        queue = add_days("QueueSteady", repeating())
-        version = run(login(), queue).json()
-
-        assert version["method"] == "baseline-v1"
-        assert version["fallback"]["reason"] == "not_better"
-        assert version["fallback"]["requested"] == "prophet"
-        assert version["fallback"]["baselineDailyPct"] == pytest.approx(100.0)
-        assert version["fallback"]["prophetDailyPct"] <= 100.0
-
-    def test_a_fallback_forecast_is_exactly_the_baseline_forecast(self) -> None:
+    def test_the_baseline_is_used_when_it_is_already_perfect_and_the_trail_says_why(self) -> None:
         queue = add_days("QueueSteady", repeating())
         asked = run(login(), queue).json()
         plain = run(login(), queue, method="baseline").json()
 
+        assert asked["method"] == "baseline-v1"
+        assert asked["fallback"]["reason"] == "not_better"
+        assert asked["fallback"]["requested"] == "prophet"
+        assert asked["fallback"]["baselineDailyPct"] == pytest.approx(100.0)
+        assert asked["fallback"]["prophetDailyPct"] <= 100.0
+
+        # A fallback forecast is exactly the baseline forecast (which has no range).
         assert volumes(asked["id"]) == volumes(plain["id"])
         ranges = ForecastInterval.objects.filter(version_id=asked["id"]).values_list(
             "volume_lower", flat=True
         )
-        assert all(v is None for v in ranges)  # the baseline has no range, and says so
+        assert all(v is None for v in ranges)
+
+        event = AuditEvent.objects.filter(action=Action.FORECAST_RUN).earliest("chain_seq")
+        changes = {c.field: c.new_value for c in AuditChange.objects.filter(event=event)}
+        assert changes["method"] == "baseline-v1"
+        assert changes["fallback"] == "not_better"
 
     def test_too_little_history_never_reaches_prophet(self) -> None:
         queue = add_days("QueueNew", {START + timedelta(days=n): 100 for n in range(10)})
@@ -148,14 +143,6 @@ class TestWhenProphetIsNotUsed:
         assert version["method"] == "baseline-v1"
         assert version["fallback"]["reason"] == "too_little_to_compare"
         assert version["fallback"]["daysScored"] < 7
-
-    def test_the_audit_trail_records_why_it_fell_back(self) -> None:
-        queue = add_days("QueueSteady", repeating())
-        run(login(), queue)
-        event = AuditEvent.objects.get(action=Action.FORECAST_RUN)
-        changes = {c.field: c.new_value for c in AuditChange.objects.filter(event=event)}
-        assert changes["method"] == "baseline-v1"
-        assert changes["fallback"] == "not_better"
 
 
 class TestAskingForTheBaseline:
@@ -192,12 +179,20 @@ class TestAccuracyPerModel:
 
 
 class TestWhoMayAskForProphet:
+    """Who may run a forecast is decided before any model is chosen, so a queue with too little
+    history (a quick baseline run) is enough to tell who is let in."""
+
+    @staticmethod
+    def small_queue() -> Queue:
+        return add_days("QueueSmall", {START + timedelta(days=n): 50 for n in range(10)})
+
     @pytest.mark.parametrize("role", [Role.LEAD, Role.AGENT, Role.EXECUTIVE, Role.CUSTOMER_OPS])
     def test_other_roles_are_refused(self, role: Role) -> None:
-        queue = add_days("QueueGrow", growing())
-        assert run(login(role), queue).status_code == 403
+        assert (
+            run(login(role), self.small_queue(), day=START + timedelta(days=14)).status_code == 403
+        )
 
     @pytest.mark.parametrize("role", [Role.PLANNER, Role.ADMIN])
     def test_planners_and_admins_may(self, role: Role) -> None:
-        queue = add_days("QueueGrow", growing())
-        assert run(login(role), queue).status_code == 201
+        response = run(login(role), self.small_queue(), day=START + timedelta(days=14))
+        assert response.status_code == 201

@@ -150,3 +150,48 @@ class ForecastEvent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} {self.date_from}..{self.date_to} ({self.uplift_pct:+}%)"
+
+
+class ForecastTuningQuerySet(ScopedQuerySet):
+    def for_user(self, user: Any) -> Self:
+        return self if user.role in READ_ROLES else self.none()
+
+
+class ForecastTuning(models.Model):
+    """How a queue's forecast is tuned (RPT-07): how far back it looks, how much older days count,
+    and corrections for a forecast that runs high or low. A queue with no row uses the defaults the
+    baseline always had. Forecasts already run keep the tuning they were made with."""
+
+    queue = models.OneToOneField(Queue, on_delete=models.CASCADE, related_name="tuning")
+    weeks = models.PositiveSmallIntegerField(default=4)
+    decay = models.DecimalField(max_digits=3, decimal_places=2, default=0.70)
+    volume_multiplier = models.DecimalField(max_digits=4, decimal_places=2, default=1)
+    aht_multiplier = models.DecimalField(max_digits=4, decimal_places=2, default=1)
+    updated_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    objects = ForecastTuningQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(weeks__gte=1) & models.Q(weeks__lte=12),
+                name="forecasting_tuning_weeks",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(decay__gte=0.1) & models.Q(decay__lte=1),
+                name="forecasting_tuning_decay",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(volume_multiplier__gte=0.5) & models.Q(volume_multiplier__lte=2),
+                name="forecasting_tuning_volume",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(aht_multiplier__gte=0.5) & models.Q(aht_multiplier__lte=2),
+                name="forecasting_tuning_aht",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.queue_id}: {self.weeks} weeks, decay {self.decay}"

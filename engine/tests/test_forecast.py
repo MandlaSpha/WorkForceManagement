@@ -11,6 +11,7 @@ from wfm_engine.forecast import (
     backtest,
     backtest_with,
     baseline_day,
+    bias_pct,
     spread_day_total,
 )
 
@@ -286,3 +287,31 @@ class TestScoringAnyModel:
         )
         assert [d.day for d in result.days] == [MON_4, MON_18]
         assert result.daily_pct == pytest.approx(100.0)
+
+
+class TestBias:
+    """Over 40 actual calls the forecasts said 10, 30 and 20 against 10, 20 and 10:
+    forecast 60, actual 40 -> 50% too high."""
+
+    def test_keeps_the_sign_so_high_and_low_are_told_apart(self) -> None:
+        assert bias_pct([(10, 10), (30, 20), (20, 10)]) == pytest.approx(50.0)
+        assert bias_pct([(5, 10), (10, 20)]) == pytest.approx(-50.0)
+
+    def test_errors_in_opposite_directions_cancel_where_accuracy_would_not(self) -> None:
+        # +10 and -10 on a day of 20 each: no net bias, but accuracy would be 50%.
+        assert bias_pct([(30, 20), (10, 20)]) == pytest.approx(0.0)
+        assert accuracy_pct([(30, 20), (10, 20)]) == pytest.approx(50.0)
+
+    def test_nothing_actually_offered_gives_no_bias(self) -> None:
+        assert bias_pct([(5, 0)]) is None
+        assert bias_pct([]) is None
+
+    def test_a_backtest_reports_it(self) -> None:
+        history = (row(MON_4, 10), row(MON_11, 20), row(MON_18, 10))
+        observed = (MON_4, MON_11, MON_18)
+        always_ten = lambda _d: [  # noqa: E731
+            SlotForecast(s, 10.0 if s == SLOT else 0.0, 180.0, 1) for s in range(SLOTS_PER_DAY)
+        ]
+        result = backtest_with(history, observed, always_ten)
+        # forecast 30, actual 40 -> 25% too low
+        assert result.bias_pct == pytest.approx(-25.0)

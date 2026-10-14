@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { useAccuracy } from '@/entities/forecast'
+import { biasLabel, useAccuracy } from '@/entities/forecast'
 import { problemMessage } from '@/shared/api'
 import { formatDayLabel } from '@/shared/lib/datetime'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
@@ -40,6 +40,10 @@ const pct = (value: number | null) => (value === null ? '—' : `${value.toFixed
       <p class="text-sm text-ink" data-testid="accuracy-days">
         Over {{ accuracy.data.value.days.length }} past
         {{ accuracy.data.value.days.length === 1 ? 'day' : 'days' }}.
+      </p>
+      <p class="text-sm text-ink" data-testid="accuracy-bias">
+        Bias: {{ biasLabel(accuracy.data.value.biasPct) }}. Whether forecasts run high or low is
+        tuned on the Calibration screen.
       </p>
       <p class="text-xs text-ink-muted">
         Measured on real calls: each day is forecast from only the days before it, using the

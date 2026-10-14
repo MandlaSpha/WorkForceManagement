@@ -44,9 +44,10 @@ export const rand = (below: number) => Math.floor(Math.random() * below)
 /** A call ID block no real report uses, different on every run. */
 export const randomFirstId = () => 9_000_000_000 + rand(900_000_000)
 
-/** A Monday somewhere in 2003 to 2020: far from real data, and the weekday the forecast needs. */
-export function randomMonday(): string {
-  const day = new Date(Date.UTC(2003 + rand(18), rand(12), 1 + rand(27)))
+/** A Monday somewhere in 2003 to 2020 (or the years asked for): far from real data, and the
+ * weekday the forecast needs. */
+export function randomMonday(firstYear = 2003, years = 18): string {
+  const day = new Date(Date.UTC(firstYear + rand(years), rand(12), 1 + rand(27)))
   day.setUTCDate(day.getUTCDate() + ((1 - day.getUTCDay() + 7) % 7))
   return day.toISOString().slice(0, 10)
 }
@@ -92,17 +93,22 @@ export async function buildReport(options: {
   return Buffer.from(await book.xlsx.writeBuffer())
 }
 
-/** Ten answered calls in the 10:00 half-hour. The importer refuses a second file with the same
- * first call, last call and row count, and the specs reuse the same Mondays run after run, so
- * every call gets a random second: each file's first and last call are its own (the half-hour,
- * and so the hand-worked numbers, do not change). */
-export function tenCalls(): Call[] {
-  return Array.from({ length: 10 }, (_, i) => ({
+/** `count` answered calls in the 10:00 half-hour (at most 30, one a minute then one every other
+ * second). The importer refuses a second file with the same first call, last call and row count,
+ * and the specs reuse the same Mondays run after run, so every call gets a random second: each
+ * file's first and last call are its own. The half-hour, and so the hand-worked numbers, do not
+ * change. */
+export function callsAt10(count: number): Call[] {
+  return Array.from({ length: count }, (_, i) => ({
     type: 'INBOUND',
     status: 'Agent',
-    clock: `10:0${i}:${String(rand(60)).padStart(2, '0')}`,
+    clock: `10:${String(Math.floor(i / 2)).padStart(2, '0')}:${String(
+      (i % 2) * 30 + rand(30),
+    ).padStart(2, '0')}`,
     wait: 0,
     talk: 150,
     wrap: 30,
   }))
 }
+
+export const tenCalls = () => callsAt10(10)

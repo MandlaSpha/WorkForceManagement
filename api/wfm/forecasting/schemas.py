@@ -62,6 +62,7 @@ class AccuracyOut(Schema):
     overallDailyAccuracyPct: float | None  # noqa: N815 - per day total
     weeks: int
     decay: float
+    biasPct: float | None  # noqa: N815 - forecast total vs actual: + ran high
     days: list[DayAccuracyOut]
 
 
@@ -115,3 +116,35 @@ class ScenarioOut(Schema):
     base: ScenarioAssumptionsOut
     scenario: ScenarioAssumptionsOut
     days: list[ScenarioDayOut]
+
+
+class TuningIn(Schema):
+    queueId: int  # noqa: N815
+    weeks: int
+    decay: float
+    volumeMultiplier: float  # noqa: N815
+    ahtMultiplier: float  # noqa: N815
+
+
+class TuningOut(Schema):
+    queueId: int  # noqa: N815
+    queue: str
+    weeks: int
+    decay: float
+    volumeMultiplier: float  # noqa: N815
+    ahtMultiplier: float  # noqa: N815
+    saved: bool  # false while it is the defaults nobody has chosen
+
+
+class ScoreOut(Schema):
+    dailyPct: float | None  # noqa: N815 - how well each day's total was predicted
+    intervalPct: float | None  # noqa: N815 - how well each half-hour was predicted
+    biasPct: float | None  # noqa: N815 - forecast total vs actual: + ran high, - ran low
+    days: int  # past days scored
+
+
+class BacktestOut(Schema):
+    queueId: int  # noqa: N815
+    candidate: ScoreOut  # the tuning that was asked about
+    current: ScoreOut  # the saved tuning (or the defaults), on the same past days
+    suggestedVolumeMultiplier: float | None  # noqa: N815 - removes the candidate's bias

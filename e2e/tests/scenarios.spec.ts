@@ -39,6 +39,7 @@ test('a planner asks what-if questions and the forecast itself stays as it was',
   await expect(page.getByTestId('total-calls')).toHaveText('10.0')
   await expect(page.getByTestId('max-required')).toHaveText('5')
 
+  await page.getByRole('tab', { name: 'What if' }).click()
   const what = page.getByRole('form', { name: 'What if' })
   const day = page.getByTestId(`scenario-${target}`)
 
@@ -62,10 +63,12 @@ test('a planner asks what-if questions and the forecast itself stays as it was',
   // Asking changed nothing: the same single draft, with the same figures.
   await expect(page.getByTestId('total-calls')).toHaveText('10.0')
   await expect(page.getByTestId('max-required')).toHaveText('5')
+  await page.getByRole('tab', { name: 'Versions' }).click()
   await expect(page.getByRole('table', { name: 'Versions' }).getByRole('row')).toHaveCount(2)
 
   // A change beyond the field's own limit is stopped by the browser before anything is sent; the
   // server's own refusal of such a request is covered by the API tests.
+  await page.getByRole('tab', { name: 'What if' }).click()
   const calls = what.getByLabel('Change in calls (%)')
   await calls.fill('900')
   expect(await calls.evaluate((el: HTMLInputElement) => el.validity.rangeOverflow)).toBe(true)

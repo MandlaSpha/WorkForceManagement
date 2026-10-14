@@ -3,11 +3,13 @@ import { http, HttpResponse } from 'msw'
 import type { ImportReport, KpiSummary, QueueInfo } from '@/entities/call-data'
 import type { Capacity } from '@/entities/capacity'
 import type {
+  Backtest,
   ForecastAccuracy,
   ForecastEvent,
   ForecastInterval,
   ForecastVersion,
   ScenarioResult,
+  Tuning,
 } from '@/entities/forecast'
 import type { Employee, Overview, Plan, Roster, Shift } from '@/entities/scheduling'
 
@@ -96,6 +98,10 @@ export const backend = {
   runs: [] as Array<{ body: Record<string, unknown>; csrf: string | null }>,
   /** The planning overview the dashboard shows. */
   overview: null as Overview | null,
+  /** Calibration: the saved tuning, the back-test it answers, and the queries it was asked. */
+  tuning: null as Tuning | null,
+  backtest: null as Backtest | null,
+  backtestQueries: [] as string[],
   /** What the scenario endpoint answers. */
   scenario: null as ScenarioResult | null,
   /** Capacity: what the capacity endpoint answers, and the queries it was asked. */
@@ -132,6 +138,9 @@ export const backend = {
     this.events = []
     this.capacity = null
     this.scenario = null
+    this.tuning = null
+    this.backtest = null
+    this.backtestQueries = []
     this.overview = null
     this.capacityQueries = []
     this.shifts = []
@@ -258,6 +267,35 @@ export const handlers = [
           : v,
     )
     return HttpResponse.json(backend.versions.find((v) => v.id === version.id))
+  }),
+
+  http.get('*/api/v1/forecasting/tuning/backtest', ({ request }) => {
+    backend.backtestQueries.push(new URL(request.url).search)
+    return backend.backtest
+      ? HttpResponse.json(backend.backtest)
+      : problem(404, 'resource.not_found', 'Not found')
+  }),
+
+  http.get('*/api/v1/forecasting/tuning', () =>
+    backend.tuning
+      ? HttpResponse.json(backend.tuning)
+      : problem(404, 'resource.not_found', 'Not found'),
+  ),
+
+  http.put('*/api/v1/forecasting/tuning', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, number>
+    const response = await schedulingWrite(info, 'PUT')
+    if (response.ok && backend.tuning) {
+      backend.tuning = {
+        ...backend.tuning,
+        weeks: sent.weeks!,
+        decay: sent.decay!,
+        volumeMultiplier: sent.volumeMultiplier!,
+        ahtMultiplier: sent.ahtMultiplier!,
+        saved: true,
+      }
+    }
+    return response
   }),
 
   http.post('*/api/v1/forecasting/scenarios', async (info) => {

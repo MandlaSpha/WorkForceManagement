@@ -3,6 +3,17 @@
     "schemas": {
       "AccuracyOut": {
         "properties": {
+          "biasPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Biaspct"
+          },
           "days": {
             "items": {
               "$ref": "#/components/schemas/DayAccuracyOut"
@@ -56,6 +67,7 @@
           "overallDailyAccuracyPct",
           "weeks",
           "decay",
+          "biasPct",
           "days"
         ],
         "title": "AccuracyOut",
@@ -180,6 +192,39 @@
           "count"
         ],
         "title": "AttentionOut",
+        "type": "object"
+      },
+      "BacktestOut": {
+        "properties": {
+          "candidate": {
+            "$ref": "#/components/schemas/ScoreOut"
+          },
+          "current": {
+            "$ref": "#/components/schemas/ScoreOut"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "suggestedVolumeMultiplier": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestedvolumemultiplier"
+          }
+        },
+        "required": [
+          "queueId",
+          "candidate",
+          "current",
+          "suggestedVolumeMultiplier"
+        ],
+        "title": "BacktestOut",
         "type": "object"
       },
       "CapacityDayOut": {
@@ -2175,6 +2220,55 @@
         "title": "ScenarioOut",
         "type": "object"
       },
+      "ScoreOut": {
+        "properties": {
+          "biasPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Biaspct"
+          },
+          "dailyPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dailypct"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "intervalPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intervalpct"
+          }
+        },
+        "required": [
+          "dailyPct",
+          "intervalPct",
+          "biasPct",
+          "days"
+        ],
+        "title": "ScoreOut",
+        "type": "object"
+      },
       "ShiftIn": {
         "properties": {
           "code": {
@@ -2293,6 +2387,82 @@
           "level"
         ],
         "title": "SkillOut",
+        "type": "object"
+      },
+      "TuningIn": {
+        "properties": {
+          "ahtMultiplier": {
+            "title": "Ahtmultiplier",
+            "type": "number"
+          },
+          "decay": {
+            "title": "Decay",
+            "type": "number"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "volumeMultiplier": {
+            "title": "Volumemultiplier",
+            "type": "number"
+          },
+          "weeks": {
+            "title": "Weeks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queueId",
+          "weeks",
+          "decay",
+          "volumeMultiplier",
+          "ahtMultiplier"
+        ],
+        "title": "TuningIn",
+        "type": "object"
+      },
+      "TuningOut": {
+        "properties": {
+          "ahtMultiplier": {
+            "title": "Ahtmultiplier",
+            "type": "number"
+          },
+          "decay": {
+            "title": "Decay",
+            "type": "number"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "saved": {
+            "title": "Saved",
+            "type": "boolean"
+          },
+          "volumeMultiplier": {
+            "title": "Volumemultiplier",
+            "type": "number"
+          },
+          "weeks": {
+            "title": "Weeks",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queueId",
+          "queue",
+          "weeks",
+          "decay",
+          "volumeMultiplier",
+          "ahtMultiplier",
+          "saved"
+        ],
+        "title": "TuningOut",
         "type": "object"
       },
       "WeekIn": {
@@ -2931,6 +3101,179 @@
           }
         ],
         "summary": "What if: the agents needed if calls, handling time, shrinkage or the target change",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
+    "/api/v1/forecasting/tuning": {
+      "get": {
+        "operationId": "wfm_forecasting_api_get_tuning",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TuningOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "How a queue's forecast is tuned",
+        "tags": [
+          "forecasting"
+        ]
+      },
+      "put": {
+        "operationId": "wfm_forecasting_api_put_tuning",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TuningIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TuningOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Save how a queue's forecast is tuned",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
+    "/api/v1/forecasting/tuning/backtest": {
+      "get": {
+        "operationId": "wfm_forecasting_api_backtest_tuning",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "weeks",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Weeks"
+            }
+          },
+          {
+            "in": "query",
+            "name": "decay",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Decay"
+            }
+          },
+          {
+            "in": "query",
+            "name": "volume_multiplier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Volume Multiplier"
+            }
+          },
+          {
+            "in": "query",
+            "name": "aht_multiplier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Aht Multiplier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BacktestOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Score a tuning against what really happened, next to the saved one (nothing is saved)",
         "tags": [
           "forecasting"
         ]

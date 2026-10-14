@@ -227,6 +227,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/forecasting/tuning": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How a queue's forecast is tuned */
+        get: operations["wfm_forecasting_api_get_tuning"];
+        /** Save how a queue's forecast is tuned */
+        put: operations["wfm_forecasting_api_put_tuning"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forecasting/tuning/backtest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Score a tuning against what really happened, next to the saved one (nothing is saved) */
+        get: operations["wfm_forecasting_api_backtest_tuning"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/forecasting/versions": {
         parameters: {
             query?: never;
@@ -586,6 +621,8 @@ export interface components {
     schemas: {
         /** AccuracyOut */
         AccuracyOut: {
+            /** Biaspct */
+            biasPct: number | null;
             /** Days */
             days: components["schemas"]["DayAccuracyOut"][];
             /** Decay */
@@ -645,6 +682,15 @@ export interface components {
             severity: string;
             /** Text */
             text: string;
+        };
+        /** BacktestOut */
+        BacktestOut: {
+            candidate: components["schemas"]["ScoreOut"];
+            current: components["schemas"]["ScoreOut"];
+            /** Queueid */
+            queueId: number;
+            /** Suggestedvolumemultiplier */
+            suggestedVolumeMultiplier: number | null;
         };
         /** CapacityDayOut */
         CapacityDayOut: {
@@ -1370,6 +1416,17 @@ export interface components {
              */
             versionId: string;
         };
+        /** ScoreOut */
+        ScoreOut: {
+            /** Biaspct */
+            biasPct: number | null;
+            /** Dailypct */
+            dailyPct: number | null;
+            /** Days */
+            days: number;
+            /** Intervalpct */
+            intervalPct: number | null;
+        };
         /** ShiftIn */
         ShiftIn: {
             /** Code */
@@ -1424,6 +1481,36 @@ export interface components {
             queue: string;
             /** Queueid */
             queueId: number;
+        };
+        /** TuningIn */
+        TuningIn: {
+            /** Ahtmultiplier */
+            ahtMultiplier: number;
+            /** Decay */
+            decay: number;
+            /** Queueid */
+            queueId: number;
+            /** Volumemultiplier */
+            volumeMultiplier: number;
+            /** Weeks */
+            weeks: number;
+        };
+        /** TuningOut */
+        TuningOut: {
+            /** Ahtmultiplier */
+            ahtMultiplier: number;
+            /** Decay */
+            decay: number;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+            /** Saved */
+            saved: boolean;
+            /** Volumemultiplier */
+            volumeMultiplier: number;
+            /** Weeks */
+            weeks: number;
         };
         /** WeekIn */
         WeekIn: {
@@ -1807,6 +1894,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScenarioOut"];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_get_tuning: {
+        parameters: {
+            query: {
+                queue_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TuningOut"];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_put_tuning: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TuningIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TuningOut"];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_backtest_tuning: {
+        parameters: {
+            query: {
+                queue_id: number;
+                weeks?: number | null;
+                decay?: number | null;
+                volume_multiplier?: number | null;
+                aht_multiplier?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BacktestOut"];
                 };
             };
         };

@@ -17,8 +17,10 @@ Docker Desktop is installed per-user; if `docker` is not found in a shell, add i
 - `just dev`: start everything under .NET Aspire (dashboard http://localhost:15888; pgAdmin data browser http://localhost:5050, already connected to the dev database; the dashboard needs no login in dev because it only listens on localhost).
 - The API and worker run with `--noreload` under Aspire: after a backend change, restart that resource in the Aspire dashboard (or `just dev` again). The Vue dev server hot-reloads.
 - `just verify`: format check, lint, strict types, engine + web unit tests, layer rules. Run before saying a change is done.
-- `just test-int`: API tests on a real Postgres in Testcontainers (needs Docker running).
-- `just e2e`: Playwright against a running `just dev` stack (needs WFM_BASE_URL and WFM_DEMO_PASSWORD, see the justfile).
+- `just test-int`: API tests on a real Postgres in Testcontainers (needs Docker running). Runs in parallel (pytest-xdist, one database per worker, about 75 s).
+- `just e2e`: Playwright against a running `just dev` stack (needs WFM_BASE_URL and WFM_DEMO_PASSWORD, see the justfile). 4 workers by default (`E2E_WORKERS=1` to run one at a time); each spec uses its own queue and dates. About 1.5 minutes.
+- **Test workflow (speed matters):** while building, run only the tests for what you touched (`pytest path -n 4`, `vitest run path`, `playwright test file.spec.ts`). Before a commit run `just verify-full` and the e2e suite ONCE, at the same time (separate processes); do not run suites one after another and do not run e2e twice. A test Playwright reports as "flaky" is a finding to look at, not noise.
+- **Row locks:** lock rows with `select_for_update(no_key=True)`, never the plain form: a plain lock deadlocks with another transaction's foreign-key check at commit (a test scans for it).
 - `POST /api/v1/system/ping-worker` (admin): proves the worker is alive and that trace context survives the queue.
 - `just api-types`: regenerate the web app's typed API client after changing the API.
 - `just verify-full`: everything CI runs (grows as web/e2e are added).

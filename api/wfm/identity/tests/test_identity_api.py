@@ -180,7 +180,9 @@ class TestDirectorySignIn:
         sign_in(client, token, "nobody-hunter2", "x", provider="corp")
 
         reasons = list(
-            AuditEvent.objects.filter(action=Action.LOGIN_FAILED).values_list("reason", flat=True)
+            AuditEvent.objects.filter(action=Action.LOGIN_FAILED)
+            .order_by("chain_seq")
+            .values_list("reason", flat=True)
         )
         assert reasons == ["corp:bad_credentials", "corp:unknown_user"]
         assert "hunter2" not in " ".join(reasons)

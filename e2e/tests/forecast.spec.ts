@@ -84,17 +84,38 @@ test('a planner forecasts a day, sees the staffing worked out by hand, and publi
   ).toBeVisible()
   await expectNoAccessibilityViolations(page)
 
-  // Measured on the real calls just imported.
+  // Measured on the real calls just imported, on the Accuracy tab.
+  await page.getByRole('tab', { name: 'Accuracy' }).click()
   await expect(page.getByTestId('accuracy-daily')).toContainText('100.0%')
   await expect(page.getByTestId('accuracy-interval')).toContainText('100.0%')
   await expect(page.getByTestId('accuracy-days')).toContainText('Over 1 past day')
 
-  // Publish: the draft becomes the live forecast.
+  // Publish: the draft becomes the live forecast, from the Versions tab.
+  await page.getByRole('tab', { name: 'Versions' }).click()
   const versions = page.getByRole('table', { name: 'Versions' })
   await expect(versions.getByText('draft')).toBeVisible()
   await versions.getByRole('button', { name: /Publish e2e forecast/ }).click()
   await expect(versions.getByText('published')).toBeVisible()
   await expect(versions.getByRole('button', { name: /Publish/ })).toHaveCount(0)
+})
+
+test('the open tab is in the address, survives a reload and moves with the arrow keys', async ({
+  page,
+}) => {
+  await signIn(page, 'planner')
+  await page.getByRole('link', { name: 'Forecast' }).click()
+  await expect(page.getByRole('tab', { name: 'Versions', selected: true })).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Events' }).click()
+  await expect(page).toHaveURL(/tab=events/)
+  await page.reload()
+  await expect(page.getByRole('tab', { name: 'Events', selected: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Events' })).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Events' }).focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(page.getByRole('tab', { name: 'What if', selected: true })).toBeFocused()
+  await expect(page).toHaveURL(/tab=scenarios/)
 })
 
 test('a lead may read forecasts but cannot run or publish, in the screen or in the API', async ({

@@ -168,6 +168,15 @@ The dashboard opens with the planner's week at a glance, above the measured serv
 - **Roles:** admin, planner and lead (same as the planner); executives and customer operations see only the measured figures and the API refuses them.
 - **Not built yet:** the video's week-trend service-level line (needs measured service level per day), a recent-activity feed (it would show who did what; the audit trail is admin-only, so a role-level, name-free feed needs its own design), and the Copilot link (parked).
 
+### 4.3g Calibration: tuning and back-test (built)
+A queue's forecast is tuned with four settings (requirement RPT-07; reference UI: the Calibration screen in the video): how many weeks to look back (1-12), a recency weight (0.1-1: how much less each older same-weekday day counts), a contacts multiplier and a handling-time multiplier (0.5-2, corrections for a forecast that runs high or low). A queue with no saved tuning uses the defaults the baseline always had (4 weeks, 0.7, 1, 1) and the screen says nobody has saved one.
+
+- **Back-test before saving.** `GET /forecasting/tuning/backtest` scores any candidate tuning against what really happened (each past day forecast from only the days before it) next to the saved tuning, on the same days: day totals right, half-hours right, and **bias**. Nothing is saved by asking.
+- **Bias keeps its sign.** Forecast total against actual, so "ran 48% low" is different from "ran 48% high" and is fixed differently; accuracy alone cannot tell them apart. The suggested contacts multiplier is the one that would remove the candidate's bias (multiplier / (1 + bias)), clamped to 0.5-2; none when there is no data.
+- **Saved tuning is used everywhere the baseline is:** forecasts run afterwards (recorded on the version as `params.tuning`, so an old forecast keeps what it was made with), the accuracy figures, and the baseline Prophet must beat (a tuned baseline is a harder opponent, which is the point). Prophet's own forecast uses the lookback and recency weight for its daily shape and the multipliers as a correction.
+- **Roles:** admin and planner open the screen and save; leads can read the tuning through the API but the screen is not theirs; every save is audited with before and after, and saving the same again records nothing.
+- **Not in this version** (the video's screen has more): outlier cleansing, a growth-per-year trend, shrinkage by category, full-time/part-time days, per-site and per-contract layers that inherit from a parent. Each is a setting the forecast would have to honour, so each waits for the feature that uses it.
+
 ### 4.3b Roster and plan (Phase 2, built)
 **Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
 

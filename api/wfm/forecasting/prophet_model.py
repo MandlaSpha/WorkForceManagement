@@ -40,12 +40,13 @@ class DayTotal:
 
 
 def predict_totals(
-    totals: Mapping[date, float], targets: Collection[date]
+    totals: Mapping[date, float], targets: Collection[date], *, with_range: bool = True
 ) -> tuple[dict[date, DayTotal], dict[str, Any]] | None:
     """Fit on `totals` (calls per observed day) and forecast each of `targets`.
 
     Returns the forecasts and the settings used, or None when there are fewer than
-    `MIN_TRAIN_DAYS` observed days to learn from.
+    `MIN_TRAIN_DAYS` observed days to learn from. Without `with_range` the lower and upper bounds
+    are the expected value (no range was worked out), which is faster.
     """
     if len(totals) < MIN_TRAIN_DAYS or not targets:
         return None
@@ -71,7 +72,8 @@ def predict_totals(
         daily_seasonality=False,
         interval_width=INTERVAL_WIDTH,
         seasonality_mode=SEASONALITY_MODE,
-        uncertainty_samples=300,
+        # The 80% range is simulated; a back-test only scores the expected value, so it skips it.
+        uncertainty_samples=300 if with_range else 0,
     )
     model.add_country_holidays(country_name="ZA")
     if monthly:
@@ -81,8 +83,8 @@ def predict_totals(
     wanted = sorted(targets)
     result = model.predict(pd.DataFrame({"ds": pd.to_datetime(wanted)}))
     yhat = result["yhat"].tolist()
-    lower = result["yhat_lower"].tolist()
-    upper = result["yhat_upper"].tolist()
+    lower = result["yhat_lower"].tolist() if with_range else yhat
+    upper = result["yhat_upper"].tolist() if with_range else yhat
     forecasts = {
         day: DayTotal(day, max(0.0, mid), max(0.0, low), max(0.0, high))
         for day, mid, low, high in zip(wanted, yhat, lower, upper, strict=True)
@@ -106,7 +108,7 @@ def rolling_forecasts(
     said: dict[date, DayTotal] = {}
     for monday in sorted(weeks)[-MAX_ORIGINS:]:
         before = {d: v for d, v in totals.items() if d < monday}
-        fitted = predict_totals(before, weeks[monday])
+        fitted = predict_totals(before, weeks[monday], with_range=False)
         if fitted is not None:
             said.update(fitted[0])
     return said

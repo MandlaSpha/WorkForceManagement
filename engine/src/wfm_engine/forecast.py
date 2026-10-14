@@ -58,6 +58,7 @@ class Backtest:
     days: list[DayAccuracy]
     interval_pct: float | None  # how well each half-hour was predicted, over all days
     daily_pct: float | None  # how well each day's total was predicted, over all days
+    bias_pct: float | None = None  # over all days, forecast total vs actual: + ran high, - ran low
 
 
 def baseline_day(
@@ -151,6 +152,18 @@ def spread_day_total(
     return [SlotForecast(s.slot, s.volume * factor, s.aht_s, s.days_used) for s in profile]
 
 
+def bias_pct(pairs: Iterable[tuple[float, float]]) -> float | None:
+    """How far the forecasts ran from what happened, in total: +10 means 10% too many calls
+    forecast, -10 means 10% too few. Unlike accuracy it keeps the sign, because a forecast that is
+    always high and one that is always low are wrong in different ways and are fixed differently.
+    None when nothing was actually offered."""
+    forecast = actual = 0.0
+    for f, a in pairs:
+        forecast += f
+        actual += a
+    return None if actual == 0 else 100.0 * (forecast - actual) / actual
+
+
 def backtest(
     history: Collection[SlotHistory],
     observed_days: Collection[date],
@@ -206,4 +219,6 @@ def backtest_with(
         )
         pooled_intervals.extend(pairs)
         pooled_days.append(total)
-    return Backtest(days, accuracy_pct(pooled_intervals), accuracy_pct(pooled_days))
+    return Backtest(
+        days, accuracy_pct(pooled_intervals), accuracy_pct(pooled_days), bias_pct(pooled_days)
+    )

@@ -1,9 +1,11 @@
 import type { QueueInfo } from '@/entities/call-data'
 import type {
+  Backtest,
   ForecastAccuracy,
   ForecastInterval,
   ForecastVersion,
   ScenarioResult,
+  Tuning,
 } from '@/entities/forecast'
 
 export function queueInfo(overrides: Partial<QueueInfo> = {}): QueueInfo {
@@ -102,12 +104,39 @@ export function accuracyFor(overrides: Partial<ForecastAccuracy> = {}): Forecast
     queue: 'QueueA',
     overallAccuracyPct: 81.448,
     overallDailyAccuracyPct: 90.2,
+    biasPct: null,
     weeks: 4,
     decay: 0.7,
     days: [
       { date: '2026-05-11', accuracyPct: 83.333, dailyAccuracyPct: 90, daysUsed: 1 },
       { date: '2026-05-18', accuracyPct: 79.832, dailyAccuracyPct: 90.4, daysUsed: 2 },
     ],
+    ...overrides,
+  }
+}
+
+export function tuningOf(overrides: Partial<Tuning> = {}): Tuning {
+  return {
+    queueId: 1,
+    queue: 'QueueA',
+    weeks: 4,
+    decay: 0.7,
+    volumeMultiplier: 1,
+    ahtMultiplier: 1,
+    saved: false,
+    ...overrides,
+  }
+}
+
+/** The back-test of the API tests, worked by hand on a rising queue (10, 20 and 30 calls): the
+ * saved tuning (4 weeks) gets day totals 51.76% right and runs 48.24% low; looking back one week
+ * gets 60% right and runs 40% low. The multiplier that removes the bias is 1.67. */
+export function backtestOf(overrides: Partial<Backtest> = {}): Backtest {
+  return {
+    queueId: 1,
+    candidate: { dailyPct: 60, intervalPct: 55.5, biasPct: -40, days: 2 },
+    current: { dailyPct: 51.76, intervalPct: 48.1, biasPct: -48.24, days: 2 },
+    suggestedVolumeMultiplier: 1.67,
     ...overrides,
   }
 }

@@ -38,6 +38,7 @@ class Action(models.TextChoices):
     FORECAST_RUN = "forecast.run", "Forecast run"
     FORECAST_PUBLISHED = "forecast.published", "Forecast published"
     FORECAST_REFUSED = "forecast.refused", "Forecast request refused"
+    FORECAST_TUNING_CHANGED = "forecast_tuning.changed", "Forecast tuning changed"
     FORECAST_EVENT_CREATED = "forecast_event.created", "Forecast event created"
     FORECAST_EVENT_CHANGED = "forecast_event.changed", "Forecast event changed"
     FORECAST_EVENT_DELETED = "forecast_event.deleted", "Forecast event deleted"

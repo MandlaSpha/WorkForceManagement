@@ -219,9 +219,10 @@ export const NAV_ITEMS = [
     label: 'Calibration',
     group: 'Insight',
     icon: 'sliders-horizontal',
-    feature: 'insight',
-    phase: 5,
-    subtitle: 'Compare modelled with measured results and tune shrinkage and handle time.',
+    feature: 'forecasting',
+    phase: 2,
+    subtitle:
+      'Tune how forecasts look back, and back-test the result against what really happened.',
   },
   {
     key: 'reports',

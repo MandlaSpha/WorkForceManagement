@@ -135,7 +135,7 @@ describe('forecast accuracy', () => {
   it('shows the measured accuracy and what it is measured against', async () => {
     withLiveForecast()
     asRole('planner')
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=accuracy')
 
     expect(await screen.findByTestId('accuracy-daily')).toHaveTextContent('90.2%')
     expect(screen.getByTestId('accuracy-interval')).toHaveTextContent('81.4%')
@@ -151,7 +151,7 @@ describe('forecast accuracy', () => {
       days: [],
     })
     asRole('planner')
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=accuracy')
 
     expect(await screen.findByText(/Not enough call data yet/)).toBeVisible()
     expect(screen.queryByTestId('accuracy-daily')).toBeNull()
@@ -341,7 +341,7 @@ describe('the two accuracy scores', () => {
     withLiveForecast()
     backend.accuracy = accuracyFor({ overallAccuracyPct: 12.3, overallDailyAccuracyPct: 68.8 })
     asRole('planner')
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=accuracy')
 
     expect(await screen.findByTestId('accuracy-interval')).toHaveTextContent('12.3%')
     expect(screen.getByTestId('accuracy-daily')).toHaveTextContent('68.8%')
@@ -352,7 +352,7 @@ describe('the two accuracy scores', () => {
     withLiveForecast()
     backend.accuracy = accuracyFor({ overallDailyAccuracyPct: null })
     asRole('planner')
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=accuracy')
 
     expect(await screen.findByTestId('accuracy-daily')).toHaveTextContent('—')
   })
@@ -455,7 +455,7 @@ describe('the events calendar', () => {
       },
     ]
     asRole('planner')
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=events')
 
     const table = await screen.findByRole('table', { name: 'Events' })
     const run = within(within(table).getByRole('rowheader', { name: 'Payment run' }).closest('tr')!)
@@ -471,7 +471,7 @@ describe('the events calendar', () => {
     withLiveForecast()
     asRole('planner')
     const u = user()
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=events')
 
     const form = await screen.findByRole('form', { name: 'Add an event' })
     await u.type(within(form).getByLabelText('Name'), 'Campaign')
@@ -505,7 +505,7 @@ describe('the events calendar', () => {
     withLiveForecast()
     asRole('planner')
     const u = user()
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=events')
 
     const form = await screen.findByRole('form', { name: 'Add an event' })
     expect(within(form).getByLabelText('Applies to')).toHaveValue('')
@@ -525,7 +525,7 @@ describe('the events calendar', () => {
     }
     asRole('planner')
     const u = user()
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=events')
 
     const form = await screen.findByRole('form', { name: 'Add an event' })
     await u.type(within(form).getByLabelText('Name'), 'Too much')
@@ -538,7 +538,7 @@ describe('the events calendar', () => {
   it('cannot add an event without a name', async () => {
     withLiveForecast()
     asRole('planner')
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=events')
     const form = await screen.findByRole('form', { name: 'Add an event' })
     expect(within(form).getByRole('button', { name: 'Add event' })).toBeDisabled()
   })
@@ -548,7 +548,7 @@ describe('the events calendar', () => {
     backend.events = [payment]
     asRole('planner')
     const u = user()
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=events')
 
     await u.click(await screen.findByRole('button', { name: 'Remove event Payment run' }))
 
@@ -565,7 +565,7 @@ describe('the events calendar', () => {
     withLiveForecast()
     backend.events = [payment]
     asRole('lead')
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=events')
 
     expect(await screen.findByRole('rowheader', { name: 'Payment run' })).toBeVisible()
     expect(screen.queryByRole('form', { name: 'Add an event' })).toBeNull()
@@ -586,7 +586,7 @@ describe('the events calendar', () => {
       },
     })
     asRole('planner')
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=events')
 
     const notice = await screen.findByTestId('events-notice')
     expect(notice).toHaveTextContent('Payment run (+20%)')
@@ -596,7 +596,7 @@ describe('the events calendar', () => {
   it('says nothing about events when none adjusted the forecast', async () => {
     withLiveForecast()
     asRole('planner')
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=events')
     await screen.findByTestId('total-calls')
     expect(screen.queryByTestId('events-notice')).toBeNull()
   })
@@ -607,7 +607,7 @@ describe('what-if scenarios', () => {
     withLiveForecast()
     backend.scenario = scenarioResult()
     asRole(role)
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=scenarios')
     return screen.findByRole('form', { name: 'What if' })
   }
 
@@ -701,8 +701,107 @@ describe('what-if scenarios', () => {
     backend.queues = [queueInfo()]
     backend.versions = []
     asRole('planner')
-    await renderApp('/forecast')
+    await renderApp('/forecast?tab=scenarios')
     await screen.findByText(/No forecast has been run for this queue yet/)
     expect(screen.queryByRole('form', { name: 'What if' })).toBeNull()
+  })
+})
+
+describe('the forecast tabs', () => {
+  const draft = forecastVersion({
+    id: 'v-draft',
+    label: 'Draft plan',
+    status: 'draft',
+    publishedAt: null,
+  })
+
+  async function open(path = '/forecast', role = 'planner') {
+    withLiveForecast()
+    backend.versions = [draft, forecastVersion()]
+    backend.intervals['v-draft'] = dayIntervals()
+    backend.scenario = scenarioResult()
+    asRole(role)
+    return renderApp(path)
+  }
+
+  it('opens on Versions, with the forecast chart above the tabs', async () => {
+    await open()
+    expect(await screen.findByRole('tab', { name: 'Versions', selected: true })).toBeVisible()
+    expect(await screen.findByRole('table', { name: 'Versions' })).toBeVisible()
+    expect(await screen.findByTestId('total-calls')).toBeVisible()
+    expect(screen.queryByRole('form', { name: 'What if' })).toBeNull()
+  })
+
+  it('keeps the chart above whichever tab is open', async () => {
+    await open('/forecast?tab=accuracy')
+    expect(await screen.findByTestId('total-calls')).toBeVisible()
+  })
+
+  it('does not load what an unopened tab would show', async () => {
+    await open()
+    await screen.findByRole('table', { name: 'Versions' })
+    const asked = backend.requests.map((r) => r.path)
+    expect(asked).not.toContain('/api/v1/forecasting/accuracy')
+    expect(asked).not.toContain('/api/v1/forecasting/events')
+  })
+
+  it('opens a tab when it is chosen, and puts it in the address', async () => {
+    const user = userEvent.setup()
+    const view = await open()
+
+    await user.click(await screen.findByRole('tab', { name: 'Events' }))
+
+    expect(await screen.findByRole('heading', { name: 'Events' })).toBeVisible()
+    expect(screen.queryByRole('table', { name: 'Versions' })).toBeNull()
+    expect(view.router.currentRoute.value.query.tab).toBe('events')
+  })
+
+  it('lands on the tab the address names, and on Versions for one it does not know', async () => {
+    await open('/forecast?tab=scenarios')
+    expect(await screen.findByRole('form', { name: 'What if' })).toBeVisible()
+    expect(screen.getByRole('tab', { name: 'What if', selected: true })).toBeVisible()
+  })
+
+  it('falls back to Versions for a tab that does not exist', async () => {
+    await open('/forecast?tab=nonsense')
+    expect(await screen.findByRole('tab', { name: 'Versions', selected: true })).toBeVisible()
+  })
+
+  it('moves between tabs with the arrow keys', async () => {
+    const user = userEvent.setup()
+    const view = await open()
+    ;(await screen.findByRole('tab', { name: 'Versions' })).focus()
+
+    await user.keyboard('{ArrowRight}')
+
+    expect(view.router.currentRoute.value.query.tab).toBe('events')
+    expect(screen.getByRole('tab', { name: 'Events' })).toHaveFocus()
+  })
+
+  it('asks the what-if about the version chosen in Versions, not the live one', async () => {
+    const user = userEvent.setup()
+    await open()
+
+    await user.click(await screen.findByRole('button', { name: 'View Draft plan' }))
+    await user.click(screen.getByRole('tab', { name: 'What if' }))
+    await user.click(await screen.findByRole('button', { name: 'Show what changes' }))
+
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]?.body).toMatchObject({ versionId: 'v-draft' })
+  })
+
+  it('says to run a forecast first when there is nothing for a what-if to ask about', async () => {
+    backend.queues = [queueInfo()]
+    backend.versions = []
+    asRole('planner')
+    await renderApp('/forecast?tab=scenarios')
+    expect(await screen.findByText(/Run a forecast first/)).toBeVisible()
+  })
+
+  it('shows every tab to a lead too, who can read all of them', async () => {
+    await open('/forecast', 'lead')
+    for (const name of ['Versions', 'Events', 'What if', 'Accuracy']) {
+      expect(await screen.findByRole('tab', { name })).toBeVisible()
+    }
   })
 })

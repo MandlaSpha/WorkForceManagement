@@ -104,7 +104,7 @@ def update_event(
     queue = _queue(user, queue_id)
     with transaction.atomic():
         found: ForecastEvent | None = (
-            ForecastEvent.objects.select_for_update(of=("self",))
+            ForecastEvent.objects.select_for_update(of=("self",), no_key=True)
             .for_user(user)
             .select_related("queue")
             .filter(pk=event_id)
@@ -139,7 +139,7 @@ def delete_event(*, user: User, event_id: int) -> None:
     """Forecasts already run keep the events they used (recorded on the version)."""
     with transaction.atomic():
         found: ForecastEvent | None = (
-            ForecastEvent.objects.select_for_update(of=("self",))
+            ForecastEvent.objects.select_for_update(of=("self",), no_key=True)
             .for_user(user)
             .select_related("queue")
             .filter(pk=event_id)

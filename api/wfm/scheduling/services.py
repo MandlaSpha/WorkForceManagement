@@ -102,7 +102,10 @@ def update_shift(
     code = _check_shift(code, start_time, end_time, paid_minutes)
     with transaction.atomic():
         shift: ShiftTemplate | None = (
-            ShiftTemplate.objects.select_for_update().for_user(user).filter(pk=shift_id).first()
+            ShiftTemplate.objects.select_for_update(no_key=True)
+            .for_user(user)
+            .filter(pk=shift_id)
+            .first()
         )
         if shift is None:
             raise not_found("No such shift.")
@@ -149,7 +152,10 @@ def update_shift(
 def delete_shift(*, user: User, shift_id: int) -> None:
     with transaction.atomic():
         shift: ShiftTemplate | None = (
-            ShiftTemplate.objects.select_for_update().for_user(user).filter(pk=shift_id).first()
+            ShiftTemplate.objects.select_for_update(no_key=True)
+            .for_user(user)
+            .filter(pk=shift_id)
+            .first()
         )
         if shift is None:
             raise not_found("No such shift.")
@@ -303,7 +309,10 @@ def update_employee(
     )
     with transaction.atomic():
         employee: Employee | None = (
-            Employee.objects.select_for_update().for_user(user).filter(pk=employee_id).first()
+            Employee.objects.select_for_update(no_key=True)
+            .for_user(user)
+            .filter(pk=employee_id)
+            .first()
         )
         if employee is None:
             raise not_found("No such employee.")

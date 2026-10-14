@@ -1,6 +1,7 @@
 """Test settings. The database is a real PostgreSQL 16 in a Testcontainers container
 (tech spec section 7). It starts when this module is first imported, i.e. before Django reads
-DATABASES, and stops when the test process exits. Set WFM_TEST_DATABASE_URL to reuse an
+DATABASES, and stops when the test process exits. With pytest-xdist the controller starts it once
+and every worker uses it, each on its own database. Set WFM_TEST_DATABASE_URL to reuse an
 existing server instead (for example a CI service container).
 """
 
@@ -11,6 +12,10 @@ os.environ.setdefault("DJANGO_SECRET_KEY", "test-only-key")
 
 
 def _ensure_database() -> None:
+    if os.environ.get("PYTEST_XDIST_WORKER") and os.environ.get("DATABASE_URL"):
+        # A parallel worker: the controller already started the container and its address was
+        # inherited. pytest-django gives each worker its own database on that one server.
+        return
     external = os.environ.get("WFM_TEST_DATABASE_URL")
     if external:
         os.environ["DATABASE_URL"] = external

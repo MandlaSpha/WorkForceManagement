@@ -42,6 +42,7 @@ dev = [
   "responses>=0.26.3",
   "types-openpyxl>=3.1.5.20260827",
   "pandas-stubs>=3.0.5.260914",
+  "pytest-xdist>=3.8.0",
 ]
 
 [tool.ruff]

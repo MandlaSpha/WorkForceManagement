@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db.models import Count, Q
-from wfm_engine.forecast import DEFAULT_DECAY, DEFAULT_WEEKS, DayAccuracy, backtest
+from wfm_engine.forecast import Backtest, DayAccuracy
 
 from wfm.accounts.models import User
 from wfm.core.errors import not_found
@@ -17,7 +17,7 @@ from wfm.telephony.models import Queue
 
 from . import modeling, scenario
 from .history import load_history
-from .models import ForecastEvent, ForecastInterval, ForecastVersion
+from .models import ForecastEvent, ForecastInterval, ForecastTuning, ForecastVersion
 
 
 def list_versions(user: User, queue_id: int | None = None) -> list[ForecastVersion]:
@@ -49,23 +49,85 @@ class Accuracy:
     days: list[DayAccuracy]
     weeks: int
     decay: float
+    bias_pct: float | None = None  # forecast total vs actual: + ran high, - ran low
+
+
+def queue_for(user: User, queue_id: int) -> Queue:
+    queue: Queue | None = Queue.objects.for_user(user).filter(pk=queue_id).first()
+    if queue is None:
+        raise not_found("No such queue.")
+    return queue
+
+
+def tuning_of(user: User, queue: Queue) -> tuple[modeling.Tuning, bool]:
+    """The queue's saved tuning, or the defaults; and whether anyone has saved one."""
+    row: ForecastTuning | None = ForecastTuning.objects.for_user(user).filter(queue=queue).first()
+    if row is None:
+        return modeling.DEFAULT_TUNING, False
+    return (
+        modeling.Tuning(
+            row.weeks, float(row.decay), float(row.volume_multiplier), float(row.aht_multiplier)
+        ),
+        True,
+    )
 
 
 def forecast_accuracy(user: User, queue_id: int, method: str = "baseline") -> Accuracy:
-    """How well a model would have predicted each past day, using only the days before it (FC-05).
-    Measured on real imported data; nothing here is modelled. For Prophet the days are the ones it
-    could be refitted for (see `prophet_model.rolling_forecasts`)."""
+    """How well a model would have predicted each past day, using only the days before it (FC-05),
+    with the queue's saved tuning. Measured on real imported data; nothing here is modelled. For
+    Prophet the days are the ones it could be refitted for (see `rolling_forecasts`)."""
     queue = Queue.objects.for_user(user).filter(pk=queue_id).first()
     if queue is None:
         raise not_found("No such queue.")
+    tuning, _ = tuning_of(user, queue)
     history, observed = load_history(queue)
     result = (
-        modeling.prophet_backtest(history, observed)[0]
+        modeling.prophet_backtest(history, observed, tuning)[0]
         if method == "prophet"
-        else backtest(history, observed)
+        else modeling.baseline_backtest(history, observed, tuning)
     )
     return Accuracy(
-        queue, result.interval_pct, result.daily_pct, result.days, DEFAULT_WEEKS, DEFAULT_DECAY
+        queue,
+        result.interval_pct,
+        result.daily_pct,
+        result.days,
+        tuning.weeks,
+        tuning.decay,
+        result.bias_pct,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class TuningTrial:
+    queue: Queue
+    saved: modeling.Tuning
+    is_saved: bool
+    candidate: Backtest
+    current: Backtest
+    suggested_volume_multiplier: float | None
+
+
+def try_tuning(user: User, queue_id: int, candidate: modeling.Tuning) -> TuningTrial:
+    """Score a tuning that has not been saved against what really happened, next to the saved one,
+    and suggest the volume multiplier that would remove the candidate's bias. Nothing is saved."""
+    queue = Queue.objects.for_user(user).filter(pk=queue_id).first()
+    if queue is None:
+        raise not_found("No such queue.")
+    modeling.check_tuning(candidate)
+    saved, is_saved = tuning_of(user, queue)
+    history, observed = load_history(queue)
+    trial = modeling.baseline_backtest(history, observed, candidate)
+    suggested: float | None = None
+    if trial.bias_pct is not None and trial.bias_pct > -100:
+        raw = candidate.volume_multiplier / (1 + trial.bias_pct / 100)
+        suggested = round(min(modeling.MAX_MULTIPLIER, max(modeling.MIN_MULTIPLIER, raw)), 2)
+    return TuningTrial(
+        queue,
+        saved,
+        is_saved,
+        trial,
+        modeling.baseline_backtest(history, observed, saved),
+        suggested,
     )
 
 

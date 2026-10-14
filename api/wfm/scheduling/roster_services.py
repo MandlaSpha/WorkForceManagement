@@ -129,7 +129,7 @@ def assign(
 def _assign(
     user: User, queue: Queue, employee_id: int, day: date, template_id: int | None
 ) -> AssignResult:
-    week, _ = RosterWeek.objects.select_for_update().get_or_create(
+    week, _ = RosterWeek.objects.select_for_update(no_key=True).get_or_create(
         queue=queue, week_start=week_start_of(day)
     )
     if week.status == RosterStatus.PUBLISHED:
@@ -141,7 +141,12 @@ def _assign(
             409,
         )
     # Lock the person's row: every check below reads their other shifts.
-    employee = Employee.objects.select_for_update().for_user(user).filter(pk=employee_id).first()
+    employee = (
+        Employee.objects.select_for_update(no_key=True)
+        .for_user(user)
+        .filter(pk=employee_id)
+        .first()
+    )
     if employee is None:
         raise not_found("No such employee.")
 
@@ -279,7 +284,7 @@ def _week(user: User, queue_id: int, week_start: date) -> tuple[Queue, RosterWee
     _monday(user, queue, week_start)
     week = (
         RosterWeek.objects.for_user(user)
-        .select_for_update()
+        .select_for_update(no_key=True)
         .filter(queue=queue, week_start=week_start)
         .first()
     )

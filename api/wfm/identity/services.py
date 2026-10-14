@@ -73,7 +73,7 @@ def _complete(*, request: HttpRequest, provider: Provider, identity: Identity) -
 
     link = (
         IdentityLink.objects.select_related("user")
-        .select_for_update()
+        .select_for_update(no_key=True)
         .filter(provider=provider.key, subject=identity.subject)
         .first()
     )
@@ -164,7 +164,7 @@ def _match_existing(provider: Provider, identity: Identity) -> User | str | None
         if not identity.username:
             return None
         query = Q(username__iexact=identity.username)
-    found = list(User.objects.select_for_update().filter(query)[:2])
+    found = list(User.objects.select_for_update(no_key=True).filter(query)[:2])
     if len(found) > 1:
         return "ambiguous"
     return found[0] if found else None

@@ -1,6 +1,7 @@
 import { api, unwrap } from '@/shared/api'
 
 import type {
+  Backtest,
   EventRequest,
   ForecastAccuracy,
   ForecastEvent,
@@ -9,6 +10,8 @@ import type {
   RunForecastRequest,
   ScenarioRequest,
   ScenarioResult,
+  Tuning,
+  TuningRequest,
 } from '../model/types'
 
 export async function fetchVersions(queueId: number | null): Promise<ForecastVersion[]> {
@@ -67,4 +70,38 @@ export async function deleteEvent(eventId: number): Promise<void> {
 
 export async function runScenario(body: ScenarioRequest): Promise<ScenarioResult> {
   return unwrap(await api.POST('/api/v1/forecasting/scenarios', { body }))
+}
+
+export interface TuningTrial {
+  weeks?: number
+  decay?: number
+  volumeMultiplier?: number
+  ahtMultiplier?: number
+}
+
+export async function fetchTuning(queueId: number): Promise<Tuning> {
+  return unwrap(
+    await api.GET('/api/v1/forecasting/tuning', { params: { query: { queue_id: queueId } } }),
+  )
+}
+
+export async function saveTuning(body: TuningRequest): Promise<Tuning> {
+  return unwrap(await api.PUT('/api/v1/forecasting/tuning', { body }))
+}
+
+/** Score a tuning that has not been saved; anything left out is the saved value. */
+export async function fetchBacktest(queueId: number, trial: TuningTrial): Promise<Backtest> {
+  return unwrap(
+    await api.GET('/api/v1/forecasting/tuning/backtest', {
+      params: {
+        query: {
+          queue_id: queueId,
+          weeks: trial.weeks,
+          decay: trial.decay,
+          volume_multiplier: trial.volumeMultiplier,
+          aht_multiplier: trial.ahtMultiplier,
+        },
+      },
+    }),
+  )
 }

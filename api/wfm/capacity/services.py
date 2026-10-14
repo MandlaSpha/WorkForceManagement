@@ -32,7 +32,7 @@ def set_limits(*, user: User, permanent_limit: int, seasonal_limit: int) -> Capa
 
     with transaction.atomic():
         limits: CapacityLimits
-        limits, _ = CapacityLimits.objects.select_for_update().get_or_create(pk=1)
+        limits, _ = CapacityLimits.objects.select_for_update(no_key=True).get_or_create(pk=1)
         wanted = {"permanent_limit": permanent_limit, "seasonal_limit": seasonal_limit}
         changes = [
             audit.FieldChange("capacity_limits", "1", name, str(getattr(limits, name)), str(value))

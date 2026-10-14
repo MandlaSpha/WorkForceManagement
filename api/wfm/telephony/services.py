@@ -291,7 +291,7 @@ def update_queue_settings(
 
     with transaction.atomic():
         queue: Queue | None = (
-            Queue.objects.select_for_update().for_user(user).filter(pk=queue_id).first()
+            Queue.objects.select_for_update(no_key=True).for_user(user).filter(pk=queue_id).first()
         )
         if queue is None:
             raise not_found("No such queue.")

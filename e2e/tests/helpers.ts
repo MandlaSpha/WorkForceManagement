@@ -54,5 +54,6 @@ export async function importDay(page: Page, date: string, queue: string): Promis
     .getByLabel('Call detail report (.xlsx)')
     .setInputFiles({ name: `${date}.xlsx`, mimeType: XLSX, buffer })
   await page.getByRole('button', { name: 'Import report' }).click()
-  await expect(page.getByTestId('reconciles')).toBeVisible()
+  // Reading a workbook can take a few seconds on a busy machine.
+  await expect(page.getByTestId('reconciles')).toBeVisible({ timeout: 20_000 })
 }

@@ -47,7 +47,7 @@ def login(
 def _attempt(
     *, request: HttpRequest, username: str, password: str, allowed_roles: Collection[str]
 ) -> User | None:
-    user = User.objects.select_for_update().filter(username=username).first()
+    user = User.objects.select_for_update(no_key=True).filter(username=username).first()
 
     if user is None:
         # Never store the attempted username: people sometimes type their password into it.
