@@ -4,18 +4,20 @@ import { ref } from 'vue'
 import { useQueues } from '@/entities/call-data'
 import { QueueSettingsForm } from '@/features/confirm-queue-settings'
 import { ShiftLibrary } from '@/features/manage-shifts'
+import { LimitsForm } from '@/features/set-capacity-limits'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 
 const screen = NAV_ITEMS.find((item) => item.key === 'configure')
-const tab = ref<'shifts' | 'queues'>('shifts')
+const tab = ref<'shifts' | 'queues' | 'workforce'>('shifts')
 const queues = useQueues()
 
 const TABS = [
   { key: 'shifts', label: 'Shifts' },
   { key: 'queues', label: 'Queues' },
+  { key: 'workforce', label: 'Workforce' },
 ] as const
 </script>
 
@@ -46,6 +48,15 @@ const TABS = [
 
     <div v-if="tab === 'shifts'" id="panel-shifts" role="tabpanel" aria-labelledby="tab-shifts">
       <ShiftLibrary />
+    </div>
+
+    <div
+      v-else-if="tab === 'workforce'"
+      id="panel-workforce"
+      role="tabpanel"
+      aria-labelledby="tab-workforce"
+    >
+      <LimitsForm />
     </div>
 
     <div v-else id="panel-queues" role="tabpanel" aria-labelledby="tab-queues" class="space-y-4">

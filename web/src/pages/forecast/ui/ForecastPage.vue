@@ -6,6 +6,7 @@ import { useVersions } from '@/entities/forecast'
 import { useSessionStore } from '@/entities/session'
 import { EventsPanel } from '@/features/manage-events'
 import { RunForecastForm } from '@/features/run-forecast'
+import { ScenarioPanel } from '@/features/run-scenario'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
@@ -83,6 +84,7 @@ function show(id: string): void {
           @select="show"
         />
         <VersionDetail v-if="selected" :key="selected.id" :version="selected" />
+        <ScenarioPanel v-if="selected" :key="`scenario-${selected.id}`" :version="selected" />
       </template>
 
       <EventsPanel :queue-id="queueId" :can-change="canChange" />

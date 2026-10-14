@@ -67,6 +67,11 @@ class EmployeeQuerySet(ScopedQuerySet):
             return self.filter(user=user)  # an agent sees only their own record
         return self.none()
 
+    def headcount_for(self, user: Any, roles: frozenset[Any]) -> Self:
+        """For a module that only COUNTS people (capacity): the caller names the roles it allows
+        and selects only contract and dates, never names. Everyone else gets nothing."""
+        return self if user.role in roles else self.none()
+
 
 class Employee(models.Model):
     emp_no = models.CharField(max_length=20, unique=True)

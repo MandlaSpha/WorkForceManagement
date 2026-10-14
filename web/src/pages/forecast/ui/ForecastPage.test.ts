@@ -3,7 +3,13 @@ import { screen, waitFor, within } from '@testing-library/vue'
 import { http, HttpResponse } from 'msw'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { accuracyFor, dayIntervals, forecastVersion, queueInfo } from '@/test/forecast-fixtures'
+import {
+  accuracyFor,
+  dayIntervals,
+  forecastVersion,
+  queueInfo,
+  scenarioResult,
+} from '@/test/forecast-fixtures'
 import { backend } from '@/test/fake-backend'
 import { renderApp } from '@/test/render-app'
 import { server } from '@/test/server'
@@ -269,6 +275,27 @@ describe('publishing', () => {
       expect(within(rows[2]!).getByText('archived')).toBeVisible() // Week 22, retired
     })
     expect(table.queryByRole('button', { name: /Publish/ })).toBeNull()
+  })
+
+  it('marks the planner and capacity figures stale, because they rest on the live forecast', async () => {
+    withLiveForecast()
+    backend.versions = [draft, forecastVersion()]
+    backend.intervals['v-draft'] = dayIntervals()
+    asRole('planner')
+    const u = user()
+    const { queryClient } = await renderApp('/forecast')
+    // Figures an earlier visit to those screens left in the cache.
+    queryClient.setQueryData(['capacity', '2026-05-25', 4], { limits: {}, weeks: [] })
+    queryClient.setQueryData(['scheduling', 'plan', 1, '2026-05-25'], { cells: {} })
+
+    await u.click(await screen.findByRole('button', { name: /Publish Draft plan/ }))
+
+    await waitFor(() => {
+      expect(queryClient.getQueryState(['capacity', '2026-05-25', 4])?.isInvalidated).toBe(true)
+      expect(
+        queryClient.getQueryState(['scheduling', 'plan', 1, '2026-05-25'])?.isInvalidated,
+      ).toBe(true)
+    })
   })
 
   it('does not offer to publish something that is already live or archived', async () => {
@@ -572,5 +599,110 @@ describe('the events calendar', () => {
     await renderApp('/forecast')
     await screen.findByTestId('total-calls')
     expect(screen.queryByTestId('events-notice')).toBeNull()
+  })
+})
+
+describe('what-if scenarios', () => {
+  const open = async (role = 'planner') => {
+    withLiveForecast()
+    backend.scenario = scenarioResult()
+    asRole(role)
+    await renderApp('/forecast')
+    return screen.findByRole('form', { name: 'What if' })
+  }
+
+  it('asks about the forecast on screen with the CSRF token, and shows base against scenario', async () => {
+    const form = await open()
+    const u = user()
+
+    await u.clear(within(form).getByLabelText('Change in calls (%)'))
+    await u.type(within(form).getByLabelText('Change in calls (%)'), '100')
+    await u.click(within(form).getByRole('button', { name: 'Show what changes' }))
+
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]).toEqual({
+      method: 'POST',
+      path: '/api/v1/forecasting/scenarios',
+      body: {
+        versionId: 'v-live',
+        volumeChangePct: 100,
+        ahtChangePct: 0,
+        shrinkagePct: null,
+        slTargetPct: null,
+      },
+      csrf: 'test-csrf-token',
+    })
+    const day = within(await screen.findByTestId('scenario-2026-05-25'))
+    expect(day.getByText(/10 to 20/)).toBeVisible()
+    expect(day.getByText(/5 to 6/)).toBeVisible()
+    expect(day.getByText('(+1)')).toBeVisible()
+    expect(day.getByText(/2\.5 to 3\.0/)).toBeVisible()
+    expect(within(screen.getByTestId('scenario-total')).getByText('(+0.5)')).toBeVisible()
+  })
+
+  it('sends shrinkage and the target when they are filled in, and says what they became', async () => {
+    const form = await open()
+    const u = user()
+    backend.scenario = scenarioResult({
+      scenario: { slTargetPct: 95, slThresholdS: 20, occupancyCeilingPct: 85, shrinkagePct: 0 },
+    })
+
+    await u.type(within(form).getByLabelText(/^Shrinkage/), '0')
+    await u.type(within(form).getByLabelText(/^Service-level target/), '95')
+    await u.click(within(form).getByRole('button', { name: 'Show what changes' }))
+
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]?.body).toMatchObject({ shrinkagePct: 0, slTargetPct: 95 })
+    expect(await screen.findByTestId('scenario-assumptions')).toHaveTextContent(
+      'Shrinkage 30% to 0%, service level target 80% to 95% in 20 s',
+    )
+  })
+
+  it('marks figures as minimums when some half-hours could not be staffed', async () => {
+    const form = await open()
+    const u = user()
+    backend.scenario = scenarioResult({
+      days: [{ ...scenarioResult().days[0]!, complete: false }],
+    })
+
+    await u.click(within(form).getByRole('button', { name: 'Show what changes' }))
+
+    expect(await screen.findByTestId('scenario-minimum')).toHaveTextContent(/at least this much/)
+    expect(within(screen.getByTestId('scenario-2026-05-25')).getByText(/5 to 6\*/)).toBeVisible()
+  })
+
+  it('shows why a scenario was refused and no table', async () => {
+    const form = await open()
+    const u = user()
+    backend.nextProblem = {
+      status: 422,
+      code: 'scenario.volume_invalid',
+      title: 'Invalid scenario',
+      detail: 'Calls can change by -100% to +500%.',
+    }
+
+    await u.click(within(form).getByRole('button', { name: 'Show what changes' }))
+
+    expect(await screen.findByTestId('scenario-error')).toHaveTextContent(/-100% to \+500%/)
+    expect(screen.queryByTestId('scenario-table')).toBeNull()
+  })
+
+  it('shows no table before anything has been asked', async () => {
+    await open()
+    expect(screen.queryByTestId('scenario-table')).toBeNull()
+  })
+
+  it('lets a lead ask, since it changes nothing', async () => {
+    const form = await open('lead')
+    expect(within(form).getByRole('button', { name: 'Show what changes' })).toBeEnabled()
+  })
+
+  it('offers nothing when there is no forecast to ask about', async () => {
+    backend.queues = [queueInfo()]
+    backend.versions = []
+    asRole('planner')
+    await renderApp('/forecast')
+    await screen.findByText(/No forecast has been run for this queue yet/)
+    expect(screen.queryByRole('form', { name: 'What if' })).toBeNull()
   })
 })

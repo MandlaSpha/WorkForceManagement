@@ -78,6 +78,11 @@ class ForecastIntervalQuerySet(ScopedQuerySet):
     def for_user(self, user: Any) -> Self:
         return self if user.role in READ_ROLES else self.none()
 
+    def aggregate_for(self, user: Any, roles: frozenset[Any]) -> Self:
+        """For a module that only ADDS UP requirements (capacity): the caller names the roles it
+        allows, and reads figures, never the forecast screens. Everyone else gets nothing."""
+        return self if user.role in roles else self.none()
+
 
 class ForecastInterval(models.Model):
     version = models.ForeignKey(ForecastVersion, on_delete=models.CASCADE, related_name="intervals")

@@ -9,7 +9,7 @@ from ninja import Router, Status
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
-from . import event_services, selectors, services
+from . import event_services, scenario, selectors, services
 from .models import ForecastEvent, ForecastInterval, ForecastVersion
 from .policy import READ_ROLES, WRITE_ROLES
 from .schemas import (
@@ -20,7 +20,12 @@ from .schemas import (
     ForecastIntervalOut,
     ForecastVersionOut,
     RunForecastIn,
+    ScenarioAssumptionsOut,
+    ScenarioDayOut,
+    ScenarioIn,
+    ScenarioOut,
 )
+from .staffing import Assumptions
 
 router = Router(tags=["forecasting"])
 
@@ -149,6 +154,53 @@ def update_event(request: HttpRequest, event_id: int, body: EventIn) -> EventOut
 def delete_event(request: HttpRequest, event_id: int) -> dict[str, bool]:
     event_services.delete_event(user=current_user(request), event_id=event_id)
     return {"ok": True}
+
+
+@router.post(
+    "/scenarios",
+    auth=READ,
+    response=ScenarioOut,
+    summary="What if: the agents needed if calls, handling time, shrinkage or the target change",
+)
+def run_scenario(request: HttpRequest, body: ScenarioIn) -> ScenarioOut:
+    version, rows = selectors.scenario_source(current_user(request), body.versionId)
+    base = Assumptions.of_params(version.params, Assumptions.of_queue(version.queue))
+    changed, days = scenario.run(
+        rows,
+        base,
+        volume_change_pct=body.volumeChangePct,
+        aht_change_pct=body.ahtChangePct,
+        sl_target_pct=body.slTargetPct,
+        shrinkage_pct=body.shrinkagePct,
+    )
+    return ScenarioOut(
+        versionId=version.id,
+        queue=version.queue.name,
+        base=_assumptions_out(base),
+        scenario=_assumptions_out(changed),
+        days=[
+            ScenarioDayOut(
+                day=d.day,
+                callsBase=d.calls_base,
+                callsScenario=d.calls_scenario,
+                peakBase=d.peak_base,
+                peakScenario=d.peak_scenario,
+                hoursBase=d.hours_base,
+                hoursScenario=d.hours_scenario,
+                complete=d.complete,
+            )
+            for d in days
+        ],
+    )
+
+
+def _assumptions_out(a: Assumptions) -> ScenarioAssumptionsOut:
+    return ScenarioAssumptionsOut(
+        slTargetPct=a.sl_target_pct,
+        slThresholdS=a.sl_threshold_s,
+        occupancyCeilingPct=a.occupancy_ceiling_pct,
+        shrinkagePct=a.shrinkage_pct,
+    )
 
 
 def _event_out(event: ForecastEvent) -> EventOut:

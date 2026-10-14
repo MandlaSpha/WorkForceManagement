@@ -5,7 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from typing import Any
+from zoneinfo import ZoneInfo
 
+from django.conf import settings
 from django.db.models import Count, Q
 from wfm_engine.forecast import DEFAULT_DECAY, DEFAULT_WEEKS, DayAccuracy, backtest
 
@@ -13,7 +15,7 @@ from wfm.accounts.models import User
 from wfm.core.errors import not_found
 from wfm.telephony.models import Queue
 
-from . import modeling
+from . import modeling, scenario
 from .history import load_history
 from .models import ForecastEvent, ForecastInterval, ForecastVersion
 
@@ -87,3 +89,18 @@ def event_uplifts(
     return [
         modeling.Uplift(e.pk, e.name, e.date_from, e.date_to, float(e.uplift_pct)) for e in events
     ]
+
+
+def scenario_source(user: User, version_id: Any) -> tuple[ForecastVersion, list[scenario.Row]]:
+    """A forecast version and its half-hours in the shape a scenario works on."""
+    version: ForecastVersion | None = (
+        ForecastVersion.objects.for_user(user).select_related("queue").filter(pk=version_id).first()
+    )
+    if version is None:
+        raise not_found("No such forecast version.")
+    zone = ZoneInfo(settings.TIME_ZONE)
+    rows = [
+        scenario.Row(i.interval_start.astimezone(zone).date(), i.volume, i.aht_s, i.required)
+        for i in ForecastInterval.objects.for_user(user).filter(version=version)
+    ]
+    return version, rows

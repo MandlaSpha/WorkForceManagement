@@ -10,9 +10,7 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models.functions import Now
-from wfm_engine.erlang import required_agents
 from wfm_engine.forecast import DEFAULT_DECAY, DEFAULT_WEEKS, SlotForecast
-from wfm_engine.kpi import INTERVAL_MINUTES
 
 from wfm.accounts.models import User
 from wfm.audit import services as audit
@@ -23,9 +21,9 @@ from wfm.telephony.models import Queue
 from . import modeling, selectors
 from .history import load_history
 from .models import ForecastInterval, ForecastStatus, ForecastVersion
+from .staffing import Assumptions, requirement
 
 MAX_DAYS = 31
-INTERVAL_S = INTERVAL_MINUTES * 60
 
 
 def run_forecast(
@@ -211,7 +209,7 @@ def _interval(
     zone: ZoneInfo,
 ) -> ForecastInterval:
     start = datetime.combine(day, time(slot.slot // 2, 30 * (slot.slot % 2)), tzinfo=zone)
-    raw, with_shrinkage = _requirement(slot.volume, slot.aht_s, queue)
+    raw, with_shrinkage = requirement(slot.volume, slot.aht_s, Assumptions.of_queue(queue))
     # The day's range, shared out in the same proportion as the day's expected total.
     expected = sum(s.volume for s in forecast.slots)
     share = slot.volume / expected if expected > 0 else 0.0
@@ -226,29 +224,6 @@ def _interval(
         required=with_shrinkage,
         days_used=slot.days_used,
     )
-
-
-def _requirement(volume: float, aht_s: float | None, queue: Queue) -> tuple[int | None, int | None]:
-    """Agents needed on the phone, and agents to roster once shrinkage is added (ENG-01, ENG-02).
-    No call volume needs nobody; calls with no known handling time cannot be staffed honestly."""
-    if volume <= 0:
-        return 0, 0
-    if aht_s is None or aht_s <= 0:
-        return None, None
-    common: dict[str, Any] = {
-        "volume": volume,
-        "interval_s": INTERVAL_S,
-        "aht_s": aht_s,
-        "sl_target": float(queue.sl_target_pct) / 100,
-        "threshold_s": queue.sl_threshold_s,
-        "occupancy_ceiling": float(queue.occupancy_ceiling_pct) / 100,
-    }
-    try:
-        raw = required_agents(**common, shrinkage=0.0)
-        with_shrinkage = required_agents(**common, shrinkage=float(queue.shrinkage_pct) / 100)
-    except ValueError:
-        return None, None
-    return raw, with_shrinkage
 
 
 def _refused(user: User, queue: Queue | None, status: int, code: str, detail: str) -> ApiError:

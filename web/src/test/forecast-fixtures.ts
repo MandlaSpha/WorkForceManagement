@@ -1,5 +1,10 @@
 import type { QueueInfo } from '@/entities/call-data'
-import type { ForecastAccuracy, ForecastInterval, ForecastVersion } from '@/entities/forecast'
+import type {
+  ForecastAccuracy,
+  ForecastInterval,
+  ForecastVersion,
+  ScenarioResult,
+} from '@/entities/forecast'
 
 export function queueInfo(overrides: Partial<QueueInfo> = {}): QueueInfo {
   return {
@@ -59,6 +64,36 @@ export function dayIntervals(day = '2026-05-25'): ForecastInterval[] {
       daysUsed: 3,
     }
   })
+}
+
+/** The scenario of the API tests worked by hand: 10 calls at 10:00 need 5 to roster; twice the
+ * calls need 6. */
+export function scenarioResult(overrides: Partial<ScenarioResult> = {}): ScenarioResult {
+  const assumptions = {
+    slTargetPct: 80,
+    slThresholdS: 20,
+    occupancyCeilingPct: 85,
+    shrinkagePct: 30,
+  }
+  return {
+    versionId: 'v-live',
+    queue: 'QueueA',
+    base: assumptions,
+    scenario: assumptions,
+    days: [
+      {
+        day: '2026-05-25',
+        callsBase: 10,
+        callsScenario: 20,
+        peakBase: 5,
+        peakScenario: 6,
+        hoursBase: 2.5,
+        hoursScenario: 3,
+        complete: true,
+      },
+    ],
+    ...overrides,
+  }
 }
 
 export function accuracyFor(overrides: Partial<ForecastAccuracy> = {}): ForecastAccuracy {

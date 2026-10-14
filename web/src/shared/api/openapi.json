@@ -144,6 +144,199 @@
         "title": "AssignOut",
         "type": "object"
       },
+      "CapacityDayOut": {
+        "properties": {
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "overflow": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overflow"
+          },
+          "peak": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak"
+          },
+          "permanent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permanent"
+          },
+          "permanentOnBooks": {
+            "title": "Permanentonbooks",
+            "type": "integer"
+          },
+          "queuesCovered": {
+            "title": "Queuescovered",
+            "type": "integer"
+          },
+          "queuesTotal": {
+            "title": "Queuestotal",
+            "type": "integer"
+          },
+          "seasonal": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seasonal"
+          },
+          "seasonalOnBooks": {
+            "title": "Seasonalonbooks",
+            "type": "integer"
+          },
+          "seasonalToHire": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seasonaltohire"
+          }
+        },
+        "required": [
+          "day",
+          "queuesCovered",
+          "queuesTotal",
+          "peak",
+          "complete",
+          "permanent",
+          "seasonal",
+          "overflow",
+          "permanentOnBooks",
+          "seasonalOnBooks",
+          "seasonalToHire"
+        ],
+        "title": "CapacityDayOut",
+        "type": "object"
+      },
+      "CapacityOut": {
+        "properties": {
+          "limits": {
+            "$ref": "#/components/schemas/LimitsOut"
+          },
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/CapacityWeekOut"
+            },
+            "title": "Weeks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "limits",
+          "weeks"
+        ],
+        "title": "CapacityOut",
+        "type": "object"
+      },
+      "CapacityWeekOut": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/CapacityDayOut"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "daysForecast": {
+            "title": "Daysforecast",
+            "type": "integer"
+          },
+          "daysIncomplete": {
+            "title": "Daysincomplete",
+            "type": "integer"
+          },
+          "overflowDays": {
+            "title": "Overflowdays",
+            "type": "integer"
+          },
+          "peak": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peak"
+          },
+          "peakDay": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peakday"
+          },
+          "seasonalPeak": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seasonalpeak"
+          },
+          "weekStart": {
+            "format": "date",
+            "title": "Weekstart",
+            "type": "string"
+          }
+        },
+        "required": [
+          "weekStart",
+          "peak",
+          "peakDay",
+          "seasonalPeak",
+          "overflowDays",
+          "daysForecast",
+          "daysIncomplete",
+          "days"
+        ],
+        "title": "CapacityWeekOut",
+        "type": "object"
+      },
       "Coverage": {
         "properties": {
           "intervalsTotal": {
@@ -824,6 +1017,47 @@
           "queues"
         ],
         "title": "KpiOut",
+        "type": "object"
+      },
+      "LimitsIn": {
+        "properties": {
+          "permanentLimit": {
+            "title": "Permanentlimit",
+            "type": "integer"
+          },
+          "seasonalLimit": {
+            "title": "Seasonallimit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "permanentLimit",
+          "seasonalLimit"
+        ],
+        "title": "LimitsIn",
+        "type": "object"
+      },
+      "LimitsOut": {
+        "properties": {
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "permanentLimit": {
+            "title": "Permanentlimit",
+            "type": "integer"
+          },
+          "seasonalLimit": {
+            "title": "Seasonallimit",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "permanentLimit",
+          "seasonalLimit",
+          "confirmed"
+        ],
+        "title": "LimitsOut",
         "type": "object"
       },
       "LoginIn": {
@@ -1513,6 +1747,178 @@
         "title": "RunForecastIn",
         "type": "object"
       },
+      "ScenarioAssumptionsOut": {
+        "properties": {
+          "occupancyCeilingPct": {
+            "title": "Occupancyceilingpct",
+            "type": "number"
+          },
+          "shrinkagePct": {
+            "title": "Shrinkagepct",
+            "type": "number"
+          },
+          "slTargetPct": {
+            "title": "Sltargetpct",
+            "type": "number"
+          },
+          "slThresholdS": {
+            "title": "Slthresholds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slTargetPct",
+          "slThresholdS",
+          "occupancyCeilingPct",
+          "shrinkagePct"
+        ],
+        "title": "ScenarioAssumptionsOut",
+        "type": "object"
+      },
+      "ScenarioDayOut": {
+        "properties": {
+          "callsBase": {
+            "title": "Callsbase",
+            "type": "number"
+          },
+          "callsScenario": {
+            "title": "Callsscenario",
+            "type": "number"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "hoursBase": {
+            "title": "Hoursbase",
+            "type": "number"
+          },
+          "hoursScenario": {
+            "title": "Hoursscenario",
+            "type": "number"
+          },
+          "peakBase": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peakbase"
+          },
+          "peakScenario": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peakscenario"
+          }
+        },
+        "required": [
+          "day",
+          "callsBase",
+          "callsScenario",
+          "peakBase",
+          "peakScenario",
+          "hoursBase",
+          "hoursScenario",
+          "complete"
+        ],
+        "title": "ScenarioDayOut",
+        "type": "object"
+      },
+      "ScenarioIn": {
+        "properties": {
+          "ahtChangePct": {
+            "default": 0,
+            "title": "Ahtchangepct",
+            "type": "number"
+          },
+          "shrinkagePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shrinkagepct"
+          },
+          "slTargetPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sltargetpct"
+          },
+          "versionId": {
+            "format": "uuid",
+            "title": "Versionid",
+            "type": "string"
+          },
+          "volumeChangePct": {
+            "default": 0,
+            "title": "Volumechangepct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "versionId"
+        ],
+        "title": "ScenarioIn",
+        "type": "object"
+      },
+      "ScenarioOut": {
+        "properties": {
+          "base": {
+            "$ref": "#/components/schemas/ScenarioAssumptionsOut"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioDayOut"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "scenario": {
+            "$ref": "#/components/schemas/ScenarioAssumptionsOut"
+          },
+          "versionId": {
+            "format": "uuid",
+            "title": "Versionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "versionId",
+          "queue",
+          "base",
+          "scenario",
+          "days"
+        ],
+        "title": "ScenarioOut",
+        "type": "object"
+      },
       "ShiftIn": {
         "properties": {
           "code": {
@@ -1932,6 +2338,91 @@
         ]
       }
     },
+    "/api/v1/capacity": {
+      "get": {
+        "operationId": "wfm_capacity_api_get_capacity",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Week Start",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "weeks",
+            "required": false,
+            "schema": {
+              "default": 4,
+              "title": "Weeks",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CapacityOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Agents needed at the busiest moment of each day, by permanent and seasonal pool",
+        "tags": [
+          "capacity"
+        ]
+      }
+    },
+    "/api/v1/capacity/limits": {
+      "put": {
+        "operationId": "wfm_capacity_api_set_limits",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LimitsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set the permanent and seasonal pools",
+        "tags": [
+          "capacity"
+        ]
+      }
+    },
     "/api/v1/forecasting/accuracy": {
       "get": {
         "operationId": "wfm_forecasting_api_accuracy",
@@ -2147,6 +2638,43 @@
           }
         ],
         "summary": "Change an event",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
+    "/api/v1/forecasting/scenarios": {
+      "post": {
+        "operationId": "wfm_forecasting_api_run_scenario",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "What if: the agents needed if calls, handling time, shrinkage or the target change",
         "tags": [
           "forecasting"
         ]

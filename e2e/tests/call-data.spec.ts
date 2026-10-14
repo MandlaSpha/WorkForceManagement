@@ -32,8 +32,19 @@ const CALLS: Call[] = [
   { type: 'OUTBOUND', status: 'Dial', clock: '10:25:00', wait: 0, talk: 500, wrap: 500 },
 ]
 
-async function report(): Promise<{ buffer: Buffer; month: string }> {
-  const date = randomMonday()
+/** A report on a made-up Monday in a month that has no call data yet. The dashboard sums every
+ * queue in a month, so a month an earlier run or another spec already used would add its calls to
+ * the figures asserted here. */
+async function report(page?: Page): Promise<{ buffer: Buffer; month: string }> {
+  // Only the test that reads the figures back needs a month of its own; the refusal tests do not.
+  const response = await page?.request.get('/api/v1/telephony/months')
+  const used = new Set<string>(
+    response ? ((await response.json()) as { months: string[] }).months : [],
+  )
+  let date = randomMonday()
+  for (let attempt = 0; attempt < 200 && used.has(date.slice(0, 7)); attempt++) {
+    date = randomMonday()
+  }
   const buffer = await buildReport({
     date,
     firstId: randomFirstId(),
@@ -52,8 +63,8 @@ async function chooseReport(page: Page, buffer: Buffer): Promise<void> {
 test('a planner imports a report and sees the measured figures on the dashboard', async ({
   page,
 }) => {
-  const { buffer, month } = await report()
   await signIn(page, 'planner')
+  const { buffer, month } = await report(page)
 
   await page.getByRole('link', { name: 'Data import' }).click()
   await expect(page.getByRole('heading', { name: 'Data import' })).toBeVisible()

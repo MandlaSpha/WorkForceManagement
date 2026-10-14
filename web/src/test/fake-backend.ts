@@ -1,11 +1,13 @@
 import { http, HttpResponse } from 'msw'
 
 import type { ImportReport, KpiSummary, QueueInfo } from '@/entities/call-data'
+import type { Capacity } from '@/entities/capacity'
 import type {
   ForecastAccuracy,
   ForecastEvent,
   ForecastInterval,
   ForecastVersion,
+  ScenarioResult,
 } from '@/entities/forecast'
 import type { Employee, Plan, Roster, Shift } from '@/entities/scheduling'
 
@@ -92,6 +94,11 @@ export const backend = {
     ForecastVersion | { status: number; code: string; title: string; detail: string } | null,
   /** The JSON bodies the app sent to run a forecast, with the CSRF header it carried. */
   runs: [] as Array<{ body: Record<string, unknown>; csrf: string | null }>,
+  /** What the scenario endpoint answers. */
+  scenario: null as ScenarioResult | null,
+  /** Capacity: what the capacity endpoint answers, and the queries it was asked. */
+  capacity: null as Capacity | null,
+  capacityQueries: [] as string[],
   /** The events calendar. */
   events: [] as ForecastEvent[],
   /** Scheduling: what the roster, plan, shift and employee endpoints answer. */
@@ -121,6 +128,9 @@ export const backend = {
     this.runOutcome = null
     this.runs = []
     this.events = []
+    this.capacity = null
+    this.scenario = null
+    this.capacityQueries = []
     this.shifts = []
     this.employees = []
     this.roster = null
@@ -245,6 +255,34 @@ export const handlers = [
           : v,
     )
     return HttpResponse.json(backend.versions.find((v) => v.id === version.id))
+  }),
+
+  http.post('*/api/v1/forecasting/scenarios', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    return response.ok && backend.scenario ? HttpResponse.json(backend.scenario) : response
+  }),
+
+  http.get('*/api/v1/capacity', ({ request }) => {
+    backend.capacityQueries.push(new URL(request.url).search)
+    return backend.capacity
+      ? HttpResponse.json(backend.capacity)
+      : problem(404, 'resource.not_found', 'Not found')
+  }),
+
+  http.put('*/api/v1/capacity/limits', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, number>
+    const response = await schedulingWrite(info, 'PUT')
+    if (response.ok && backend.capacity) {
+      backend.capacity = {
+        ...backend.capacity,
+        limits: {
+          permanentLimit: Number(sent.permanentLimit),
+          seasonalLimit: Number(sent.seasonalLimit),
+          confirmed: true,
+        },
+      }
+    }
+    return response
   }),
 
   http.get('*/api/v1/forecasting/events', ({ request }) => {

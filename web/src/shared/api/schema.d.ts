@@ -123,6 +123,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/capacity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Agents needed at the busiest moment of each day, by permanent and seasonal pool */
+        get: operations["wfm_capacity_api_get_capacity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capacity/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the permanent and seasonal pools */
+        put: operations["wfm_capacity_api_set_limits"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/forecasting/accuracy": {
         parameters: {
             query?: never;
@@ -171,6 +205,23 @@ export interface paths {
         post?: never;
         /** Remove an event */
         delete: operations["wfm_forecasting_api_delete_event"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forecasting/scenarios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What if: the agents needed if calls, handling time, shrinkage or the target change */
+        post: operations["wfm_forecasting_api_run_scenario"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -563,6 +614,62 @@ export interface components {
             /** Weekstatus */
             weekStatus: string;
         };
+        /** CapacityDayOut */
+        CapacityDayOut: {
+            /** Complete */
+            complete: boolean;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Overflow */
+            overflow: number | null;
+            /** Peak */
+            peak: number | null;
+            /** Permanent */
+            permanent: number | null;
+            /** Permanentonbooks */
+            permanentOnBooks: number;
+            /** Queuescovered */
+            queuesCovered: number;
+            /** Queuestotal */
+            queuesTotal: number;
+            /** Seasonal */
+            seasonal: number | null;
+            /** Seasonalonbooks */
+            seasonalOnBooks: number;
+            /** Seasonaltohire */
+            seasonalToHire: number | null;
+        };
+        /** CapacityOut */
+        CapacityOut: {
+            limits: components["schemas"]["LimitsOut"];
+            /** Weeks */
+            weeks: components["schemas"]["CapacityWeekOut"][];
+        };
+        /** CapacityWeekOut */
+        CapacityWeekOut: {
+            /** Days */
+            days: components["schemas"]["CapacityDayOut"][];
+            /** Daysforecast */
+            daysForecast: number;
+            /** Daysincomplete */
+            daysIncomplete: number;
+            /** Overflowdays */
+            overflowDays: number;
+            /** Peak */
+            peak: number | null;
+            /** Peakday */
+            peakDay: string | null;
+            /** Seasonalpeak */
+            seasonalPeak: number | null;
+            /**
+             * Weekstart
+             * Format: date
+             */
+            weekStart: string;
+        };
         /** Coverage */
         Coverage: {
             /** Intervalstotal */
@@ -819,6 +926,22 @@ export interface components {
             slThresholdS: number;
             total: components["schemas"]["QueueKpisOut"];
         };
+        /** LimitsIn */
+        LimitsIn: {
+            /** Permanentlimit */
+            permanentLimit: number;
+            /** Seasonallimit */
+            seasonalLimit: number;
+        };
+        /** LimitsOut */
+        LimitsOut: {
+            /** Confirmed */
+            confirmed: boolean;
+            /** Permanentlimit */
+            permanentLimit: number;
+            /** Seasonallimit */
+            seasonalLimit: number;
+        };
         /** LoginIn */
         LoginIn: {
             /** Password */
@@ -1073,6 +1196,75 @@ export interface components {
             /** Queueid */
             queueId: number;
         };
+        /** ScenarioAssumptionsOut */
+        ScenarioAssumptionsOut: {
+            /** Occupancyceilingpct */
+            occupancyCeilingPct: number;
+            /** Shrinkagepct */
+            shrinkagePct: number;
+            /** Sltargetpct */
+            slTargetPct: number;
+            /** Slthresholds */
+            slThresholdS: number;
+        };
+        /** ScenarioDayOut */
+        ScenarioDayOut: {
+            /** Callsbase */
+            callsBase: number;
+            /** Callsscenario */
+            callsScenario: number;
+            /** Complete */
+            complete: boolean;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Hoursbase */
+            hoursBase: number;
+            /** Hoursscenario */
+            hoursScenario: number;
+            /** Peakbase */
+            peakBase: number | null;
+            /** Peakscenario */
+            peakScenario: number | null;
+        };
+        /** ScenarioIn */
+        ScenarioIn: {
+            /**
+             * Ahtchangepct
+             * @default 0
+             */
+            ahtChangePct: number;
+            /** Shrinkagepct */
+            shrinkagePct?: number | null;
+            /** Sltargetpct */
+            slTargetPct?: number | null;
+            /**
+             * Versionid
+             * Format: uuid
+             */
+            versionId: string;
+            /**
+             * Volumechangepct
+             * @default 0
+             */
+            volumeChangePct: number;
+        };
+        /** ScenarioOut */
+        ScenarioOut: {
+            base: components["schemas"]["ScenarioAssumptionsOut"];
+            /** Days */
+            days: components["schemas"]["ScenarioDayOut"][];
+            /** Queue */
+            queue: string;
+            scenario: components["schemas"]["ScenarioAssumptionsOut"];
+            /**
+             * Versionid
+             * Format: uuid
+             */
+            versionId: string;
+        };
         /** ShiftIn */
         ShiftIn: {
             /** Code */
@@ -1324,6 +1516,53 @@ export interface operations {
             };
         };
     };
+    wfm_capacity_api_get_capacity: {
+        parameters: {
+            query: {
+                week_start: string;
+                weeks?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapacityOut"];
+                };
+            };
+        };
+    };
+    wfm_capacity_api_set_limits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LimitsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LimitsOut"];
+                };
+            };
+        };
+    };
     wfm_forecasting_api_accuracy: {
         parameters: {
             query: {
@@ -1439,6 +1678,30 @@ export interface operations {
                     "application/json": {
                         [key: string]: boolean;
                     };
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_run_scenario: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioOut"];
                 };
             };
         };

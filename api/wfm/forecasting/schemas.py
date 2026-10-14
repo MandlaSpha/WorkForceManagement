@@ -81,3 +81,37 @@ class EventOut(Schema):
     dateFrom: date  # noqa: N815
     dateTo: date  # noqa: N815
     upliftPct: float  # noqa: N815
+
+
+class ScenarioIn(Schema):
+    versionId: UUID  # noqa: N815 - the forecast to ask "what if" about
+    volumeChangePct: float = 0  # noqa: N815 - +20 is a fifth more calls
+    ahtChangePct: float = 0  # noqa: N815 - +10 is calls taking a tenth longer
+    shrinkagePct: float | None = None  # noqa: N815 - none keeps the forecast's own
+    slTargetPct: float | None = None  # noqa: N815
+
+
+class ScenarioAssumptionsOut(Schema):
+    slTargetPct: float  # noqa: N815
+    slThresholdS: int  # noqa: N815
+    occupancyCeilingPct: float  # noqa: N815
+    shrinkagePct: float  # noqa: N815
+
+
+class ScenarioDayOut(Schema):
+    day: date
+    callsBase: float  # noqa: N815
+    callsScenario: float  # noqa: N815
+    peakBase: int | None  # noqa: N815 - most agents to roster at once
+    peakScenario: int | None  # noqa: N815
+    hoursBase: float  # noqa: N815 - agent-hours to roster over the day
+    hoursScenario: float  # noqa: N815
+    complete: bool  # false: some half-hour with calls could not be staffed, figures are minimums
+
+
+class ScenarioOut(Schema):
+    versionId: UUID  # noqa: N815
+    queue: str
+    base: ScenarioAssumptionsOut
+    scenario: ScenarioAssumptionsOut
+    days: list[ScenarioDayOut]

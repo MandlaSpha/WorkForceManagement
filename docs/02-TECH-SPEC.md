@@ -140,6 +140,25 @@ A planner or admin enters a planned reason for demand to differ: a name, the fir
 - Roles: admin and planner change the calendar, leads read it, nobody else sees it. Create, change and remove are audited with the before and after values; saving without changes records nothing.
 - Edit has an API (`PUT`) but no screen yet; add and remove cover the planner's need.
 
+### 4.3d Capacity against the workforce (Phase 2.5, built)
+Capacity answers one question per day: how many people must be working **at the same moment** at the busiest half-hour, and can the permanent staff, then the seasonal pool, cover it (requirement CAP-01; tender: up to 350 agents, 100 permanent and 250 seasonal).
+
+- **Source.** The published forecast of every queue (agents to roster, shrinkage included), added up half-hour by half-hour across queues (`wfm_engine.capacity.combine`); the day's figure is the busiest half-hour (`peak`), not the sum of the day.
+- **Split.** Permanent staff fill first, then seasonal agents up to their pool, and what is left is **overflow** (needs overtime, another site or an outsourcer). Parts always add up to the peak (`split_demand`).
+- **Honesty.** A day with no published forecast has no figures (dashes, never zeros). A day where only some queues are forecast, or a half-hour could not be staffed, is a **minimum** and says "at least this many: 1 of 2 queues". Drafts and archived forecasts never count.
+- **On the books.** Permanent staff and seasonal agents employed that day (from the employee dates) and the seasonal agents **still to find** (needed minus engaged, never negative). Only counts leave the API, never names.
+- **Limits.** One row for the deployment, the tender's 100 and 250 until an admin confirms or changes them in Configure, Workforce (audited, with before and after). The screen warns while they are unconfirmed.
+- **Roles.** Admin, planner, executive and customer operations read it; only the admin sets the limits. Leads and agents are refused.
+- **Not modelled yet.** A person works a shift, so headcount to cover shifts, leave and rest is higher than the simultaneous peak; this view is the floor for hiring, not the roster. Attrition and hiring pipelines are not tracked.
+
+### 4.3e What-if scenarios (Phase 2.5, built)
+A planner, lead or admin picks a forecast version and changes any of: calls (-100% to +500%), handling time (-90% to +500%), shrinkage, or the service-level target. The staffing is worked out again with the same function the forecast used (`forecasting/staffing.py`), and the screen shows base against scenario per day: calls, the most agents to roster at once, and agent-hours (agents to roster x half an hour), with the change signed.
+
+- **Read-only.** Nothing is saved, no version is created and no audit event is written; the forecast is never touched. A scenario of "no change" reproduces the base, which is tested.
+- **The base is the forecast's own**: the assumptions it was run with (stored on the version), not the queue's current ones, so changing a queue's shrinkage later does not rewrite what an old forecast meant.
+- **Honest about gaps.** A half-hour with calls but no known handling time cannot be staffed; the day is marked a minimum (asterisk) rather than counting it as zero.
+- Not in this version: saving and naming scenarios, comparing several side by side, headcount what-ifs (leave, hiring) and linking a scenario to the capacity pools; those wait for Phase 4 (optimise).
+
 ### 4.3b Roster and plan (Phase 2, built)
 **Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
 
@@ -284,7 +303,7 @@ Other rules:
 - **Where it runs:** in the API layer (`wfm/forecasting/prophet_model.py`, `modeling.py`), not in `wfm_engine`, which stays free of Django, the clock and I/O. Built (14 Oct 2026): a run with its backtest takes a few seconds and stays inside the request; it moves to the Celery worker behind the job API when runs grow. The model sits behind the same forecast-version interface as the baseline, so publishing, audit and the accuracy backtest are unchanged. Decision record: `docs/adr/0002-prophet-for-daily-totals.md`.
 - **Rule from the tender text:** Prophet must beat the baseline on the rolling backtest, or the version says it did not and uses the baseline. Accuracy is shown per model.
 - **Data limit:** only May and July are real today. With under a year of history yearly seasonality is switched off and the screen says so; weekly pattern, holidays and month-end still apply.
-- **Cost:** none beyond the wheel: Prophet 1.5 ships the compiled model, so no compiler or cmdstan build is needed on Windows or in a glibc Linux image (ADR 0002). Built since: the events calendar (section 4.3c). Still to build in this phase: the 350-agent capacity view (CAP-01) and scenarios.
+- **Cost:** none beyond the wheel: Prophet 1.5 ships the compiled model, so no compiler or cmdstan build is needed on Windows or in a glibc Linux image (ADR 0002). Built since: the events calendar (section 4.3c). Also built: the capacity view (section 4.3d) and what-if scenarios (section 4.3e). Phase 2.5 is complete apart from the extras listed under Not built.
 
 The Copilot (requirements §3.12) is **parked**: not in any phase and not in the test plan. If it is ever requested, it comes after the role-scoping layer and the endpoint × role test matrix exist, and reuses them rather than adding a new data path.
 

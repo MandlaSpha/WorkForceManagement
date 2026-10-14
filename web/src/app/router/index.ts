@@ -25,6 +25,7 @@ const BUILT_SCREENS: Partial<Record<NavKey, RouteRecordRaw['component']>> = {
   roster: () => import('@/pages/roster'),
   employees: () => import('@/pages/employees'),
   configure: () => import('@/pages/configure'),
+  capacity: () => import('@/pages/capacity'),
 }
 
 const screens: RouteRecordRaw[] = NAV_ITEMS.map((item) => ({

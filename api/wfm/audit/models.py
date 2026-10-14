@@ -41,6 +41,7 @@ class Action(models.TextChoices):
     FORECAST_EVENT_CREATED = "forecast_event.created", "Forecast event created"
     FORECAST_EVENT_CHANGED = "forecast_event.changed", "Forecast event changed"
     FORECAST_EVENT_DELETED = "forecast_event.deleted", "Forecast event deleted"
+    CAPACITY_LIMITS_CHANGED = "capacity.limits_changed", "Workforce limits changed"
     SHIFT_CREATED = "shift.created", "Shift template created"
     SHIFT_CHANGED = "shift.changed", "Shift template changed"
     SHIFT_DELETED = "shift.deleted", "Shift template deleted"

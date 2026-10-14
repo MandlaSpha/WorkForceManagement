@@ -7,6 +7,8 @@ import type {
   ForecastInterval,
   ForecastVersion,
   RunForecastRequest,
+  ScenarioRequest,
+  ScenarioResult,
 } from '../model/types'
 
 export async function fetchVersions(queueId: number | null): Promise<ForecastVersion[]> {
@@ -61,4 +63,8 @@ export async function deleteEvent(eventId: number): Promise<void> {
       params: { path: { event_id: eventId } },
     }),
   )
+}
+
+export async function runScenario(body: ScenarioRequest): Promise<ScenarioResult> {
+  return unwrap(await api.POST('/api/v1/forecasting/scenarios', { body }))
 }

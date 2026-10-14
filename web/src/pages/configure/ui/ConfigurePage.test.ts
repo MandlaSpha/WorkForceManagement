@@ -2,6 +2,7 @@ import userEvent from '@testing-library/user-event'
 import { screen, waitFor, within } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 
+import { capacityOf } from '@/test/capacity-fixtures'
 import { backend } from '@/test/fake-backend'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
 
@@ -136,6 +137,57 @@ describe('queue staffing settings', () => {
 
     expect(await screen.findByTestId('settings-error')).toHaveTextContent(/below 100/)
     expect(screen.getByTestId('settings-state-1')).toHaveTextContent('Defaults, not confirmed')
+  })
+})
+
+describe('workforce limits', () => {
+  it('says the pools are the tender figures until confirmed, then sends them and flips', async () => {
+    seedScheduling()
+    backend.capacity = capacityOf({
+      limits: { permanentLimit: 100, seasonalLimit: 250, confirmed: false },
+    })
+    const user = userEvent.setup()
+    await openScheduling('/configure', 'admin')
+
+    await user.click(await screen.findByRole('tab', { name: 'Workforce' }))
+    expect(await screen.findByTestId('limits-state')).toHaveTextContent(
+      'Tender figures, not confirmed',
+    )
+    const seasonal = screen.getByLabelText(/Seasonal agents/)
+    await user.clear(seasonal)
+    await user.type(seasonal, '200')
+    await user.click(screen.getByRole('button', { name: 'Confirm limits' }))
+
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]).toEqual({
+      method: 'PUT',
+      path: '/api/v1/capacity/limits',
+      body: { permanentLimit: 100, seasonalLimit: 200 },
+      csrf: 'test-csrf-token',
+    })
+    await waitFor(() => expect(screen.getByTestId('limits-state')).toHaveTextContent('Confirmed'))
+    expect(screen.getByRole('button', { name: 'Save limits' })).toBeVisible()
+  })
+
+  it('shows the reason and stays unconfirmed when the server refuses', async () => {
+    seedScheduling()
+    backend.capacity = capacityOf({
+      limits: { permanentLimit: 100, seasonalLimit: 250, confirmed: false },
+    })
+    backend.nextProblem = {
+      status: 422,
+      code: 'capacity.no_workforce',
+      title: 'Invalid request',
+      detail: 'The workforce cannot be empty.',
+    }
+    const user = userEvent.setup()
+    await openScheduling('/configure', 'admin')
+
+    await user.click(await screen.findByRole('tab', { name: 'Workforce' }))
+    await user.click(await screen.findByRole('button', { name: 'Confirm limits' }))
+
+    expect(await screen.findByTestId('limits-error')).toHaveTextContent(/cannot be empty/)
+    expect(screen.getByTestId('limits-state')).toHaveTextContent('not confirmed')
   })
 })
 

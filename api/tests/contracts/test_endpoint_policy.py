@@ -161,6 +161,7 @@ MODULE_FEATURE = {
     "/api/v1/telephony": "telephony",
     "/api/v1/forecasting": "forecasting",
     "/api/v1/scheduling": "scheduling",
+    "/api/v1/capacity": "capacity",
 }
 
 
