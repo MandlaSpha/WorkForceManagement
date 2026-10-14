@@ -53,7 +53,7 @@ test.describe('tracing', () => {
 
     await signIn(page, 'planner')
     await page.getByRole('link', { name: 'Forecast' }).click()
-    await expect(page.getByRole('heading', { name: 'Forecast' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Forecast', exact: true })).toBeVisible()
     await page.goto('/login?redirect=/roster&name=Pat') // a URL with a query string
     // Spans are exported in batches and when the page is hidden.
     await expect.poll(() => exports.length, { timeout: 15_000 }).toBeGreaterThan(0)

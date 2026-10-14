@@ -131,6 +131,17 @@ The half-hour score is low for small queues because a half-hour holds a call or 
 
 **Not built yet:** the monthly trend factor, events and uplifts (FC-04), multi-channel (FC-06), ML (FC-07), per-queue and per-contract settings screens (ENG-05; the values exist on the queue but are changed in Configure, Phase 2). Whole days are assumed: an import that stops mid-day would make that day look quiet.
 
+### 4.3b Roster and plan (Phase 2, built)
+**Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
+
+**Rules on every assignment, in this order** (the first that fails refuses the change and is audited as `roster.refused`, after the transaction rolls back so the refusal itself is not lost): the person has the queue's skill; the person is employed on that day; the person is not already rostered anywhere that day (one shift per person per day across all queues); at least 11 hours of rest from the previous and next shift, including overnight shifts and across week boundaries; no more than 6 consecutive days; paid minutes in the week within the contract hours. The employee row is locked while checking so two planners cannot both pass the rules. A published week answers 409 `roster.published` until it is returned to draft.
+
+**Honesty.** Weekly hours nobody entered are a flagged default (`weeklyHoursIsDefault`), shown as "Default". The plan counts **people on shift (gross)**: breaks and activities are not modelled yet (SCH-03), so coverage is optimistic by the break time. An interval with no requirement known (no published forecast covers it) is `null`, drawn as a dot, never as zero, and the week summary counts only intervals with a known requirement. A night shift that started on the previous Sunday counts into Monday.
+
+**Not built:** leave and availability clash on assign (Phase 3), breaks and activities, team-scoped lead views, employee import (DAT-06), auto-schedule (Phase 4).
+
+**Tests that guard it.** Hand-worked plan numbers (required 3, 3, 2, 2 against two people gives gap 4, worst -2 at 09:00); every role allowed and refused on every endpoint; the contract test that each module's routes sit behind their own feature switch; web page tests for the grid, refusals reverting the cell, publish locking and the lead's read-only view; an e2e journey where each person rostered moves the heatmap cell from -5 to -4 to -3, and a published week refuses a change through the API.
+
 ### 4.4 Auto-scheduler
 OR-Tools CP-SAT. Variables: employee × day × shift-template (+ queue). Hard constraints: skill, availability-unavailable, approved leave, one shift per day, ≥ 11h rest, max weekly hours / consecutive days (BCEA), contract hours. Objective: minimise Σ under-staffing (weighted ×3) + Σ over-staffing + preference violations + fairness spread. Time limit 10–30 s per queue-week; run as a job.
 
@@ -248,11 +259,23 @@ Other rules:
 | 0. Foundation | Repo, Docker, DB schema, auth + roles, app shell (sidebar, top bar, site/queue/week pickers, dark mode), seed demo data, Compose dev stack with the Aspire dashboard as OTLP viewer (§9), **OpenTelemetry end to end (browser → API → worker → DB), allow-listed event tracker, collector PII-stripping** so every later screen is instrumented from the start | Login as 4 demo users |
 | 1. Data & engine | CDR importer + reconciliation, interval actuals, baseline forecast, Erlang C requirement | May/July KPIs match DECK exactly |
 | 2. Plan & roster | Shift templates, employees, roster grid, coverage, planner heatmap + day chart, publish, CSV | Variance updates live on assign |
+| 2.5. Forecast v2 & capacity | Prophet daily model beside the baseline (§8.0), SA public holidays + month-end/payment-cycle events (FC-04), confidence band, day totals spread over half-hours by the existing profile, model comparison in the backtest; then the 350-agent cap (100 permanent + 250 seasonal), seasonal need per week and overflow, scenario "what if +20%" | Prophet beats the baseline on the backtest for at least the large queues, or the screen says it does not and keeps the baseline; capacity view shows permanent, seasonal and overflow |
 | 3. People | Leave + approvals + balances, swaps, availability, agent self-service | Leave approval changes coverage |
-| 4. Optimise | Auto-schedule (CP-SAT), recommendations, overtime + pricing, shrinkage | Auto-schedule closes ≥ X% of gap |
-| 5. Insight | Dashboard, analytics, peaks & troughs report, scheduled packs, payroll CSV, capacity planning, intraday | UIF reporting requirements covered |
-| 6. Integrations | Employee master, roster seed, ticket/email, ACD agent-state → adherence, Azure AD | Depends on Gijima data |
-| 7. Extras | Scenario planning, calibration, service-desk model, cross-queue flexing, standby, ML forecast | — |
+| 4. Optimise | Auto-schedule (CP-SAT), recommendations, overtime + pricing (BCEA), shrinkage from actuals | Auto-schedule closes ≥ X% of gap |
+| 5. Insight | Dashboard, analytics, peaks & troughs detection and report, scheduled daily/weekly/monthly packs, payroll CSV, intraday reforecast + alerts, executive view | UIF reporting requirements covered |
+| 6. Integrations | Employee master, roster seed, ticket/email, ACD agent-state → adherence, Azure AD, customer/contract/tier views, ITSM adapters | Depends on Gijima data |
+| 7. Extras | Calibration, service-desk model, cross-queue flexing, standby, ML forecast beyond Prophet | — |
+
+**Why Phase 2.5 exists (re-read of the tender requirements, 14 Oct 2026).** Forecasting carries 1.0 of the 3.0 WFM points and the baseline is weak (§4.3). The tender also asks for the 100 + 250 capacity model, overtime, intraday and peaks/troughs reporting, which were spread thin. Order is by score and by dependency: a better forecast first, because capacity, overtime, intraday and peaks reports all consume it.
+
+**Tender coverage after this plan:** forecasting (2.5), scheduling (2, 3), overtime and shrinkage (4), intraday and adherence (5, 6; adherence needs an ACD agent-state feed), peaks and troughs (5), 350-agent capacity (2.5). Not software: the Workforce Analyst post. **Bid risk, not a build item:** the tender asks for a licensed OEM WFM product (Annexure H); that must be settled with the bid team (requirements open question).
+
+### 8.0 Prophet decision (Phase 2.5)
+- **Use:** Prophet (MIT licence) forecasts **daily totals** per queue; the historical profile spreads the total over half-hours (the approach the baseline already uses at slot level). Holidays from the `holidays` package (ZA) and a business-editable events table feed it.
+- **Where it runs:** in the worker (Celery), not in `wfm_engine`, which stays free of Django, clock and I/O. The model sits behind the same forecast-version interface as the baseline, so publishing, audit and the accuracy backtest are unchanged.
+- **Rule from the tender text:** Prophet must beat the baseline on the rolling backtest, or the version says it did not and uses the baseline. Accuracy is shown per model.
+- **Data limit:** only May and July are real today. With under a year of history yearly seasonality is switched off and the screen says so; weekly pattern, holidays and month-end still apply.
+- **Cost:** a cmdstan toolchain in the worker image and on Windows dev machines (document the fix); decide with an ADR before adding the dependency.
 
 The Copilot (requirements §3.12) is **parked**: not in any phase and not in the test plan. If it is ever requested, it comes after the role-scoping layer and the endpoint × role test matrix exist, and reuses them rather than adding a new data path.
 

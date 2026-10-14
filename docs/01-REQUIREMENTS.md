@@ -71,6 +71,8 @@ Priority: **M** = must (MVP), **S** = should (phase 2), **C** = could (later). U
 | FC-05 | Forecast accuracy tracking (1 − MAPE) at interval and daily level | M | PROP §3 |
 | FC-06 | Multi-channel: tickets and emails as forecastable workload with backlog carry-over | S | PROP 1.7 |
 | FC-07 | Predictive / ML forecast model (e.g. gradient boosting on aggregated volumes only — no personal data) selectable alongside baseline | S | UIF "AI-driven" |
+| FC-08 | Prophet daily-total model with SA holidays and month-end/payment events, spread over half-hours by the historical profile; kept only where it beats the baseline in the backtest (tech spec §8.0, Phase 2.5) | M | UIF 3.1, WFM engine brief |
+| CAP-01 | 350-agent capacity: permanent (100) vs seasonal (250) headcount per day/week, seasonal need and overflow when demand exceeds 350 (Phase 2.5) | M | UIF §4 |
 | FC-08 | Do not forecast inbound for outbound-only queues (GHSA-Service-Desk) | M | DECK s5 |
 
 ### 3.3 Requirement engine ("the spine")
