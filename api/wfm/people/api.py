@@ -22,8 +22,10 @@ from .schemas import (
     LeaveRequestOut,
     LeaveTypeOut,
 )
+from .swap_api import router as swap_router
 
 router = Router(tags=["people"])
+router.add_router("/swaps", swap_router)
 
 SELF = RoleSessionAuth(*sorted(SELF_ROLES), feature=Feature.PEOPLE)
 APPROVE = RoleSessionAuth(*sorted(APPROVE_ROLES), feature=Feature.PEOPLE)

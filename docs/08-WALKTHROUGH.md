@@ -79,9 +79,19 @@ marked "not confirmed" until saved.
 Five-minute demo script: agent asks for Mon-Tue leave; sign in as lead; open impact; approve; open
 the Roster for that week and see the shifts gone; sign in as agent and cancel.
 
+## Phase 3: Shift swaps (SWP-01)
+
+**Agent** (`agent`): **Shift swaps** > *Offer a swap*. Pick one of your coming shifts, then a colleague's shift on the same queue. Only swaps that keep both people within the rest, hours and leave rules are listed, so you cannot offer something the roster would refuse. Offer it.
+
+**Colleague** (`lead` is the demo colleague): sees it under *Waiting for your answer* and accepts or declines.
+
+**Lead / planner / admin**: *Approvals* tab. Approve exchanges the two shifts on the roster; check the Roster page. Nobody approves a swap they are part of: sign in as `lead` and the swap they are in shows 'Somebody else decides', so a planner or admin approves it.
+
+With the demo data there is already a swap waiting for the demo agent, one waiting for approval, one declined and one approved.
+
 ## Not built yet (so you are not looking for it)
 
-Shift swaps, employee availability, agent "my schedule" and "my availability" pages, blackout
+Employee availability, agent "my schedule" and "my availability" pages, blackout
 periods, team-scoped lead views (a lead currently decides for everyone), auto-scheduler,
 recommendations, overtime pricing, scheduled reports, intraday, adherence, ITSM and Azure AD
 integration. The menu lists some of these as placeholders.

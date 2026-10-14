@@ -451,6 +451,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/people/swaps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Shift swaps you are part of, or all */
+        get: operations["wfm_people_swap_api_list_swaps"];
+        put?: never;
+        /** Offer a shift for a colleague's */
+        post: operations["wfm_people_swap_api_propose"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/swaps/my-shifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your shifts you could swap */
+        get: operations["wfm_people_swap_api_my_shifts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/swaps/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Colleagues' shifts one of yours could be swapped for */
+        get: operations["wfm_people_swap_api_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/swaps/{swap_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a colleague's offer */
+        post: operations["wfm_people_swap_api_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/swaps/{swap_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a swap: the two shifts are exchanged */
+        post: operations["wfm_people_swap_api_approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/swaps/{swap_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw a swap */
+        post: operations["wfm_people_swap_api_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/swaps/{swap_id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline an offer */
+        post: operations["wfm_people_swap_api_decline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/swaps/{swap_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject a swap */
+        post: operations["wfm_people_swap_api_reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/employees": {
         parameters: {
             query?: never;
@@ -1858,6 +1995,83 @@ export interface components {
             /** Queueid */
             queueId: number;
         };
+        /** SwapIn */
+        SwapIn: {
+            /** Employeeid */
+            employeeId?: number | null;
+            /** Giveassignmentid */
+            giveAssignmentId: number;
+            /** Takeassignmentid */
+            takeAssignmentId: number;
+        };
+        /** SwapOut */
+        SwapOut: {
+            /** Asker */
+            asker: boolean;
+            /** Colleague */
+            colleague: boolean;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Decidedat */
+            decidedAt: string | null;
+            /**
+             * Fromday
+             * Format: date
+             */
+            fromDay: string;
+            /** Fromemployee */
+            fromEmployee: string;
+            /** Fromshift */
+            fromShift: string;
+            /** Id */
+            id: number;
+            /** Queue */
+            queue: string;
+            /** Status */
+            status: string;
+            /**
+             * Today
+             * Format: date
+             */
+            toDay: string;
+            /** Toemployee */
+            toEmployee: string;
+            /** Toshift */
+            toShift: string;
+        };
+        /** SwapShiftOut */
+        SwapShiftOut: {
+            /** Assignmentid */
+            assignmentId: number;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /**
+             * Endtime
+             * Format: time
+             */
+            endTime: string;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+            /** Shift */
+            shift: string;
+            /**
+             * Starttime
+             * Format: time
+             */
+            startTime: string;
+        };
         /** TuningIn */
         TuningIn: {
             /** Ahtmultiplier */
@@ -2651,6 +2865,204 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LeaveTypeOut"];
+                };
+            };
+        };
+    };
+    wfm_people_swap_api_list_swaps: {
+        parameters: {
+            query?: {
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapOut"][];
+                };
+            };
+        };
+    };
+    wfm_people_swap_api_propose: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwapIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapOut"];
+                };
+            };
+        };
+    };
+    wfm_people_swap_api_my_shifts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapShiftOut"][];
+                };
+            };
+        };
+    };
+    wfm_people_swap_api_options: {
+        parameters: {
+            query: {
+                give_assignment_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapShiftOut"][];
+                };
+            };
+        };
+    };
+    wfm_people_swap_api_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                swap_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapOut"];
+                };
+            };
+        };
+    };
+    wfm_people_swap_api_approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                swap_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapOut"];
+                };
+            };
+        };
+    };
+    wfm_people_swap_api_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                swap_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapOut"];
+                };
+            };
+        };
+    };
+    wfm_people_swap_api_decline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                swap_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapOut"];
+                };
+            };
+        };
+    };
+    wfm_people_swap_api_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                swap_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SwapOut"];
                 };
             };
         };

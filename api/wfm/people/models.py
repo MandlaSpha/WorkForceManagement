@@ -104,3 +104,76 @@ class LeaveRequest(models.Model):
 
     def __str__(self) -> str:
         return f"{self.employee_id} {self.start_date}..{self.end_date} ({self.status})"
+
+
+class SwapStatus(models.TextChoices):
+    AWAITING_COLLEAGUE = "awaiting_colleague", "Waiting for the colleague"
+    AWAITING_APPROVAL = "awaiting_approval", "Waiting for approval"
+    APPROVED = "approved", "Approved"
+    DECLINED = "declined", "Declined by the colleague"
+    REJECTED = "rejected", "Rejected"
+    CANCELLED = "cancelled", "Cancelled"
+
+
+OPEN_SWAP_STATUSES = (SwapStatus.AWAITING_COLLEAGUE, SwapStatus.AWAITING_APPROVAL)
+
+
+class SwapRequestQuerySet(ScopedQuerySet):
+    def for_user(self, user: Any) -> Self:
+        if user.role in APPROVE_ROLES:
+            return self
+        if user.role == Role.AGENT:  # an agent sees swaps they are a party to, nothing else
+            return self.filter(
+                models.Q(from_employee__user=user) | models.Q(to_employee__user=user)
+            )
+        return self.none()
+
+
+class SwapRequest(models.Model):
+    """Two people exchange shifts: `from_employee` gives up their shift on `from_day` and takes
+    `to_employee`'s on `to_day`. The shifts are kept as a snapshot (day and shift), because the
+    roster rows are replaced when the swap happens; approving checks the roster still matches.
+    No free text, like leave."""
+
+    queue = models.ForeignKey("telephony.Queue", on_delete=models.PROTECT, related_name="+")
+    from_employee = models.ForeignKey(
+        "scheduling.Employee", on_delete=models.PROTECT, related_name="swaps_asked"
+    )
+    from_day = models.DateField()
+    from_template = models.ForeignKey(
+        "scheduling.ShiftTemplate", on_delete=models.PROTECT, related_name="+"
+    )
+    to_employee = models.ForeignKey(
+        "scheduling.Employee", on_delete=models.PROTECT, related_name="swaps_offered"
+    )
+    to_day = models.DateField()
+    to_template = models.ForeignKey(
+        "scheduling.ShiftTemplate", on_delete=models.PROTECT, related_name="+"
+    )
+    status = models.CharField(
+        max_length=20, choices=SwapStatus.choices, default=SwapStatus.AWAITING_COLLEAGUE
+    )
+    requested_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(
+        db_default=models.Func(function="now", output_field=models.DateTimeField())
+    )
+    colleague_answered_at = models.DateTimeField(null=True, blank=True)
+    decided_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+
+    objects = SwapRequestQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["from_day", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(from_employee=models.F("to_employee")),
+                name="people_swap_two_people",
+            ),
+        ]
+        indexes = [models.Index(fields=["status", "from_day"], name="people_swap_by_status")]
+
+    def __str__(self) -> str:
+        return f"{self.from_employee_id}<->{self.to_employee_id} ({self.status})"

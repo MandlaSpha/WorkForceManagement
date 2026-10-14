@@ -66,11 +66,15 @@ def test_reset_passwords_updates_existing_demo_users_and_clears_lockout() -> Non
 
 
 @override_settings(DEBUG=True)
-def test_the_demo_agent_gets_one_synthetic_employee_record_even_when_seeded_twice() -> None:
+def test_the_demo_floor_logins_get_one_synthetic_employee_record_each() -> None:
     call_command("seed_demo", password=STRONG)
     call_command("seed_demo", password=STRONG)
 
     employees = Employee.objects.filter(user__isnull=False)
-    assert [(e.emp_no, e.user.username) for e in employees] == [("DEMO-AGENT", "agent")]
-    # Only the agent: leads, planners and the rest are not on the roster list by being demo users.
-    assert Employee.objects.count() == 1
+    assert sorted((e.emp_no, e.user.username) for e in employees) == [
+        ("DEMO-AGENT", "agent"),
+        ("DEMO-LEAD", "lead"),
+    ]
+    # Only the two who work the floor: planners, admins and the rest are not on the roster list
+    # just by being demo users.
+    assert Employee.objects.count() == 2

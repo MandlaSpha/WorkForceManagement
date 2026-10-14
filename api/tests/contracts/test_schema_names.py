@@ -20,7 +20,7 @@ import wfm
 def test_every_schema_class_name_is_used_by_one_app_only() -> None:
     owners: dict[str, set[str]] = defaultdict(set)
     for module_info in pkgutil.walk_packages(wfm.__path__, "wfm."):
-        if not module_info.name.endswith(".schemas"):
+        if not module_info.name.rsplit(".", 1)[-1].endswith("schemas"):  # schemas, swap_schemas
             continue
         module = importlib.import_module(module_info.name)
         for name, cls in inspect.getmembers(module, inspect.isclass):

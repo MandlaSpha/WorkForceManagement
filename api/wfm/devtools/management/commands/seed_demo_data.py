@@ -42,10 +42,17 @@ from wfm.forecasting import event_services
 from wfm.forecasting import services as forecast_services
 from wfm.forecasting.models import ForecastInterval, ForecastStatus
 from wfm.people import services as leave_services
+from wfm.people import swap_services
 from wfm.people.models import LeaveType
 from wfm.scheduling import roster_services
 from wfm.scheduling import services as scheduling_services
-from wfm.scheduling.models import ContractType, Employee, EmployeeSkill, ShiftTemplate
+from wfm.scheduling.models import (
+    ContractType,
+    Employee,
+    EmployeeSkill,
+    ShiftAssignment,
+    ShiftTemplate,
+)
 from wfm.scheduling.services import SkillInput
 from wfm.servicedesk.models import ServicePool, WorkItem
 from wfm.telephony.models import IntervalActual, Queue
@@ -154,6 +161,8 @@ class Command(BaseCommand):
         self.stdout.write("Rosters built.")
         self._leave(cast, staff["Demo Support"], today)
         self.stdout.write("Leave in every state.")
+        self._swaps(cast, queues["Demo Support"], today)
+        self.stdout.write("Shift swaps in every state.")
         self._service_desk(today, zone)
         audit.record(
             actor=None,
@@ -209,7 +218,7 @@ class Command(BaseCommand):
         rng.shuffle(names)
         number = 0
         staff: dict[str, list[Employee]] = {}
-        demo_agent = Employee.objects.filter(emp_no="DEMO-AGENT").first()
+        demo_floor = list(Employee.objects.filter(emp_no__in=["DEMO-AGENT", "DEMO-LEAD"]))
         for queue_name, (full, part, seasonal) in HEADCOUNT.items():
             queue = queues[queue_name]
             extra = SkillInput(queues["Demo Support"].pk) if queue_name == "Demo Billing" else None
@@ -236,9 +245,9 @@ class Command(BaseCommand):
                     )
                 )
             staff[queue_name] = made
-        if demo_agent is not None:  # the demo `agent` login works the Support queue
-            EmployeeSkill.objects.get_or_create(employee=demo_agent, queue=queues["Demo Support"])
-            staff["Demo Support"].append(demo_agent)
+        for floor_person in demo_floor:  # the `agent` and `lead` logins work the Support queue
+            EmployeeSkill.objects.get_or_create(employee=floor_person, queue=queues["Demo Support"])
+            staff["Demo Support"].append(floor_person)
         return staff
 
     # --- forecasts and events ------------------------------------------------------------------
@@ -433,6 +442,55 @@ class Command(BaseCommand):
             back -= timedelta(days=1)
         taken = ask(people[5], "sick", back, back + timedelta(days=1))
         leave_services.decide(user=cast.lead, request_id=taken.pk, approve=True)
+
+    # --- shift swaps ---------------------------------------------------------------------------
+
+    def _swaps(self, cast: Cast, queue: Queue, today: date) -> None:
+        """Swaps next week on the Support queue: one waiting for the demo agent's answer, one
+        waiting for the lead, one declined and one already approved (the roster shows it)."""
+        monday = today - timedelta(days=today.weekday()) + timedelta(days=7)
+        shifts = list(
+            ShiftAssignment.objects.filter(
+                roster_week__queue=queue, day__gte=monday, day__lt=monday + timedelta(days=7)
+            )
+            .select_related("employee")
+            .order_by("day", "pk")
+        )
+        used: set[int] = set()
+
+        def offer(want_colleague: str | None = None) -> Any:
+            for give in shifts:
+                for take in shifts:
+                    if give.pk in used or take.pk in used or give.employee_id == take.employee_id:
+                        continue
+                    if cast.lead.pk in (give.employee.user_id, take.employee.user_id):
+                        continue  # the lead decides these, and nobody decides their own swap
+                    if want_colleague and take.employee.emp_no != want_colleague:
+                        continue
+                    try:
+                        swap = swap_services.propose(
+                            user=cast.planner,
+                            give_id=give.pk,
+                            take_id=take.pk,
+                            employee_id=give.employee_id,
+                        )
+                    except ApiError:
+                        continue  # a roster rule refuses this pair: try another
+                    used.update((give.pk, take.pk))
+                    return swap
+            return None
+
+        offer("DEMO-AGENT")  # waits for the demo agent to accept
+        agreed = offer()
+        if agreed is not None:
+            swap_services.respond(user=cast.planner, swap_id=agreed.pk, accept=True)
+        declined = offer()
+        if declined is not None:
+            swap_services.respond(user=cast.planner, swap_id=declined.pk, accept=False)
+        done = offer()
+        if done is not None:
+            swap_services.respond(user=cast.planner, swap_id=done.pk, accept=True)
+            swap_services.decide(user=cast.lead, swap_id=done.pk, approve=True)
 
     # --- service desk --------------------------------------------------------------------------
 

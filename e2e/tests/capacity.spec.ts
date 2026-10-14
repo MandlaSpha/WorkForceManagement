@@ -24,7 +24,9 @@ test.beforeAll(() => {
   if (!PASSWORD) throw new Error('Set WFM_DEMO_PASSWORD to the demo account password.')
 })
 
-const WEEKS_AHEAD = 3 // the target Monday is three weeks after the current one
+// The target Monday is six weeks after the current one: beyond the four weeks the demo data
+// forecasts (seed_demo_data), so the day checked for "nobody forecast" is really empty.
+const WEEKS_AHEAD = 6
 
 /** The figures of one day's row, or null for the dash that means "not forecast". */
 async function readDay(page: Page, day: string) {
@@ -58,7 +60,7 @@ test('publishing a forecast adds its people to the day, split permanent first', 
 }) => {
   test.setTimeout(120_000)
   const queue = `E2E Queue c${rand(1_000_000)}`
-  const target = addDays(nextMonday(), 14)
+  const target = addDays(nextMonday(), 7 * (WEEKS_AHEAD - 1))
 
   await signIn(page, 'planner')
   await importDay(page, addDays(target, -14), queue)

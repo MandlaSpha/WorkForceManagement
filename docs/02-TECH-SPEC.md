@@ -203,6 +203,17 @@ Requirements LV-01 to LV-03 and the agent's own view (ESS-01). Pure rules in `wf
 - **Roles.** Agent, lead, planner and admin have their own leave; agents see only their own. Leads, planners and admins see and decide everyone's (a lead's own team needs the employee's manager link, which is not built: until then a lead decides for everyone). Only the admin sets entitlements. Every request, decision, cancellation and entitlement change is audited with before and after.
 - **Not built yet:** blackout periods and a maximum number on leave at once (LV-04), half days, leave balances carried over, a lead's team scope, notifications, and leave in the planner's availability view.
 
+### 4.3j Shift swaps (Phase 3, built)
+Requirement SWP-01. In `wfm.people` (`SwapRequest`, `swap_services.py`); the exchange itself and its rule check live with the roster rules in `scheduling/roster_services.py` (`exchange_refusal`, `exchange`), so a swap can never allow what the roster would refuse.
+
+- **Flow.** A person offers one of their shifts for a colleague's on the SAME queue. The colleague accepts or declines; a lead, planner or admin approves or rejects. Open swaps can be withdrawn by whoever asked (or a planner/admin); an approved swap cannot, because it would leave the roster half-done.
+- **Rules are checked three times:** when asked, when the colleague accepts, and when it is approved, because the roster moves in between. Each person is checked as if their own shift were already gone: rest between shifts (11 h), days in a row, contract hours, approved leave, employment dates, skill, and not already working that day. The refusal is the roster's own reason (`roster.rest_period` and so on).
+- **The roster must still match.** The swap keeps a snapshot (person, day, shift) of both shifts; if either has changed or gone, approval is refused (`swap.changed`). A shift can be in only one open swap (`swap.already_open`). A shift that has started cannot be swapped (`swap.in_the_past`).
+- **Approving exchanges the two shifts** in one transaction with the audit event as the last write; it works in a published week and leaves it published, as the sanctioned way for a final roster to change. Audit actions: `swap.requested|accepted|declined|approved|rejected|cancelled`, with the shift moves on approval.
+- **Roles.** Agent, lead, planner, admin take part; agents see only swaps they are in; leads, planners and admins see all. Nobody approves a swap they are part of (`swap.own_request`, 403). A planner or admin can ask or answer on someone's behalf. Executive and customer_ops are refused everywhere.
+- **What colleagues see.** The "swap it for" list shows colleagues' name, day and shift for the same queue, only those that pass every rule for both people (at most 40, next 28 days), as on any posted roster. No reason text is stored.
+- **Not built:** open "shift board" offers to anyone, swaps across queues, notifications, team-scoped approval (a lead approves for everyone until employees have a manager link).
+
 ### 4.3b Roster and plan (Phase 2, built)
 **Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
 

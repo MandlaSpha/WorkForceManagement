@@ -12,7 +12,7 @@ from django.utils import timezone
 from wfm.audit.models import AuditEvent
 from wfm.devtools.demo_history import outage_day, recorder_gap_day
 from wfm.forecasting.models import ForecastStatus, ForecastVersion
-from wfm.people.models import LeaveRequest, LeaveStatus
+from wfm.people.models import LeaveRequest, LeaveStatus, SwapRequest, SwapStatus
 from wfm.scheduling.models import Employee, RosterStatus, RosterWeek, ShiftAssignment
 from wfm.servicedesk.models import WorkItem
 from wfm.telephony.models import IntervalActual, Queue
@@ -125,3 +125,27 @@ def test_the_seeding_is_audited_and_the_chain_still_verifies(seeded: None) -> No
     assert AuditEvent.objects.filter(action="system.seed_demo_data").count() == 1
     assert AuditEvent.objects.filter(action="roster.assigned").exists()
     call_command("audit_verify")
+
+
+def test_swaps_are_in_the_states_a_demo_needs_and_the_approved_one_moved_the_roster(
+    seeded: None,
+) -> None:
+    states = set(SwapRequest.objects.values_list("status", flat=True))
+    assert states == {
+        SwapStatus.AWAITING_COLLEAGUE,
+        SwapStatus.AWAITING_APPROVAL,
+        SwapStatus.DECLINED,
+        SwapStatus.APPROVED,
+    }
+    # One is waiting for the demo agent's own answer, so their login has something to do.
+    assert SwapRequest.objects.filter(
+        status=SwapStatus.AWAITING_COLLEAGUE, to_employee__emp_no="DEMO-AGENT"
+    ).exists()
+    # The approved swap really happened: each person now holds the other's shift.
+    done = SwapRequest.objects.get(status=SwapStatus.APPROVED)
+    assert ShiftAssignment.objects.filter(
+        employee=done.to_employee, day=done.from_day, template=done.from_template
+    ).exists()
+    assert ShiftAssignment.objects.filter(
+        employee=done.from_employee, day=done.to_day, template=done.to_template
+    ).exists()

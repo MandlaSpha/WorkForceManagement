@@ -59,9 +59,10 @@ class Command(BaseCommand):
                 )
                 if was_created:
                     created += 1
-                if role == Role.AGENT:
-                    # A synthetic employee record for the demo agent, so their own schedule and
-                    # leave screens have somebody to show (the record names no real person).
+                if role in (Role.AGENT, Role.LEAD):
+                    # Synthetic employee records for the demo agent and lead, who work the floor:
+                    # their own leave and swap screens have somebody to show, and they can swap
+                    # shifts with each other (the records name no real person).
                     employee_model = apps.get_model("scheduling", "Employee")
                     employee_model.objects.get_or_create(
                         user=user,

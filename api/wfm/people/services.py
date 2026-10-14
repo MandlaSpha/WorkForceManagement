@@ -44,7 +44,7 @@ def _refuse(status: int, code: str, detail: str) -> ApiError:
 def apply(
     *, user: User, leave_type_id: int, start: date, end: date, employee_id: int | None = None
 ) -> LeaveRequest:
-    employee = _employee_for(user, employee_id)
+    employee = employee_for(user, employee_id)
     leave_type: LeaveType | None = LeaveType.objects.for_user(user).filter(pk=leave_type_id).first()
     if leave_type is None:
         raise not_found("No such kind of leave.")
@@ -242,15 +242,18 @@ def set_entitlement(*, user: User, type_id: int, days: Decimal | None) -> LeaveT
 # --- helpers ---------------------------------------------------------------------------------
 
 
-def _employee_for(user: User, employee_id: int | None) -> Employee:
+def employee_for(
+    user: User, employee_id: int | None, *, area: str = "leave", refuse_as: str = "Leave refused"
+) -> Employee:
     """Whose leave this is: the signed-in person's own, or (planner and admin only) someone's."""
     if employee_id is None:
         own = selectors.own_employee(user)
         if own is None:
-            raise _refuse(
+            raise ApiError(
                 422,
-                "leave.no_employee_record",
-                "You are not on the employee list yet, so there is nobody to take leave for.",
+                f"{area}.no_employee_record",
+                refuse_as,
+                "You are not on the employee list yet, so there is nobody to act for.",
             )
         return own
     employee: Employee | None = Employee.objects.filter(pk=employee_id).first()

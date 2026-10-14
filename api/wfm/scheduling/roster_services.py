@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import csv
 import io
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -226,6 +226,7 @@ def _check_rules(
     day: date,
     template: ShiftTemplate,
     existing: ShiftAssignment | None,
+    also_ignoring: Sequence[int] = (),
 ) -> None:
     if not EmployeeSkill.objects.filter(employee=employee, queue=queue).exists():
         raise _refused(
@@ -247,6 +248,8 @@ def _check_rules(
     ).select_related("template")
     if existing is not None:
         others = others.exclude(pk=existing.pk)
+    if also_ignoring:
+        others = others.exclude(pk__in=also_ignoring)
     others_list = list(others)
 
     candidate = shift_span(day, template.start_time, template.end_time)
@@ -278,6 +281,47 @@ def _check_rules(
             "roster.over_hours",
             f"This would take the person over their {employee.weekly_hours} contract hours "
             "for the week.",
+        )
+
+
+# --- exchanging shifts ---------------------------------------------------------------------------
+
+
+def exchange_refusal(
+    user: User, first: ShiftAssignment, second: ShiftAssignment
+) -> tuple[str, str] | None:
+    """Would the two people swapping these shifts break a roster rule? Each takes the other's
+    shift and gives up their own, so each is checked as if their own shift were already gone.
+    Returns the (code, plain-language reason) of the first rule broken, or None when it is fine."""
+    queue = first.roster_week.queue
+    try:
+        for mine, theirs in ((first, second), (second, first)):
+            person, day, template = mine.employee, theirs.day, theirs.template
+            # The incoming day must be free, except for the shift being given up.
+            clash = ShiftAssignment.objects.filter(employee=person, day=day).exclude(pk=mine.pk)
+            if clash.exists():
+                raise _refused(
+                    user, queue, "roster.already_rostered", "That person already works that day."
+                )
+            _check_rules(
+                user, queue, person, day, template, mine if mine.day == day else None, [mine.pk]
+            )
+    except _RefusalError as refusal:
+        return refusal.code, refusal.detail
+    return None
+
+
+def exchange(first: ShiftAssignment, second: ShiftAssignment) -> None:
+    """Carry out the swap: each person ends up on the other's shift. The caller has checked the
+    rules and audits it. Deleting both first keeps the one-shift-a-day constraint happy."""
+    plan = [
+        (second.employee_id, first.roster_week_id, first.day, first.template_id),
+        (first.employee_id, second.roster_week_id, second.day, second.template_id),
+    ]
+    ShiftAssignment.objects.filter(pk__in=[first.pk, second.pk]).delete()
+    for employee_id, week_id, day, template_id in plan:
+        ShiftAssignment.objects.create(
+            roster_week_id=week_id, employee_id=employee_id, day=day, template_id=template_id
         )
 
 

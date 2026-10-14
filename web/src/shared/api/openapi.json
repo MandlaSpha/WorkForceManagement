@@ -2906,6 +2906,175 @@
         "title": "SkillOut",
         "type": "object"
       },
+      "SwapIn": {
+        "properties": {
+          "employeeId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employeeid"
+          },
+          "giveAssignmentId": {
+            "title": "Giveassignmentid",
+            "type": "integer"
+          },
+          "takeAssignmentId": {
+            "title": "Takeassignmentid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "giveAssignmentId",
+          "takeAssignmentId"
+        ],
+        "title": "SwapIn",
+        "type": "object"
+      },
+      "SwapOut": {
+        "properties": {
+          "asker": {
+            "title": "Asker",
+            "type": "boolean"
+          },
+          "colleague": {
+            "title": "Colleague",
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "decidedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decidedat"
+          },
+          "fromDay": {
+            "format": "date",
+            "title": "Fromday",
+            "type": "string"
+          },
+          "fromEmployee": {
+            "title": "Fromemployee",
+            "type": "string"
+          },
+          "fromShift": {
+            "title": "Fromshift",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "toDay": {
+            "format": "date",
+            "title": "Today",
+            "type": "string"
+          },
+          "toEmployee": {
+            "title": "Toemployee",
+            "type": "string"
+          },
+          "toShift": {
+            "title": "Toshift",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "queue",
+          "status",
+          "fromEmployee",
+          "fromDay",
+          "fromShift",
+          "toEmployee",
+          "toDay",
+          "toShift",
+          "createdAt",
+          "decidedAt",
+          "asker",
+          "colleague"
+        ],
+        "title": "SwapOut",
+        "type": "object"
+      },
+      "SwapShiftOut": {
+        "properties": {
+          "assignmentId": {
+            "title": "Assignmentid",
+            "type": "integer"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "endTime": {
+            "format": "time",
+            "title": "Endtime",
+            "type": "string"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "shift": {
+            "title": "Shift",
+            "type": "string"
+          },
+          "startTime": {
+            "format": "time",
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assignmentId",
+          "queueId",
+          "queue",
+          "day",
+          "shift",
+          "startTime",
+          "endTime",
+          "employeeId",
+          "employee"
+        ],
+        "title": "SwapShiftOut",
+        "type": "object"
+      },
       "TuningIn": {
         "properties": {
           "ahtMultiplier": {
@@ -4372,6 +4541,355 @@
         ],
         "summary": "Set the days a year of a kind of leave",
         "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/swaps": {
+      "get": {
+        "operationId": "wfm_people_swap_api_list_swaps",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SwapOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Shift swaps you are part of, or all",
+        "tags": [
+          "people",
+          "people"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_people_swap_api_propose",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SwapIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Offer a shift for a colleague's",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/swaps/my-shifts": {
+      "get": {
+        "operationId": "wfm_people_swap_api_my_shifts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SwapShiftOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Your shifts you could swap",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/swaps/options": {
+      "get": {
+        "operationId": "wfm_people_swap_api_options",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "give_assignment_id",
+            "required": true,
+            "schema": {
+              "title": "Give Assignment Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SwapShiftOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Colleagues' shifts one of yours could be swapped for",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/swaps/{swap_id}/accept": {
+      "post": {
+        "operationId": "wfm_people_swap_api_accept",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "swap_id",
+            "required": true,
+            "schema": {
+              "title": "Swap Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Accept a colleague's offer",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/swaps/{swap_id}/approve": {
+      "post": {
+        "operationId": "wfm_people_swap_api_approve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "swap_id",
+            "required": true,
+            "schema": {
+              "title": "Swap Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Approve a swap: the two shifts are exchanged",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/swaps/{swap_id}/cancel": {
+      "post": {
+        "operationId": "wfm_people_swap_api_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "swap_id",
+            "required": true,
+            "schema": {
+              "title": "Swap Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Withdraw a swap",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/swaps/{swap_id}/decline": {
+      "post": {
+        "operationId": "wfm_people_swap_api_decline",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "swap_id",
+            "required": true,
+            "schema": {
+              "title": "Swap Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Decline an offer",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/swaps/{swap_id}/reject": {
+      "post": {
+        "operationId": "wfm_people_swap_api_reject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "swap_id",
+            "required": true,
+            "schema": {
+              "title": "Swap Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SwapOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Reject a swap",
+        "tags": [
+          "people",
           "people"
         ]
       }
