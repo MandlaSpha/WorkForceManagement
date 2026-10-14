@@ -1,4 +1,12 @@
-import type { Employee, Plan, PlanCell, Roster, Shift } from '@/entities/scheduling'
+import type {
+  Employee,
+  Overview,
+  OverviewQueue,
+  Plan,
+  PlanCell,
+  Roster,
+  Shift,
+} from '@/entities/scheduling'
 
 export const WEEK = '2026-05-25' // a Monday
 export const DAYS = Array.from({ length: 7 }, (_, n) => {
@@ -136,4 +144,100 @@ export const MONDAY_CELLS: Record<string, Partial<PlanCell>> = {
   [`${DAYS[0]}:19`]: { scheduled: 1, required: 3, variance: -2, state: 'under' },
   [`${DAYS[0]}:20`]: { scheduled: 2, required: 2, variance: 0, state: 'met' },
   [`${DAYS[0]}:22`]: { scheduled: 2, required: 0, variance: 2, state: 'over' },
+}
+
+const queueWeek = (over: Partial<OverviewQueue>): OverviewQueue => ({
+  queueId: 1,
+  queue: 'QueueA',
+  rosterStatus: 'draft',
+  forecastLabel: 'Week 22',
+  assumptionsConfirmed: true,
+  intervalsKnown: 48,
+  underIntervals: 2,
+  gap: 4,
+  requiredTotal: 10,
+  scheduledTotal: 25,
+  worstVariance: -2,
+  worstDay: DAYS[0]!,
+  worstSlot: 18,
+  ...over,
+})
+
+/** The overview of the API tests, worked by hand: QueueB is short 8 (nobody rostered), QueueA is
+ * short 4 (a draft roster), QueueC has no forecast. Monday carries the whole gap. */
+export function overviewOf(overrides: Partial<Overview> = {}): Overview {
+  return {
+    weekStart: WEEK,
+    totals: {
+      queues: 3,
+      queuesWithForecast: 2,
+      intervalsKnown: 96,
+      underIntervals: 4,
+      gap: 12,
+      headcount: 2,
+      rostersPublished: 0,
+    },
+    queues: [
+      queueWeek({
+        queueId: 2,
+        queue: 'QueueB',
+        gap: 8,
+        requiredTotal: 8,
+        scheduledTotal: 0,
+        worstVariance: -4,
+        worstSlot: 20,
+      }),
+      queueWeek({}),
+      queueWeek({
+        queueId: 3,
+        queue: 'QueueC',
+        forecastLabel: null,
+        assumptionsConfirmed: null,
+        intervalsKnown: 0,
+        underIntervals: 0,
+        gap: 0,
+        requiredTotal: 0,
+        scheduledTotal: 0,
+        worstVariance: null,
+        worstDay: null,
+        worstSlot: null,
+      }),
+    ],
+    days: DAYS.map((day, i) => ({ day, gap: i === 0 ? 12 : 0, underIntervals: i === 0 ? 4 : 0 })),
+    attention: [
+      {
+        severity: 'warning',
+        kind: 'understaffed',
+        queueId: 1,
+        queue: 'QueueA',
+        text: 'QueueA: 2 under-staffed intervals',
+        count: 2,
+      },
+      {
+        severity: 'warning',
+        kind: 'understaffed',
+        queueId: 2,
+        queue: 'QueueB',
+        text: 'QueueB: 2 under-staffed intervals',
+        count: 2,
+      },
+      {
+        severity: 'warning',
+        kind: 'no_forecast',
+        queueId: 3,
+        queue: 'QueueC',
+        text: 'QueueC: no published forecast for this week, so nothing to staff to',
+        count: 0,
+      },
+      {
+        severity: 'info',
+        kind: 'draft_roster',
+        queueId: 1,
+        queue: 'QueueA',
+        text: 'QueueA: the roster is still a draft',
+        count: 0,
+      },
+    ],
+    ...overrides,
+  }
 }

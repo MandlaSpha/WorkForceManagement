@@ -7,6 +7,8 @@ from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
+from django.db.models import Q
+from wfm_engine.attention import Item, QueueWeek, attention
 from wfm_engine.roster import (
     SLOTS_PER_DAY,
     WeekSummary,
@@ -212,3 +214,70 @@ def week_plan(user: User, queue_id: int, week_start: date) -> Plan:
         cells=cells,
         summary=summarise(scheduled, required),
     )
+
+
+@dataclass(frozen=True, slots=True)
+class DayGap:
+    day: date
+    gap: int  # people-half-hours short across every queue with a requirement
+    under_intervals: int
+
+
+@dataclass(frozen=True, slots=True)
+class Overview:
+    week_start: date
+    plans: list[Plan]  # one per queue, worst-staffed first, queues with no forecast last
+    days: list[DayGap]
+    headcount: int  # people employed at some point in the week
+    attention: list[Item]
+
+
+def overview(user: User, week_start: date) -> Overview:
+    """Every queue's week at a glance (the planning dashboard): the plan of each queue, the gap day
+    by day across them, who is employed, and what needs attention. Built from `week_plan`, so the
+    dashboard and the planner can never disagree."""
+    _check_monday(week_start)
+    plans = [week_plan(user, queue.pk, week_start) for queue in Queue.objects.for_user(user)]
+    plans.sort(
+        key=lambda p: (p.summary.intervals_known == 0, -p.summary.gap, p.queue.name),
+    )
+
+    days = [
+        DayGap(
+            day,
+            gap=sum(
+                max(-cell.variance, 0)
+                for plan in plans
+                for cell in plan.cells[day]
+                if cell.variance is not None
+            ),
+            under_intervals=sum(
+                1 for plan in plans for cell in plan.cells[day] if cell.state == "under"
+            ),
+        )
+        for day in week_days(week_start)
+    ]
+    last = week_start + timedelta(days=WEEK_DAYS - 1)
+    headcount = (
+        Employee.objects.for_user(user)
+        .filter(Q(start_date__isnull=True) | Q(start_date__lte=last))
+        .filter(Q(end_date__isnull=True) | Q(end_date__gte=week_start))
+        .count()
+    )
+    facts = [
+        QueueWeek(
+            queue_id=plan.queue.pk,
+            queue=plan.queue.name,
+            # A published forecast that does not reach this week is no forecast for it.
+            has_forecast=plan.summary.intervals_known > 0,
+            assumptions_confirmed=bool(
+                plan.forecast and plan.forecast.params.get("assumptionsConfirmed")
+            ),
+            intervals_known=plan.summary.intervals_known,
+            under_intervals=plan.summary.under_intervals,
+            scheduled_total=plan.summary.scheduled_total,
+            roster_published=plan.roster_status == RosterStatus.PUBLISHED,
+        )
+        for plan in plans
+    ]
+    return Overview(week_start, plans, days, headcount, attention(facts))

@@ -1,6 +1,7 @@
 import { api, unwrap } from '@/shared/api'
 
 import type {
+  Overview,
   AssignRequest,
   AssignResult,
   Employee,
@@ -85,4 +86,10 @@ export async function fetchPlan(queueId: number, weekStart: string): Promise<Pla
  * and sends the session cookie itself. */
 export function rosterExportUrl(queueId: number, weekStart: string): string {
   return `/api/v1/scheduling/roster/export.csv?queue_id=${queueId}&week_start=${weekStart}`
+}
+
+export async function fetchOverview(weekStart: string): Promise<Overview> {
+  return unwrap(
+    await api.GET('/api/v1/scheduling/overview', { params: { query: { week_start: weekStart } } }),
+  )
 }

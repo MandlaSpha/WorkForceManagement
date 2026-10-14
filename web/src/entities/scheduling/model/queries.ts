@@ -1,7 +1,13 @@
 import { useQuery } from '@tanstack/vue-query'
 import { computed, toValue, type MaybeRef } from 'vue'
 
-import { fetchEmployees, fetchPlan, fetchRoster, fetchShifts } from '../api/scheduling'
+import {
+  fetchEmployees,
+  fetchOverview,
+  fetchPlan,
+  fetchRoster,
+  fetchShifts,
+} from '../api/scheduling'
 
 /** Query keys. Any change to shifts, people or the roster invalidates `all`, so the roster, the
  * plan and the lists never disagree. */
@@ -10,6 +16,7 @@ export const schedulingKeys = {
   shifts: ['scheduling', 'shifts'] as const,
   employees: (queueId: number | null) => ['scheduling', 'employees', queueId] as const,
   roster: (queueId: number, week: string) => ['scheduling', 'roster', queueId, week] as const,
+  overview: (week: string) => ['scheduling', 'overview', week] as const,
   plan: (queueId: number, week: string) => ['scheduling', 'plan', queueId, week] as const,
 }
 
@@ -37,5 +44,13 @@ export function usePlan(queueId: MaybeRef<number | null>, week: MaybeRef<string>
     queryKey: computed(() => schedulingKeys.plan(toValue(queueId) ?? 0, toValue(week))),
     queryFn: () => fetchPlan(toValue(queueId) as number, toValue(week)),
     enabled: computed(() => toValue(queueId) !== null),
+  })
+}
+
+export function useOverview(week: MaybeRef<string>, enabled: MaybeRef<boolean> = true) {
+  return useQuery({
+    queryKey: computed(() => schedulingKeys.overview(toValue(week))),
+    queryFn: () => fetchOverview(toValue(week)),
+    enabled: computed(() => toValue(enabled)),
   })
 }

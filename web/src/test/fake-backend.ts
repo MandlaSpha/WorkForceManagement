@@ -9,7 +9,7 @@ import type {
   ForecastVersion,
   ScenarioResult,
 } from '@/entities/forecast'
-import type { Employee, Plan, Roster, Shift } from '@/entities/scheduling'
+import type { Employee, Overview, Plan, Roster, Shift } from '@/entities/scheduling'
 
 import { emptySummary } from './call-data-fixtures'
 
@@ -94,6 +94,8 @@ export const backend = {
     ForecastVersion | { status: number; code: string; title: string; detail: string } | null,
   /** The JSON bodies the app sent to run a forecast, with the CSRF header it carried. */
   runs: [] as Array<{ body: Record<string, unknown>; csrf: string | null }>,
+  /** The planning overview the dashboard shows. */
+  overview: null as Overview | null,
   /** What the scenario endpoint answers. */
   scenario: null as ScenarioResult | null,
   /** Capacity: what the capacity endpoint answers, and the queries it was asked. */
@@ -130,6 +132,7 @@ export const backend = {
     this.events = []
     this.capacity = null
     this.scenario = null
+    this.overview = null
     this.capacityQueries = []
     this.shifts = []
     this.employees = []
@@ -326,6 +329,12 @@ export const handlers = [
   http.get('*/api/v1/scheduling/roster', () =>
     backend.roster
       ? HttpResponse.json(backend.roster)
+      : problem(404, 'resource.not_found', 'Not found'),
+  ),
+
+  http.get('*/api/v1/scheduling/overview', () =>
+    backend.overview
+      ? HttpResponse.json(backend.overview)
       : problem(404, 'resource.not_found', 'Not found'),
   ),
 

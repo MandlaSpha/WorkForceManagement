@@ -144,6 +144,44 @@
         "title": "AssignOut",
         "type": "object"
       },
+      "AttentionOut": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "severity",
+          "kind",
+          "queueId",
+          "queue",
+          "text",
+          "count"
+        ],
+        "title": "AttentionOut",
+        "type": "object"
+      },
       "CapacityDayOut": {
         "properties": {
           "complete": {
@@ -1160,6 +1198,224 @@
           "months"
         ],
         "title": "MonthsOut",
+        "type": "object"
+      },
+      "OverviewDayOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "gap": {
+            "title": "Gap",
+            "type": "integer"
+          },
+          "underIntervals": {
+            "title": "Underintervals",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "gap",
+          "underIntervals"
+        ],
+        "title": "OverviewDayOut",
+        "type": "object"
+      },
+      "OverviewOut": {
+        "properties": {
+          "attention": {
+            "items": {
+              "$ref": "#/components/schemas/AttentionOut"
+            },
+            "title": "Attention",
+            "type": "array"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewDayOut"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "queues": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewQueueOut"
+            },
+            "title": "Queues",
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/OverviewTotalsOut"
+          },
+          "weekStart": {
+            "format": "date",
+            "title": "Weekstart",
+            "type": "string"
+          }
+        },
+        "required": [
+          "weekStart",
+          "totals",
+          "queues",
+          "days",
+          "attention"
+        ],
+        "title": "OverviewOut",
+        "type": "object"
+      },
+      "OverviewQueueOut": {
+        "properties": {
+          "assumptionsConfirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assumptionsconfirmed"
+          },
+          "forecastLabel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecastlabel"
+          },
+          "gap": {
+            "title": "Gap",
+            "type": "integer"
+          },
+          "intervalsKnown": {
+            "title": "Intervalsknown",
+            "type": "integer"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "requiredTotal": {
+            "title": "Requiredtotal",
+            "type": "integer"
+          },
+          "rosterStatus": {
+            "title": "Rosterstatus",
+            "type": "string"
+          },
+          "scheduledTotal": {
+            "title": "Scheduledtotal",
+            "type": "integer"
+          },
+          "underIntervals": {
+            "title": "Underintervals",
+            "type": "integer"
+          },
+          "worstDay": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worstday"
+          },
+          "worstSlot": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worstslot"
+          },
+          "worstVariance": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worstvariance"
+          }
+        },
+        "required": [
+          "queueId",
+          "queue",
+          "rosterStatus",
+          "forecastLabel",
+          "assumptionsConfirmed",
+          "intervalsKnown",
+          "underIntervals",
+          "gap",
+          "requiredTotal",
+          "scheduledTotal",
+          "worstVariance",
+          "worstDay",
+          "worstSlot"
+        ],
+        "title": "OverviewQueueOut",
+        "type": "object"
+      },
+      "OverviewTotalsOut": {
+        "properties": {
+          "gap": {
+            "title": "Gap",
+            "type": "integer"
+          },
+          "headcount": {
+            "title": "Headcount",
+            "type": "integer"
+          },
+          "intervalsKnown": {
+            "title": "Intervalsknown",
+            "type": "integer"
+          },
+          "queues": {
+            "title": "Queues",
+            "type": "integer"
+          },
+          "queuesWithForecast": {
+            "title": "Queueswithforecast",
+            "type": "integer"
+          },
+          "rostersPublished": {
+            "title": "Rosterspublished",
+            "type": "integer"
+          },
+          "underIntervals": {
+            "title": "Underintervals",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queues",
+          "queuesWithForecast",
+          "intervalsKnown",
+          "underIntervals",
+          "gap",
+          "headcount",
+          "rostersPublished"
+        ],
+        "title": "OverviewTotalsOut",
         "type": "object"
       },
       "PlanCellOut": {
@@ -2968,6 +3224,44 @@
           }
         ],
         "summary": "Change an employee",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/overview": {
+      "get": {
+        "operationId": "wfm_scheduling_api_get_overview",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Week Start",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Every queue's week at a glance: gap, rosters and what needs attention",
         "tags": [
           "scheduling"
         ]

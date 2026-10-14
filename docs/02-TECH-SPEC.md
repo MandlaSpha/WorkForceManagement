@@ -159,6 +159,15 @@ A planner, lead or admin picks a forecast version and changes any of: calls (-10
 - **Honest about gaps.** A half-hour with calls but no known handling time cannot be staffed; the day is marked a minimum (asterisk) rather than counting it as zero.
 - Not in this version: saving and naming scenarios, comparing several side by side, headcount what-ifs (leave, hiring) and linking a scenario to the capacity pools; those wait for Phase 4 (optimise).
 
+### 4.3f Planning overview on the dashboard (built)
+The dashboard opens with the planner's week at a glance, above the measured service figures (reference UI: the dashboard in the video). `GET /scheduling/overview?week_start=` builds it from `week_plan` for every queue, so the dashboard and the planner screen can never disagree.
+
+- **Cards:** coverage gap (people-half-hours short, over-staffing offsets nothing), under-staffed intervals as a share of those with a known requirement, queues with a forecast, rosters published, headcount employed in the week. Occupancy and pending approvals are not shown: occupancy needs agent-state data and approvals need Phase 3; nothing is invented to fill the space.
+- **Coverage by queue**, worst-staffed first, queues with no requirement last; choosing a queue opens its planner on it. **Gap by day** across queues.
+- **Needs attention** is a list of plain rules, not AI (`wfm_engine/attention.py`): under-staffed intervals (critical from a quarter of the known half-hours, else a warning), no published forecast for the week, unconfirmed staffing assumptions, a roster still in draft. Most serious first, biggest first within a severity; each item links to where it is fixed. A published forecast that does not reach the week counts as no forecast for it.
+- **Roles:** admin, planner and lead (same as the planner); executives and customer operations see only the measured figures and the API refuses them.
+- **Not built yet:** the video's week-trend service-level line (needs measured service level per day), a recent-activity feed (it would show who did what; the audit trail is admin-only, so a role-level, name-free feed needs its own design), and the Copilot link (parked).
+
 ### 4.3b Roster and plan (Phase 2, built)
 **Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
 

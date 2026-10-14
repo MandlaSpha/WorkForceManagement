@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { kpiSummary, metric, queueKpis } from '@/test/call-data-fixtures'
 import { backend } from '@/test/fake-backend'
+import { overviewOf } from '@/test/scheduling-fixtures'
 import { renderApp } from '@/test/render-app'
 import { server } from '@/test/server'
 
@@ -31,6 +32,8 @@ const JULY = kpiSummary({
 function withData() {
   backend.months = ['2026-05', '2026-06', '2026-07'] // June is listed but has no calls
   backend.kpisByMonth = { '2026-05': kpiSummary(), '2026-07': JULY }
+  // A planner also sees the planning overview; these tests are about the call data below it.
+  backend.overview = overviewOf()
 }
 
 const tile = async (key: string) => within(await screen.findByTestId(`tile-${key}`))

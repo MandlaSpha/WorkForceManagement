@@ -155,3 +155,52 @@ class PlanOut(Schema):
     forecast: PlanForecastOut | None  # null: no published forecast, so no requirement
     cells: dict[str, list[PlanCellOut]]  # date to its 48 half-hours
     summary: PlanSummaryOut
+
+
+class OverviewQueueOut(Schema):
+    queueId: int  # noqa: N815
+    queue: str
+    rosterStatus: str  # noqa: N815
+    forecastLabel: str | None  # noqa: N815 - none when no forecast is published
+    assumptionsConfirmed: bool | None  # noqa: N815 - none without a forecast
+    intervalsKnown: int  # noqa: N815
+    underIntervals: int  # noqa: N815
+    gap: int
+    requiredTotal: int  # noqa: N815
+    scheduledTotal: int  # noqa: N815
+    worstVariance: int | None  # noqa: N815
+    worstDay: date | None  # noqa: N815
+    worstSlot: int | None  # noqa: N815
+
+
+class OverviewDayOut(Schema):
+    day: date
+    gap: int
+    underIntervals: int  # noqa: N815
+
+
+class AttentionOut(Schema):
+    severity: str  # critical, warning or info
+    kind: str  # understaffed, no_forecast, assumptions or draft_roster
+    queueId: int  # noqa: N815
+    queue: str
+    text: str
+    count: int
+
+
+class OverviewTotalsOut(Schema):
+    queues: int
+    queuesWithForecast: int  # noqa: N815
+    intervalsKnown: int  # noqa: N815
+    underIntervals: int  # noqa: N815
+    gap: int
+    headcount: int
+    rostersPublished: int  # noqa: N815
+
+
+class OverviewOut(Schema):
+    weekStart: date  # noqa: N815
+    totals: OverviewTotalsOut
+    queues: list[OverviewQueueOut]
+    days: list[OverviewDayOut]
+    attention: list[AttentionOut]

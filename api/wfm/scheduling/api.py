@@ -15,8 +15,13 @@ from .policy import EMPLOYEE_WRITE_ROLES, READ_ROLES, ROSTER_WRITE_ROLES, SHIFT_
 from .schemas import (
     AssignIn,
     AssignOut,
+    AttentionOut,
     EmployeeIn,
     EmployeeOut,
+    OverviewDayOut,
+    OverviewOut,
+    OverviewQueueOut,
+    OverviewTotalsOut,
     PlanCellOut,
     PlanForecastOut,
     PlanOut,
@@ -80,6 +85,68 @@ def update_shift(request: HttpRequest, shift_id: int, body: ShiftIn) -> ShiftOut
 def delete_shift(request: HttpRequest, shift_id: int) -> dict[str, bool]:
     services.delete_shift(user=current_user(request), shift_id=shift_id)
     return {"ok": True}
+
+
+@router.get(
+    "/overview",
+    auth=READ,
+    response=OverviewOut,
+    summary="Every queue's week at a glance: gap, rosters and what needs attention",
+)
+def get_overview(request: HttpRequest, week_start: date) -> OverviewOut:
+    result = selectors.overview(current_user(request), week_start)
+    queues = []
+    for plan in result.plans:
+        worst = plan.summary.worst
+        # A published forecast that does not reach this week is no forecast for it.
+        covered = plan.forecast if plan.summary.intervals_known > 0 else None
+        queues.append(
+            OverviewQueueOut(
+                queueId=plan.queue.pk,
+                queue=plan.queue.name,
+                rosterStatus=plan.roster_status,
+                forecastLabel=None if covered is None else covered.label,
+                assumptionsConfirmed=(
+                    None if covered is None else bool(covered.params.get("assumptionsConfirmed"))
+                ),
+                intervalsKnown=plan.summary.intervals_known,
+                underIntervals=plan.summary.under_intervals,
+                gap=plan.summary.gap,
+                requiredTotal=plan.summary.required_total,
+                scheduledTotal=plan.summary.scheduled_total,
+                worstVariance=None if worst is None else worst[1],
+                worstDay=None if worst is None else worst[0][0],
+                worstSlot=None if worst is None else worst[0][1],
+            )
+        )
+    return OverviewOut(
+        weekStart=result.week_start,
+        totals=OverviewTotalsOut(
+            queues=len(result.plans),
+            queuesWithForecast=sum(1 for p in result.plans if p.summary.intervals_known > 0),
+            intervalsKnown=sum(p.summary.intervals_known for p in result.plans),
+            underIntervals=sum(p.summary.under_intervals for p in result.plans),
+            gap=sum(p.summary.gap for p in result.plans),
+            headcount=result.headcount,
+            rostersPublished=sum(1 for p in result.plans if p.roster_status == "published"),
+        ),
+        queues=queues,
+        days=[
+            OverviewDayOut(day=d.day, gap=d.gap, underIntervals=d.under_intervals)
+            for d in result.days
+        ],
+        attention=[
+            AttentionOut(
+                severity=i.severity,
+                kind=i.kind,
+                queueId=i.queue_id,
+                queue=i.queue,
+                text=i.text,
+                count=i.count,
+            )
+            for i in result.attention
+        ],
+    )
 
 
 # --- employees ---------------------------------------------------------------------------------

@@ -10,6 +10,7 @@ import { formatMonth } from '@/shared/lib/month'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import SelectField from '@/shared/ui/SelectField.vue'
+import { PlanningOverview } from '@/widgets/planning-overview'
 import { ServiceKpis } from '@/widgets/service-kpis'
 
 const session = useSessionStore()
@@ -35,6 +36,15 @@ const selected = computed({
 const options = computed(() => months.value.map((m) => ({ value: m, label: formatMonth(m) })))
 
 const kpis = useKpis(month)
+
+// The planning overview is the planner's: only those who may open the planner see it, and only
+// when scheduling is part of the plan. The API refuses everyone else anyway.
+const showPlanning = computed(
+  () =>
+    !!session.user &&
+    canOpen(session.user, 'planner') &&
+    isAvailable(session.user.features, 'planner'),
+)
 </script>
 
 <template>
@@ -45,6 +55,8 @@ const kpis = useKpis(month)
       </div>
     </template>
   </PageHeader>
+
+  <div v-if="showPlanning" class="mb-8"><PlanningOverview /></div>
 
   <section class="space-y-4" aria-live="polite">
     <NoticeBox v-if="!hasCallData">

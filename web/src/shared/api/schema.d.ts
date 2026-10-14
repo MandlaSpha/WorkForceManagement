@@ -314,6 +314,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every queue's week at a glance: gap, rosters and what needs attention */
+        get: operations["wfm_scheduling_api_get_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/plan": {
         parameters: {
             query?: never;
@@ -613,6 +630,21 @@ export interface components {
             shiftId: number | null;
             /** Weekstatus */
             weekStatus: string;
+        };
+        /** AttentionOut */
+        AttentionOut: {
+            /** Count */
+            count: number;
+            /** Kind */
+            kind: string;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+            /** Severity */
+            severity: string;
+            /** Text */
+            text: string;
         };
         /** CapacityDayOut */
         CapacityDayOut: {
@@ -987,6 +1019,79 @@ export interface components {
         MonthsOut: {
             /** Months */
             months: string[];
+        };
+        /** OverviewDayOut */
+        OverviewDayOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Gap */
+            gap: number;
+            /** Underintervals */
+            underIntervals: number;
+        };
+        /** OverviewOut */
+        OverviewOut: {
+            /** Attention */
+            attention: components["schemas"]["AttentionOut"][];
+            /** Days */
+            days: components["schemas"]["OverviewDayOut"][];
+            /** Queues */
+            queues: components["schemas"]["OverviewQueueOut"][];
+            totals: components["schemas"]["OverviewTotalsOut"];
+            /**
+             * Weekstart
+             * Format: date
+             */
+            weekStart: string;
+        };
+        /** OverviewQueueOut */
+        OverviewQueueOut: {
+            /** Assumptionsconfirmed */
+            assumptionsConfirmed: boolean | null;
+            /** Forecastlabel */
+            forecastLabel: string | null;
+            /** Gap */
+            gap: number;
+            /** Intervalsknown */
+            intervalsKnown: number;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+            /** Requiredtotal */
+            requiredTotal: number;
+            /** Rosterstatus */
+            rosterStatus: string;
+            /** Scheduledtotal */
+            scheduledTotal: number;
+            /** Underintervals */
+            underIntervals: number;
+            /** Worstday */
+            worstDay: string | null;
+            /** Worstslot */
+            worstSlot: number | null;
+            /** Worstvariance */
+            worstVariance: number | null;
+        };
+        /** OverviewTotalsOut */
+        OverviewTotalsOut: {
+            /** Gap */
+            gap: number;
+            /** Headcount */
+            headcount: number;
+            /** Intervalsknown */
+            intervalsKnown: number;
+            /** Queues */
+            queues: number;
+            /** Queueswithforecast */
+            queuesWithForecast: number;
+            /** Rosterspublished */
+            rostersPublished: number;
+            /** Underintervals */
+            underIntervals: number;
         };
         /** PlanCellOut */
         PlanCellOut: {
@@ -1864,6 +1969,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EmployeeOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_get_overview: {
+        parameters: {
+            query: {
+                week_start: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewOut"];
                 };
             };
         };

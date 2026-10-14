@@ -1,3 +1,4 @@
+export { ATTENTION_ROUTE, attentionRoute, barShare } from './model/overview'
 export {
   assignShift,
   createEmployee,
@@ -18,9 +19,19 @@ export {
   varianceLabel,
 } from './model/plan'
 export type { HeatTone } from './model/plan'
-export { schedulingKeys, useEmployees, usePlan, useRoster, useShifts } from './model/queries'
+export {
+  schedulingKeys,
+  useEmployees,
+  useOverview,
+  usePlan,
+  useRoster,
+  useShifts,
+} from './model/queries'
 export type {
   AssignRequest,
+  Attention,
+  Overview,
+  OverviewQueue,
   AssignResult,
   Employee,
   EmployeeRequest,
