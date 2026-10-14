@@ -6,11 +6,12 @@ import {
   updateEmployee,
   type EmployeeRequest,
 } from '@/entities/scheduling'
+import { refreshQueries } from '@/shared/lib/refresh'
 
 /** Add a person, or change one. Every list that shows people and rosters is refreshed. */
 export function useEmployeeMutations() {
   const queryClient = useQueryClient()
-  const refresh = () => queryClient.invalidateQueries({ queryKey: schedulingKeys.all })
+  const refresh = () => refreshQueries(queryClient, schedulingKeys.all)
   return {
     create: useMutation({
       mutationFn: (body: EmployeeRequest) => createEmployee(body),

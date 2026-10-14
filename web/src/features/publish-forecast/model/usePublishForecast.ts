@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { capacityKeys } from '@/entities/capacity'
 import { forecastKeys, publishVersion } from '@/entities/forecast'
 import { schedulingKeys } from '@/entities/scheduling'
+import { refreshQueries } from '@/shared/lib/refresh'
 
 /** Make a draft the live forecast of its queue. The previous live one is archived by the server;
  * every list that shows versions is refreshed so both changes appear together. The planner's
@@ -14,9 +15,9 @@ export function usePublishForecast() {
     mutationFn: (versionId: string) => publishVersion(versionId),
     onSuccess: () =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: forecastKeys.all }),
-        queryClient.invalidateQueries({ queryKey: schedulingKeys.all }),
-        queryClient.invalidateQueries({ queryKey: capacityKeys.all }),
+        refreshQueries(queryClient, forecastKeys.all),
+        refreshQueries(queryClient, schedulingKeys.all),
+        refreshQueries(queryClient, capacityKeys.all),
       ]),
   })
 }

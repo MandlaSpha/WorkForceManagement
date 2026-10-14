@@ -147,8 +147,8 @@ export const NAV_ITEMS = [
     group: 'Operate',
     icon: 'ticket',
     feature: 'service_desk',
-    phase: 6,
-    subtitle: 'Ticket and email workload alongside calls.',
+    phase: 2,
+    subtitle: 'Ticket workload by resource pool: effort due by the deadline over productive time.',
   },
 
   {

@@ -504,6 +504,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/service-desk/demand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The people each pool needs: effort due by the deadline over productive time */
+        get: operations["wfm_servicedesk_api_get_demand"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/service-desk/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bring in work items from an ITSM export (CSV); known references are updated */
+        post: operations["wfm_servicedesk_api_import_items"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/service-desk/pools/{pool_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set how many minutes of a day an engineer in this pool spends on tickets */
+        put: operations["wfm_servicedesk_api_set_pool"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/ping-worker": {
         parameters: {
             query?: never;
@@ -768,6 +819,30 @@ export interface components {
             date: string;
             /** Daysused */
             daysUsed: number;
+        };
+        /** DemandOut */
+        DemandOut: {
+            /** Arrivingmin */
+            arrivingMin: number | null;
+            /**
+             * Asof
+             * Format: date
+             */
+            asOf: string;
+            /** Backlogmin */
+            backlogMin: number;
+            /** Breached */
+            breached: number;
+            /** Complete */
+            complete: boolean;
+            /** Days */
+            days: number;
+            /** Pools */
+            pools: components["schemas"]["PoolDemandOut"][];
+            /** Requiredfte */
+            requiredFte: number | null;
+            /** Workingdays */
+            workingDays: number;
         };
         /** EmployeeIn */
         EmployeeIn: {
@@ -1199,6 +1274,40 @@ export interface components {
             underIntervals: number;
             worst: components["schemas"]["WorstOut"] | null;
         };
+        /** PoolDemandOut */
+        PoolDemandOut: {
+            /** Arrivingmin */
+            arrivingMin: number | null;
+            /** Backlogmin */
+            backlogMin: number;
+            /** Breached */
+            breached: number;
+            /** Complete */
+            complete: boolean;
+            /** Duemin */
+            dueMin: number;
+            /** Nodeadline */
+            noDeadline: number;
+            /** Opencount */
+            openCount: number;
+            /** Pool */
+            pool: string;
+            /** Poolid */
+            poolId: number;
+            /** Productiveminutesperday */
+            productiveMinutesPerDay: number;
+            /** Requiredfte */
+            requiredFte: number | null;
+            /** Settingsconfirmed */
+            settingsConfirmed: boolean;
+            /** Unestimated */
+            unestimated: number;
+        };
+        /** PoolIn */
+        PoolIn: {
+            /** Productiveminutesperday */
+            productiveMinutesPerDay: number;
+        };
         /** ProviderOut */
         ProviderOut: {
             /** Flow */
@@ -1535,6 +1644,21 @@ export interface components {
              * Format: date
              */
             weekStart: string;
+        };
+        /** WorkImportOut */
+        WorkImportOut: {
+            /** Created */
+            created: number;
+            /** Ignoredcolumns */
+            ignoredColumns: string[];
+            /** Rejected */
+            rejected: {
+                [key: string]: number;
+            };
+            /** Unchanged */
+            unchanged: number;
+            /** Updated */
+            updated: number;
         };
         /** WorkerPingOut */
         WorkerPingOut: {
@@ -2382,6 +2506,87 @@ export interface operations {
                 content: {
                     "application/json": {
                         [key: string]: boolean;
+                    };
+                };
+            };
+        };
+    };
+    wfm_servicedesk_api_get_demand: {
+        parameters: {
+            query: {
+                as_of: string;
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DemandOut"];
+                };
+            };
+        };
+    };
+    wfm_servicedesk_api_import_items: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkImportOut"];
+                };
+            };
+        };
+    };
+    wfm_servicedesk_api_set_pool: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pool_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PoolIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
                     };
                 };
             };

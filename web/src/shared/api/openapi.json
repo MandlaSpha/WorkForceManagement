@@ -481,6 +481,77 @@
         "title": "DayAccuracyOut",
         "type": "object"
       },
+      "DemandOut": {
+        "properties": {
+          "arrivingMin": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrivingmin"
+          },
+          "asOf": {
+            "format": "date",
+            "title": "Asof",
+            "type": "string"
+          },
+          "backlogMin": {
+            "title": "Backlogmin",
+            "type": "integer"
+          },
+          "breached": {
+            "title": "Breached",
+            "type": "integer"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "pools": {
+            "items": {
+              "$ref": "#/components/schemas/PoolDemandOut"
+            },
+            "title": "Pools",
+            "type": "array"
+          },
+          "requiredFte": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredfte"
+          },
+          "workingDays": {
+            "title": "Workingdays",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "asOf",
+          "days",
+          "workingDays",
+          "pools",
+          "requiredFte",
+          "backlogMin",
+          "arrivingMin",
+          "breached",
+          "complete"
+        ],
+        "title": "DemandOut",
+        "type": "object"
+      },
       "EmployeeIn": {
         "properties": {
           "contractType": {
@@ -1661,6 +1732,106 @@
         "title": "PlanSummaryOut",
         "type": "object"
       },
+      "PoolDemandOut": {
+        "properties": {
+          "arrivingMin": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arrivingmin"
+          },
+          "backlogMin": {
+            "title": "Backlogmin",
+            "type": "integer"
+          },
+          "breached": {
+            "title": "Breached",
+            "type": "integer"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "dueMin": {
+            "title": "Duemin",
+            "type": "integer"
+          },
+          "noDeadline": {
+            "title": "Nodeadline",
+            "type": "integer"
+          },
+          "openCount": {
+            "title": "Opencount",
+            "type": "integer"
+          },
+          "pool": {
+            "title": "Pool",
+            "type": "string"
+          },
+          "poolId": {
+            "title": "Poolid",
+            "type": "integer"
+          },
+          "productiveMinutesPerDay": {
+            "title": "Productiveminutesperday",
+            "type": "integer"
+          },
+          "requiredFte": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredfte"
+          },
+          "settingsConfirmed": {
+            "title": "Settingsconfirmed",
+            "type": "boolean"
+          },
+          "unestimated": {
+            "title": "Unestimated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "poolId",
+          "pool",
+          "productiveMinutesPerDay",
+          "settingsConfirmed",
+          "openCount",
+          "breached",
+          "backlogMin",
+          "dueMin",
+          "arrivingMin",
+          "unestimated",
+          "noDeadline",
+          "requiredFte",
+          "complete"
+        ],
+        "title": "PoolDemandOut",
+        "type": "object"
+      },
+      "PoolIn": {
+        "properties": {
+          "productiveMinutesPerDay": {
+            "title": "Productiveminutesperday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "productiveMinutesPerDay"
+        ],
+        "title": "PoolIn",
+        "type": "object"
+      },
       "ProviderOut": {
         "properties": {
           "flow": {
@@ -2519,6 +2690,45 @@
           "publishedAt"
         ],
         "title": "WeekOut",
+        "type": "object"
+      },
+      "WorkImportOut": {
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "ignoredColumns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ignoredcolumns",
+            "type": "array"
+          },
+          "rejected": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Rejected",
+            "type": "object"
+          },
+          "unchanged": {
+            "title": "Unchanged",
+            "type": "integer"
+          },
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "created",
+          "updated",
+          "unchanged",
+          "rejected",
+          "ignoredColumns"
+        ],
+        "title": "WorkImportOut",
         "type": "object"
       },
       "WorkerPingOut": {
@@ -4004,6 +4214,153 @@
         "summary": "Change a shift",
         "tags": [
           "scheduling"
+        ]
+      }
+    },
+    "/api/v1/service-desk/demand": {
+      "get": {
+        "operationId": "wfm_servicedesk_api_get_demand",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "As Of",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemandOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "The people each pool needs: effort due by the deadline over productive time",
+        "tags": [
+          "service-desk"
+        ]
+      }
+    },
+    "/api/v1/service-desk/imports": {
+      "post": {
+        "operationId": "wfm_servicedesk_api_import_items",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkImportOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Bring in work items from an ITSM export (CSV); known references are updated",
+        "tags": [
+          "service-desk"
+        ]
+      }
+    },
+    "/api/v1/service-desk/pools/{pool_id}": {
+      "put": {
+        "operationId": "wfm_servicedesk_api_set_pool",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pool_id",
+            "required": true,
+            "schema": {
+              "title": "Pool Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoolIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "integer"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set how many minutes of a day an engineer in this pool spends on tickets",
+        "tags": [
+          "service-desk"
         ]
       }
     },

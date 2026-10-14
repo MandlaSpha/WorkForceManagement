@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 
 import { createShift, deleteShift, schedulingKeys, type ShiftRequest } from '@/entities/scheduling'
+import { refreshQueries } from '@/shared/lib/refresh'
 
 export function useShiftMutations() {
   const queryClient = useQueryClient()
-  const refresh = () => queryClient.invalidateQueries({ queryKey: schedulingKeys.all })
+  const refresh = () => refreshQueries(queryClient, schedulingKeys.all)
   return {
     create: useMutation({
       mutationFn: (body: ShiftRequest) => createShift(body),

@@ -40,8 +40,4 @@ export function shareLabel(part: number, whole: number): string {
 }
 
 /** Minutes as hours: 480 is "8h", 450 is "7h 30m". */
-export function formatHours(minutes: number): string {
-  const hours = Math.floor(minutes / 60)
-  const rest = minutes % 60
-  return rest === 0 ? `${hours}h` : hours === 0 ? `${rest}m` : `${hours}h ${rest}m`
-}
+export { formatMinutes as formatHours } from '@/shared/lib/duration'

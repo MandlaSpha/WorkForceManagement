@@ -5,9 +5,11 @@ The phone and name cells hold CANARY values, so tests can prove they are never s
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from io import BytesIO
+from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 import openpyxl
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -108,6 +110,26 @@ def workbook_bytes(
             book.create_sheet(name).append(["Call ID", "Anything"])
     out = BytesIO()
     book.save(out)
+    return _frozen(out.getvalue())
+
+
+def _frozen(xlsx: bytes) -> bytes:
+    """The same workbook as the same bytes. openpyxl stamps the file with the current time, inside
+    the properties and in every zip entry, so two workbooks built a moment apart would differ and
+    "the same file twice" would sometimes not be the same file."""
+    fixed = datetime(2026, 1, 1, tzinfo=UTC)
+    stamp = fixed.strftime("%Y-%m-%dT%H:%M:%SZ").encode()
+    out = BytesIO()
+    with ZipFile(BytesIO(xlsx)) as source, ZipFile(out, "w", ZIP_DEFLATED) as target:
+        for info in source.infolist():
+            data = source.read(info.filename)
+            if info.filename == "docProps/core.xml":
+                data = re.sub(
+                    rb"(<dcterms:(?:created|modified)[^>]*>)[^<]*", rb"\g<1>" + stamp, data
+                )
+            entry = ZipInfo(info.filename, date_time=(2026, 1, 1, 0, 0, 0))
+            entry.compress_type = ZIP_DEFLATED
+            target.writestr(entry, data)
     return out.getvalue()
 
 

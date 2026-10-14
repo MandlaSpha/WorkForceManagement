@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 
 import type { ImportReport, KpiSummary, QueueInfo } from '@/entities/call-data'
 import type { Capacity } from '@/entities/capacity'
+import type { Demand, WorkImport } from '@/entities/service-desk'
 import type {
   Backtest,
   ForecastAccuracy,
@@ -96,6 +97,10 @@ export const backend = {
     ForecastVersion | { status: number; code: string; title: string; detail: string } | null,
   /** The JSON bodies the app sent to run a forecast, with the CSRF header it carried. */
   runs: [] as Array<{ body: Record<string, unknown>; csrf: string | null }>,
+  /** Service desk: the workload, the answer to an import, and the queries it was asked. */
+  demand: null as Demand | null,
+  workImport: null as WorkImport | null,
+  demandQueries: [] as string[],
   /** The planning overview the dashboard shows. */
   overview: null as Overview | null,
   /** Calibration: the saved tuning, the back-test it answers, and the queries it was asked. */
@@ -142,6 +147,9 @@ export const backend = {
     this.backtest = null
     this.backtestQueries = []
     this.overview = null
+    this.demand = null
+    this.workImport = null
+    this.demandQueries = []
     this.capacityQueries = []
     this.shifts = []
     this.employees = []
@@ -369,6 +377,15 @@ export const handlers = [
       ? HttpResponse.json(backend.roster)
       : problem(404, 'resource.not_found', 'Not found'),
   ),
+
+  http.get('*/api/v1/service-desk/demand', ({ request }) => {
+    backend.demandQueries.push(new URL(request.url).search)
+    return backend.demand
+      ? HttpResponse.json(backend.demand)
+      : problem(404, 'resource.not_found', 'Not found')
+  }),
+
+  http.put('*/api/v1/service-desk/pools/:id', (info) => schedulingWrite(info, 'PUT')),
 
   http.get('*/api/v1/scheduling/overview', () =>
     backend.overview

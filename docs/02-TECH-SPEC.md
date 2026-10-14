@@ -177,6 +177,21 @@ A queue's forecast is tuned with four settings (requirement RPT-07; reference UI
 - **Roles:** admin and planner open the screen and save; leads can read the tuning through the API but the screen is not theirs; every save is audited with before and after, and saving the same again records nothing.
 - **Not in this version** (the video's screen has more): outlier cleansing, a growth-per-year trend, shrinkage by category, full-time/part-time days, per-site and per-contract layers that inherit from a parent. Each is a setting the forecast would have to honour, so each waits for the feature that uses it.
 
+### 4.3h Service desk workload (built)
+Ticket work is not staffed like calls (requirement SD-01; reference UI: the Service desk screen in the video, "This is not Erlang"). A caller who is not answered abandons; a ticket that is not picked up is still there tomorrow. So per **resource pool** (Service Desk, NOC, SOC, Field Services...) the people needed over a period are:
+
+```
+required = ( effort due by the end of the period  +  expected arriving effort )
+           / ( productive minutes per day x working days in the period )
+```
+Effort is engineer time, never the SLA window (a four-hour P1 can hold twenty minutes of work). Pure rules in `wfm_engine/workload.py`, tested by hand: a pool with 720 minutes due and 180 minutes a day arriving over 5 working days at 360 productive minutes needs (720 + 900) / 1800 = 0.9 people.
+
+- **Work items** are brought in from an ITSM export (CSV: `ref`, `pool`, `opened`, and optionally `priority`, `due`, `effort_minutes`, `closed`). They hold a reference, a pool, dates and an effort estimate, **never a person**: any other column (requester, assignee, text) is ignored and not stored, so it cannot reach the database by being in the file. Known references are updated, so the same export can be brought in again as tickets are closed; nothing is deleted. Rows that cannot be read are counted by reason, never kept or echoed. The audit trail holds counts only.
+- **Honesty (DAT-10).** An item with no effort estimate cannot be sized and an item with no deadline is in the backlog but not in the requirement; both are counted per pool and make the figure a minimum ("at least 0.60"). Arrivals are measured from the items opened in the 28 days before the period; a pool with nothing opened has **unknown** arrivals, not zero (a quiet month and a missing export look the same). Breached means past its deadline when the period starts; breached work still has to be done.
+- **Productive time** per pool (default 360 of an 8-hour day, an assumption until a planner or admin confirms it) is editable and audited. Public holidays are not taken off the working days: adjust the productive time.
+- **Roles:** admin, planner and customer operations read it; admin and planner bring work in and set the productive time. Feature `service_desk`.
+- **Not built yet:** the video's Backlog, SLA & quality, Utilisation & cost and Work items tabs (utilisation and billability are SD-02), skills-based allocation to L1/L2/L3 (SD-03), a direct ITSM connection (Phase 6; today it is a file), and Customer Operations Managers, which the video sizes through the interval engine because they are a real-time queue, not deadline work.
+
 ### 4.3b Roster and plan (Phase 2, built)
 **Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
 
