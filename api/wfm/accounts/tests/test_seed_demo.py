@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from wfm.accounts.models import Role, User
 from wfm.audit.models import AuditEvent
+from wfm.scheduling.models import Employee
 
 pytestmark = pytest.mark.django_db
 
@@ -62,3 +63,14 @@ def test_reset_passwords_updates_existing_demo_users_and_clears_lockout() -> Non
     assert planner.failed_login_count == 0
     assert planner.locked_until is None
     assert User.objects.count() == len(Role)
+
+
+@override_settings(DEBUG=True)
+def test_the_demo_agent_gets_one_synthetic_employee_record_even_when_seeded_twice() -> None:
+    call_command("seed_demo", password=STRONG)
+    call_command("seed_demo", password=STRONG)
+
+    employees = Employee.objects.filter(user__isnull=False)
+    assert [(e.emp_no, e.user.username) for e in employees] == [("DEMO-AGENT", "agent")]
+    # Only the agent: leads, planners and the rest are not on the roster list by being demo users.
+    assert Employee.objects.count() == 1

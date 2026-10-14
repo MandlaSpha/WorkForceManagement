@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw'
 
 import type { ImportReport, KpiSummary, QueueInfo } from '@/entities/call-data'
 import type { Capacity } from '@/entities/capacity'
+import type { Balances, Impact, LeaveRequest, LeaveType } from '@/entities/leave'
 import type { Demand, WorkImport } from '@/entities/service-desk'
 import type {
   Backtest,
@@ -97,6 +98,14 @@ export const backend = {
     ForecastVersion | { status: number; code: string; title: string; detail: string } | null,
   /** The JSON bodies the app sent to run a forecast, with the CSRF header it carried. */
   runs: [] as Array<{ body: Record<string, unknown>; csrf: string | null }>,
+  /** Leave: kinds, balances, requests, the coverage impact, and what a decision reports. */
+  leaveTypes: [] as LeaveType[],
+  balances: null as Balances | null,
+  noEmployeeRecord: false,
+  leaveRequests: [] as LeaveRequest[],
+  impact: null as Impact | null,
+  requestQueries: [] as string[],
+  decision: { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 },
   /** Service desk: the workload, the answer to an import, and the queries it was asked. */
   demand: null as Demand | null,
   workImport: null as WorkImport | null,
@@ -148,6 +157,13 @@ export const backend = {
     this.backtestQueries = []
     this.overview = null
     this.demand = null
+    this.leaveTypes = []
+    this.balances = null
+    this.noEmployeeRecord = false
+    this.leaveRequests = []
+    this.impact = null
+    this.requestQueries = []
+    this.decision = { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 }
     this.workImport = null
     this.demandQueries = []
     this.capacityQueries = []
@@ -378,6 +394,77 @@ export const handlers = [
       : problem(404, 'resource.not_found', 'Not found'),
   ),
 
+  http.get('*/api/v1/people/leave/types', () => HttpResponse.json(backend.leaveTypes)),
+
+  http.get('*/api/v1/people/leave/balances', () =>
+    backend.noEmployeeRecord
+      ? problem(422, 'leave.no_employee_record', 'Leave refused')
+      : HttpResponse.json(backend.balances),
+  ),
+
+  http.get('*/api/v1/people/leave/requests', ({ request }) => {
+    const status = new URL(request.url).searchParams.get('status')
+    backend.requestQueries.push(new URL(request.url).search)
+    return HttpResponse.json(
+      backend.leaveRequests.filter((r) => status === null || r.status === status),
+    )
+  }),
+
+  http.post('*/api/v1/people/leave/requests', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, string | number>
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created: LeaveRequest = {
+      id: 100 + backend.leaveRequests.length,
+      employeeId: 10,
+      employee: 'Alex Agent',
+      empNo: 'E001',
+      leaveTypeId: Number(sent.leaveTypeId),
+      leaveType: backend.leaveTypes.find((t) => t.id === Number(sent.leaveTypeId))?.name ?? '',
+      startDate: String(sent.startDate),
+      endDate: String(sent.endDate),
+      days: 2,
+      status: 'pending',
+      createdAt: '2026-05-20T08:00:00Z',
+      decidedAt: null,
+      shiftsCleared: 0,
+      mine: true,
+    }
+    backend.leaveRequests = [...backend.leaveRequests, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.post('*/api/v1/people/leave/requests/:id/:what', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const what = String(info.params.what)
+    const status =
+      { approve: 'approved', reject: 'rejected', cancel: 'cancelled' }[what] ?? 'pending'
+    backend.leaveRequests = backend.leaveRequests.map((r) =>
+      r.id === Number(info.params.id) ? { ...r, status } : r,
+    )
+    const request = backend.leaveRequests.find((r) => r.id === Number(info.params.id))
+    return HttpResponse.json({ request, ...backend.decision })
+  }),
+
+  http.get('*/api/v1/people/leave/requests/:id/impact', () =>
+    backend.impact
+      ? HttpResponse.json(backend.impact)
+      : problem(404, 'resource.not_found', 'Not found'),
+  ),
+
+  http.put('*/api/v1/people/leave/types/:id', async (info) => {
+    const sent = (await info.request.clone().json()) as { daysPerYear: number | null }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    backend.leaveTypes = backend.leaveTypes.map((t) =>
+      t.id === Number(info.params.id)
+        ? { ...t, daysPerYear: sent.daysPerYear, confirmed: true }
+        : t,
+    )
+    return HttpResponse.json(backend.leaveTypes.find((t) => t.id === Number(info.params.id)))
+  }),
+
   http.get('*/api/v1/service-desk/demand', ({ request }) => {
     backend.demandQueries.push(new URL(request.url).search)
     return backend.demand
@@ -419,7 +506,9 @@ async function schedulingWrite(
   const csrf = request.headers.get('X-CSRFToken')
   if (csrf !== CSRF_TOKEN) return problem(403, 'auth.csrf', 'CSRF check failed')
   const path = new URL(request.url).pathname
-  const body = method === 'DELETE' ? null : ((await request.json()) as Record<string, unknown>)
+  // Some writes (approve, cancel, delete) carry no body at all.
+  const text = await request.text()
+  const body = text === '' ? null : (JSON.parse(text) as Record<string, unknown>)
   backend.writes.push({ method, path, body, csrf })
 
   const refusal = backend.nextProblem

@@ -314,6 +314,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/people/leave/balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A person's leave balances for a year (their own unless a planner or admin asks) */
+        get: operations["wfm_people_api_get_balances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/leave/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Leave requests: your own, or everyone's for leads, planners and admins */
+        get: operations["wfm_people_api_list_requests"];
+        put?: never;
+        /** Ask for leave */
+        post: operations["wfm_people_api_apply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/leave/requests/{request_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve a request: it is written into the roster and coverage follows */
+        post: operations["wfm_people_api_approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/leave/requests/{request_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw a request; cancelling approved leave puts its shifts back where it can */
+        post: operations["wfm_people_api_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/leave/requests/{request_id}/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What approving a request would do to coverage */
+        get: operations["wfm_people_api_get_impact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/leave/requests/{request_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject a request */
+        post: operations["wfm_people_api_reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/leave/types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kinds of leave */
+        get: operations["wfm_people_api_list_types"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/leave/types/{type_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the days a year of a kind of leave */
+        put: operations["wfm_people_api_set_entitlement"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/employees": {
         parameters: {
             query?: never;
@@ -743,6 +880,34 @@ export interface components {
             /** Suggestedvolumemultiplier */
             suggestedVolumeMultiplier: number | null;
         };
+        /** BalanceOut */
+        BalanceOut: {
+            /** Available */
+            available: number | null;
+            /** Code */
+            code: string;
+            /** Entitlement */
+            entitlement: number | null;
+            /** Name */
+            name: string;
+            /** Pending */
+            pending: number;
+            /** Taken */
+            taken: number;
+            /** Typeid */
+            typeId: number;
+        };
+        /** BalancesOut */
+        BalancesOut: {
+            /** Balances */
+            balances: components["schemas"]["BalanceOut"][];
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Year */
+            year: number;
+        };
         /** CapacityDayOut */
         CapacityDayOut: {
             /** Complete */
@@ -820,6 +985,16 @@ export interface components {
             /** Daysused */
             daysUsed: number;
         };
+        /** DecisionOut */
+        DecisionOut: {
+            request: components["schemas"]["LeaveRequestOut"];
+            /** Shiftscleared */
+            shiftsCleared: number;
+            /** Shiftsnotrestored */
+            shiftsNotRestored: number;
+            /** Shiftsrestored */
+            shiftsRestored: number;
+        };
         /** DemandOut */
         DemandOut: {
             /** Arrivingmin */
@@ -891,6 +1066,11 @@ export interface components {
             weeklyHoursIsDefault: boolean;
             /** Workmode */
             workMode: string;
+        };
+        /** EntitlementIn */
+        EntitlementIn: {
+            /** Daysperyear */
+            daysPerYear: number | string | null;
         };
         /** EventIn */
         EventIn: {
@@ -1014,6 +1194,21 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** ImpactOut */
+        ImpactOut: {
+            /** Alreadyunder */
+            alreadyUnder: number;
+            /** Hours */
+            hours: number;
+            /** Intervals */
+            intervals: number;
+            /** Newlyunder */
+            newlyUnder: number;
+            /** Shifts */
+            shifts: number;
+            /** Unknown */
+            unknown: number;
+        };
         /** ImportOut */
         ImportOut: {
             /**
@@ -1078,6 +1273,78 @@ export interface components {
             /** Slthresholds */
             slThresholdS: number;
             total: components["schemas"]["QueueKpisOut"];
+        };
+        /** LeaveRequestIn */
+        LeaveRequestIn: {
+            /** Employeeid */
+            employeeId?: number | null;
+            /**
+             * Enddate
+             * Format: date
+             */
+            endDate: string;
+            /** Leavetypeid */
+            leaveTypeId: number;
+            /**
+             * Startdate
+             * Format: date
+             */
+            startDate: string;
+        };
+        /** LeaveRequestOut */
+        LeaveRequestOut: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Days */
+            days: number;
+            /** Decidedat */
+            decidedAt: string | null;
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /**
+             * Enddate
+             * Format: date
+             */
+            endDate: string;
+            /** Id */
+            id: number;
+            /** Leavetype */
+            leaveType: string;
+            /** Leavetypeid */
+            leaveTypeId: number;
+            /** Mine */
+            mine: boolean;
+            /** Shiftscleared */
+            shiftsCleared: number;
+            /**
+             * Startdate
+             * Format: date
+             */
+            startDate: string;
+            /** Status */
+            status: string;
+        };
+        /** LeaveTypeOut */
+        LeaveTypeOut: {
+            /** Code */
+            code: string;
+            /** Confirmed */
+            confirmed: boolean;
+            /** Daysperyear */
+            daysPerYear: number | null;
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Paid */
+            paid: boolean;
         };
         /** LimitsIn */
         LimitsIn: {
@@ -2180,6 +2447,210 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ForecastVersionOut"];
+                };
+            };
+        };
+    };
+    wfm_people_api_get_balances: {
+        parameters: {
+            query: {
+                year: number;
+                employee_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalancesOut"];
+                };
+            };
+        };
+    };
+    wfm_people_api_list_requests: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                employee_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequestOut"][];
+                };
+            };
+        };
+    };
+    wfm_people_api_apply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LeaveRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveRequestOut"];
+                };
+            };
+        };
+    };
+    wfm_people_api_approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+        };
+    };
+    wfm_people_api_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+        };
+    };
+    wfm_people_api_get_impact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImpactOut"];
+                };
+            };
+        };
+    };
+    wfm_people_api_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+        };
+    };
+    wfm_people_api_list_types: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveTypeOut"][];
+                };
+            };
+        };
+    };
+    wfm_people_api_set_entitlement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                type_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntitlementIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LeaveTypeOut"];
                 };
             };
         };

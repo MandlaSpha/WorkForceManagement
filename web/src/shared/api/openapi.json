@@ -227,6 +227,94 @@
         "title": "BacktestOut",
         "type": "object"
       },
+      "BalanceOut": {
+        "properties": {
+          "available": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "entitlement": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entitlement"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "number"
+          },
+          "taken": {
+            "title": "Taken",
+            "type": "number"
+          },
+          "typeId": {
+            "title": "Typeid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "typeId",
+          "code",
+          "name",
+          "entitlement",
+          "taken",
+          "pending",
+          "available"
+        ],
+        "title": "BalanceOut",
+        "type": "object"
+      },
+      "BalancesOut": {
+        "properties": {
+          "balances": {
+            "items": {
+              "$ref": "#/components/schemas/BalanceOut"
+            },
+            "title": "Balances",
+            "type": "array"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "year": {
+            "title": "Year",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "employeeId",
+          "employee",
+          "year",
+          "balances"
+        ],
+        "title": "BalancesOut",
+        "type": "object"
+      },
       "CapacityDayOut": {
         "properties": {
           "complete": {
@@ -481,6 +569,33 @@
         "title": "DayAccuracyOut",
         "type": "object"
       },
+      "DecisionOut": {
+        "properties": {
+          "request": {
+            "$ref": "#/components/schemas/LeaveRequestOut"
+          },
+          "shiftsCleared": {
+            "title": "Shiftscleared",
+            "type": "integer"
+          },
+          "shiftsNotRestored": {
+            "title": "Shiftsnotrestored",
+            "type": "integer"
+          },
+          "shiftsRestored": {
+            "title": "Shiftsrestored",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "request",
+          "shiftsCleared",
+          "shiftsRestored",
+          "shiftsNotRestored"
+        ],
+        "title": "DecisionOut",
+        "type": "object"
+      },
       "DemandOut": {
         "properties": {
           "arrivingMin": {
@@ -702,6 +817,29 @@
           "skills"
         ],
         "title": "EmployeeOut",
+        "type": "object"
+      },
+      "EntitlementIn": {
+        "properties": {
+          "daysPerYear": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daysperyear"
+          }
+        },
+        "required": [
+          "daysPerYear"
+        ],
+        "title": "EntitlementIn",
         "type": "object"
       },
       "EventIn": {
@@ -1036,6 +1174,44 @@
         "title": "ForecastVersionOut",
         "type": "object"
       },
+      "ImpactOut": {
+        "properties": {
+          "alreadyUnder": {
+            "title": "Alreadyunder",
+            "type": "integer"
+          },
+          "hours": {
+            "title": "Hours",
+            "type": "number"
+          },
+          "intervals": {
+            "title": "Intervals",
+            "type": "integer"
+          },
+          "newlyUnder": {
+            "title": "Newlyunder",
+            "type": "integer"
+          },
+          "shifts": {
+            "title": "Shifts",
+            "type": "integer"
+          },
+          "unknown": {
+            "title": "Unknown",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "shifts",
+          "hours",
+          "intervals",
+          "newlyUnder",
+          "alreadyUnder",
+          "unknown"
+        ],
+        "title": "ImpactOut",
+        "type": "object"
+      },
       "ImportOut": {
         "properties": {
           "createdAt": {
@@ -1171,6 +1347,176 @@
           "queues"
         ],
         "title": "KpiOut",
+        "type": "object"
+      },
+      "LeaveRequestIn": {
+        "properties": {
+          "employeeId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employeeid"
+          },
+          "endDate": {
+            "format": "date",
+            "title": "Enddate",
+            "type": "string"
+          },
+          "leaveTypeId": {
+            "title": "Leavetypeid",
+            "type": "integer"
+          },
+          "startDate": {
+            "format": "date",
+            "title": "Startdate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "leaveTypeId",
+          "startDate",
+          "endDate"
+        ],
+        "title": "LeaveRequestIn",
+        "type": "object"
+      },
+      "LeaveRequestOut": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "decidedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decidedat"
+          },
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "endDate": {
+            "format": "date",
+            "title": "Enddate",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "leaveType": {
+            "title": "Leavetype",
+            "type": "string"
+          },
+          "leaveTypeId": {
+            "title": "Leavetypeid",
+            "type": "integer"
+          },
+          "mine": {
+            "title": "Mine",
+            "type": "boolean"
+          },
+          "shiftsCleared": {
+            "title": "Shiftscleared",
+            "type": "integer"
+          },
+          "startDate": {
+            "format": "date",
+            "title": "Startdate",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "employeeId",
+          "employee",
+          "empNo",
+          "leaveTypeId",
+          "leaveType",
+          "startDate",
+          "endDate",
+          "days",
+          "status",
+          "createdAt",
+          "decidedAt",
+          "shiftsCleared",
+          "mine"
+        ],
+        "title": "LeaveRequestOut",
+        "type": "object"
+      },
+      "LeaveTypeOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "daysPerYear": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daysperyear"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "paid": {
+            "title": "Paid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "paid",
+          "daysPerYear",
+          "confirmed"
+        ],
+        "title": "LeaveTypeOut",
         "type": "object"
       },
       "LimitsIn": {
@@ -3649,6 +3995,384 @@
         "summary": "Make a draft the live forecast of its queue",
         "tags": [
           "forecasting"
+        ]
+      }
+    },
+    "/api/v1/people/leave/balances": {
+      "get": {
+        "operationId": "wfm_people_api_get_balances",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "title": "Year",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "employee_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Employee Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalancesOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "A person's leave balances for a year (their own unless a planner or admin asks)",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/leave/requests": {
+      "get": {
+        "operationId": "wfm_people_api_list_requests",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "employee_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Employee Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LeaveRequestOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Leave requests: your own, or everyone's for leads, planners and admins",
+        "tags": [
+          "people"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_people_api_apply",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaveRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaveRequestOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Ask for leave",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/leave/requests/{request_id}/approve": {
+      "post": {
+        "operationId": "wfm_people_api_approve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Approve a request: it is written into the roster and coverage follows",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/leave/requests/{request_id}/cancel": {
+      "post": {
+        "operationId": "wfm_people_api_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Withdraw a request; cancelling approved leave puts its shifts back where it can",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/leave/requests/{request_id}/impact": {
+      "get": {
+        "operationId": "wfm_people_api_get_impact",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "What approving a request would do to coverage",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/leave/requests/{request_id}/reject": {
+      "post": {
+        "operationId": "wfm_people_api_reject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DecisionOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Reject a request",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/leave/types": {
+      "get": {
+        "operationId": "wfm_people_api_list_types",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LeaveTypeOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Kinds of leave",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/leave/types/{type_id}": {
+      "put": {
+        "operationId": "wfm_people_api_set_entitlement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "type_id",
+            "required": true,
+            "schema": {
+              "title": "Type Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntitlementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaveTypeOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set the days a year of a kind of leave",
+        "tags": [
+          "people"
         ]
       }
     },

@@ -163,6 +163,7 @@ MODULE_FEATURE = {
     "/api/v1/scheduling": "scheduling",
     "/api/v1/capacity": "capacity",
     "/api/v1/service-desk": "service_desk",
+    "/api/v1/people": "people",
 }
 
 

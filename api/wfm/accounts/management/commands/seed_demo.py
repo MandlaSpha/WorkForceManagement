@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
+from django.apps import apps
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
@@ -58,6 +59,14 @@ class Command(BaseCommand):
                 )
                 if was_created:
                     created += 1
+                if role == Role.AGENT:
+                    # A synthetic employee record for the demo agent, so their own schedule and
+                    # leave screens have somebody to show (the record names no real person).
+                    employee_model = apps.get_model("scheduling", "Employee")
+                    employee_model.objects.get_or_create(
+                        user=user,
+                        defaults={"emp_no": f"DEMO-{username.upper()}", "name": full_name},
+                    )
                 if was_created or options["reset_passwords"]:
                     user.set_password(password)
                     user.failed_login_count = 0

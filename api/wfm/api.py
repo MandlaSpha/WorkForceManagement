@@ -11,6 +11,7 @@ from wfm.core.api import router as system_router
 from wfm.core.errors import ApiError, problem_response
 from wfm.forecasting.api import router as forecasting_router
 from wfm.identity.api import router as identity_router
+from wfm.people.api import router as people_router
 from wfm.scheduling.api import router as scheduling_router
 from wfm.servicedesk.api import router as servicedesk_router
 from wfm.telephony.api import router as telephony_router
@@ -35,4 +36,5 @@ api.add_router("/telephony", telephony_router)
 api.add_router("/forecasting", forecasting_router)
 api.add_router("/scheduling", scheduling_router)
 api.add_router("/capacity", capacity_router)
+api.add_router("/people", people_router)
 api.add_router("/service-desk", servicedesk_router)

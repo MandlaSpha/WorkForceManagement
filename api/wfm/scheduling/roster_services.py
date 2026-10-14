@@ -31,6 +31,7 @@ from wfm.accounts.models import User
 from wfm.audit import services as audit
 from wfm.audit.models import Action, Outcome
 from wfm.core.errors import ApiError, not_found
+from wfm.people.models import LeaveRequest, LeaveStatus
 from wfm.telephony.models import Queue
 
 from .models import (
@@ -236,6 +237,10 @@ def _check_rules(
         raise _refused(
             user, queue, "roster.not_employed", "This person is not employed on that day."
         )
+    if LeaveRequest.objects.filter(
+        employee=employee, status=LeaveStatus.APPROVED, start_date__lte=day, end_date__gte=day
+    ).exists():
+        raise _refused(user, queue, "roster.on_leave", "This person is on approved leave that day.")
 
     others = ShiftAssignment.objects.filter(
         employee=employee, day__gte=day - timedelta(days=7), day__lte=day + timedelta(days=7)
