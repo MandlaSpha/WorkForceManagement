@@ -45,6 +45,19 @@ const stale = computed(() => age.value !== null && age.value >= STALE_AFTER_DAYS
 const evidence = computed(() => points.value[0]?.daysUsed ?? 0)
 const missingDays = toRef(() => props.version.daysWithoutHistory)
 
+// Which model made this forecast, and when Prophet was asked for but not used, why (ADR 0002).
+const usedProphet = computed(() => props.version.method.startsWith('prophet'))
+const fallbackMessage = computed(() => {
+  const message = props.version.fallback?.message
+  return typeof message === 'string' ? message : null
+})
+const backtest = computed(() => {
+  const b = props.version.params.backtest as Record<string, unknown> | undefined
+  return b && typeof b.prophetDailyPct === 'number' && typeof b.baselineDailyPct === 'number'
+    ? { prophet: b.prophetDailyPct, baseline: b.baselineDailyPct, days: Number(b.daysScored) }
+    : null
+})
+
 const chartSummary = computed(
   () =>
     `Expected calls per half-hour and agents to roster, ${formatDayLabel(day.value)}. ` +
@@ -72,6 +85,10 @@ const chartSummary = computed(
       shrinkage. The agents-required figures rest on them.
     </NoticeBox>
 
+    <NoticeBox v-if="fallbackMessage" data-testid="fallback-notice">
+      This forecast uses the baseline, not Prophet. {{ fallbackMessage }}
+    </NoticeBox>
+
     <NoticeBox v-if="stale" tone="warn" data-testid="stale-notice">
       The newest call data is from {{ version.historyThrough }}, {{ age }} days before the first day
       of this forecast. Treat it as a rough guide, and import newer data to improve it.
@@ -95,6 +112,13 @@ const chartSummary = computed(
           <dt class="text-xs text-ink-muted">Expected calls</dt>
           <dd class="text-xl font-semibold tabular-nums text-ink" data-testid="total-calls">
             {{ summary.totalVolume.toFixed(1) }}
+          </dd>
+          <dd
+            v-if="summary.totalLower !== null && summary.totalUpper !== null"
+            class="text-xs tabular-nums text-ink-muted"
+            data-testid="total-range"
+          >
+            80% range {{ summary.totalLower.toFixed(0) }} to {{ summary.totalUpper.toFixed(0) }}
           </dd>
         </div>
         <div class="rounded-xl border border-line bg-surface p-3">
@@ -120,10 +144,16 @@ const chartSummary = computed(
         bar-label="Expected calls"
         line-label="Agents to roster"
       />
+      <p v-if="usedProphet && backtest" class="text-xs text-ink-muted" data-testid="model">
+        Model: Prophet. On {{ backtest.days }} past days it predicted the day's total
+        {{ backtest.prophet.toFixed(1) }}% right, against {{ backtest.baseline.toFixed(1) }}% for
+        the baseline, which is why it was used. It forecasts each day's total; the total is then
+        spread over the half-hours in the shape of recent days.
+      </p>
       <p class="text-xs text-ink-muted" data-testid="evidence">
-        Forecast from the {{ evidence }} most recent earlier {{ evidence === 1 ? 'day' : 'days' }}
-        with the same weekday that have call data. Agents to roster include
-        {{ number('shrinkagePct') }}% shrinkage.
+        Daily shape from the {{ evidence }} most recent earlier
+        {{ evidence === 1 ? 'day' : 'days' }} with the same weekday that have call data. Agents to
+        roster include {{ number('shrinkagePct') }}% shrinkage.
       </p>
     </template>
   </section>

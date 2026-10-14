@@ -208,7 +208,13 @@ describe('running a forecast', () => {
 
     await waitFor(() => expect(backend.runs).toHaveLength(1))
     expect(backend.runs[0]).toEqual({
-      body: { queueId: 1, dateFrom: '2026-06-01', dateTo: '2026-06-01', label: 'Next week' },
+      body: {
+        queueId: 1,
+        dateFrom: '2026-06-01',
+        dateTo: '2026-06-01',
+        label: 'Next week',
+        method: 'prophet',
+      },
       csrf: 'test-csrf-token',
     })
     // The new draft is listed and opened.
@@ -322,5 +328,76 @@ describe('the two accuracy scores', () => {
     await renderApp('/forecast')
 
     expect(await screen.findByTestId('accuracy-daily')).toHaveTextContent('—')
+  })
+})
+
+describe('which model made the forecast', () => {
+  const prophetParams = {
+    slTargetPct: 80,
+    slThresholdS: 20,
+    occupancyCeilingPct: 85,
+    shrinkagePct: 30,
+    backtest: { prophetDailyPct: 93.456, baselineDailyPct: 88.1, daysScored: 21 },
+  }
+
+  it('asks for the best available model by default and for the baseline when told to', async () => {
+    withLiveForecast()
+    backend.runOutcome = forecastVersion({ id: 'v-new', status: 'draft', publishedAt: null })
+    backend.intervals['v-new'] = dayIntervals()
+    asRole('planner')
+    const u = user()
+    await renderApp('/forecast')
+
+    const form = await screen.findByRole('form', { name: 'Run a forecast' })
+    expect(within(form).getByLabelText('Model')).toHaveValue('prophet')
+    await u.selectOptions(within(form).getByLabelText('Model'), 'baseline')
+    await u.click(within(form).getByRole('button', { name: 'Run forecast' }))
+
+    await waitFor(() => expect(backend.runs).toHaveLength(1))
+    expect(backend.runs[0]?.body).toMatchObject({ method: 'baseline' })
+  })
+
+  it('says Prophet was used, with the evidence that earned it the place, and shows the range', async () => {
+    withLiveForecast({ method: 'prophet-v1', params: prophetParams })
+    // Prophet gives every half-hour a range, quiet ones included (zero to zero).
+    backend.intervals['v-live'] = dayIntervals().map((i) => ({
+      ...i,
+      volumeLower: i.volume * 0.8,
+      volumeUpper: i.volume * 1.25,
+    }))
+    asRole('planner')
+    await renderApp('/forecast')
+
+    const model = await screen.findByTestId('model')
+    expect(model).toHaveTextContent('21 past days')
+    expect(model).toHaveTextContent('93.5% right, against 88.1%')
+    // 31.9 calls: 0.8 x 31.9 = 25.5 and 1.25 x 31.9 = 39.9, as whole numbers.
+    expect(screen.getByTestId('total-range')).toHaveTextContent('80% range 26 to 40')
+  })
+
+  it('does not draw a range the baseline never had', async () => {
+    withLiveForecast()
+    asRole('planner')
+    await renderApp('/forecast')
+    await screen.findByTestId('total-calls')
+    expect(screen.queryByTestId('total-range')).toBeNull()
+    expect(screen.queryByTestId('model')).toBeNull()
+    expect(screen.queryByTestId('fallback-notice')).toBeNull()
+  })
+
+  it('explains why the baseline was used when Prophet was asked for', async () => {
+    withLiveForecast({
+      fallback: {
+        requested: 'prophet',
+        reason: 'not_better',
+        message: 'Prophet did not beat the baseline on past days.',
+      },
+    })
+    asRole('planner')
+    await renderApp('/forecast')
+
+    const notice = await screen.findByTestId('fallback-notice')
+    expect(notice).toHaveTextContent('uses the baseline, not Prophet')
+    expect(notice).toHaveTextContent('did not beat the baseline')
   })
 })

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Literal
 from uuid import UUID
 
 from django.http import HttpRequest
@@ -29,7 +30,7 @@ WRITE = RoleSessionAuth(*sorted(WRITE_ROLES), feature=Feature.FORECASTING)
     "/versions",
     auth=WRITE,
     response={201: ForecastVersionOut},
-    summary="Run the baseline forecast for a queue and a range of days (a draft)",
+    summary="Run a forecast for a queue and a range of days (a draft)",
 )
 def run_forecast(request: HttpRequest, body: RunForecastIn) -> Status[ForecastVersionOut]:
     version = services.run_forecast(
@@ -38,6 +39,7 @@ def run_forecast(request: HttpRequest, body: RunForecastIn) -> Status[ForecastVe
         date_from=body.dateFrom,
         date_to=body.dateTo,
         label=body.label,
+        method=body.method,
     )
     return Status(201, _version_out(version, interval_count=version.intervals.count()))
 
@@ -80,10 +82,12 @@ def version_intervals(request: HttpRequest, version_id: UUID) -> list[ForecastIn
     "/accuracy",
     auth=READ,
     response=AccuracyOut,
-    summary="How well the baseline would have predicted each past day (backtest)",
+    summary="How well a model would have predicted each past day (backtest)",
 )
-def accuracy(request: HttpRequest, queue_id: int) -> AccuracyOut:
-    result = selectors.forecast_accuracy(current_user(request), queue_id)
+def accuracy(
+    request: HttpRequest, queue_id: int, method: Literal["baseline", "prophet"] = "baseline"
+) -> AccuracyOut:
+    result = selectors.forecast_accuracy(current_user(request), queue_id, method)
     return AccuracyOut(
         queueId=result.queue.pk,
         queue=result.queue.name,
@@ -118,6 +122,7 @@ def _version_out(version: ForecastVersion, *, interval_count: int) -> ForecastVe
         publishedAt=version.published_at,
         intervalCount=interval_count,
         assumptionsConfirmed=bool(version.params.get("assumptionsConfirmed")),
+        fallback=version.params.get("fallback"),
         daysWithoutHistory=version.params.get("daysWithoutHistory", []),
         historyThrough=version.params.get("historyThrough"),
         params=version.params,
@@ -128,6 +133,8 @@ def _interval_out(interval: ForecastInterval) -> ForecastIntervalOut:
     return ForecastIntervalOut(
         start=interval.interval_start,
         volume=interval.volume,
+        volumeLower=interval.volume_lower,
+        volumeUpper=interval.volume_upper,
         ahtS=interval.aht_s,
         requiredRaw=interval.required_raw,
         required=interval.required,

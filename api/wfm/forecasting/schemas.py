@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from ninja import Field, Schema
@@ -12,6 +12,8 @@ class RunForecastIn(Schema):
     dateFrom: date  # noqa: N815
     dateTo: date  # noqa: N815
     label: str = Field("", max_length=100)
+    # "prophet" is used only where it beats the baseline on past days (ADR 0002).
+    method: Literal["baseline", "prophet"] = "baseline"
 
 
 class ForecastVersionOut(Schema):
@@ -28,6 +30,7 @@ class ForecastVersionOut(Schema):
     publishedAt: datetime | None  # noqa: N815
     intervalCount: int  # noqa: N815
     assumptionsConfirmed: bool  # noqa: N815 - false while the staffing settings are defaults
+    fallback: dict[str, Any] | None  # why Prophet was asked for but not used
     daysWithoutHistory: list[str]  # noqa: N815 - days that could not be forecast
     historyThrough: str | None  # noqa: N815 - newest day of call data the forecast could use
     params: dict[str, Any]
@@ -36,6 +39,8 @@ class ForecastVersionOut(Schema):
 class ForecastIntervalOut(Schema):
     start: datetime
     volume: float
+    volumeLower: float | None  # noqa: N815 - bottom of the 80% range, Prophet only
+    volumeUpper: float | None  # noqa: N815
     ahtS: float | None  # noqa: N815
     requiredRaw: int | None  # noqa: N815 - agents on the phone
     required: int | None  # agents to roster, shrinkage included

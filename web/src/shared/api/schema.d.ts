@@ -130,7 +130,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** How well the baseline would have predicted each past day (backtest) */
+        /** How well a model would have predicted each past day (backtest) */
         get: operations["wfm_forecasting_api_accuracy"];
         put?: never;
         post?: never;
@@ -150,7 +150,7 @@ export interface paths {
         /** Forecast versions, newest first */
         get: operations["wfm_forecasting_api_list_versions"];
         put?: never;
-        /** Run the baseline forecast for a queue and a range of days (a draft) */
+        /** Run a forecast for a queue and a range of days (a draft) */
         post: operations["wfm_forecasting_api_run_forecast"];
         delete?: never;
         options?: never;
@@ -618,6 +618,10 @@ export interface components {
             start: string;
             /** Volume */
             volume: number;
+            /** Volumelower */
+            volumeLower: number | null;
+            /** Volumeupper */
+            volumeUpper: number | null;
         };
         /** ForecastVersionOut */
         ForecastVersionOut: {
@@ -642,6 +646,10 @@ export interface components {
             dateTo: string;
             /** Dayswithouthistory */
             daysWithoutHistory: string[];
+            /** Fallback */
+            fallback: {
+                [key: string]: unknown;
+            } | null;
             /** Historythrough */
             historyThrough: string | null;
             /**
@@ -978,6 +986,12 @@ export interface components {
              * @default
              */
             label: string;
+            /**
+             * Method
+             * @default baseline
+             * @enum {string}
+             */
+            method: "baseline" | "prophet";
             /** Queueid */
             queueId: number;
         };
@@ -1236,6 +1250,7 @@ export interface operations {
         parameters: {
             query: {
                 queue_id: number;
+                method?: "baseline" | "prophet";
             };
             header?: never;
             path?: never;

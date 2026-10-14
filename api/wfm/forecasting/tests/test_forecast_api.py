@@ -228,7 +228,12 @@ class TestAudit:
         event = AuditEvent.objects.get(action=Action.FORECAST_RUN)
         assert (event.actor_role, event.entity_id) == (Role.PLANNER, version["id"])
         changes = {c.field: c.new_value for c in AuditChange.objects.filter(event=event)}
-        assert changes == {"queue": "QueueA", "range": "2026-05-25..2026-05-25", "intervals": "48"}
+        assert changes == {
+            "queue": "QueueA",
+            "range": "2026-05-25..2026-05-25",
+            "intervals": "48",
+            "method": "baseline-v1",
+        }
 
     def test_a_publish_records_both_the_new_live_version_and_the_one_it_archived(self) -> None:
         first = run(login()).json()

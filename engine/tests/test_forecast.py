@@ -5,10 +5,13 @@ import pytest
 from wfm_engine.forecast import (
     SLOTS_PER_DAY,
     Backtest,
+    SlotForecast,
     SlotHistory,
     accuracy_pct,
     backtest,
+    backtest_with,
     baseline_day,
+    spread_day_total,
 )
 
 # Mondays in May 2026: 4, 11, 18, 25. The target is Monday 25 May.
@@ -216,3 +219,70 @@ class TestTheDailyScore:
         history = (row(MON_4, 10, slot=20), row(MON_11, 0, slot=20))
         (day,) = backtest(history, self.observed).days
         assert day.daily_pct is None
+
+
+class TestSpreadingADayTotal:
+    """Monday 18 May had 30 calls at 10:00 and 10 at 11:00 (shape 3 : 1). A day total of 80 for
+    25 May is therefore 60 at 10:00 and 20 at 11:00, and the handling time stays 180 s."""
+
+    history = (row(MON_18, 30), row(MON_18, 10, slot=22))
+    observed = (MON_18,)
+
+    def test_follows_the_recent_shape_and_adds_up_to_the_total(self) -> None:
+        forecast = spread_day_total(self.history, self.observed, MON_25, 80)
+        assert forecast is not None
+        assert forecast[20].volume == pytest.approx(60)
+        assert forecast[22].volume == pytest.approx(20)
+        assert forecast[20].aht_s == pytest.approx(180)
+        assert sum(s.volume for s in forecast) == pytest.approx(80)
+
+    def test_a_total_of_zero_is_a_quiet_day_not_a_missing_one(self) -> None:
+        forecast = spread_day_total(self.history, self.observed, MON_25, 0)
+        assert forecast is not None
+        assert sum(s.volume for s in forecast) == 0
+
+    def test_no_same_weekday_means_no_shape_so_no_forecast(self) -> None:
+        assert spread_day_total(self.history, self.observed, date(2026, 5, 26), 80) is None
+
+    def test_a_day_with_no_calls_gives_no_shape_so_no_forecast(self) -> None:
+        # Observed and quiet all day: there is nothing to say where 80 calls would fall.
+        assert spread_day_total((), (MON_18,), MON_25, 80) is None
+
+    def test_a_negative_total_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="negative"):
+            spread_day_total(self.history, self.observed, MON_25, -1)
+
+
+class TestScoringAnyModel:
+    """A model that always says 10 calls at 10:00 is scored against 10, 20 and 10 actual calls
+    on three Mondays: errors 0, 10, 0 over 40 actual calls, so 75%."""
+
+    history = (row(MON_4, 10), row(MON_11, 20), row(MON_18, 10))
+    observed = (MON_4, MON_11, MON_18)
+
+    @staticmethod
+    def always_ten(_day: date) -> list[SlotForecast]:
+        return [SlotForecast(s, 10.0 if s == SLOT else 0.0, 180.0, 1) for s in range(SLOTS_PER_DAY)]
+
+    def test_scores_the_forecast_it_is_given(self) -> None:
+        result = backtest_with(self.history, self.observed, self.always_ten)
+        assert result.daily_pct == pytest.approx(75.0)
+        assert [d.day for d in result.days] == [MON_4, MON_11, MON_18]
+
+    def test_only_days_limits_both_the_scoring_and_what_the_model_is_asked(self) -> None:
+        asked: list[date] = []
+
+        def spy(day: date) -> list[SlotForecast]:
+            asked.append(day)
+            return self.always_ten(day)
+
+        result = backtest_with(self.history, self.observed, spy, only_days={MON_11, MON_18})
+        assert asked == [MON_11, MON_18]
+        assert result.daily_pct == pytest.approx(100 * (1 - 10 / 30))
+
+    def test_days_the_model_cannot_forecast_are_skipped_not_scored_as_zero(self) -> None:
+        result = backtest_with(
+            self.history, self.observed, lambda d: None if d == MON_11 else self.always_ten(d)
+        )
+        assert [d.day for d in result.days] == [MON_4, MON_18]
+        assert result.daily_pct == pytest.approx(100.0)

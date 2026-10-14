@@ -12,6 +12,7 @@ from wfm.accounts.models import User
 from wfm.core.errors import not_found
 from wfm.telephony.models import Queue
 
+from . import modeling
 from .history import load_history
 from .models import ForecastInterval, ForecastVersion
 
@@ -47,14 +48,19 @@ class Accuracy:
     decay: float
 
 
-def forecast_accuracy(user: User, queue_id: int) -> Accuracy:
-    """How well the baseline would have predicted each past day, using only the days before it
-    (FC-05). Measured on real imported data; nothing here is modelled."""
+def forecast_accuracy(user: User, queue_id: int, method: str = "baseline") -> Accuracy:
+    """How well a model would have predicted each past day, using only the days before it (FC-05).
+    Measured on real imported data; nothing here is modelled. For Prophet the days are the ones it
+    could be refitted for (see `prophet_model.rolling_forecasts`)."""
     queue = Queue.objects.for_user(user).filter(pk=queue_id).first()
     if queue is None:
         raise not_found("No such queue.")
     history, observed = load_history(queue)
-    result = backtest(history, observed)
+    result = (
+        modeling.prophet_backtest(history, observed)[0]
+        if method == "prophet"
+        else backtest(history, observed)
+    )
     return Accuracy(
         queue, result.interval_pct, result.daily_pct, result.days, DEFAULT_WEEKS, DEFAULT_DECAY
     )

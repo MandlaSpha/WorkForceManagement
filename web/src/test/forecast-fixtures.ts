@@ -30,6 +30,7 @@ export function forecastVersion(overrides: Partial<ForecastVersion> = {}): Forec
     publishedAt: '2026-05-20T09:00:00Z',
     intervalCount: 48,
     assumptionsConfirmed: false,
+    fallback: null,
     daysWithoutHistory: [],
     historyThrough: '2026-05-18',
     params: { slTargetPct: 80, slThresholdS: 20, occupancyCeilingPct: 85, shrinkagePct: 30 },
@@ -50,6 +51,8 @@ export function dayIntervals(day = '2026-05-25'): ForecastInterval[] {
     return {
       start,
       volume: hit?.volume ?? 0,
+      volumeLower: null,
+      volumeUpper: null,
       ahtS: hit ? 180 : null,
       requiredRaw: hit?.raw ?? 0,
       required: hit?.required ?? 0,

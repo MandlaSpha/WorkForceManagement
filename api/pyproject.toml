@@ -22,6 +22,8 @@ dependencies = [
   "requests>=2.34.2",
   "openpyxl>=3.1.5",
   "defusedxml>=0.7.1",
+  "prophet>=1.5.0",
+  "holidays>=0.106",
 ]
 
 [tool.uv.sources]
@@ -39,6 +41,7 @@ dev = [
   "import-linter>=2.1",
   "responses>=0.26.3",
   "types-openpyxl>=3.1.5.20260827",
+  "pandas-stubs>=3.0.5.260914",
 ]
 
 [tool.ruff]

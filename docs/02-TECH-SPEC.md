@@ -261,8 +261,8 @@ Other rules:
 | 2. Plan & roster | Shift templates, employees, roster grid, coverage, planner heatmap + day chart, publish, CSV | Variance updates live on assign |
 | 2.5. Forecast v2 & capacity | Prophet daily model beside the baseline (§8.0), SA public holidays + month-end/payment-cycle events (FC-04), confidence band, day totals spread over half-hours by the existing profile, model comparison in the backtest; then the 350-agent cap (100 permanent + 250 seasonal), seasonal need per week and overflow, scenario "what if +20%" | Prophet beats the baseline on the backtest for at least the large queues, or the screen says it does not and keeps the baseline; capacity view shows permanent, seasonal and overflow |
 | 3. People | Leave + approvals + balances, swaps, availability, agent self-service | Leave approval changes coverage |
-| 4. Optimise | Auto-schedule (CP-SAT), recommendations, overtime + pricing (BCEA), shrinkage from actuals | Auto-schedule closes ≥ X% of gap |
-| 5. Insight | Dashboard, analytics, peaks & troughs detection and report, scheduled daily/weekly/monthly packs, payroll CSV, intraday reforecast + alerts, executive view | UIF reporting requirements covered |
+| 4. Optimise | **Configurable compliance rules (CFG-06)** first, so the roster checks, auto-schedule (CP-SAT), recommendations and overtime pricing (BCEA) all read the same editable rules; shrinkage from actuals | Changing a rule changes what the roster accepts; auto-schedule closes ≥ X% of gap |
+| 5. Insight | Dashboard, analytics, peaks & troughs detection and report, **self-service report schedules (RPT-10: report, recipients, when)** with daily/weekly/monthly packs, payroll CSV, intraday reforecast + alerts, executive view, **Grafana operations dashboards (OBS-11)** | UIF reporting requirements covered |
 | 6. Integrations | Employee master, roster seed, ticket/email, ACD agent-state → adherence, Azure AD, customer/contract/tier views, ITSM adapters | Depends on Gijima data |
 | 7. Extras | Calibration, service-desk model, cross-queue flexing, standby, ML forecast beyond Prophet | — |
 
@@ -272,10 +272,10 @@ Other rules:
 
 ### 8.0 Prophet decision (Phase 2.5)
 - **Use:** Prophet (MIT licence) forecasts **daily totals** per queue; the historical profile spreads the total over half-hours (the approach the baseline already uses at slot level). Holidays from the `holidays` package (ZA) and a business-editable events table feed it.
-- **Where it runs:** in the worker (Celery), not in `wfm_engine`, which stays free of Django, clock and I/O. The model sits behind the same forecast-version interface as the baseline, so publishing, audit and the accuracy backtest are unchanged.
+- **Where it runs:** in the API layer (`wfm/forecasting/prophet_model.py`, `modeling.py`), not in `wfm_engine`, which stays free of Django, the clock and I/O. Built (14 Oct 2026): a run with its backtest takes a few seconds and stays inside the request; it moves to the Celery worker behind the job API when runs grow. The model sits behind the same forecast-version interface as the baseline, so publishing, audit and the accuracy backtest are unchanged. Decision record: `docs/adr/0002-prophet-for-daily-totals.md`.
 - **Rule from the tender text:** Prophet must beat the baseline on the rolling backtest, or the version says it did not and uses the baseline. Accuracy is shown per model.
 - **Data limit:** only May and July are real today. With under a year of history yearly seasonality is switched off and the screen says so; weekly pattern, holidays and month-end still apply.
-- **Cost:** a cmdstan toolchain in the worker image and on Windows dev machines (document the fix); decide with an ADR before adding the dependency.
+- **Cost:** none beyond the wheel: Prophet 1.5 ships the compiled model, so no compiler or cmdstan build is needed on Windows or in a glibc Linux image (ADR 0002). Still to build in this phase: SA holidays are in, but the editable events calendar (FC-04) and the 350-agent capacity view (CAP-01) are not.
 
 The Copilot (requirements §3.12) is **parked**: not in any phase and not in the test plan. If it is ever requested, it comes after the role-scoping layer and the endpoint × role test matrix exist, and reuses them rather than adding a new data path.
 

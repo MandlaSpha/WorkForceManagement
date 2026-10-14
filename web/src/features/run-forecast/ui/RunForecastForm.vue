@@ -21,6 +21,12 @@ const monday = weekStartOf(todayInJohannesburg())
 const dateFrom = ref(monday)
 const dateTo = ref(addDays(monday, 6))
 const label = ref('')
+// Prophet is only used where it beats the baseline on past days; otherwise the server says why not.
+const method = ref('prophet')
+const METHODS = [
+  { value: 'prophet', label: 'Best available (Prophet, checked against the baseline)' },
+  { value: 'baseline', label: 'Baseline (recent same weekdays)' },
+]
 
 const options = computed(() => props.queues.map((q) => ({ value: String(q.id), label: q.name })))
 const selected = computed({
@@ -38,6 +44,7 @@ function submit(): void {
       dateFrom: dateFrom.value,
       dateTo: dateTo.value,
       label: label.value.trim(),
+      method: method.value === 'baseline' ? 'baseline' : 'prophet',
     },
     { onSuccess: (version) => emit('ran', version) },
   )
@@ -46,11 +53,12 @@ function submit(): void {
 
 <template>
   <form class="space-y-3" aria-label="Run a forecast" @submit.prevent="submit">
-    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
       <SelectField v-model="selected" label="Queue" :options="options" empty-text="No queues yet" />
       <TextField v-model="dateFrom" type="date" label="From" />
       <TextField v-model="dateTo" type="date" label="To" />
       <TextField v-model="label" label="Label (optional)" />
+      <SelectField v-model="method" label="Model" :options="METHODS" />
     </div>
     <div class="flex items-center gap-3">
       <AppButton

@@ -9,6 +9,8 @@ export interface Point {
   required: number | null
   requiredRaw: number | null
   daysUsed: number
+  lower: number | null // bottom of the 80% range; only Prophet gives one
+  upper: number | null
 }
 
 /** The half-hours of one South African day, in time order. */
@@ -22,6 +24,8 @@ export function dayPoints(intervals: ReadonlyArray<ForecastInterval>, day: strin
       required: i.required,
       requiredRaw: i.requiredRaw,
       daysUsed: i.daysUsed,
+      lower: i.volumeLower,
+      upper: i.volumeUpper,
     }))
 }
 
@@ -41,6 +45,8 @@ export function forecastDays(version: ForecastVersion): string[] {
 
 export interface DaySummary {
   totalVolume: number
+  totalLower: number | null // the day's 80% range; null unless every half-hour has one
+  totalUpper: number | null
   peak: Point | null // the busiest half-hour
   maxRequired: number | null
 }
@@ -58,8 +64,11 @@ export function summarise(points: ReadonlyArray<Point>): DaySummary {
   }
   // If any half-hour with calls has no requirement, the true maximum could be higher than the
   // ones we know, so no maximum is claimed (DAT-10: never present a partial figure as complete).
+  const ranged = points.length > 0 && points.every((p) => p.lower !== null && p.upper !== null)
   return {
     totalVolume: points.reduce((sum, p) => sum + p.volume, 0),
+    totalLower: ranged ? points.reduce((sum, p) => sum + (p.lower ?? 0), 0) : null,
+    totalUpper: ranged ? points.reduce((sum, p) => sum + (p.upper ?? 0), 0) : null,
     peak,
     maxRequired: someUnknown ? null : maxRequired,
   }

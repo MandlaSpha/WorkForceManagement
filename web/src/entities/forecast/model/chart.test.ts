@@ -10,6 +10,8 @@ const interval = (start: string, volume: number, required: number | null): Forec
   requiredRaw: required,
   required,
   daysUsed: 3,
+  volumeLower: null,
+  volumeUpper: null,
 })
 
 const version = (overrides: Partial<ForecastVersion> = {}): ForecastVersion => ({
@@ -26,6 +28,7 @@ const version = (overrides: Partial<ForecastVersion> = {}): ForecastVersion => (
   publishedAt: null,
   intervalCount: 48,
   assumptionsConfirmed: false,
+  fallback: null,
   daysWithoutHistory: [],
   historyThrough: '2026-05-18',
   params: {},
@@ -117,5 +120,31 @@ describe('historyAgeDays', () => {
 
   it('has no answer when the API did not say', () => {
     expect(historyAgeDays(version({ historyThrough: null }))).toBeNull()
+  })
+})
+
+describe('the range of a day', () => {
+  const point = (lower: number | null, upper: number | null) => ({
+    label: '10:00',
+    volume: 10,
+    required: 1,
+    requiredRaw: 1,
+    daysUsed: 3,
+    lower,
+    upper,
+  })
+
+  it('adds up the half-hour ranges', () => {
+    const day = summarise([point(8, 13), point(4, 6)])
+    expect([day.totalLower, day.totalUpper]).toEqual([12, 19])
+  })
+
+  it('claims no range when any half-hour lacks one, rather than a partial figure', () => {
+    const day = summarise([point(8, 13), point(null, null)])
+    expect([day.totalLower, day.totalUpper]).toEqual([null, null])
+  })
+
+  it('claims no range for a day with no half-hours at all', () => {
+    expect(summarise([]).totalLower).toBeNull()
   })
 })

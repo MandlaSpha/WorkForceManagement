@@ -11,12 +11,7 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models.functions import Now
 from wfm_engine.erlang import required_agents
-from wfm_engine.forecast import (
-    DEFAULT_DECAY,
-    DEFAULT_WEEKS,
-    SlotForecast,
-    baseline_day,
-)
+from wfm_engine.forecast import DEFAULT_DECAY, DEFAULT_WEEKS, SlotForecast
 from wfm_engine.kpi import INTERVAL_MINUTES
 
 from wfm.accounts.models import User
@@ -25,19 +20,28 @@ from wfm.audit.models import Action, Outcome
 from wfm.core.errors import ApiError, not_found
 from wfm.telephony.models import Queue
 
+from . import modeling
 from .history import load_history
 from .models import ForecastInterval, ForecastStatus, ForecastVersion
 
-METHOD = "baseline-v1"
 MAX_DAYS = 31
 INTERVAL_S = INTERVAL_MINUTES * 60
 
 
 def run_forecast(
-    *, user: User, queue_id: int, date_from: date, date_to: date, label: str = ""
+    *,
+    user: User,
+    queue_id: int,
+    date_from: date,
+    date_to: date,
+    label: str = "",
+    method: str = "baseline",
 ) -> ForecastVersion:
     """Forecast every day from `date_from` to `date_to` and work out the agents each half-hour
-    needs. The result is a DRAFT version; publishing it is a separate, deliberate step."""
+    needs. The result is a DRAFT version; publishing it is a separate, deliberate step.
+
+    `method="prophet"` asks for Prophet, which is used only if it beats the baseline on past days;
+    the version records the model that was really used and, if it fell back, why (ADR 0002)."""
     queue = Queue.objects.for_user(user).filter(pk=queue_id).first()
     if queue is None:
         raise not_found("No such queue.")
@@ -54,8 +58,8 @@ def run_forecast(
 
     history, observed = load_history(queue)
     days = [date_from + timedelta(days=n) for n in range((date_to - date_from).days + 1)]
-    forecasts = {day: baseline_day(history, observed, day) for day in days}
-    forecastable = {day: f for day, f in forecasts.items() if f is not None}
+    built = modeling.build(history, observed, days, method)
+    forecastable = built.days
     if not forecastable:
         raise _refused(
             user,
@@ -79,21 +83,22 @@ def run_forecast(
         "daysWithoutHistory": [d.isoformat() for d in days if d not in forecastable],
         # Newest day of data it could draw on, so a forecast built on old data says so.
         "historyThrough": max(observed).isoformat(),
+        **built.params,
     }
     with transaction.atomic():
         version: ForecastVersion = ForecastVersion.objects.create(
             queue=queue,
             label=label.strip()[:100],
-            method=METHOD,
+            method=built.method,
             params=params,
             date_from=date_from,
             date_to=date_to,
             created_by=user,
         )
         intervals = [
-            _interval(version, queue, day, slot, zone)
+            _interval(version, queue, day, slot, forecast, zone)
             for day, forecast in forecastable.items()
-            for slot in forecast
+            for slot in forecast.slots
         ]
         ForecastInterval.objects.bulk_create(intervals)
         audit.record(  # last write of the transaction
@@ -109,6 +114,10 @@ def run_forecast(
                 audit.FieldChange(
                     "forecast_version", str(version.id), "intervals", None, str(len(intervals))
                 ),
+                audit.FieldChange(
+                    "forecast_version", str(version.id), "method", None, built.method
+                ),
+                *_fallback_changes(version, built),
             ],
         )
     return version
@@ -181,15 +190,36 @@ def publish_forecast(*, user: User, version_id: Any) -> ForecastVersion:
 # --- helpers ---------------------------------------------------------------------------------
 
 
+def _fallback_changes(version: ForecastVersion, built: modeling.Built) -> list[audit.FieldChange]:
+    fallback = built.params.get("fallback")
+    if not fallback:
+        return []
+    return [
+        audit.FieldChange(
+            "forecast_version", str(version.id), "fallback", "prophet", fallback["reason"]
+        )
+    ]
+
+
 def _interval(
-    version: ForecastVersion, queue: Queue, day: date, slot: SlotForecast, zone: ZoneInfo
+    version: ForecastVersion,
+    queue: Queue,
+    day: date,
+    slot: SlotForecast,
+    forecast: modeling.DayForecast,
+    zone: ZoneInfo,
 ) -> ForecastInterval:
     start = datetime.combine(day, time(slot.slot // 2, 30 * (slot.slot % 2)), tzinfo=zone)
     raw, with_shrinkage = _requirement(slot.volume, slot.aht_s, queue)
+    # The day's range, shared out in the same proportion as the day's expected total.
+    expected = sum(s.volume for s in forecast.slots)
+    share = slot.volume / expected if expected > 0 else 0.0
     return ForecastInterval(
         version=version,
         interval_start=start,
         volume=slot.volume,
+        volume_lower=None if forecast.lower is None else forecast.lower * share,
+        volume_upper=None if forecast.upper is None else forecast.upper * share,
         aht_s=slot.aht_s,
         required_raw=raw,
         required=with_shrinkage,

@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
 from django.test import Client
 
 from wfm.accounts.models import Role, User
+from wfm.telephony.models import IntervalActual, Queue
 from wfm.telephony.tests.workbooks import Call, upload, workbook_bytes
 
 # Mondays before the target Monday 25 May 2026, most recent first.
@@ -51,3 +53,34 @@ def import_mondays(volumes: dict[date, int], queue: str = "QueueA") -> None:
             "/api/v1/telephony/imports", {"file": upload(workbook_bytes(calls), f"{day}.xlsx")}
         )
         assert response.status_code == 201, response.content
+
+
+SLOTS_WITH_CALLS = (18, 19, 20, 21, 22)  # 09:00 to 11:30, so every day has the same shape
+
+
+def add_days(queue_name: str, daily: dict[date, int]) -> Queue:
+    """Give a queue `daily[day]` answered calls on each day, spread evenly over five half-hours
+    (the first takes the remainder), each handled for 180 s. Straight into the interval table, so
+    weeks of history cost milliseconds instead of one workbook import per day."""
+    zone = ZoneInfo("Africa/Johannesburg")
+    queue, _ = Queue.objects.get_or_create(name=queue_name)
+    rows = []
+    for day, total in daily.items():
+        each, extra = divmod(total, len(SLOTS_WITH_CALLS))
+        for n, slot in enumerate(SLOTS_WITH_CALLS):
+            calls = each + (extra if n == 0 else 0)
+            start = datetime(day.year, day.month, day.day, slot // 2, 30 * (slot % 2), tzinfo=zone)
+            rows.append(
+                IntervalActual(
+                    queue=queue,
+                    interval_start=start,
+                    offered=calls,
+                    answered=calls,
+                    abandoned=0,
+                    answered_in_sl=calls,
+                    sum_wait_s=0,
+                    sum_handle_s=180 * calls,
+                )
+            )
+    IntervalActual.objects.bulk_create(rows)
+    return queue

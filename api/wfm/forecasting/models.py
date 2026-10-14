@@ -1,8 +1,8 @@
 """Forecast versions and their intervals (requirements FC-01 to FC-03).
 
-A version is one run of the baseline forecast for a queue and a range of days, with the staffing
-requirement worked out from it. This app depends on `wfm.telephony` (queues and the measured
-intervals) and never the other way round.
+A version is one run of a forecast model (Prophet, or the baseline) for a queue and a range of
+days, with the staffing requirement worked out from it. This app depends on `wfm.telephony`
+(queues and the measured intervals) and never the other way round.
 """
 
 from __future__ import annotations
@@ -83,6 +83,10 @@ class ForecastInterval(models.Model):
     version = models.ForeignKey(ForecastVersion, on_delete=models.CASCADE, related_name="intervals")
     interval_start = models.DateTimeField()
     volume = models.FloatField()
+    # The 80% range around `volume`, from the model's range for the whole day. Only Prophet gives
+    # one; the baseline has none and says so with null.
+    volume_lower = models.FloatField(null=True)
+    volume_upper = models.FloatField(null=True)
     aht_s = models.FloatField(null=True)
     required_raw = models.PositiveSmallIntegerField(null=True)  # agents on the phone
     required = models.PositiveSmallIntegerField(null=True)  # with shrinkage: agents to roster

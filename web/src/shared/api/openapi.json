@@ -420,11 +420,35 @@
           "volume": {
             "title": "Volume",
             "type": "number"
+          },
+          "volumeLower": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volumelower"
+          },
+          "volumeUpper": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Volumeupper"
           }
         },
         "required": [
           "start",
           "volume",
+          "volumeLower",
+          "volumeUpper",
           "ahtS",
           "requiredRaw",
           "required",
@@ -464,6 +488,18 @@
             },
             "title": "Dayswithouthistory",
             "type": "array"
+          },
+          "fallback": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback"
           },
           "historyThrough": {
             "anyOf": [
@@ -537,6 +573,7 @@
           "publishedAt",
           "intervalCount",
           "assumptionsConfirmed",
+          "fallback",
           "daysWithoutHistory",
           "historyThrough",
           "params"
@@ -1346,6 +1383,15 @@
             "title": "Label",
             "type": "string"
           },
+          "method": {
+            "default": "baseline",
+            "enum": [
+              "baseline",
+              "prophet"
+            ],
+            "title": "Method",
+            "type": "string"
+          },
           "queueId": {
             "title": "Queueid",
             "type": "integer"
@@ -1790,6 +1836,20 @@
               "title": "Queue Id",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "method",
+            "required": false,
+            "schema": {
+              "default": "baseline",
+              "enum": [
+                "baseline",
+                "prophet"
+              ],
+              "title": "Method",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1809,7 +1869,7 @@
             "RoleSessionAuth": []
           }
         ],
-        "summary": "How well the baseline would have predicted each past day (backtest)",
+        "summary": "How well a model would have predicted each past day (backtest)",
         "tags": [
           "forecasting"
         ]
@@ -1892,7 +1952,7 @@
             "RoleSessionAuth": []
           }
         ],
-        "summary": "Run the baseline forecast for a queue and a range of days (a draft)",
+        "summary": "Run a forecast for a queue and a range of days (a draft)",
         "tags": [
           "forecasting"
         ]

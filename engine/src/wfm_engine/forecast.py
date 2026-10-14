@@ -17,7 +17,7 @@ machine-learning models (FC-07).
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Collection, Iterable
+from collections.abc import Callable, Collection, Iterable
 from dataclasses import dataclass
 from datetime import date
 
@@ -124,6 +124,33 @@ def accuracy_pct(pairs: Iterable[tuple[float, float]]) -> float | None:
     return max(0.0, 100.0 * (1.0 - forecast_error / actual_total))
 
 
+def spread_day_total(
+    history: Iterable[SlotHistory],
+    observed_days: Collection[date],
+    target: date,
+    total: float,
+    *,
+    weeks: int = DEFAULT_WEEKS,
+    decay: float = DEFAULT_DECAY,
+) -> list[SlotForecast] | None:
+    """A day's forecast total spread over its half-hours in the shape of the recent same-weekday
+    days (the intraday profile), so a model that forecasts day totals can drive the whole day.
+
+    None when the shape is unknown: no earlier same-weekday day, or those days had no calls, so
+    there is nothing to say where in the day the calls fall. Handling times come from the profile.
+    """
+    if total < 0:
+        raise ValueError("total must not be negative")
+    profile = baseline_day(history, observed_days, target, weeks=weeks, decay=decay)
+    if profile is None:
+        return None
+    shape = sum(s.volume for s in profile)
+    if shape == 0:
+        return None
+    factor = total / shape
+    return [SlotForecast(s.slot, s.volume * factor, s.aht_s, s.days_used) for s in profile]
+
+
 def backtest(
     history: Collection[SlotHistory],
     observed_days: Collection[date],
@@ -131,14 +158,33 @@ def backtest(
     weeks: int = DEFAULT_WEEKS,
     decay: float = DEFAULT_DECAY,
 ) -> Backtest:
-    """Forecast every observed day from the days before it and score it against what happened.
+    """The baseline forecast scored against what happened (see `backtest_with`)."""
+    return backtest_with(
+        history,
+        observed_days,
+        lambda day: baseline_day(history, observed_days, day, weeks=weeks, decay=decay),
+    )
+
+
+def backtest_with(
+    history: Collection[SlotHistory],
+    observed_days: Collection[date],
+    forecast_day: Callable[[date], list[SlotForecast] | None],
+    *,
+    only_days: Collection[date] | None = None,
+) -> Backtest:
+    """Forecast every observed day with `forecast_day` and score it against what happened.
+
+    `forecast_day` must use only the days BEFORE the one it forecasts; that is the caller's
+    promise and the reason a score here can be trusted. `only_days` restricts the scoring, so two
+    models can be compared on exactly the same days.
 
     Two scores, because they answer different questions (FC-05). The half-hour score asks how well
     each interval was predicted; it is low for small queues, where a half-hour holds a call or two
     and chance variation swamps any forecast. The daily score asks how well the day's TOTAL was
     predicted, which is what planning a day's staffing level leans on.
 
-    Days with no earlier same-weekday data are skipped: they cannot be forecast.
+    Days the model could not forecast (it returns None) are skipped.
     """
     actual: dict[date, dict[int, int]] = defaultdict(dict)
     for row in history:
@@ -148,7 +194,9 @@ def backtest(
     pooled_intervals: list[tuple[float, float]] = []
     pooled_days: list[tuple[float, float]] = []
     for day in sorted(observed_days):
-        forecast = baseline_day(history, observed_days, day, weeks=weeks, decay=decay)
+        if only_days is not None and day not in only_days:
+            continue
+        forecast = forecast_day(day)
         if forecast is None:
             continue
         pairs = [(f.volume, float(actual[day].get(f.slot, 0))) for f in forecast]

@@ -166,6 +166,7 @@ Priority: **M** = must (MVP), **S** = should (phase 2), **C** = could (later). U
 | RPT-07 | Calibration screen (compare modelled vs measured, tune shrinkage/AHT) | S | VID |
 | RPT-08 | Payroll CSV export (hours, OT, standby, leave) | M | VID, PROP |
 | RPT-09 | Investment-Board KPI pack | S | PROP |
+| RPT-10 | **Self-service report schedules.** Anyone who may read a report can set up their own schedule: which report, which recipient email(s), how often and when (daily, weekly, monthly, a time in SAST), and pause or delete it. Safeguards: a report contains only what its **owner** may see (the same `for_user` scoping), never what a recipient could not; recipients are limited to an admin-set allowed email domain list; sending, changes and failures are audited; no personal data in the email body beyond what the report itself holds; a schedule stops if its owner is deactivated | M | Product owner, UIF 3.6 |
 
 ### 3.12 Copilot (role-scoped AI assistant) — PARKED, not a current requirement
 Decision (12 Oct 2026): neither the UIF specification nor the Gijima requirements ask for an AI assistant, so it is **out of the current scope, phases and test plan**. The reference app has one (Copilot page, roster Assistant button); we do not build it now. The rules below are kept so that, if it is ever requested, it is added safely: it may only answer from data the asking user is already allowed to see, as a convenience over the existing authorised API and never a second route to the data.
@@ -209,6 +210,7 @@ The UIF wording "AI-driven demand forecasting" is separately met by FC-07, a sta
 | CFG-03 | QA scorecards | C | VID (out of scope in PROP) |
 | CFG-04 | Users & roles; audit trail per §3.15 | M | PROP |
 | CFG-05 | Notifications rules (coverage alerts, approvals, publication) | M | PROP |
+| CFG-06 | **Configurable compliance rules** (BCEA and company policy): minimum rest between shifts (now 11 h), maximum consecutive days (now 6), maximum weekly hours, overtime thresholds and multipliers, Sunday and public-holiday rules. Admin-editable in Configure, per site or contract with a default, versioned with an effective-from date, every change audited; the roster checks (SCH-04), auto-scheduler (SCH-05) and overtime pricing read them from here. A rule can be tightened freely but loosening one below the statutory minimum shows a warning that the statutory floor is the admin's responsibility | M | Product owner, G5 |
 
 ### 3.14 Employee self-service (agent portal)
 | ID | Requirement | Pri | Source |
@@ -289,6 +291,7 @@ Modules are sold separately, so each one can be switched off for a customer that
 | OBS-07 | Transparency: a plain-language notice in the app (and in the privacy policy) says what usage data is collected and why; the Gijima information officer signs it off before go-live | POPIA |
 | OBS-08 | Retention: raw analytics events kept 90 days then reduced to aggregates; traces/logs 14–30 days; no personal data in either | POPIA |
 | OBS-09 | Telemetry stays in the South African environment (self-hosted collectors and stores); nothing is sent to a third-party analytics SaaS | POPIA, NFR-03 |
+| OBS-11 | **Operations dashboards in Grafana** (VMK side; open-source stack): traces, logs and metrics from the existing OpenTelemetry collector shown in Grafana with Tempo, Loki and Prometheus (or Mimir), as an optional resource beside the Aspire dashboard. Same POPIA rules as OBS-04 to OBS-10 (nothing personal in telemetry). Grafana OSS is AGPL-3.0: it runs as a separate unmodified service, and an ADR records that before it is added. The customer's own monitoring tools (e.g. SolarWinds, Splunk) are reached through standard OTLP/log/metric export, not built in | ops | Product owner |
 | OBS-10 | Server logs and traces carry the **role and an opaque request id**, not employee names or values; user id appears only in the security audit log (CFG-04), which is separate and access-controlled | POPIA |
 
 ## 5. Success metrics (from PROP §3)
