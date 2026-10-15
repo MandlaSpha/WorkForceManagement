@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change your own password */
+        post: operations["wfm_accounts_api_change_password"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/csrf": {
         parameters: {
             query?: never;
@@ -779,6 +796,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/employees/{employee_id}/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Link an employee to the login they sign in with, or unlink it */
+        put: operations["wfm_scheduling_api_link_login"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/overview": {
         parameters: {
             query?: never;
@@ -1096,6 +1130,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Users */
+        get: operations["wfm_accounts_user_api_list_users"];
+        put?: never;
+        /** Create a local user */
+        post: operations["wfm_accounts_user_api_create_user"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Switch an account off or on */
+        put: operations["wfm_accounts_user_api_set_active"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Give a local account a new temporary password */
+        post: operations["wfm_accounts_user_api_reset_password"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change a user's role */
+        put: operations["wfm_accounts_user_api_set_role"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Unlock an account */
+        post: operations["wfm_accounts_user_api_unlock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1118,6 +1238,11 @@ export interface components {
             queueId: number;
             /** Weeks */
             weeks: number;
+        };
+        /** ActiveIn */
+        ActiveIn: {
+            /** Active */
+            active: boolean;
         };
         /** AssignIn */
         AssignIn: {
@@ -1445,6 +1570,11 @@ export interface components {
              */
             workMode: string;
         };
+        /** EmployeeLoginIn */
+        EmployeeLoginIn: {
+            /** Userid */
+            userId: number | null;
+        };
         /** EmployeeOut */
         EmployeeOut: {
             /** Canmanage */
@@ -1455,6 +1585,8 @@ export interface components {
             empNo: string;
             /** Enddate */
             endDate: string | null;
+            /** Haslogin */
+            hasLogin: boolean;
             /** Id */
             id: number;
             /** Manager */
@@ -1806,6 +1938,8 @@ export interface components {
             displayName: string;
             /** Features */
             features: components["schemas"]["Feature"][];
+            /** Mustchangepassword */
+            mustChangePassword: boolean;
             /** Role */
             role: string;
             /** Username */
@@ -1987,6 +2121,18 @@ export interface components {
             /** Underintervals */
             underIntervals: number;
         };
+        /** OwnPasswordIn */
+        OwnPasswordIn: {
+            /** Current */
+            current: string;
+            /** New */
+            new: string;
+        };
+        /** PasswordIn */
+        PasswordIn: {
+            /** Password */
+            password: string;
+        };
         /** PlanCellOut */
         PlanCellOut: {
             /** Required */
@@ -2147,6 +2293,11 @@ export interface components {
             slTargetPct: number | string;
             /** Slthresholds */
             slThresholdS: number;
+        };
+        /** RoleIn */
+        RoleIn: {
+            /** Role */
+            role: string;
         };
         /** RosterCellOut */
         RosterCellOut: {
@@ -2473,6 +2624,44 @@ export interface components {
             /** Weeks */
             weeks: number;
         };
+        /** UserIn */
+        UserIn: {
+            /** Firstname */
+            firstName: string;
+            /** Lastname */
+            lastName: string;
+            /** Password */
+            password: string;
+            /** Role */
+            role: string;
+            /** Username */
+            username: string;
+        };
+        /** UserOut */
+        UserOut: {
+            /** Active */
+            active: boolean;
+            /** Employee */
+            employee: string | null;
+            /** Haspassword */
+            hasPassword: boolean;
+            /** Id */
+            id: number;
+            /** Lastlogin */
+            lastLogin: string | null;
+            /** Locked */
+            locked: boolean;
+            /** Mustchangepassword */
+            mustChangePassword: boolean;
+            /** Name */
+            name: string;
+            /** Role */
+            role: string;
+            /** Rolefromdirectory */
+            roleFromDirectory: boolean;
+            /** Username */
+            username: string;
+        };
         /** WeekIn */
         WeekIn: {
             /** Queueid */
@@ -2542,6 +2731,28 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    wfm_accounts_api_change_password: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnPasswordIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     wfm_accounts_api_csrf: {
         parameters: {
             query?: never;
@@ -3781,6 +3992,32 @@ export interface operations {
             };
         };
     };
+    wfm_scheduling_api_link_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                employee_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeLoginIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeOut"];
+                };
+            };
+        };
+    };
     wfm_scheduling_api_get_overview: {
         parameters: {
             query: {
@@ -4273,6 +4510,150 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QueueOut"];
+                };
+            };
+        };
+    };
+    wfm_accounts_user_api_list_users: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"][];
+                };
+            };
+        };
+    };
+    wfm_accounts_user_api_create_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    wfm_accounts_user_api_set_active: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActiveIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    wfm_accounts_user_api_reset_password: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    wfm_accounts_user_api_set_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RoleIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    wfm_accounts_user_api_unlock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
                 };
             };
         };

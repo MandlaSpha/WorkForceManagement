@@ -6,6 +6,7 @@ from django.http import HttpRequest, HttpResponse
 from ninja import NinjaAPI
 
 from wfm.accounts.api import router as auth_router
+from wfm.accounts.user_api import router as users_router
 from wfm.capacity.api import router as capacity_router
 from wfm.core.api import router as system_router
 from wfm.core.errors import ApiError, problem_response
@@ -31,6 +32,7 @@ def handle_api_error(request: HttpRequest, exc: ApiError) -> HttpResponse:
 
 
 api.add_router("/auth", auth_router)
+api.add_router("/users", users_router)
 api.add_router("/auth", identity_router)
 api.add_router("/system", system_router)
 api.add_router("/telephony", telephony_router)

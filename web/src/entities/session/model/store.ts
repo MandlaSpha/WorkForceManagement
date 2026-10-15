@@ -13,6 +13,8 @@ export interface SessionUser {
   role: Role
   /** Features switched on in this deployment (FEAT-01). Hiding the rest is cosmetic. */
   features: ReadonlyArray<FeatureKey>
+  /** An admin gave this account a temporary password; the person must choose their own. */
+  mustChangePassword: boolean
 }
 
 type Status = 'unknown' | 'anonymous' | 'authenticated'
@@ -22,6 +24,7 @@ function toUser(data: {
   displayName: string
   role: string
   features: ReadonlyArray<FeatureKey>
+  mustChangePassword?: boolean
 }): SessionUser {
   // A role the UI does not know is a front-end/back-end mismatch: refuse rather than guess.
   if (!isRole(data.role)) throw new Error(`Unknown role from API: ${data.role}`)
@@ -30,6 +33,7 @@ function toUser(data: {
     displayName: data.displayName,
     role: data.role,
     features: data.features,
+    mustChangePassword: data.mustChangePassword ?? false,
   }
 }
 
@@ -97,5 +101,10 @@ export const useSessionStore = defineStore('session', () => {
     expired.value = false
   }
 
-  return { user, status, expired, load, signIn, signOut }
+  /** The person has chosen their own password: stop sending them to the change page. */
+  function passwordChanged(): void {
+    if (user.value) user.value = { ...user.value, mustChangePassword: false }
+  }
+
+  return { user, status, expired, load, signIn, signOut, passwordChanged }
 })

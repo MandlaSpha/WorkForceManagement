@@ -242,6 +242,15 @@ Requirement CFG-05 (and SCH-06 "publish notifies agents", ESS-01). App `wfm.noti
 - **Screen.** The bell shows an unread count (and names it for screen readers), lists the latest 50 (read ones plain, unread bold), jumps to the linked screen, "Mark all as read", closes with Escape. It looks again every minute and when the window is focused.
 - **Not built:** email and SMS (`notify` is the single place to add them), coverage alerts (they arrive with intraday), per-person settings, retention clean-up (messages are small; a purge job can follow).
 
+### 4.3n User administration (Phase 3.5, built)
+Requirement CFG-04 (users and roles). In `wfm.accounts` (`user_services.py`, `user_api.py`); linking a login to an employee is in `wfm.scheduling`. Admin only (the customer's admin; feature `core`, so it works whatever is licensed).
+
+- **What an admin can do:** list everyone who can sign in; add a local account (a temporary password the person must change at first sign-in); change a role; switch an account off and on (history stays); unlock; set a new temporary password; link a login to an employee record (one login, one employee) or unlink it.
+- **What stops mistakes.** An admin cannot change their own role or switch off their own account (so there is always an active admin: the person doing it). A role handed down by an identity provider's group mapping is shown as fixed and refused if edited here (AUTH-06, `user.role_from_directory`). An account that signs in only through a provider has no password to reset (`user.no_local_password`). Passwords follow the deployment's rules (at least 12 characters, not common, not only digits) and the reason is shown.
+- **Passwords.** Stored hashed by Django. An admin-set password is *temporary*: `must_change_password` is set, `/auth/me` says so, and the router sends the person to a Change password page before anything else opens. `POST /auth/change-password` needs the current password, refuses an unchanged or weak one, clears the flag, keeps the caller's session and ends their other sessions. No password (old, new or temporary) is ever written to the audit trail or a log; a test searches for them.
+- **Audit.** `user.created`, `user.role_set` (before and after), `user.active_set`, `user.unlocked`, `user.password_reset`, `user.password_changed`, `employee.login_linked` (by ids, not usernames).
+- **Not built:** a self-service "forgot password" (people on a provider use the provider's; local accounts ask an admin), password expiry, multi-factor for local accounts, bulk user import.
+
 ### 4.3b Roster and plan (Phase 2, built)
 **Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
 

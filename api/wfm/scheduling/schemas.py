@@ -64,6 +64,7 @@ class EmployeeOut(Schema):
     managerId: int | None  # noqa: N815
     manager: str | None  # the manager's name
     canManage: bool  # noqa: N815 - has a login that can approve, so can be a manager
+    hasLogin: bool  # noqa: N815 - a login is linked, so they can see their own schedule
 
 
 class RosterCellOut(Schema):
@@ -92,6 +93,10 @@ class RosterOut(Schema):
     rows: list[RosterRowOut]
     onCounts: dict[str, int]  # noqa: N815 - date to people on a shift that day
     shifts: list[ShiftOut]
+
+
+class EmployeeLoginIn(Schema):
+    userId: int | None  # noqa: N815 - none unlinks the login
 
 
 class AssignIn(Schema):

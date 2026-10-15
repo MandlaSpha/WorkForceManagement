@@ -68,6 +68,7 @@ describe('a switched-off feature disappears from the sidebar', () => {
     expect(nav.getAllByRole('link').map((link) => link.textContent?.trim())).toEqual([
       'Dashboard',
       'Configure',
+      'Users',
       'Audit log',
     ])
   })

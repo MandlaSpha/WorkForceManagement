@@ -21,6 +21,9 @@ export async function authGuard(
   }
   if (!user) return { name: 'login', query: { redirect: to.fullPath } }
 
+  // A temporary password has to be replaced before anything else is opened.
+  if (user.mustChangePassword && to.name !== 'change-password') return { name: 'change-password' }
+
   const key = to.meta.navKey
   if (key && !canAccess(user.role, key)) {
     // "/" is the generic landing address: send each role to its own home instead of a 403.

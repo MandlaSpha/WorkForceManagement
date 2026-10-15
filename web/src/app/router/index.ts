@@ -29,8 +29,9 @@ const BUILT_SCREENS: Partial<Record<NavKey, RouteRecordRaw['component']>> = {
   calibration: () => import('@/pages/calibration'),
   leave: () => import('@/pages/leave'),
   swaps: () => import('@/pages/swaps'),
-  'my-schedule': () => import('@/pages/my-schedule'),
-  'my-availability': () => import('@/pages/my-availability'),
+  users: () => import('@/pages/users'),
+  'my-schedule': () => import('@/pages/my/schedule'),
+  'my-availability': () => import('@/pages/my/availability'),
   'service-desk': () => import('@/pages/service-desk'),
 }
 
@@ -49,6 +50,11 @@ const routes: RouteRecordRaw[] = [
     name: 'login',
     component: () => import('@/pages/login'),
     meta: { public: true },
+  },
+  {
+    path: '/change-password',
+    name: 'change-password',
+    component: () => import('@/pages/change-password'),
   },
   {
     path: '',

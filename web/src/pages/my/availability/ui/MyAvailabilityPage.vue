@@ -8,7 +8,7 @@ import {
   WEEKDAYS,
   windowLabel,
 } from '@/entities/availability'
-import { DeclareWindowForm, RemoveWindowButton } from '@/features/edit-availability'
+import { DeclareWindowForm, RemoveWindowButton } from '@/features/people/availability'
 import { ApiProblem, problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'

@@ -73,6 +73,19 @@
         "title": "AccuracyOut",
         "type": "object"
       },
+      "ActiveIn": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "active"
+        ],
+        "title": "ActiveIn",
+        "type": "object"
+      },
       "AssignIn": {
         "properties": {
           "day": {
@@ -942,6 +955,26 @@
         "title": "EmployeeIn",
         "type": "object"
       },
+      "EmployeeLoginIn": {
+        "properties": {
+          "userId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userid"
+          }
+        },
+        "required": [
+          "userId"
+        ],
+        "title": "EmployeeLoginIn",
+        "type": "object"
+      },
       "EmployeeOut": {
         "properties": {
           "canManage": {
@@ -967,6 +1000,10 @@
               }
             ],
             "title": "Enddate"
+          },
+          "hasLogin": {
+            "title": "Haslogin",
+            "type": "boolean"
           },
           "id": {
             "title": "Id",
@@ -1043,7 +1080,8 @@
           "skills",
           "managerId",
           "manager",
-          "canManage"
+          "canManage",
+          "hasLogin"
         ],
         "title": "EmployeeOut",
         "type": "object"
@@ -1891,6 +1929,10 @@
             "title": "Features",
             "type": "array"
           },
+          "mustChangePassword": {
+            "title": "Mustchangepassword",
+            "type": "boolean"
+          },
           "role": {
             "title": "Role",
             "type": "string"
@@ -1904,6 +1946,7 @@
           "username",
           "displayName",
           "role",
+          "mustChangePassword",
           "features"
         ],
         "title": "MeOut",
@@ -2329,6 +2372,37 @@
           "rostersPublished"
         ],
         "title": "OverviewTotalsOut",
+        "type": "object"
+      },
+      "OwnPasswordIn": {
+        "properties": {
+          "current": {
+            "title": "Current",
+            "type": "string"
+          },
+          "new": {
+            "title": "New",
+            "type": "string"
+          }
+        },
+        "required": [
+          "current",
+          "new"
+        ],
+        "title": "OwnPasswordIn",
+        "type": "object"
+      },
+      "PasswordIn": {
+        "properties": {
+          "password": {
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "PasswordIn",
         "type": "object"
       },
       "PlanCellOut": {
@@ -2829,6 +2903,19 @@
           "shrinkagePct"
         ],
         "title": "QueueSettingsIn",
+        "type": "object"
+      },
+      "RoleIn": {
+        "properties": {
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "RoleIn",
         "type": "object"
       },
       "RosterCellOut": {
@@ -3642,6 +3729,117 @@
         "title": "TuningOut",
         "type": "object"
       },
+      "UserIn": {
+        "properties": {
+          "firstName": {
+            "title": "Firstname",
+            "type": "string"
+          },
+          "lastName": {
+            "title": "Lastname",
+            "type": "string"
+          },
+          "password": {
+            "title": "Password",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "firstName",
+          "lastName",
+          "role",
+          "password"
+        ],
+        "title": "UserIn",
+        "type": "object"
+      },
+      "UserOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "employee": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee"
+          },
+          "hasPassword": {
+            "title": "Haspassword",
+            "type": "boolean"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "lastLogin": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastlogin"
+          },
+          "locked": {
+            "title": "Locked",
+            "type": "boolean"
+          },
+          "mustChangePassword": {
+            "title": "Mustchangepassword",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          },
+          "roleFromDirectory": {
+            "title": "Rolefromdirectory",
+            "type": "boolean"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "name",
+          "role",
+          "roleFromDirectory",
+          "active",
+          "locked",
+          "hasPassword",
+          "mustChangePassword",
+          "employee",
+          "lastLogin"
+        ],
+        "title": "UserOut",
+        "type": "object"
+      },
       "WeekIn": {
         "properties": {
           "queueId": {
@@ -3800,6 +3998,36 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/auth/change-password": {
+      "post": {
+        "operationId": "wfm_accounts_api_change_password",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnPasswordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Change your own password",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/csrf": {
       "get": {
         "operationId": "wfm_accounts_api_csrf",
@@ -5978,6 +6206,53 @@
         ]
       }
     },
+    "/api/v1/scheduling/employees/{employee_id}/login": {
+      "put": {
+        "operationId": "wfm_scheduling_api_link_login",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employee_id",
+            "required": true,
+            "schema": {
+              "title": "Employee Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmployeeLoginIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Link an employee to the login they sign in with, or unlink it",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
     "/api/v1/scheduling/overview": {
       "get": {
         "operationId": "wfm_scheduling_api_get_overview",
@@ -6832,6 +7107,250 @@
         "summary": "Set and confirm a queue's staffing assumptions",
         "tags": [
           "telephony"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "operationId": "wfm_accounts_user_api_list_users",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Users",
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_accounts_user_api_create_user",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Create a local user",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}/active": {
+      "put": {
+        "operationId": "wfm_accounts_user_api_set_active",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActiveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Switch an account off or on",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}/password": {
+      "post": {
+        "operationId": "wfm_accounts_user_api_reset_password",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Give a local account a new temporary password",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}/role": {
+      "put": {
+        "operationId": "wfm_accounts_user_api_set_role",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Change a user's role",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}/unlock": {
+      "post": {
+        "operationId": "wfm_accounts_user_api_unlock",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Unlock an account",
+        "tags": [
+          "users"
         ]
       }
     }

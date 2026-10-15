@@ -311,6 +311,48 @@ def create_employee(
     return employee
 
 
+def link_login(*, actor: User, employee_id: int, user_id: int | None) -> Employee:
+    """Tie an employee record to the login they sign in with (or untie it with None). Their own
+    schedule, leave and swaps then show for them. One login, one employee."""
+    with transaction.atomic():
+        employee: Employee | None = (
+            Employee.objects.select_for_update(no_key=True).filter(pk=employee_id).first()
+        )
+        if employee is None:
+            raise not_found("No such employee.")
+        login: User | None = None
+        if user_id is not None:
+            login = User.objects.select_for_update(no_key=True).filter(pk=user_id).first()
+            if login is None:
+                raise not_found("No such user.")
+            taken = Employee.objects.filter(user=login).exclude(pk=employee.pk).first()
+            if taken is not None:
+                raise _invalid(
+                    "employee.login_taken", "That login is already linked to another employee.", 409
+                )
+        was = employee.user_id
+        employee.user = login
+        employee.save(update_fields=["user"])
+        audit.record(  # last write of the transaction
+            actor=actor,
+            action=Action.EMPLOYEE_LOGIN_LINKED,
+            entity_type="employee",
+            entity_id=str(employee.pk),
+            subject_employee_id=employee.pk,
+            changes=[
+                # Ids, not usernames: the trail says which login without repeating it.
+                audit.FieldChange(
+                    "employee",
+                    str(employee.pk),
+                    "login",
+                    None if was is None else str(was),
+                    None if user_id is None else str(user_id),
+                )
+            ],
+        )
+    return employee
+
+
 def update_employee(
     *,
     user: User,

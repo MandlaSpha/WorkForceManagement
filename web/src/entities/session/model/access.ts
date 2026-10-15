@@ -49,6 +49,7 @@ export const ACCESS: Record<NavKey, readonly Role[]> = {
   reports: ['planner', 'lead', 'admin', 'executive', 'customer_ops'],
 
   configure: ['admin'],
+  users: ['admin'],
   audit: ['admin'],
 }
 

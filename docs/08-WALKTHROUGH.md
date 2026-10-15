@@ -108,6 +108,13 @@ Everyone who takes leave sees the coming blackouts and the limit on their *Leave
 
 The **bell** in the top bar (every role). Try: as `agent` ask for leave; as `lead` the bell shows "Leave is waiting for your decision"; approve it; as `agent` the bell shows "Your ... leave request for ... was approved." Publishing a roster tells everyone on it; a swap being taken tells the poster (not by whom) and asks the lead. Messages never name another person or give a reason. Email comes later behind the same call.
 
+## Phase 3.5: Users and passwords
+
+As `admin`, **Admin > Users**.
+- **Add a user**: username, name, role and a temporary password. The person signs in with it and is made to choose their own before anything else opens.
+- **Change a role**, **switch an account off or on**, **unlock** a locked account, give a **new temporary password**. You cannot change your own role or switch yourself off. A role that comes from the identity provider's groups is shown as fixed.
+- **Link a login to an employee**: the account then sees that employee's schedule, leave and swaps. One login, one employee. Everyone can change their own password from the top bar (*Password*).
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, auto-scheduler,

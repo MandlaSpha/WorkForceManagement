@@ -12,6 +12,7 @@ import type {
 } from '@/entities/leave'
 import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
+import type { AdminUser } from '@/entities/user-admin'
 import type { MySchedule } from '@/entities/my-schedule'
 import type { BoardEntry, Swap, SwapShift } from '@/entities/swap'
 import type { Demand, WorkImport } from '@/entities/service-desk'
@@ -37,6 +38,7 @@ export interface FakeUser {
   username: string
   displayName: string
   role: string
+  mustChangePassword?: boolean
 }
 
 export const ACCOUNTS: Record<string, { password: string; user: FakeUser }> = {
@@ -119,6 +121,8 @@ export const backend = {
   impact: null as Impact | null,
   requestQueries: [] as string[],
   decision: { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 },
+  /** User administration: every account, as the admin sees them. */
+  users: [] as AdminUser[],
   /** Notifications: the signed-in person's inbox. */
   inbox: { unread: 0, items: [] } as Inbox,
   /** Self-service: declared availability and the signed-in person's own schedule. */
@@ -193,6 +197,7 @@ export const backend = {
     this.requestQueries = []
     this.decision = { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 }
     this.inbox = { unread: 0, items: [] }
+    this.users = []
     this.availability = []
     this.mySchedule = null
     this.noScheduleRecord = false
@@ -536,6 +541,81 @@ export const handlers = [
     return HttpResponse.json(backend.leaveTypes.find((t) => t.id === Number(info.params.id)))
   }),
 
+  http.get('*/api/v1/users', () => HttpResponse.json(backend.users)),
+
+  http.post('*/api/v1/users', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, string>
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created: AdminUser = {
+      id: 100 + backend.users.length,
+      username: String(sent.username),
+      name: `${sent.firstName} ${sent.lastName}`.trim(),
+      role: String(sent.role),
+      roleFromDirectory: false,
+      active: true,
+      locked: false,
+      hasPassword: true,
+      mustChangePassword: true,
+      employee: null,
+      lastLogin: null,
+    }
+    backend.users = [...backend.users, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.put('*/api/v1/users/:id/role', async (info) => {
+    const sent = (await info.request.clone().json()) as { role: string }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    return changeUser(Number(info.params.id), { role: sent.role })
+  }),
+
+  http.put('*/api/v1/users/:id/active', async (info) => {
+    const sent = (await info.request.clone().json()) as { active: boolean }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    return changeUser(Number(info.params.id), { active: sent.active })
+  }),
+
+  http.post('*/api/v1/users/:id/unlock', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    return changeUser(Number(info.params.id), { locked: false })
+  }),
+
+  http.post('*/api/v1/users/:id/password', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    return changeUser(Number(info.params.id), { mustChangePassword: true, locked: false })
+  }),
+
+  http.put('*/api/v1/scheduling/employees/:id/login', async (info) => {
+    const sent = (await info.request.clone().json()) as { userId: number | null }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.employees = backend.employees.map((e) =>
+      e.id === id ? { ...e, hasLogin: sent.userId !== null } : e,
+    )
+    const emp = backend.employees.find((e) => e.id === id)
+    backend.users = backend.users.map((u) =>
+      u.id === sent.userId
+        ? { ...u, employee: emp?.empNo ?? null }
+        : u.employee === emp?.empNo && sent.userId === null
+          ? { ...u, employee: null }
+          : u,
+    )
+    return HttpResponse.json(emp)
+  }),
+
+  http.post('*/api/v1/auth/change-password', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    if (backend.signedIn) backend.signedIn = { ...backend.signedIn, mustChangePassword: false }
+    return HttpResponse.json({ ok: true })
+  }),
+
   http.get('*/api/v1/notifications', () => HttpResponse.json(backend.inbox)),
 
   http.post('*/api/v1/notifications/read-all', async (info) => {
@@ -717,6 +797,11 @@ export const handlers = [
 
 /** Every scheduling write: demand the CSRF token, record the request, refuse when a test says so,
  * otherwise echo what a real server would return for it. */
+function changeUser(id: number, change: Partial<AdminUser>): Response {
+  backend.users = backend.users.map((u) => (u.id === id ? { ...u, ...change } : u))
+  return HttpResponse.json(backend.users.find((u) => u.id === id))
+}
+
 async function schedulingWrite(
   { request }: { request: Request },
   method: string,

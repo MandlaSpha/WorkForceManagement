@@ -6,6 +6,7 @@ from django.http import HttpRequest, HttpResponse
 from ninja import Router, Status
 from wfm_engine.roster import is_overnight, shift_kind, shift_minutes
 
+from wfm.accounts.models import Role
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
@@ -23,6 +24,7 @@ from .schemas import (
     AssignOut,
     AttentionOut,
     EmployeeIn,
+    EmployeeLoginIn,
     EmployeeOut,
     OverviewDayOut,
     OverviewOut,
@@ -49,6 +51,8 @@ FEATURE = Feature.SCHEDULING
 READ = RoleSessionAuth(*sorted(READ_ROLES), feature=FEATURE)
 SHIFT_WRITE = RoleSessionAuth(*sorted(SHIFT_WRITE_ROLES), feature=FEATURE)
 EMPLOYEE_WRITE = RoleSessionAuth(*sorted(EMPLOYEE_WRITE_ROLES), feature=FEATURE)
+# Tying a login to a person decides whose schedule it opens, so only the customer's admin does it.
+ADMIN_ONLY = RoleSessionAuth(Role.ADMIN, feature=FEATURE)
 ROSTER_WRITE = RoleSessionAuth(*sorted(ROSTER_WRITE_ROLES), feature=FEATURE)
 
 
@@ -203,6 +207,20 @@ def update_employee(request: HttpRequest, employee_id: int, body: EmployeeIn) ->
         manager_id=body.managerId if "managerId" in body.model_fields_set else services.KEEP,
     )
     return _employee_out(employee)
+
+
+@router.put(
+    "/employees/{employee_id}/login",
+    auth=ADMIN_ONLY,
+    response=EmployeeOut,
+    summary="Link an employee to the login they sign in with, or unlink it",
+)
+def link_login(request: HttpRequest, employee_id: int, body: EmployeeLoginIn) -> EmployeeOut:
+    return _employee_out(
+        services.link_login(
+            actor=current_user(request), employee_id=employee_id, user_id=body.userId
+        )
+    )
 
 
 # --- the roster --------------------------------------------------------------------------------
@@ -384,6 +402,7 @@ def _employee_out(employee: Employee) -> EmployeeOut:
         managerId=employee.manager_id,
         manager=employee.manager.name if employee.manager else None,
         canManage=employee.user is not None and employee.user.role in MANAGER_ROLES,
+        hasLogin=employee.user_id is not None,
     )
 
 

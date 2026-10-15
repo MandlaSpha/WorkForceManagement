@@ -27,6 +27,8 @@ class User(AbstractUser):
     )
     """Who decides the role. "directory" means a provider's group mapping sets it at every sign-in
     and the application must not offer to edit it by hand (AUTH-06)."""
+    must_change_password = models.BooleanField(default=False)
+    """Set when an admin gave the account a temporary password; the person must choose their own."""
     failed_login_count = models.PositiveSmallIntegerField(default=0)
     locked_until = models.DateTimeField(null=True, blank=True)
 

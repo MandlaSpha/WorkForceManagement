@@ -246,6 +246,16 @@ export const NAV_ITEMS = [
     subtitle: 'Shifts, queues, skills, adherence targets and reference data.',
   },
   {
+    key: 'users',
+    path: '/users',
+    label: 'Users',
+    group: 'Admin',
+    icon: 'users',
+    feature: 'core',
+    phase: 3,
+    subtitle: 'Who can sign in, what role they have, and which employee they are.',
+  },
+  {
     key: 'audit',
     path: '/audit',
     label: 'Audit log',

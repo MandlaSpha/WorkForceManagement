@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Menu } from 'lucide-vue-next'
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
 import { ContextBar } from '@/features/context-filters'
-import { NotificationBell } from '@/features/notification-bell'
+import { NotificationBell } from '@/features/account/notifications'
 import { SignOutButton } from '@/features/sign-out'
 import { ThemeToggle } from '@/features/toggle-theme'
 import { ROLE_LABELS, useSessionStore } from '@/entities/session'
@@ -54,6 +55,12 @@ const initials = computed(() =>
           <p class="text-sm font-medium text-ink">{{ session.user.displayName }}</p>
           <p class="text-xs text-ink-muted">{{ ROLE_LABELS[session.user.role] }}</p>
         </div>
+        <RouterLink
+          to="/change-password"
+          class="hidden text-xs font-medium text-ink-muted underline hover:text-ink md:inline"
+        >
+          Password
+        </RouterLink>
         <SignOutButton />
       </div>
     </div>

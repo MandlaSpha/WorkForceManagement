@@ -58,6 +58,7 @@ export function employeeOf(overrides: Partial<Employee> = {}): Employee {
     managerId: null,
     manager: null,
     canManage: false,
+    hasLogin: false,
     ...overrides,
   }
 }

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.contrib.auth import update_session_auth_hash
 from django.http import HttpRequest
 from django.middleware.csrf import get_token
 from ninja import Router
@@ -7,9 +8,9 @@ from ninja import Router
 from wfm.core.features import CORE
 from wfm.core.permissions import ANY_ROLE, RoleSessionAuth
 
-from . import services
+from . import services, user_services
 from .models import User
-from .schemas import MeOut, me_out
+from .schemas import MeOut, OwnPasswordIn, me_out
 
 router = Router(tags=["auth"])
 authenticated = RoleSessionAuth(*ANY_ROLE, feature=CORE)
@@ -34,3 +35,11 @@ def logout(request: HttpRequest) -> dict[str, bool]:
 def me(request: HttpRequest) -> MeOut:
     user: User = request.user  # type: ignore[assignment]
     return me_out(user)
+
+
+@router.post("/change-password", auth=authenticated, summary="Change your own password")
+def change_password(request: HttpRequest, body: OwnPasswordIn) -> dict[str, bool]:
+    signed_in: User = request.user  # type: ignore[assignment]
+    user = user_services.change_own_password(user=signed_in, current=body.current, new=body.new)
+    update_session_auth_hash(request, user)  # keep this session; other sessions end
+    return {"ok": True}

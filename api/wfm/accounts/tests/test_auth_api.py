@@ -60,7 +60,12 @@ def test_login_succeeds_and_is_audited_with_who_and_role() -> None:
     assert response.status_code == 200
     body = response.json()
     assert body.pop("features") == [f.value for f in REGISTRY]  # everything is on by default
-    assert body == {"username": "pat", "displayName": "pat", "role": "planner"}
+    assert body == {
+        "username": "pat",
+        "displayName": "pat",
+        "role": "planner",
+        "mustChangePassword": False,
+    }
     (event,) = events(Action.LOGIN_SUCCESS)
     assert event.actor_user_id == user.pk
     assert event.actor_role == "planner"
