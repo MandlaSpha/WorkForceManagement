@@ -78,3 +78,11 @@ def test_the_demo_floor_logins_get_one_synthetic_employee_record_each() -> None:
     # Only the two who work the floor: planners, admins and the rest are not on the roster list
     # just by being demo users.
     assert Employee.objects.count() == 2
+
+
+@override_settings(DEBUG=True)
+def test_the_demo_lead_manages_the_demo_agent_so_the_lead_can_decide_their_leave() -> None:
+    call_command("seed_demo", password=STRONG)
+    agent = Employee.objects.get(emp_no="DEMO-AGENT")
+    assert agent.manager is not None
+    assert agent.manager.emp_no == "DEMO-LEAD"

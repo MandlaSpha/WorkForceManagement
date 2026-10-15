@@ -29,6 +29,8 @@ from wfm.scheduling.tests.helpers import (
 )
 from wfm.scheduling.tests.helpers import login as scheduling_login
 
+from .team import lead_of
+
 pytestmark = pytest.mark.django_db
 
 AV = "/api/v1/people/availability"
@@ -66,6 +68,7 @@ def staff() -> dict[str, Any]:
     colleague_client()
     a = person("E001", user=User.objects.get(username="u-agent"))
     b = person("E002", user=User.objects.get(username="u-colleague"))
+    lead_of(a, b)
     return {"shifts": shifts, "a": a, "b": b}
 
 

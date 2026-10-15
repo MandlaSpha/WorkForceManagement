@@ -58,7 +58,11 @@ def shifts(user: User) -> list[ShiftTemplate]:
 
 
 def employees(user: User, queue_id: int | None = None) -> list[Employee]:
-    found = Employee.objects.for_user(user).prefetch_related("skills__queue")
+    found = (
+        Employee.objects.for_user(user)
+        .select_related("manager", "user")
+        .prefetch_related("skills__queue")
+    )
     if queue_id is not None:
         found = found.filter(skills__queue_id=queue_id)
     return list(found.order_by("emp_no"))

@@ -251,6 +251,11 @@ class Command(BaseCommand):
         for floor_person in demo_floor:  # the `agent` and `lead` logins work the Support queue
             EmployeeSkill.objects.get_or_create(employee=floor_person, queue=queues["Demo Support"])
             staff["Demo Support"].append(floor_person)
+        lead = next((p for p in demo_floor if p.emp_no == "DEMO-LEAD"), None)
+        if lead is not None:  # the demo lead leads the whole Support team
+            Employee.objects.filter(pk__in=[e.pk for e in staff["Demo Support"]]).exclude(
+                pk=lead.pk
+            ).update(manager=lead)
         if (
             demo_floor
         ):  # the demo agent never works Sundays and would rather finish early on Fridays

@@ -15,6 +15,7 @@ class LeaveTypeOut(Schema):
     paid: bool
     daysPerYear: float | None  # noqa: N815 - none means no limit
     confirmed: bool  # false while it is the BCEA default nobody has confirmed
+    restricted: bool  # blackout periods and the away-at-once limit apply to it
 
 
 class EntitlementIn(Schema):

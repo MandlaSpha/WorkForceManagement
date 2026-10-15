@@ -7,7 +7,9 @@ import {
   rangeLabel,
   STATUS_LABEL,
   STATUS_TONE,
+  useAwayLimit,
   useBalances,
+  useBlackouts,
   useLeaveTypes,
   useRequests,
 } from '@/entities/leave'
@@ -16,6 +18,7 @@ import { useSessionStore } from '@/entities/session'
 import { ApplyLeaveForm } from '@/features/leave/apply'
 import { CancelLeaveButton, DecisionButtons, ImpactPanel } from '@/features/leave/decide'
 import { EntitlementForm } from '@/features/leave/entitlement'
+import { AwayLimitForm, BlackoutManager } from '@/features/leave/rules'
 import { ApiProblem, problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import { todayInJohannesburg } from '@/shared/lib/week'
@@ -53,6 +56,12 @@ const FILTERS = [
 const queue = useRequests(computed(() => filter.value))
 
 const types = useLeaveTypes()
+const blackouts = useBlackouts()
+const awayLimit = useAwayLimit()
+// Blackout periods that have not ended yet: the ones that can still stop a request.
+const upcomingBlackouts = computed(() =>
+  (blackouts.data.value ?? []).filter((b) => b.dateTo >= today),
+)
 const open = ref<number | null>(null) // the request whose coverage impact is showing
 
 // What the last decision did, kept on the page: the request leaves the waiting list as soon as it
@@ -73,7 +82,12 @@ const tab = ref('mine')
 const TABS = computed(() => [
   { key: 'mine', label: 'My leave' },
   ...(decides.value ? [{ key: 'approvals', label: 'Approvals' }] : []),
-  ...(configures.value ? [{ key: 'entitlements', label: 'Entitlements' }] : []),
+  ...(configures.value
+    ? [
+        { key: 'entitlements', label: 'Entitlements' },
+        { key: 'rules', label: 'Rules' },
+      ]
+    : []),
 ])
 </script>
 
@@ -128,6 +142,19 @@ const TABS = computed(() => [
             admin confirms them for your company.
           </NoticeBox>
         </section>
+
+        <NoticeBox
+          v-if="upcomingBlackouts.length > 0 || awayLimit.data.value?.maxConcurrent"
+          data-testid="leave-rules-notice"
+        >
+          <p v-for="b in upcomingBlackouts" :key="b.id">
+            {{ b.name }} ({{ rangeLabel(b.dateFrom, b.dateTo) }}): annual, study, training and
+            unpaid leave cannot be asked for then. Sick and family leave can.
+          </p>
+          <p v-if="awayLimit.data.value?.maxConcurrent">
+            At most {{ awayLimit.data.value.maxConcurrent }} people can be away at once.
+          </p>
+        </NoticeBox>
 
         <section class="space-y-2" aria-labelledby="ask-title">
           <h2 id="ask-title" class="text-base font-semibold text-ink">Ask for leave</h2>
@@ -254,6 +281,31 @@ const TABS = computed(() => [
           </div>
         </li>
       </ul>
+    </div>
+
+    <div
+      v-else-if="tab === 'rules'"
+      id="leave-panel-rules"
+      role="tabpanel"
+      aria-labelledby="leave-tab-rules"
+      class="space-y-6"
+    >
+      <section class="space-y-2" aria-labelledby="blackout-title">
+        <h2 id="blackout-title" class="text-base font-semibold text-ink">Blackout periods</h2>
+        <p class="text-sm text-ink-muted">
+          Days on which leave that can wait cannot be asked for (a year-end close, a launch). Sick,
+          family responsibility and maternity leave are never refused for these.
+        </p>
+        <BlackoutManager />
+      </section>
+      <section class="space-y-2" aria-labelledby="limit-title">
+        <h2 id="limit-title" class="text-base font-semibold text-ink">Away at once</h2>
+        <p class="text-sm text-ink-muted">
+          The most people who may be on approved leave on the same day, counting leave that can
+          wait. A request that would pass it is refused.
+        </p>
+        <AwayLimitForm />
+      </section>
     </div>
 
     <div

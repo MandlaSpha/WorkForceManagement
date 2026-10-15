@@ -308,6 +308,112 @@ describe('entitlements', () => {
   })
 })
 
+describe('leave rules (blackout periods and the away-at-once limit)', () => {
+  it('lets an admin add a blackout period, which then shows in the list', async () => {
+    const user = userEvent.setup()
+    await open('admin')
+    await user.click(await screen.findByRole('tab', { name: 'Rules' }))
+    expect(await screen.findByTestId('no-blackouts')).toBeVisible()
+
+    const form = screen.getByRole('form', { name: 'Add a blackout period' })
+    await user.type(within(form).getByLabelText(/^Name/), 'Year-end close')
+    await user.type(within(form).getByLabelText('First day'), '2099-12-20')
+    await user.type(within(form).getByLabelText('Last day'), '2099-12-31')
+    await user.click(within(form).getByRole('button', { name: 'Add blackout period' }))
+
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    // Failure caught: dates sent in the wrong fields would block the wrong days.
+    expect(backend.writes[0]).toEqual({
+      method: 'POST',
+      path: '/api/v1/people/leave/blackouts',
+      body: { name: 'Year-end close', dateFrom: '2099-12-20', dateTo: '2099-12-31' },
+      csrf: 'test-csrf-token',
+    })
+    expect(await screen.findByLabelText('Blackout periods')).toHaveTextContent('Year-end close')
+  })
+
+  it('removes one with a DELETE', async () => {
+    const user = userEvent.setup()
+    await open('admin')
+    backend.blackouts = [{ id: 7, name: 'Launch', dateFrom: '2099-03-01', dateTo: '2099-03-05' }]
+    await user.click(await screen.findByRole('tab', { name: 'Rules' }))
+    await user.click(await screen.findByRole('button', { name: 'Remove Launch' }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]).toMatchObject({
+      method: 'DELETE',
+      path: '/api/v1/people/leave/blackouts/7',
+    })
+    expect(await screen.findByTestId('no-blackouts')).toBeVisible()
+  })
+
+  it('shows why a blackout period was refused', async () => {
+    const user = userEvent.setup()
+    await open('admin')
+    backend.nextProblem = {
+      status: 422,
+      code: 'blackout.dates_invalid',
+      title: 'Rule refused',
+      detail: 'The last day is before the first.',
+    }
+    await user.click(await screen.findByRole('tab', { name: 'Rules' }))
+    const form = await screen.findByRole('form', { name: 'Add a blackout period' })
+    await user.type(within(form).getByLabelText(/^Name/), 'X')
+    await user.type(within(form).getByLabelText('First day'), '2099-12-31')
+    await user.type(within(form).getByLabelText('Last day'), '2099-12-20')
+    await user.click(within(form).getByRole('button', { name: 'Add blackout period' }))
+    expect(await screen.findByTestId('blackout-error')).toHaveTextContent(/before the first/)
+  })
+
+  it('sends the limit as a number and a blank as no limit', async () => {
+    const user = userEvent.setup()
+    await open('admin')
+    await user.click(await screen.findByRole('tab', { name: 'Rules' }))
+    const input = await screen.findByLabelText('Most people away at once, blank for no limit')
+    const save = within(screen.getByRole('form', { name: 'Most people away at once' })).getByRole(
+      'button',
+      { name: 'Save' },
+    )
+    await user.type(input, '5')
+    await user.click(save)
+    // Failure caught: a number input hands back a number, and calling .trim() on it threw, so
+    // the save was never sent.
+    await waitFor(() => expect(backend.writes[0]?.body).toEqual({ maxConcurrent: 5 }))
+    await user.clear(input)
+    await user.click(save)
+    await waitFor(() => expect(backend.writes[1]?.body).toEqual({ maxConcurrent: null }))
+  })
+
+  it('tells everyone about a coming blackout and the limit, but not a finished one', async () => {
+    seedScheduling()
+    backend.leaveTypes = LEAVE_TYPES
+    backend.balances = balancesOf()
+    backend.blackouts = [
+      { id: 1, name: 'Year-end close', dateFrom: '2099-12-20', dateTo: '2099-12-31' },
+      { id: 2, name: 'Old launch', dateFrom: '2020-03-01', dateTo: '2020-03-05' },
+    ]
+    backend.awayLimit = { maxConcurrent: 4 }
+    await openScheduling('/leave', 'agent')
+    const notice = await screen.findByTestId('leave-rules-notice')
+    expect(notice).toHaveTextContent('Year-end close')
+    expect(notice).toHaveTextContent('Sick and family leave can')
+    // The blackout and the limit load separately; the notice fills in as each arrives.
+    await waitFor(() => expect(notice).toHaveTextContent('At most 4 people can be away at once'))
+    expect(notice).not.toHaveTextContent('Old launch')
+  })
+
+  it('says nothing when there are no rules', async () => {
+    await open('agent')
+    await screen.findByTestId('balance-annual')
+    expect(screen.queryByTestId('leave-rules-notice')).toBeNull()
+  })
+
+  it.each(['agent', 'lead', 'planner'])('does not give %s the rules tab', async (role) => {
+    await open(role)
+    await screen.findByRole('tab', { name: 'My leave' })
+    expect(screen.queryByRole('tab', { name: 'Rules' })).toBeNull()
+  })
+})
+
 describe('who sees which tab', () => {
   it('gives an agent only their own leave', async () => {
     await open('agent')
@@ -322,9 +428,9 @@ describe('who sees which tab', () => {
     expect(screen.queryByRole('tab', { name: 'Entitlements' })).toBeNull()
   })
 
-  it('gives an admin all three', async () => {
+  it('gives an admin all four', async () => {
     await open('admin')
-    for (const name of ['My leave', 'Approvals', 'Entitlements']) {
+    for (const name of ['My leave', 'Approvals', 'Entitlements', 'Rules']) {
       expect(await screen.findByRole('tab', { name })).toBeVisible()
     }
   })

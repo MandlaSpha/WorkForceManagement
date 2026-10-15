@@ -13,6 +13,7 @@ from . import selectors, services
 from .ess_api import router as ess_router
 from .models import LeaveRequest, LeaveType
 from .policy import APPROVE_ROLES, CONFIG_ROLES, SELF_ROLES
+from .rules_api import router as rules_router
 from .schemas import (
     BalanceOut,
     BalancesOut,
@@ -27,6 +28,7 @@ from .swap_api import router as swap_router
 
 router = Router(tags=["people"])
 router.add_router("/swaps", swap_router)
+router.add_router("/leave", rules_router)
 router.add_router("", ess_router)
 
 SELF = RoleSessionAuth(*sorted(SELF_ROLES), feature=Feature.PEOPLE)
@@ -176,8 +178,8 @@ def _employee(request: HttpRequest, employee_id: int | None) -> Employee:
                 "You are not on the employee list yet, so there is nobody to take leave for.",
             )
         return own
-    employee: Employee | None = Employee.objects.for_user(user).filter(pk=employee_id).first()
-    if employee is None or (employee.user_id != user.pk and user.role not in APPROVE_ROLES):
+    employee = selectors.employee_in_scope(user, employee_id)
+    if employee is None:
         raise not_found("No such employee.")
     return employee
 
@@ -190,6 +192,7 @@ def _type_out(t: LeaveType) -> LeaveTypeOut:
         paid=t.paid,
         daysPerYear=None if t.days_per_year is None else float(t.days_per_year),
         confirmed=t.confirmed,
+        restricted=t.restricted,
     )
 
 

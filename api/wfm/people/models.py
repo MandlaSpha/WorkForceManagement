@@ -14,7 +14,7 @@ from django.db import models
 from wfm.accounts.models import Role, User
 from wfm.core.scoping import ScopedQuerySet
 
-from .policy import APPROVE_ROLES, SELF_ROLES
+from .policy import ALL_SCOPE_ROLES, SELF_ROLES
 
 
 class LeaveTypeQuerySet(ScopedQuerySet):
@@ -31,6 +31,9 @@ class LeaveType(models.Model):
     paid = models.BooleanField(default=True)
     days_per_year = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True)
     confirmed = models.BooleanField(default=False)  # a person confirmed the entitlement
+    # Blackout periods and the limit on people away at once apply to leave that can wait. Sick,
+    # family responsibility and maternity leave cannot, so they are never refused for those.
+    restricted = models.BooleanField(default=True)
 
     objects = LeaveTypeQuerySet.as_manager()
 
@@ -50,8 +53,12 @@ class LeaveStatus(models.TextChoices):
 
 class LeaveRequestQuerySet(ScopedQuerySet):
     def for_user(self, user: Any) -> Self:
-        if user.role in APPROVE_ROLES:
+        if user.role in ALL_SCOPE_ROLES:
             return self
+        if user.role == Role.LEAD:  # their own team, and their own
+            return self.filter(
+                models.Q(employee__manager__user=user) | models.Q(employee__user=user)
+            )
         if user.role == Role.AGENT:
             return self.filter(employee__user=user)  # an agent sees only their own
         return self.none()
@@ -120,8 +127,15 @@ OPEN_SWAP_STATUSES = (SwapStatus.AWAITING_COLLEAGUE, SwapStatus.AWAITING_APPROVA
 
 class SwapRequestQuerySet(ScopedQuerySet):
     def for_user(self, user: Any) -> Self:
-        if user.role in APPROVE_ROLES:
+        if user.role in ALL_SCOPE_ROLES:
             return self
+        if user.role == Role.LEAD:  # swaps with someone on their team, or their own
+            return self.filter(
+                models.Q(from_employee__manager__user=user)
+                | models.Q(to_employee__manager__user=user)
+                | models.Q(from_employee__user=user)
+                | models.Q(to_employee__user=user)
+            )
         if user.role == Role.AGENT:  # an agent sees swaps they are a party to, nothing else
             return self.filter(
                 models.Q(from_employee__user=user) | models.Q(to_employee__user=user)
@@ -186,8 +200,12 @@ class AvailabilityKind(models.TextChoices):
 
 class AvailabilityQuerySet(ScopedQuerySet):
     def for_user(self, user: Any) -> Self:
-        if user.role in APPROVE_ROLES:
+        if user.role in ALL_SCOPE_ROLES:
             return self
+        if user.role == Role.LEAD:  # their own team, and their own
+            return self.filter(
+                models.Q(employee__manager__user=user) | models.Q(employee__user=user)
+            )
         if user.role == Role.AGENT:
             return self.filter(employee__user=user)  # an agent sees only their own
         return self.none()
@@ -219,3 +237,48 @@ class Availability(models.Model):
 
     def __str__(self) -> str:
         return f"{self.employee_id} {self.weekday} {self.start_time}-{self.end_time} {self.kind}"
+
+
+class LeaveBlackout(models.Model):
+    """Days on which leave of a restricted kind cannot be asked for (a year-end close, a launch)."""
+
+    name = models.CharField(max_length=60)
+    date_from = models.DateField()
+    date_to = models.DateField()
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+
+    class Meta:
+        ordering = ["date_from", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(date_to__gte=models.F("date_from")),
+                name="people_blackout_dates_ordered",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} {self.date_from}..{self.date_to}"
+
+
+class LeaveLimit(models.Model):
+    """One row for the whole deployment: the most people who may be away at once on restricted
+    leave (none: no limit). Locked while a request is approved, so two approvals made at the same
+    moment cannot both squeeze under it."""
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    max_concurrent = models.PositiveSmallIntegerField(null=True, blank=True)
+    updated_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=models.Q(id=1), name="people_leave_limit_single_row"),
+            models.CheckConstraint(
+                condition=models.Q(max_concurrent__isnull=True) | models.Q(max_concurrent__gte=1),
+                name="people_leave_limit_positive",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"at most {self.max_concurrent or 'any number'} away at once"

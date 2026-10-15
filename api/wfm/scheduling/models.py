@@ -88,6 +88,11 @@ class Employee(models.Model):
     user = models.OneToOneField(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="employee"
     )
+    # The team lead (another employee, who has a login) who approves this person's leave and
+    # swaps. Planners and admins approve for everybody; a lead only for their own team.
+    manager = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="reports"
+    )
 
     objects = EmployeeQuerySet.as_manager()
 

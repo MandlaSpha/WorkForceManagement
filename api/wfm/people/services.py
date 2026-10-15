@@ -19,7 +19,7 @@ from wfm.audit.models import Action
 from wfm.core.errors import ApiError, not_found
 from wfm.scheduling.models import Employee, RosterWeek, ShiftAssignment
 
-from . import selectors
+from . import rules_services, selectors
 from .calendar import public_holidays
 from .models import LeaveRequest, LeaveStatus, LeaveType
 from .policy import APPROVE_ROLES, ON_BEHALF_ROLES
@@ -77,6 +77,8 @@ def apply(
         Employee.objects.select_for_update(no_key=True).filter(pk=employee.pk).get()
         _check_overlap(employee, start, end)
         _check_balance(employee, leave_type, by_year)
+        rules_services.check_blackout(leave_type, start, end)
+        rules_services.check_concurrency(employee, leave_type, start, end)
         request = LeaveRequest.objects.create(
             employee=employee,
             leave_type=leave_type,
@@ -115,6 +117,11 @@ def decide(*, user: User, request_id: int, approve: bool) -> Decision:
 
         cleared: list[dict[str, object]] = []
         if approve:
+            # Two approvals at the same moment must not both squeeze under the limit.
+            rules_services.lock_limit()
+            rules_services.check_concurrency(
+                leave.employee, leave.leave_type, leave.start_date, leave.end_date
+            )
             assignments = ShiftAssignment.objects.filter(
                 employee=leave.employee, day__gte=leave.start_date, day__lte=leave.end_date
             ).select_related("roster_week")

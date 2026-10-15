@@ -9,6 +9,9 @@ SELF_ROLES = frozenset({Role.AGENT, Role.LEAD, Role.PLANNER, Role.ADMIN})
 # Leads, planners and admins see and decide everyone's requests. (A lead's own team needs the
 # employee's manager link, which is not built: until then a lead decides for everyone.)
 APPROVE_ROLES = frozenset({Role.LEAD, Role.PLANNER, Role.ADMIN})
+# Planners and admins see and decide for everybody; a lead only for their own team (the
+# employees whose manager is the lead's own employee record).
+ALL_SCOPE_ROLES = frozenset({Role.PLANNER, Role.ADMIN})
 # Planners and admins can also apply on someone's behalf (a phone call, a medical certificate).
 ON_BEHALF_ROLES = frozenset({Role.PLANNER, Role.ADMIN})
 # The entitlements are a policy decision of the customer's admin.

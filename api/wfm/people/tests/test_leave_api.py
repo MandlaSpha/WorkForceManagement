@@ -39,6 +39,8 @@ from wfm.scheduling.tests.helpers import (
 )
 from wfm.scheduling.tests.helpers import login as scheduling_login
 
+from .team import lead_of
+
 pytestmark = pytest.mark.django_db
 
 LEAVE = "/api/v1/people/leave"
@@ -80,6 +82,7 @@ def week() -> dict[str, Any]:
     publish_forecast(queue(), {**{(MON, s): 2 for s in range(18, 35)}, (TUE, 18): 0})
     e1 = person("E001", user=agent)
     e2 = person("E002")
+    lead_of(e1, e2)
     assign(login(), queue(), e1, MON, shifts["D1"])
     assign(login(), queue(), e1, TUE, shifts["D1"])
     assign(login(), queue(), e2, MON, shifts["D1"])

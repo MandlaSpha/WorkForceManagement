@@ -55,6 +55,9 @@ export function employeeOf(overrides: Partial<Employee> = {}): Employee {
     startDate: null,
     endDate: null,
     skills: [{ queueId: 1, queue: 'QueueA', level: 1 }],
+    managerId: null,
+    manager: null,
+    canManage: false,
     ...overrides,
   }
 }

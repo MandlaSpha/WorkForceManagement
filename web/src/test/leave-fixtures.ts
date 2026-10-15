@@ -1,9 +1,33 @@
 import type { Balances, Impact, LeaveRequest, LeaveType } from '@/entities/leave'
 
 export const LEAVE_TYPES: LeaveType[] = [
-  { id: 1, code: 'annual', name: 'Annual leave', paid: true, daysPerYear: 15, confirmed: false },
-  { id: 2, code: 'sick', name: 'Sick leave', paid: true, daysPerYear: 10, confirmed: false },
-  { id: 3, code: 'unpaid', name: 'Unpaid leave', paid: false, daysPerYear: null, confirmed: false },
+  {
+    id: 1,
+    code: 'annual',
+    name: 'Annual leave',
+    paid: true,
+    daysPerYear: 15,
+    confirmed: false,
+    restricted: true,
+  },
+  {
+    id: 2,
+    code: 'sick',
+    name: 'Sick leave',
+    paid: true,
+    daysPerYear: 10,
+    confirmed: false,
+    restricted: false,
+  },
+  {
+    id: 3,
+    code: 'unpaid',
+    name: 'Unpaid leave',
+    paid: false,
+    daysPerYear: null,
+    confirmed: false,
+    restricted: true,
+  },
 ]
 
 /** Annual leave: 15 a year, 2 approved, 2 waiting, so 11 left; sick untouched; unpaid has no limit. */

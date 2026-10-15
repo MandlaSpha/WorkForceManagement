@@ -24,7 +24,7 @@ from .ess_schemas import (
     MyShiftOut,
 )
 from .models import Availability
-from .policy import APPROVE_ROLES, SELF_ROLES
+from .policy import SELF_ROLES
 
 router = Router(tags=["people"])
 SELF = RoleSessionAuth(*sorted(SELF_ROLES), feature=Feature.PEOPLE)
@@ -46,8 +46,8 @@ def _employee(request: HttpRequest, employee_id: int | None, area: str) -> Emplo
                 "A planner adds you.",
             )
         return own
-    found: Employee | None = Employee.objects.for_user(user).filter(pk=employee_id).first()
-    if found is None or (found.user_id != user.pk and user.role not in APPROVE_ROLES):
+    found = people_selectors.employee_in_scope(user, employee_id)
+    if found is None:
         raise not_found("No such employee.")
     return found
 

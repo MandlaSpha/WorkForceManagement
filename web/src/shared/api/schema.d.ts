@@ -366,6 +366,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/people/leave/blackouts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Days on which restricted kinds of leave cannot be asked for */
+        get: operations["wfm_people_rules_api_list_blackouts"];
+        put?: never;
+        /** Add a blackout period */
+        post: operations["wfm_people_rules_api_add_blackout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/leave/blackouts/{blackout_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a blackout period */
+        delete: operations["wfm_people_rules_api_remove_blackout"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/leave/limit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The most people away at once */
+        get: operations["wfm_people_rules_api_get_limit"];
+        /** Set the most people away at once */
+        put: operations["wfm_people_rules_api_put_limit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/people/leave/requests": {
         parameters: {
             query?: never;
@@ -1139,6 +1192,38 @@ export interface components {
             /** Year */
             year: number;
         };
+        /** BlackoutIn */
+        BlackoutIn: {
+            /**
+             * Datefrom
+             * Format: date
+             */
+            dateFrom: string;
+            /**
+             * Dateto
+             * Format: date
+             */
+            dateTo: string;
+            /** Name */
+            name: string;
+        };
+        /** BlackoutOut */
+        BlackoutOut: {
+            /**
+             * Datefrom
+             * Format: date
+             */
+            dateFrom: string;
+            /**
+             * Dateto
+             * Format: date
+             */
+            dateTo: string;
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+        };
         /** CapacityDayOut */
         CapacityDayOut: {
             /** Complete */
@@ -1261,6 +1346,8 @@ export interface components {
             empNo: string;
             /** Enddate */
             endDate?: string | null;
+            /** Managerid */
+            managerId?: number | null;
             /** Name */
             name: string;
             /** Skills */
@@ -1277,6 +1364,8 @@ export interface components {
         };
         /** EmployeeOut */
         EmployeeOut: {
+            /** Canmanage */
+            canManage: boolean;
             /** Contracttype */
             contractType: string;
             /** Empno */
@@ -1285,6 +1374,10 @@ export interface components {
             endDate: string | null;
             /** Id */
             id: number;
+            /** Manager */
+            manager: string | null;
+            /** Managerid */
+            managerId: number | null;
             /** Name */
             name: string;
             /** Skills */
@@ -1576,6 +1669,18 @@ export interface components {
             name: string;
             /** Paid */
             paid: boolean;
+            /** Restricted */
+            restricted: boolean;
+        };
+        /** LimitIn */
+        LimitIn: {
+            /** Maxconcurrent */
+            maxConcurrent: number | null;
+        };
+        /** LimitOut */
+        LimitOut: {
+            /** Maxconcurrent */
+            maxConcurrent: number | null;
         };
         /** LimitsIn */
         LimitsIn: {
@@ -2910,6 +3015,118 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BalancesOut"];
+                };
+            };
+        };
+    };
+    wfm_people_rules_api_list_blackouts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlackoutOut"][];
+                };
+            };
+        };
+    };
+    wfm_people_rules_api_add_blackout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BlackoutIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BlackoutOut"];
+                };
+            };
+        };
+    };
+    wfm_people_rules_api_remove_blackout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                blackout_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+        };
+    };
+    wfm_people_rules_api_get_limit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LimitOut"];
+                };
+            };
+        };
+    };
+    wfm_people_rules_api_put_limit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LimitIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LimitOut"];
                 };
             };
         };

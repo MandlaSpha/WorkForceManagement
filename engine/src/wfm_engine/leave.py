@@ -5,7 +5,7 @@ does to coverage. Pure functions: no Django, no clock, no I/O. Public holidays a
 from __future__ import annotations
 
 from collections import Counter
-from collections.abc import Collection, Iterable
+from collections.abc import Collection, Iterable, Mapping
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import Decimal
@@ -17,6 +17,24 @@ HOURS_PER_SLOT = 0.5
 def working_days(start: date, end: date, holidays: Collection[date] = ()) -> int:
     """Monday-to-Friday days from `start` to `end` inclusive that are not public holidays."""
     return sum(working_days_by_year(start, end, holidays).values())
+
+
+def working_day_list(start: date, end: date, holidays: Collection[date] = ()) -> list[date]:
+    """The Monday-to-Friday days from `start` to `end` inclusive that are not public holidays."""
+    if end < start:
+        raise ValueError("end is before start")
+    days = (start + timedelta(days=n) for n in range((end - start).days + 1))
+    return [d for d in days if d.weekday() < WORKING_WEEKDAYS and d not in holidays]
+
+
+def first_day_over_limit(
+    days: Iterable[date], away: Mapping[date, int], limit: int | None
+) -> date | None:
+    """The first of `days` on which one more person away would pass `limit` (None: no limit).
+    `away` is how many are already away on each day; a day not in it has nobody away."""
+    if limit is None:
+        return None
+    return next((d for d in days if away.get(d, 0) + 1 > limit), None)
 
 
 def working_days_by_year(start: date, end: date, holidays: Collection[date] = ()) -> dict[int, int]:

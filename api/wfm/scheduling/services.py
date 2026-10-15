@@ -27,6 +27,7 @@ from .models import (
     ShiftTemplate,
     WorkMode,
 )
+from .policy import MANAGER_ROLES
 
 DEFAULT_WEEKLY_HOURS = Decimal("40")
 MAX_WEEKLY_HOURS = Decimal("60")
@@ -183,6 +184,29 @@ class SkillInput:
     level: int = 1
 
 
+class _Keep:
+    """'Leave the manager as it is' on a change, as opposed to None, which clears it."""
+
+
+KEEP = _Keep()
+
+
+def _check_manager(manager_id: int | None, employee_id: int | None) -> Employee | None:
+    if manager_id is None:
+        return None
+    if manager_id == employee_id:
+        raise _invalid("employee.manager_self", "Somebody cannot manage themselves.")
+    manager: Employee | None = Employee.objects.select_related("user").filter(pk=manager_id).first()
+    if manager is None:
+        raise _invalid("employee.manager_unknown", "That manager does not exist.")
+    if manager.user is None or manager.user.role not in MANAGER_ROLES:
+        raise _invalid(
+            "employee.manager_cannot",
+            "A manager needs a login that can approve leave (lead, planner or admin).",
+        )
+    return manager
+
+
 def _check_employee(
     *,
     emp_no: str,
@@ -231,6 +255,7 @@ def create_employee(
     start_date: date | None = None,
     end_date: date | None = None,
     skills: Sequence[SkillInput] = (),
+    manager_id: int | None = None,
 ) -> Employee:
     emp_no, name, queues = _check_employee(
         emp_no=emp_no,
@@ -242,6 +267,7 @@ def create_employee(
         end_date=end_date,
         skills=skills,
     )
+    manager = _check_manager(manager_id, None)
     if Employee.objects.filter(emp_no=emp_no).exists():
         raise _invalid("employee.emp_no_taken", f"Employee number {emp_no} is already used.", 409)
     try:
@@ -255,6 +281,7 @@ def create_employee(
                 weekly_hours_is_default=weekly_hours is None,
                 start_date=start_date,
                 end_date=end_date,
+                manager=manager,
             )
             EmployeeSkill.objects.bulk_create(
                 EmployeeSkill(employee=employee, queue=queues[s.queue_id], level=s.level)
@@ -296,6 +323,7 @@ def update_employee(
     start_date: date | None,
     end_date: date | None,
     skills: Sequence[SkillInput],
+    manager_id: int | _Keep | None = KEEP,
 ) -> Employee:
     emp_no, name, queues = _check_employee(
         emp_no=emp_no,
@@ -316,6 +344,11 @@ def update_employee(
         )
         if employee is None:
             raise not_found("No such employee.")
+        new_manager = (
+            employee.manager
+            if isinstance(manager_id, _Keep)
+            else _check_manager(manager_id, employee.pk)
+        )
         if Employee.objects.filter(emp_no=emp_no).exclude(pk=employee.pk).exists():
             raise _invalid(
                 "employee.emp_no_taken", f"Employee number {emp_no} is already used.", 409
@@ -343,8 +376,10 @@ def update_employee(
             "weekly_hours": employee.weekly_hours,
             "start_date": employee.start_date,
             "end_date": employee.end_date,
+            "manager": employee.manager.emp_no if employee.manager else None,
         }
         employee.emp_no, employee.name = emp_no, name
+        employee.manager = new_manager
         employee.contract_type, employee.work_mode = contract_type, work_mode
         if weekly_hours is not None:
             employee.weekly_hours, employee.weekly_hours_is_default = weekly_hours, False
@@ -355,7 +390,8 @@ def update_employee(
             EmployeeSkill(employee=employee, queue=queues[s.queue_id], level=s.level)
             for s in skills
         )
-        after = {k: getattr(employee, k) for k in before}
+        after = {k: getattr(employee, k) for k in before if k != "manager"}
+        after["manager"] = new_manager.emp_no if new_manager else None
         # A name is personal data: the trail says it changed, not what it was or became.
         changes = [
             audit.FieldChange(

@@ -95,9 +95,18 @@ Sign in as `agent`: you land on **My schedule**: your published shifts and leave
 
 **My availability**: declare a weekly time you *cannot work* (the roster will refuse a shift covering it, and so will a swap) or would *rather work* (a wish the planner can see). Declaring nothing tells the planner nothing; it does not mean you are free. The demo agent never works Sundays and would rather finish early on Fridays; the demo part-timers cannot work Thursday or Friday, and the demo roster respects it.
 
+## Phase 3: Teams and leave rules (LV-04)
+
+**Teams.** On *Employees*, each person has a **Manager** (a lead, planner or admin who has a login). A lead sees and decides leave, swaps and availability only for their own team: sign in as `lead` and you see the demo Support team's requests, nobody else's. Planners and admins decide for everybody. In the demo data the demo lead leads the whole Support team.
+
+**Leave rules** (as `admin`): *Leave > Rules*.
+- **Blackout periods**: days when leave that can wait cannot be asked for. Add one, then ask for leave inside it as `agent`: it is refused and names the period. Sick and family leave are never refused.
+- **Away at once**: the most people who may be on approved leave the same day. Set it to 1, approve one request as `lead`, then try to approve another for the same day: refused with the day and the limit.
+Everyone who takes leave sees the coming blackouts and the limit on their *Leave* page, so a refusal is never a surprise.
+
 ## Not built yet (so you are not looking for it)
 
-Leave blackout periods and limits, team-scoped lead views (a lead currently decides for everyone), auto-scheduler,
+Per-team leave limits, auto-scheduler,
 recommendations, overtime pricing, scheduled reports, intraday, adherence, ITSM and Azure AD
 integration. The menu lists some of these as placeholders.
 

@@ -1,7 +1,14 @@
 import { useQuery } from '@tanstack/vue-query'
 import { computed, toValue, type MaybeRef } from 'vue'
 
-import { fetchBalances, fetchImpact, fetchLeaveTypes, fetchRequests } from '../api/leave'
+import {
+  fetchAwayLimit,
+  fetchBalances,
+  fetchBlackouts,
+  fetchImpact,
+  fetchLeaveTypes,
+  fetchRequests,
+} from '../api/leave'
 
 /** Applying for, deciding on or cancelling leave invalidates `all`. */
 export const leaveKeys = {
@@ -10,6 +17,8 @@ export const leaveKeys = {
   balances: (year: number) => ['leave', 'balances', year] as const,
   requests: (status: string | null) => ['leave', 'requests', status] as const,
   impact: (requestId: number) => ['leave', 'impact', requestId] as const,
+  blackouts: ['leave', 'blackouts'] as const,
+  limit: ['leave', 'limit'] as const,
 }
 
 export function useLeaveTypes() {
@@ -37,4 +46,12 @@ export function useImpact(requestId: MaybeRef<number>, enabled: MaybeRef<boolean
     queryFn: () => fetchImpact(toValue(requestId)),
     enabled: computed(() => toValue(enabled)),
   })
+}
+
+export function useBlackouts() {
+  return useQuery({ queryKey: leaveKeys.blackouts, queryFn: fetchBlackouts })
+}
+
+export function useAwayLimit() {
+  return useQuery({ queryKey: leaveKeys.limit, queryFn: fetchAwayLimit })
 }

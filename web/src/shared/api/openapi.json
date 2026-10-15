@@ -401,6 +401,61 @@
         "title": "BalancesOut",
         "type": "object"
       },
+      "BlackoutIn": {
+        "properties": {
+          "dateFrom": {
+            "format": "date",
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "format": "date",
+            "title": "Dateto",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "dateFrom",
+          "dateTo"
+        ],
+        "title": "BlackoutIn",
+        "type": "object"
+      },
+      "BlackoutOut": {
+        "properties": {
+          "dateFrom": {
+            "format": "date",
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "format": "date",
+            "title": "Dateto",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "dateFrom",
+          "dateTo"
+        ],
+        "title": "BlackoutOut",
+        "type": "object"
+      },
       "CapacityDayOut": {
         "properties": {
           "complete": {
@@ -777,6 +832,17 @@
             ],
             "title": "Enddate"
           },
+          "managerId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Managerid"
+          },
           "name": {
             "maxLength": 100,
             "title": "Name",
@@ -830,6 +896,10 @@
       },
       "EmployeeOut": {
         "properties": {
+          "canManage": {
+            "title": "Canmanage",
+            "type": "boolean"
+          },
           "contractType": {
             "title": "Contracttype",
             "type": "string"
@@ -853,6 +923,28 @@
           "id": {
             "title": "Id",
             "type": "integer"
+          },
+          "manager": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manager"
+          },
+          "managerId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Managerid"
           },
           "name": {
             "title": "Name",
@@ -900,7 +992,10 @@
           "weeklyHoursIsDefault",
           "startDate",
           "endDate",
-          "skills"
+          "skills",
+          "managerId",
+          "manager",
+          "canManage"
         ],
         "title": "EmployeeOut",
         "type": "object"
@@ -1592,6 +1687,10 @@
           "paid": {
             "title": "Paid",
             "type": "boolean"
+          },
+          "restricted": {
+            "title": "Restricted",
+            "type": "boolean"
           }
         },
         "required": [
@@ -1600,9 +1699,50 @@
           "name",
           "paid",
           "daysPerYear",
-          "confirmed"
+          "confirmed",
+          "restricted"
         ],
         "title": "LeaveTypeOut",
+        "type": "object"
+      },
+      "LimitIn": {
+        "properties": {
+          "maxConcurrent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxconcurrent"
+          }
+        },
+        "required": [
+          "maxConcurrent"
+        ],
+        "title": "LimitIn",
+        "type": "object"
+      },
+      "LimitOut": {
+        "properties": {
+          "maxConcurrent": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxconcurrent"
+          }
+        },
+        "required": [
+          "maxConcurrent"
+        ],
+        "title": "LimitOut",
         "type": "object"
       },
       "LimitsIn": {
@@ -4546,6 +4686,180 @@
         ],
         "summary": "A person's leave balances for a year (their own unless a planner or admin asks)",
         "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/leave/blackouts": {
+      "get": {
+        "operationId": "wfm_people_rules_api_list_blackouts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BlackoutOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Days on which restricted kinds of leave cannot be asked for",
+        "tags": [
+          "people",
+          "people"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_people_rules_api_add_blackout",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlackoutIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BlackoutOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Add a blackout period",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/leave/blackouts/{blackout_id}": {
+      "delete": {
+        "operationId": "wfm_people_rules_api_remove_blackout",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "blackout_id",
+            "required": true,
+            "schema": {
+              "title": "Blackout Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Remove a blackout period",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/leave/limit": {
+      "get": {
+        "operationId": "wfm_people_rules_api_get_limit",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "The most people away at once",
+        "tags": [
+          "people",
+          "people"
+        ]
+      },
+      "put": {
+        "operationId": "wfm_people_rules_api_put_limit",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LimitIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LimitOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set the most people away at once",
+        "tags": [
+          "people",
           "people"
         ]
       }

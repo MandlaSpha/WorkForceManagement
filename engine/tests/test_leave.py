@@ -1,5 +1,6 @@
 from datetime import date
 from decimal import Decimal
+from typing import ClassVar
 
 import pytest
 
@@ -93,3 +94,42 @@ class TestCoverageImpact:
 
     def test_no_shifts_means_no_impact(self) -> None:
         assert impact(0, []) == Impact(0, 0.0, 0, 0, 0, 0)
+
+
+class TestConcurrentLeave:
+    """Monday 25 to Wednesday 27 May 2026; limit 2 people away at once."""
+
+    DAYS: ClassVar[list[date]] = [date(2026, 5, 25), date(2026, 5, 26), date(2026, 5, 27)]
+
+    def test_working_day_list_leaves_out_weekends_and_holidays(self) -> None:
+        from wfm_engine.leave import working_day_list
+
+        # Fri 1 May (Workers' Day) to Wed 6 May: Mon 4, Tue 5, Wed 6 are the working days.
+        assert working_day_list(date(2026, 5, 1), date(2026, 5, 6), {date(2026, 5, 1)}) == [
+            date(2026, 5, 4),
+            date(2026, 5, 5),
+            date(2026, 5, 6),
+        ]
+
+    def test_no_limit_never_blocks(self) -> None:
+        from wfm_engine.leave import first_day_over_limit
+
+        assert first_day_over_limit(self.DAYS, {self.DAYS[0]: 99}, None) is None
+
+    def test_a_day_with_the_limit_already_away_is_the_first_to_block(self) -> None:
+        from wfm_engine.leave import first_day_over_limit
+
+        away = {self.DAYS[0]: 1, self.DAYS[1]: 2, self.DAYS[2]: 2}
+        # Tuesday already has 2 away: a third would pass the limit of 2.
+        assert first_day_over_limit(self.DAYS, away, 2) == self.DAYS[1]
+
+    def test_one_below_the_limit_is_allowed_and_a_limit_of_one_means_nobody_else(self) -> None:
+        from wfm_engine.leave import first_day_over_limit
+
+        assert first_day_over_limit(self.DAYS, {self.DAYS[0]: 1}, 2) is None
+        assert first_day_over_limit(self.DAYS, {self.DAYS[0]: 1}, 1) == self.DAYS[0]
+
+    def test_days_nobody_is_away_on_are_free(self) -> None:
+        from wfm_engine.leave import first_day_over_limit
+
+        assert first_day_over_limit(self.DAYS, {}, 1) is None

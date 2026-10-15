@@ -34,6 +34,8 @@ from wfm.scheduling.tests.helpers import (
 )
 from wfm.scheduling.tests.helpers import login as scheduling_login
 
+from .team import lead_of
+
 pytestmark = pytest.mark.django_db
 
 SW = "/api/v1/people/swaps"
@@ -86,6 +88,7 @@ def rota() -> dict[str, Any]:
     colleague_client()
     a = person("E001", user=User.objects.get(username="u-agent"))
     b = person("E002", user=User.objects.get(username="u-colleague"))
+    lead_of(a, b)
     planner = login()
     assign(planner, queue(), a, MON, shifts["D1"])
     assign(planner, queue(), b, TUE, shifts["L1"])
@@ -346,7 +349,7 @@ class TestWhoMayDoWhat:
     def test_nobody_decides_a_swap_they_are_part_of(self, rota: dict[str, Any]) -> None:
         # A lead who is one of the two people cannot approve it, even though leads can approve.
         lead_user = User.objects.get_or_create(username="u-lead", defaults={"role": Role.LEAD})[0]
-        lead_person = person("E010", user=lead_user)
+        lead_person = Employee.objects.get(user=lead_user)  # the team lead from the fixture
         assign(login(), queue(), lead_person, WED, rota["shifts"]["D1"])
         response = offer(login(Role.AGENT), rota["give"], row(lead_person, WED))  # type: ignore[arg-type]
         swap_id = response.json()["id"]

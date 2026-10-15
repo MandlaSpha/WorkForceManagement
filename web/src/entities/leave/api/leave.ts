@@ -1,7 +1,10 @@
 import { api, unwrap } from '@/shared/api'
 
 import type {
+  AwayLimit,
   Balances,
+  Blackout,
+  BlackoutBody,
   Decision,
   Impact,
   LeaveRequest,
@@ -54,4 +57,28 @@ export async function setEntitlement(
       body: { daysPerYear },
     }),
   )
+}
+
+export async function fetchBlackouts(): Promise<Blackout[]> {
+  return unwrap(await api.GET('/api/v1/people/leave/blackouts'))
+}
+
+export async function addBlackout(body: BlackoutBody): Promise<Blackout> {
+  return unwrap(await api.POST('/api/v1/people/leave/blackouts', { body }))
+}
+
+export async function removeBlackout(blackoutId: number): Promise<void> {
+  unwrap(
+    await api.DELETE('/api/v1/people/leave/blackouts/{blackout_id}', {
+      params: { path: { blackout_id: blackoutId } },
+    }),
+  )
+}
+
+export async function fetchAwayLimit(): Promise<AwayLimit> {
+  return unwrap(await api.GET('/api/v1/people/leave/limit'))
+}
+
+export async function setAwayLimit(maxConcurrent: number | null): Promise<AwayLimit> {
+  return unwrap(await api.PUT('/api/v1/people/leave/limit', { body: { maxConcurrent } }))
 }

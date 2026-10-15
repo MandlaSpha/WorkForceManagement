@@ -2,7 +2,14 @@ import { http, HttpResponse } from 'msw'
 
 import type { ImportReport, KpiSummary, QueueInfo } from '@/entities/call-data'
 import type { Capacity } from '@/entities/capacity'
-import type { Balances, Impact, LeaveRequest, LeaveType } from '@/entities/leave'
+import type {
+  AwayLimit,
+  Balances,
+  Blackout,
+  Impact,
+  LeaveRequest,
+  LeaveType,
+} from '@/entities/leave'
 import type { AvailabilityWindow } from '@/entities/availability'
 import type { MySchedule } from '@/entities/my-schedule'
 import type { Swap, SwapShift } from '@/entities/swap'
@@ -103,6 +110,8 @@ export const backend = {
   runs: [] as Array<{ body: Record<string, unknown>; csrf: string | null }>,
   /** Leave: kinds, balances, requests, the coverage impact, and what a decision reports. */
   leaveTypes: [] as LeaveType[],
+  blackouts: [] as Blackout[],
+  awayLimit: { maxConcurrent: null } as AwayLimit,
   balances: null as Balances | null,
   noEmployeeRecord: false,
   leaveRequests: [] as LeaveRequest[],
@@ -170,6 +179,8 @@ export const backend = {
     this.overview = null
     this.demand = null
     this.leaveTypes = []
+    this.blackouts = []
+    this.awayLimit = { maxConcurrent: null }
     this.balances = null
     this.noEmployeeRecord = false
     this.leaveRequests = []
@@ -412,6 +423,39 @@ export const handlers = [
       ? HttpResponse.json(backend.roster)
       : problem(404, 'resource.not_found', 'Not found'),
   ),
+
+  http.get('*/api/v1/people/leave/blackouts', () => HttpResponse.json(backend.blackouts)),
+
+  http.post('*/api/v1/people/leave/blackouts', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, string>
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created: Blackout = {
+      id: 100 + backend.blackouts.length,
+      name: String(sent.name),
+      dateFrom: String(sent.dateFrom),
+      dateTo: String(sent.dateTo),
+    }
+    backend.blackouts = [...backend.blackouts, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.delete('*/api/v1/people/leave/blackouts/:id', async (info) => {
+    const response = await schedulingWrite(info, 'DELETE')
+    if (response.ok)
+      backend.blackouts = backend.blackouts.filter((b) => b.id !== Number(info.params.id))
+    return response
+  }),
+
+  http.get('*/api/v1/people/leave/limit', () => HttpResponse.json(backend.awayLimit)),
+
+  http.put('*/api/v1/people/leave/limit', async (info) => {
+    const sent = (await info.request.clone().json()) as AwayLimit
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    backend.awayLimit = { maxConcurrent: sent.maxConcurrent }
+    return HttpResponse.json(backend.awayLimit)
+  }),
 
   http.get('*/api/v1/people/leave/types', () => HttpResponse.json(backend.leaveTypes)),
 

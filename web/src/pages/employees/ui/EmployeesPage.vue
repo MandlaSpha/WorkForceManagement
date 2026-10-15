@@ -38,6 +38,7 @@ const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybri
       :key="editing === 'new' ? 'new' : editing.id"
       :employee="editing === 'new' ? null : editing"
       :queues="queues.data.value ?? []"
+      :managers="(employees.data.value ?? []).filter((e) => e.canManage)"
       @saved="editing = null"
       @cancel="editing = null"
     />
@@ -64,6 +65,7 @@ const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybri
             <th scope="col" class="px-3 py-2 font-medium">Weekly hours</th>
             <th scope="col" class="px-3 py-2 font-medium">Works</th>
             <th scope="col" class="px-3 py-2 font-medium">Queues</th>
+            <th scope="col" class="px-3 py-2 font-medium">Manager</th>
             <th scope="col" class="px-4 py-2 text-right font-medium">
               <span class="sr-only">Actions</span>
             </th>
@@ -87,6 +89,7 @@ const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybri
             <td class="px-3 py-2">
               {{ e.skills.map((s) => `${s.queue} L${s.level}`).join(', ') || '—' }}
             </td>
+            <td class="px-3 py-2">{{ e.manager ?? '—' }}</td>
             <td class="px-4 py-2 text-right">
               <button
                 v-if="canChange"

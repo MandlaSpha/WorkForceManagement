@@ -11,7 +11,13 @@ from wfm.core.permissions import RoleSessionAuth, current_user
 
 from . import roster_services, selectors, services
 from .models import Employee, RosterWeek, ShiftTemplate
-from .policy import EMPLOYEE_WRITE_ROLES, READ_ROLES, ROSTER_WRITE_ROLES, SHIFT_WRITE_ROLES
+from .policy import (
+    EMPLOYEE_WRITE_ROLES,
+    MANAGER_ROLES,
+    READ_ROLES,
+    ROSTER_WRITE_ROLES,
+    SHIFT_WRITE_ROLES,
+)
 from .schemas import (
     AssignIn,
     AssignOut,
@@ -171,6 +177,7 @@ def create_employee(request: HttpRequest, body: EmployeeIn) -> Status[EmployeeOu
         start_date=body.startDate,
         end_date=body.endDate,
         skills=[services.SkillInput(s.queueId, s.level) for s in body.skills],
+        manager_id=body.managerId,
     )
     return Status(201, _employee_out(employee))
 
@@ -193,6 +200,7 @@ def update_employee(request: HttpRequest, employee_id: int, body: EmployeeIn) ->
         start_date=body.startDate,
         end_date=body.endDate,
         skills=[services.SkillInput(s.queueId, s.level) for s in body.skills],
+        manager_id=body.managerId if "managerId" in body.model_fields_set else services.KEEP,
     )
     return _employee_out(employee)
 
@@ -373,6 +381,9 @@ def _employee_out(employee: Employee) -> EmployeeOut:
             SkillOut(queueId=s.queue_id, queue=s.queue.name, level=s.level)
             for s in employee.skills.select_related("queue").order_by("queue__name")
         ],
+        managerId=employee.manager_id,
+        manager=employee.manager.name if employee.manager else None,
+        canManage=employee.user is not None and employee.user.role in MANAGER_ROLES,
     )
 
 

@@ -5,16 +5,17 @@ from __future__ import annotations
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from wfm_engine import leave as rules
 from wfm_engine.roster import shift_slots
 
-from wfm.accounts.models import User
+from wfm.accounts.models import Role, User
 from wfm.core.errors import not_found
 from wfm.scheduling.models import Employee, ShiftAssignment
 from wfm.scheduling.selectors import PlanCell, week_plan
 
 from .models import LeaveRequest, LeaveStatus, LeaveType
+from .policy import ALL_SCOPE_ROLES
 
 
 def leave_types(user: User) -> list[LeaveType]:
@@ -23,6 +24,20 @@ def leave_types(user: User) -> list[LeaveType]:
 
 def own_employee(user: User) -> Employee | None:
     return Employee.objects.filter(user=user).first()
+
+
+def employee_in_scope(user: User, employee_id: int) -> Employee | None:
+    """An employee the person may act on: anyone for a planner or admin, their team (and
+    themselves) for a lead, only themselves for an agent. None when out of scope, which the
+    caller answers as 'not found'."""
+    found = Employee.objects.filter(pk=employee_id)
+    if user.role in ALL_SCOPE_ROLES:
+        return found.first()
+    if user.role == Role.LEAD:
+        return found.filter(Q(manager__user=user) | Q(user=user)).first()
+    if user.role == Role.AGENT:
+        return found.filter(user=user).first()
+    return None
 
 
 def requests(

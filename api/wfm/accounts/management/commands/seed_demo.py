@@ -73,6 +73,11 @@ class Command(BaseCommand):
                     user.failed_login_count = 0
                     user.locked_until = None
                     user.save(update_fields=["password", "failed_login_count", "locked_until"])
+            # The demo lead manages the demo agent, so the lead can decide the agent's leave.
+            employee_model = apps.get_model("scheduling", "Employee")
+            lead = employee_model.objects.filter(emp_no="DEMO-LEAD").first()
+            if lead is not None:
+                employee_model.objects.filter(emp_no="DEMO-AGENT").update(manager=lead)
             audit.record(
                 actor=None,
                 action="system.seed_demo",

@@ -11,7 +11,12 @@ import TextField from '@/shared/ui/TextField.vue'
 
 import { useEmployeeMutations } from '../model/useEmployeeMutations'
 
-const props = defineProps<{ employee: Employee | null; queues: ReadonlyArray<QueueInfo> }>()
+const props = defineProps<{
+  employee: Employee | null
+  queues: ReadonlyArray<QueueInfo>
+  /** People with a login that can approve leave: the choices for who manages this person. */
+  managers: ReadonlyArray<Employee>
+}>()
 const emit = defineEmits<{ saved: []; cancel: [] }>()
 
 const empNo = ref(props.employee?.empNo ?? '')
@@ -22,6 +27,7 @@ const workMode = ref(props.employee?.workMode ?? 'office')
 const hours = ref(
   props.employee && !props.employee.weeklyHoursIsDefault ? String(props.employee.weeklyHours) : '',
 )
+const managerId = ref(props.employee?.managerId == null ? '' : String(props.employee.managerId))
 const levels = ref<Record<number, number>>(
   Object.fromEntries((props.employee?.skills ?? []).map((s) => [s.queueId, s.level])),
 )
@@ -35,6 +41,12 @@ const CONTRACTS = [
   { value: 'permanent', label: 'Permanent' },
   { value: 'seasonal', label: 'Seasonal' },
 ]
+const MANAGERS = computed(() => [
+  { value: '', label: 'Nobody (a planner or admin decides)' },
+  ...props.managers
+    .filter((m) => m.id !== props.employee?.id)
+    .map((m) => ({ value: String(m.id), label: `${m.name} (${m.empNo})` })),
+])
 const MODES = [
   { value: 'office', label: 'Office' },
   { value: 'remote', label: 'Remote' },
@@ -55,6 +67,7 @@ function submit(): void {
     contractType: contractType.value,
     workMode: workMode.value,
     weeklyHours: hours.value.trim() === '' ? null : Number(hours.value),
+    managerId: managerId.value === '' ? null : Number(managerId.value),
     skills: Object.entries(levels.value).map(([queueId, level]) => ({
       queueId: Number(queueId),
       level,
@@ -85,6 +98,11 @@ function submit(): void {
       />
       <SelectField v-model="contractType" label="Contract" :options="CONTRACTS" />
       <SelectField v-model="workMode" label="Works" :options="MODES" />
+      <SelectField
+        v-model="managerId"
+        label="Manager (approves leave and swaps)"
+        :options="MANAGERS"
+      />
     </div>
 
     <fieldset class="space-y-2">

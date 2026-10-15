@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { backend } from '@/test/fake-backend'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
+import { employeeOf } from '@/test/scheduling-fixtures'
 
 describe('the employee list', () => {
   it('shows hours, and marks hours nobody entered as a default', async () => {
@@ -51,6 +52,7 @@ describe('adding an employee', () => {
         contractType: 'permanent',
         workMode: 'office',
         weeklyHours: null,
+        managerId: null,
         skills: [{ queueId: 1, level: 1 }],
       },
       csrf: 'test-csrf-token',
@@ -131,6 +133,55 @@ describe('changing an employee', () => {
 
     await waitFor(() => expect(backend.writes).toHaveLength(1))
     expect(backend.writes[0]?.body).toMatchObject({ weeklyHours: null })
+  })
+})
+
+describe('who manages whom', () => {
+  const lead = () =>
+    employeeOf({ id: 12, empNo: 'L001', name: 'Lee Lead', canManage: true, skills: [] })
+
+  it('shows each persons manager, and a dash for nobody', async () => {
+    seedScheduling()
+    backend.employees = [employeeOf({ managerId: 12, manager: 'Lee Lead' }), lead()]
+    await openScheduling('/employees')
+    const alex = (await screen.findByText('Alex Agent')).closest('tr')!
+    expect(within(alex).getByText('Lee Lead')).toBeVisible()
+    const lee = screen.getByText('Lee Lead', { selector: 'th' }).closest('tr')!
+    // No queues and no manager: two dashes.
+    expect(within(lee).getAllByText('—')).toHaveLength(2)
+  })
+
+  it('offers only people who can approve as managers, never the person themselves', async () => {
+    seedScheduling()
+    backend.employees = [employeeOf(), lead(), employeeOf({ id: 13, empNo: 'E003', name: 'Sam' })]
+    const user = userEvent.setup()
+    await openScheduling('/employees')
+    await user.click(await screen.findByRole('button', { name: 'Change Alex Agent' }))
+    const select = screen.getByLabelText(/^Manager/)
+    const names = within(select)
+      .getAllByRole('option')
+      .map((o) => o.textContent)
+    // Failure caught: offering an agent as a manager would send a choice the API refuses.
+    expect(names).toEqual(['Nobody (a planner or admin decides)', 'Lee Lead (L001)'])
+  })
+
+  it('sends the chosen manager as a number, and null for nobody', async () => {
+    seedScheduling()
+    backend.employees = [employeeOf({ managerId: 12, manager: 'Lee Lead' }), lead()]
+    const user = userEvent.setup()
+    await openScheduling('/employees')
+    await user.click(await screen.findByRole('button', { name: 'Change Alex Agent' }))
+    expect(screen.getByLabelText(/^Manager/)).toHaveValue('12')
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+    await waitFor(() => expect(backend.writes[0]?.body).toMatchObject({ managerId: 12 }))
+
+    await user.click(await screen.findByRole('button', { name: 'Change Alex Agent' }))
+    await user.selectOptions(
+      screen.getByLabelText(/^Manager/),
+      'Nobody (a planner or admin decides)',
+    )
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+    await waitFor(() => expect(backend.writes[1]?.body).toMatchObject({ managerId: null }))
   })
 })
 

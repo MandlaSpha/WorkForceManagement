@@ -46,6 +46,8 @@ class EmployeeIn(Schema):
     startDate: date | None = None  # noqa: N815
     endDate: date | None = None  # noqa: N815
     skills: list[SkillIn] = Field(default_factory=list)
+    # Who approves this person's leave and swaps. Left out on a change: unchanged; null: none.
+    managerId: int | None = None  # noqa: N815
 
 
 class EmployeeOut(Schema):
@@ -59,6 +61,9 @@ class EmployeeOut(Schema):
     startDate: date | None  # noqa: N815
     endDate: date | None  # noqa: N815
     skills: list[SkillOut]
+    managerId: int | None  # noqa: N815
+    manager: str | None  # the manager's name
+    canManage: bool  # noqa: N815 - has a login that can approve, so can be a manager
 
 
 class RosterCellOut(Schema):
