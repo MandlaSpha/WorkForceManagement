@@ -761,6 +761,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/agent-logins/unmapped": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** ACD logins seen on calls that belong to nobody yet */
+        get: operations["wfm_scheduling_api_unmapped_logins"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/employees": {
         parameters: {
             query?: never;
@@ -779,6 +796,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/employees/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import the employee master from a CSV or Excel file (dry_run shows what would happen) */
+        post: operations["wfm_scheduling_api_import_employees"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/employees/{employee_id}": {
         parameters: {
             query?: never;
@@ -789,6 +823,23 @@ export interface paths {
         get?: never;
         /** Change an employee */
         put: operations["wfm_scheduling_api_update_employee"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/employees/{employee_id}/agent-logins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the ACD logins that are this person */
+        put: operations["wfm_scheduling_api_set_agent_logins"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1244,6 +1295,11 @@ export interface components {
             /** Active */
             active: boolean;
         };
+        /** AgentLoginsIn */
+        AgentLoginsIn: {
+            /** Logins */
+            logins: string[];
+        };
         /** AssignIn */
         AssignIn: {
             /**
@@ -1543,6 +1599,25 @@ export interface components {
             /** Workingdays */
             workingDays: number;
         };
+        /** EmployeeImportOut */
+        EmployeeImportOut: {
+            /** Created */
+            created: number;
+            /** Dryrun */
+            dryRun: boolean;
+            /** Ignoredcolumns */
+            ignoredColumns: string[];
+            /** Loginsmapped */
+            loginsMapped: number;
+            /** Rejected */
+            rejected: {
+                [key: string]: number;
+            };
+            /** Unchanged */
+            unchanged: number;
+            /** Updated */
+            updated: number;
+        };
         /** EmployeeIn */
         EmployeeIn: {
             /**
@@ -1577,6 +1652,8 @@ export interface components {
         };
         /** EmployeeOut */
         EmployeeOut: {
+            /** Agentlogins */
+            agentLogins: string[];
             /** Canmanage */
             canManage: boolean;
             /** Contracttype */
@@ -2623,6 +2700,13 @@ export interface components {
             volumeMultiplier: number;
             /** Weeks */
             weeks: number;
+        };
+        /** UnmappedLoginOut */
+        UnmappedLoginOut: {
+            /** Calls */
+            calls: number;
+            /** Login */
+            login: string;
         };
         /** UserIn */
         UserIn: {
@@ -3920,6 +4004,26 @@ export interface operations {
             };
         };
     };
+    wfm_scheduling_api_unmapped_logins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnmappedLoginOut"][];
+                };
+            };
+        };
+    };
     wfm_scheduling_api_list_employees: {
         parameters: {
             query?: {
@@ -3966,6 +4070,38 @@ export interface operations {
             };
         };
     };
+    wfm_scheduling_api_import_employees: {
+        parameters: {
+            query?: {
+                dry_run?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeImportOut"];
+                };
+            };
+        };
+    };
     wfm_scheduling_api_update_employee: {
         parameters: {
             query?: never;
@@ -3978,6 +4114,32 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EmployeeIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_api_set_agent_logins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                employee_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentLoginsIn"];
             };
         };
         responses: {

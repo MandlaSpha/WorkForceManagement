@@ -5,6 +5,8 @@ import { useQueues } from '@/entities/call-data'
 import { useSessionStore } from '@/entities/session'
 import { formatHours, useEmployees, type Employee } from '@/entities/scheduling'
 import { EmployeeForm } from '@/features/people/employee'
+import { ImportEmployeesPanel } from '@/features/people/import-employees'
+import { MapLoginsPanel } from '@/features/people/map-logins'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import AppButton from '@/shared/ui/AppButton.vue'
@@ -21,6 +23,7 @@ const queues = useQueues()
 
 // "new" shows the add form; an employee shows the change form for them; null shows neither.
 const editing = ref<Employee | 'new' | null>(null)
+const importing = ref(false)
 const CONTRACT: Record<string, string> = { permanent: 'Permanent', seasonal: 'Seasonal' }
 const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybrid: 'Hybrid' }
 </script>
@@ -29,10 +32,16 @@ const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybri
   <PageHeader eyebrow="People" :title="screen?.label ?? 'Employees'" :subtitle="screen?.subtitle">
     <template v-if="canChange" #actions>
       <AppButton v-if="editing === null" @click="editing = 'new'">Add employee</AppButton>
+      <AppButton variant="secondary" :aria-pressed="importing" @click="importing = !importing">
+        Import employees
+      </AppButton>
     </template>
   </PageHeader>
 
   <section class="space-y-6" aria-live="polite">
+    <ImportEmployeesPanel v-if="importing && canChange" />
+    <MapLoginsPanel v-if="canChange" :employees="employees.data.value ?? []" />
+
     <EmployeeForm
       v-if="editing !== null && canChange"
       :key="editing === 'new' ? 'new' : editing.id"
@@ -66,6 +75,7 @@ const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybri
             <th scope="col" class="px-3 py-2 font-medium">Works</th>
             <th scope="col" class="px-3 py-2 font-medium">Queues</th>
             <th scope="col" class="px-3 py-2 font-medium">Manager</th>
+            <th scope="col" class="px-3 py-2 font-medium">ACD logins</th>
             <th scope="col" class="px-4 py-2 text-right font-medium">
               <span class="sr-only">Actions</span>
             </th>
@@ -90,6 +100,7 @@ const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybri
               {{ e.skills.map((s) => `${s.queue} L${s.level}`).join(', ') || '—' }}
             </td>
             <td class="px-3 py-2">{{ e.manager ?? '—' }}</td>
+            <td class="px-3 py-2">{{ e.agentLogins.join(', ') || '—' }}</td>
             <td class="px-4 py-2 text-right">
               <button
                 v-if="canChange"

@@ -7,6 +7,7 @@ import {
   fetchPlan,
   fetchRoster,
   fetchShifts,
+  fetchUnmappedLogins,
 } from '../api/scheduling'
 
 /** Query keys. Any change to shifts, people or the roster invalidates `all`, so the roster, the
@@ -14,6 +15,7 @@ import {
 export const schedulingKeys = {
   all: ['scheduling'] as const,
   shifts: ['scheduling', 'shifts'] as const,
+  unmappedLogins: ['scheduling', 'unmapped-logins'] as const,
   employees: (queueId: number | null) => ['scheduling', 'employees', queueId] as const,
   roster: (queueId: number, week: string) => ['scheduling', 'roster', queueId, week] as const,
   overview: (week: string) => ['scheduling', 'overview', week] as const,
@@ -53,4 +55,8 @@ export function useOverview(week: MaybeRef<string>, enabled: MaybeRef<boolean> =
     queryFn: () => fetchOverview(toValue(week)),
     enabled: computed(() => toValue(enabled)),
   })
+}
+
+export function useUnmappedLogins() {
+  return useQuery({ queryKey: schedulingKeys.unmappedLogins, queryFn: fetchUnmappedLogins })
 }

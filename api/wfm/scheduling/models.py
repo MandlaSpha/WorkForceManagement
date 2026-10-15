@@ -108,6 +108,20 @@ class Employee(models.Model):
         return self.emp_no
 
 
+class AgentLogin(models.Model):
+    """An ACD login that is this person. Several logins can be one person (DAT-05); a login is
+    one person only."""
+
+    login = models.CharField(max_length=100, unique=True)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="agent_logins")
+
+    class Meta:
+        ordering = ["login"]
+
+    def __str__(self) -> str:
+        return f"{self.login} -> {self.employee_id}"
+
+
 class EmployeeSkill(models.Model):
     """The queues an employee can work, with a level 1 to 3 (EMP-01)."""
 

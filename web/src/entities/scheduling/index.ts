@@ -4,11 +4,15 @@ export {
   createEmployee,
   createShift,
   deleteShift,
+  fetchUnmappedLogins,
+  importEmployees,
   publishRoster,
   reopenRoster,
   rosterExportUrl,
+  setAgentLogins,
   updateEmployee,
 } from './api/scheduling'
+export { importReason } from './model/import'
 export { SHIFT_KIND_LABEL, SHIFT_KINDS, SHIFT_TONE } from './model/shift'
 export {
   cellDescription,
@@ -26,6 +30,7 @@ export {
   usePlan,
   useRoster,
   useShifts,
+  useUnmappedLogins,
 } from './model/queries'
 export type {
   AssignRequest,
@@ -34,6 +39,7 @@ export type {
   OverviewQueue,
   AssignResult,
   Employee,
+  EmployeeImportReport,
   EmployeeRequest,
   Plan,
   PlanCell,
@@ -42,4 +48,5 @@ export type {
   RosterWeek,
   Shift,
   ShiftRequest,
+  UnmappedLogin,
 } from './model/types'

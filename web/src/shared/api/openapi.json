@@ -86,6 +86,22 @@
         "title": "ActiveIn",
         "type": "object"
       },
+      "AgentLoginsIn": {
+        "properties": {
+          "logins": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Logins",
+            "type": "array"
+          }
+        },
+        "required": [
+          "logins"
+        ],
+        "title": "AgentLoginsIn",
+        "type": "object"
+      },
       "AssignIn": {
         "properties": {
           "day": {
@@ -869,6 +885,55 @@
         "title": "DemandOut",
         "type": "object"
       },
+      "EmployeeImportOut": {
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "dryRun": {
+            "title": "Dryrun",
+            "type": "boolean"
+          },
+          "ignoredColumns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ignoredcolumns",
+            "type": "array"
+          },
+          "loginsMapped": {
+            "title": "Loginsmapped",
+            "type": "integer"
+          },
+          "rejected": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Rejected",
+            "type": "object"
+          },
+          "unchanged": {
+            "title": "Unchanged",
+            "type": "integer"
+          },
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "dryRun",
+          "created",
+          "updated",
+          "unchanged",
+          "rejected",
+          "ignoredColumns",
+          "loginsMapped"
+        ],
+        "title": "EmployeeImportOut",
+        "type": "object"
+      },
       "EmployeeIn": {
         "properties": {
           "contractType": {
@@ -977,6 +1042,13 @@
       },
       "EmployeeOut": {
         "properties": {
+          "agentLogins": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Agentlogins",
+            "type": "array"
+          },
           "canManage": {
             "title": "Canmanage",
             "type": "boolean"
@@ -1081,7 +1153,8 @@
           "managerId",
           "manager",
           "canManage",
-          "hasLogin"
+          "hasLogin",
+          "agentLogins"
         ],
         "title": "EmployeeOut",
         "type": "object"
@@ -3729,6 +3802,24 @@
         "title": "TuningOut",
         "type": "object"
       },
+      "UnmappedLoginOut": {
+        "properties": {
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "login": {
+            "title": "Login",
+            "type": "string"
+          }
+        },
+        "required": [
+          "login",
+          "calls"
+        ],
+        "title": "UnmappedLoginOut",
+        "type": "object"
+      },
       "UserIn": {
         "properties": {
           "firstName": {
@@ -6076,6 +6167,37 @@
         ]
       }
     },
+    "/api/v1/scheduling/agent-logins/unmapped": {
+      "get": {
+        "operationId": "wfm_scheduling_api_unmapped_logins",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UnmappedLoginOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "ACD logins seen on calls that belong to nobody yet",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
     "/api/v1/scheduling/employees": {
       "get": {
         "operationId": "wfm_scheduling_api_list_employees",
@@ -6159,6 +6281,65 @@
         ]
       }
     },
+    "/api/v1/scheduling/employees/import": {
+      "post": {
+        "operationId": "wfm_scheduling_api_import_employees",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dry_run",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Dry Run",
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeImportOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Import the employee master from a CSV or Excel file (dry_run shows what would happen)",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
     "/api/v1/scheduling/employees/{employee_id}": {
       "put": {
         "operationId": "wfm_scheduling_api_update_employee",
@@ -6201,6 +6382,53 @@
           }
         ],
         "summary": "Change an employee",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/employees/{employee_id}/agent-logins": {
+      "put": {
+        "operationId": "wfm_scheduling_api_set_agent_logins",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employee_id",
+            "required": true,
+            "schema": {
+              "title": "Employee Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentLoginsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set the ACD logins that are this person",
         "tags": [
           "scheduling"
         ]

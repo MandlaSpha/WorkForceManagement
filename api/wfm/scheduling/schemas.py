@@ -65,6 +65,7 @@ class EmployeeOut(Schema):
     manager: str | None  # the manager's name
     canManage: bool  # noqa: N815 - has a login that can approve, so can be a manager
     hasLogin: bool  # noqa: N815 - a login is linked, so they can see their own schedule
+    agentLogins: list[str]  # noqa: N815 - the ACD logins that are this person
 
 
 class RosterCellOut(Schema):
@@ -93,6 +94,25 @@ class RosterOut(Schema):
     rows: list[RosterRowOut]
     onCounts: dict[str, int]  # noqa: N815 - date to people on a shift that day
     shifts: list[ShiftOut]
+
+
+class EmployeeImportOut(Schema):
+    dryRun: bool  # noqa: N815 - nothing was changed: this is what would happen
+    created: int
+    updated: int
+    unchanged: int
+    rejected: dict[str, int]  # reason -> rows; never the rows themselves
+    ignoredColumns: list[str]  # noqa: N815 - columns in the file that were not read or stored
+    loginsMapped: int  # noqa: N815 - ACD logins newly tied to a person
+
+
+class AgentLoginsIn(Schema):
+    logins: list[str]
+
+
+class UnmappedLoginOut(Schema):
+    login: str
+    calls: int
 
 
 class EmployeeLoginIn(Schema):

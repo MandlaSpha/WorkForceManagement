@@ -115,6 +115,12 @@ As `admin`, **Admin > Users**.
 - **Change a role**, **switch an account off or on**, **unlock** a locked account, give a **new temporary password**. You cannot change your own role or switch yourself off. A role that comes from the identity provider's groups is shown as fixed.
 - **Link a login to an employee**: the account then sees that employee's schedule, leave and swaps. One login, one employee. Everyone can change their own password from the top bar (*Password*).
 
+## Phase 3.5: Employee import and ACD logins
+
+As `planner` or `admin`, **Employees > Import employees**. Pick a CSV or Excel file (needed: *Employee No* and *Name*; the screen lists the optional columns), press **Check the file**: it tells you how many would be added, updated or are already up to date, names any rows that would be skipped and why ("2 with a contract that is not permanent or seasonal"), and lists columns it will ignore. Nothing has changed yet. Press **Import these** to do it. Run the same file again and everyone is "already up to date". A blank cell never erases anything. Hours left blank are shown as **Default**.
+
+Below the import, **ACD logins nobody owns yet** lists logins found on imported call data. Choose the person and press *Tie*; one person can have several logins.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, auto-scheduler,

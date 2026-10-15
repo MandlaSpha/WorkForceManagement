@@ -1,8 +1,10 @@
 import userEvent from '@testing-library/user-event'
 import { screen, waitFor, within } from '@testing-library/vue'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import type { EmployeeImportReport } from '@/entities/scheduling'
 import { backend } from '@/test/fake-backend'
+import { interceptEmployeeImport } from '@/test/employee-import'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
 import { employeeOf } from '@/test/scheduling-fixtures'
 
@@ -147,8 +149,8 @@ describe('who manages whom', () => {
     const alex = (await screen.findByText('Alex Agent')).closest('tr')!
     expect(within(alex).getByText('Lee Lead')).toBeVisible()
     const lee = screen.getByText('Lee Lead', { selector: 'th' }).closest('tr')!
-    // No queues and no manager: two dashes.
-    expect(within(lee).getAllByText('—')).toHaveLength(2)
+    // No queues, no manager and no ACD logins: three dashes.
+    expect(within(lee).getAllByText('—')).toHaveLength(3)
   })
 
   it('offers only people who can approve as managers, never the person themselves', async () => {
@@ -182,6 +184,182 @@ describe('who manages whom', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Save changes' }))
     await waitFor(() => expect(backend.writes[1]?.body).toMatchObject({ managerId: null }))
+  })
+})
+
+describe('importing employees', () => {
+  const report = (over: Partial<EmployeeImportReport> = {}): EmployeeImportReport => ({
+    dryRun: true,
+    created: 2,
+    updated: 1,
+    unchanged: 3,
+    rejected: {},
+    ignoredColumns: [],
+    loginsMapped: 3,
+    ...over,
+  })
+
+  beforeEach(() => interceptEmployeeImport())
+  afterEach(() => vi.restoreAllMocks())
+
+  async function chooseFile(user: ReturnType<typeof userEvent.setup>, name = 'people.csv') {
+    await user.click(await screen.findByRole('button', { name: 'Import employees' }))
+    const input = await screen.findByLabelText('Employees (.csv or .xlsx)')
+    await user.upload(input, new File(['Employee No,Name\n'], name, { type: 'text/csv' }))
+  }
+
+  it('checks the file first, saying what would happen, and changes nothing yet', async () => {
+    seedScheduling()
+    backend.employeeImport = report()
+    const user = userEvent.setup()
+    await openScheduling('/employees')
+    await chooseFile(user)
+    await user.click(screen.getByRole('button', { name: 'Check the file' }))
+
+    const result = await screen.findByTestId('emp-import-report')
+    expect(result).toHaveTextContent('If you import this file:')
+    expect(result).toHaveTextContent('2 added')
+    expect(result).toHaveTextContent('3 ACD logins tied to people')
+    // Failure caught: a check that quietly imports.
+    expect(backend.employeeImports).toHaveLength(1)
+    expect(backend.employeeImports[0]).toEqual({
+      dryRun: true,
+      multipart: true,
+      filePart: true,
+      csrf: 'test-csrf-token',
+    })
+  })
+
+  it('imports for real only after the check, with the same file, and says it is done', async () => {
+    seedScheduling()
+    backend.employeeImport = report()
+    const user = userEvent.setup()
+    await openScheduling('/employees')
+    await chooseFile(user)
+    await user.click(screen.getByRole('button', { name: 'Check the file' }))
+    await user.click(await screen.findByRole('button', { name: 'Import these' }))
+
+    await waitFor(() => expect(backend.employeeImports).toHaveLength(2))
+    expect(backend.employeeImports.map((i) => i.dryRun)).toEqual([true, false])
+    await waitFor(() =>
+      expect(screen.getByTestId('emp-import-report')).toHaveTextContent('Imported:'),
+    )
+    expect(screen.queryByRole('button', { name: 'Import these' })).toBeNull()
+  })
+
+  it('names the rows that are not kept in words, and the columns that were ignored', async () => {
+    seedScheduling()
+    backend.employeeImport = report({
+      rejected: { contract_invalid: 2, queue_unknown: 1 },
+      ignoredColumns: ['Favourite colour'],
+    })
+    const user = userEvent.setup()
+    await openScheduling('/employees')
+    await chooseFile(user)
+    await user.click(screen.getByRole('button', { name: 'Check the file' }))
+    const rejected = await screen.findByTestId('emp-import-rejected')
+    expect(rejected).toHaveTextContent('3 rows are not kept')
+    expect(rejected).toHaveTextContent('2 with a contract that is not permanent or seasonal')
+    expect(rejected).toHaveTextContent('1 with a queue that does not exist')
+    expect(screen.getByTestId('emp-import-ignored')).toHaveTextContent('Favourite colour')
+  })
+
+  it('offers no import when nothing would change', async () => {
+    seedScheduling()
+    backend.employeeImport = report({ created: 0, updated: 0, loginsMapped: 0, unchanged: 5 })
+    const user = userEvent.setup()
+    await openScheduling('/employees')
+    await chooseFile(user)
+    await user.click(screen.getByRole('button', { name: 'Check the file' }))
+    expect(await screen.findByRole('button', { name: 'Import these' })).toBeDisabled()
+  })
+
+  it('forgets the check when a different file is chosen, so an old preview cannot confirm a new file', async () => {
+    seedScheduling()
+    backend.employeeImport = report()
+    const user = userEvent.setup()
+    await openScheduling('/employees')
+    await chooseFile(user)
+    await user.click(screen.getByRole('button', { name: 'Check the file' }))
+    await screen.findByTestId('emp-import-report')
+    await user.upload(
+      screen.getByLabelText('Employees (.csv or .xlsx)'),
+      new File(['x'], 'other.csv', { type: 'text/csv' }),
+    )
+    expect(screen.queryByTestId('emp-import-report')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Import these' })).toBeNull()
+  })
+
+  it('shows why a file was refused', async () => {
+    seedScheduling()
+    backend.nextProblem = {
+      status: 422,
+      code: 'employees.unreadable',
+      title: 'Unusable file',
+      detail: 'The first row must name the columns, and include an employee number and a name.',
+    }
+    const user = userEvent.setup()
+    await openScheduling('/employees')
+    await chooseFile(user)
+    await user.click(screen.getByRole('button', { name: 'Check the file' }))
+    expect(await screen.findByTestId('emp-import-error')).toHaveTextContent(/employee number/)
+  })
+
+  it('is not offered to a lead', async () => {
+    seedScheduling()
+    await openScheduling('/employees', 'lead')
+    await screen.findByText('Alex Agent')
+    expect(screen.queryByRole('button', { name: 'Import employees' })).toBeNull()
+  })
+})
+
+describe('mapping ACD logins to people', () => {
+  it('lists logins nobody owns, busiest first as given, with a call count', async () => {
+    seedScheduling()
+    backend.unmapped = [
+      { login: 'jsmith', calls: 12 },
+      { login: 'tmp', calls: 1 },
+    ]
+    await openScheduling('/employees')
+    expect(await screen.findByTestId('unmapped-jsmith')).toHaveTextContent('12 calls')
+    expect(screen.getByTestId('unmapped-tmp')).toHaveTextContent('1 call')
+  })
+
+  it('adds the login to the ones the person already has', async () => {
+    seedScheduling()
+    backend.employees = [employeeOf({ id: 10, name: 'Alex Agent', agentLogins: ['alex.a'] })]
+    backend.unmapped = [{ login: 'alex2', calls: 4 }]
+    const user = userEvent.setup()
+    await openScheduling('/employees')
+    const row = await screen.findByTestId('unmapped-alex2')
+    await user.selectOptions(within(row).getByLabelText('Who is alex2'), '10')
+    await user.click(within(row).getByRole('button', { name: /Tie alex2/ }))
+
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    // Failure caught: replacing the person's other logins and orphaning their calls.
+    expect(backend.writes[0]).toEqual({
+      method: 'PUT',
+      path: '/api/v1/scheduling/employees/10/agent-logins',
+      body: { logins: ['alex.a', 'alex2'] },
+      csrf: 'test-csrf-token',
+    })
+    await waitFor(() => expect(screen.queryByTestId('unmapped-alex2')).toBeNull())
+  })
+
+  it('shows nothing at all when every login is owned, and nothing to a lead', async () => {
+    seedScheduling()
+    backend.unmapped = []
+    await openScheduling('/employees')
+    await screen.findByText('Alex Agent')
+    expect(screen.queryByRole('heading', { name: 'ACD logins nobody owns yet' })).toBeNull()
+  })
+
+  it('shows each persons logins in the list', async () => {
+    seedScheduling()
+    backend.employees = [employeeOf({ agentLogins: ['a1', 'a2'] })]
+    await openScheduling('/employees')
+    const row = (await screen.findByText('Alex Agent')).closest('tr')!
+    expect(within(row).getByText('a1, a2')).toBeVisible()
   })
 })
 

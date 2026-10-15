@@ -5,12 +5,14 @@ import type {
   AssignRequest,
   AssignResult,
   Employee,
+  EmployeeImportReport,
   EmployeeRequest,
   Plan,
   Roster,
   RosterWeek,
   Shift,
   ShiftRequest,
+  UnmappedLogin,
 } from '../model/types'
 
 export async function fetchShifts(): Promise<Shift[]> {
@@ -91,5 +93,35 @@ export function rosterExportUrl(queueId: number, weekStart: string): string {
 export async function fetchOverview(weekStart: string): Promise<Overview> {
   return unwrap(
     await api.GET('/api/v1/scheduling/overview', { params: { query: { week_start: weekStart } } }),
+  )
+}
+
+/** Read an employee file. With `dryRun` nothing is changed: the report says what would happen. */
+export async function importEmployees(file: File, dryRun: boolean): Promise<EmployeeImportReport> {
+  return unwrap(
+    await api.POST('/api/v1/scheduling/employees/import', {
+      params: { query: { dry_run: dryRun } },
+      // The generated type calls a file a string; the serializer sends the real File.
+      body: { file: file as unknown as string },
+      bodySerializer: (body) => {
+        const form = new FormData()
+        form.append('file', body.file as unknown as File)
+        return form
+      },
+    }),
+  )
+}
+
+export async function fetchUnmappedLogins(): Promise<UnmappedLogin[]> {
+  return unwrap(await api.GET('/api/v1/scheduling/agent-logins/unmapped'))
+}
+
+/** Replace the ACD logins that are this person. */
+export async function setAgentLogins(employeeId: number, logins: string[]): Promise<Employee> {
+  return unwrap(
+    await api.PUT('/api/v1/scheduling/employees/{employee_id}/agent-logins', {
+      params: { path: { employee_id: employeeId } },
+      body: { logins },
+    }),
   )
 }

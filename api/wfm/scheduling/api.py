@@ -3,14 +3,15 @@ from __future__ import annotations
 from datetime import date
 
 from django.http import HttpRequest, HttpResponse
-from ninja import Router, Status
+from ninja import File, Router, Status
+from ninja.files import UploadedFile
 from wfm_engine.roster import is_overnight, shift_kind, shift_minutes
 
 from wfm.accounts.models import Role
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
-from . import roster_services, selectors, services
+from . import import_services, roster_services, selectors, services
 from .models import Employee, RosterWeek, ShiftTemplate
 from .policy import (
     EMPLOYEE_WRITE_ROLES,
@@ -20,9 +21,11 @@ from .policy import (
     SHIFT_WRITE_ROLES,
 )
 from .schemas import (
+    AgentLoginsIn,
     AssignIn,
     AssignOut,
     AttentionOut,
+    EmployeeImportOut,
     EmployeeIn,
     EmployeeLoginIn,
     EmployeeOut,
@@ -40,6 +43,7 @@ from .schemas import (
     ShiftIn,
     ShiftOut,
     SkillOut,
+    UnmappedLoginOut,
     WeekIn,
     WeekOut,
     WorstOut,
@@ -186,6 +190,33 @@ def create_employee(request: HttpRequest, body: EmployeeIn) -> Status[EmployeeOu
     return Status(201, _employee_out(employee))
 
 
+# Declared before the routes that take an employee id: otherwise 'import' would be read as one.
+@router.post(
+    "/employees/import",
+    auth=EMPLOYEE_WRITE,
+    response=EmployeeImportOut,
+    summary="Import the employee master from a CSV or Excel file (dry_run shows what would happen)",
+)
+def import_employees(
+    request: HttpRequest, file: File[UploadedFile], dry_run: bool = True
+) -> EmployeeImportOut:
+    report = import_services.import_employees(
+        user=current_user(request),
+        content=file.read(),
+        filename=file.name or "",
+        dry_run=dry_run,
+    )
+    return EmployeeImportOut(
+        dryRun=report.dry_run,
+        created=report.created,
+        updated=report.updated,
+        unchanged=report.unchanged,
+        rejected=dict(report.rejected),
+        ignoredColumns=report.ignored_columns,
+        loginsMapped=report.logins_mapped,
+    )
+
+
 @router.put(
     "/employees/{employee_id}",
     auth=EMPLOYEE_WRITE,
@@ -207,6 +238,32 @@ def update_employee(request: HttpRequest, employee_id: int, body: EmployeeIn) ->
         manager_id=body.managerId if "managerId" in body.model_fields_set else services.KEEP,
     )
     return _employee_out(employee)
+
+
+@router.get(
+    "/agent-logins/unmapped",
+    auth=EMPLOYEE_WRITE,
+    response=list[UnmappedLoginOut],
+    summary="ACD logins seen on calls that belong to nobody yet",
+)
+def unmapped_logins(request: HttpRequest) -> list[UnmappedLoginOut]:
+    return [
+        UnmappedLoginOut(login=u.login, calls=u.calls) for u in import_services.unmapped_logins()
+    ]
+
+
+@router.put(
+    "/employees/{employee_id}/agent-logins",
+    auth=EMPLOYEE_WRITE,
+    response=EmployeeOut,
+    summary="Set the ACD logins that are this person",
+)
+def set_agent_logins(request: HttpRequest, employee_id: int, body: AgentLoginsIn) -> EmployeeOut:
+    return _employee_out(
+        import_services.set_agent_logins(
+            user=current_user(request), employee_id=employee_id, logins=body.logins
+        )
+    )
 
 
 @router.put(
@@ -403,6 +460,7 @@ def _employee_out(employee: Employee) -> EmployeeOut:
         manager=employee.manager.name if employee.manager else None,
         canManage=employee.user is not None and employee.user.role in MANAGER_ROLES,
         hasLogin=employee.user_id is not None,
+        agentLogins=[a.login for a in employee.agent_logins.all()],
     )
 
 

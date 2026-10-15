@@ -3,6 +3,8 @@ import type { components } from '@/shared/api'
 export type Shift = components['schemas']['ShiftOut']
 export type ShiftRequest = components['schemas']['ShiftIn']
 export type Employee = components['schemas']['EmployeeOut']
+export type EmployeeImportReport = components['schemas']['EmployeeImportOut']
+export type UnmappedLogin = components['schemas']['UnmappedLoginOut']
 export type EmployeeRequest = components['schemas']['EmployeeIn']
 export type Roster = components['schemas']['RosterOut']
 export type RosterRow = components['schemas']['RosterRowOut']

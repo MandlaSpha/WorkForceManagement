@@ -13,6 +13,7 @@ import type {
 import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
 import type { AdminUser } from '@/entities/user-admin'
+import type { EmployeeImportReport, UnmappedLogin } from '@/entities/scheduling'
 import type { MySchedule } from '@/entities/my-schedule'
 import type { BoardEntry, Swap, SwapShift } from '@/entities/swap'
 import type { Demand, WorkImport } from '@/entities/service-desk'
@@ -121,6 +122,15 @@ export const backend = {
   impact: null as Impact | null,
   requestQueries: [] as string[],
   decision: { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 },
+  /** Employee import: what a file check or an import answers, and the logins nobody owns. */
+  employeeImport: null as EmployeeImportReport | null,
+  employeeImports: [] as Array<{
+    dryRun: boolean
+    multipart: boolean
+    filePart: boolean
+    csrf: string | null
+  }>,
+  unmapped: [] as UnmappedLogin[],
   /** User administration: every account, as the admin sees them. */
   users: [] as AdminUser[],
   /** Notifications: the signed-in person's inbox. */
@@ -198,6 +208,9 @@ export const backend = {
     this.decision = { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 }
     this.inbox = { unread: 0, items: [] }
     this.users = []
+    this.employeeImport = null
+    this.employeeImports = []
+    this.unmapped = []
     this.availability = []
     this.mySchedule = null
     this.noScheduleRecord = false
@@ -539,6 +552,20 @@ export const handlers = [
         : t,
     )
     return HttpResponse.json(backend.leaveTypes.find((t) => t.id === Number(info.params.id)))
+  }),
+
+  http.get('*/api/v1/scheduling/agent-logins/unmapped', () => HttpResponse.json(backend.unmapped)),
+
+  http.put('*/api/v1/scheduling/employees/:id/agent-logins', async (info) => {
+    const sent = (await info.request.clone().json()) as { logins: string[] }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.employees = backend.employees.map((e) =>
+      e.id === id ? { ...e, agentLogins: sent.logins } : e,
+    )
+    backend.unmapped = backend.unmapped.filter((u) => !sent.logins.includes(u.login))
+    return HttpResponse.json(backend.employees.find((e) => e.id === id))
   }),
 
   http.get('*/api/v1/users', () => HttpResponse.json(backend.users)),
