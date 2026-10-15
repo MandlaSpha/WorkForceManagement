@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "wfm.forecasting",
     "wfm.scheduling",
     "wfm.capacity",
+    "wfm.contracts",
     "wfm.servicedesk",
     "wfm.people",
     "wfm.notifications",

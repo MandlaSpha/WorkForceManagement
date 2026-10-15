@@ -726,6 +726,186 @@
         "title": "CapacityWeekOut",
         "type": "object"
       },
+      "ContractChangeIn": {
+        "properties": {
+          "active": {
+            "default": true,
+            "title": "Active",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "queueIds": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Queueids",
+            "type": "array"
+          },
+          "slTargetPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Sltargetpct"
+          },
+          "slThresholdS": {
+            "title": "Slthresholds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "slTargetPct",
+          "slThresholdS"
+        ],
+        "title": "ContractChangeIn",
+        "type": "object"
+      },
+      "ContractCreateIn": {
+        "properties": {
+          "customerId": {
+            "title": "Customerid",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "queueIds": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Queueids",
+            "type": "array"
+          },
+          "slTargetPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Sltargetpct"
+          },
+          "slThresholdS": {
+            "title": "Slthresholds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "slTargetPct",
+          "slThresholdS",
+          "customerId"
+        ],
+        "title": "ContractCreateIn",
+        "type": "object"
+      },
+      "ContractOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "atRisk": {
+            "title": "Atrisk",
+            "type": "boolean"
+          },
+          "customer": {
+            "title": "Customer",
+            "type": "string"
+          },
+          "customerId": {
+            "title": "Customerid",
+            "type": "integer"
+          },
+          "gap": {
+            "title": "Gap",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "intervalsKnown": {
+            "title": "Intervalsknown",
+            "type": "integer"
+          },
+          "measuredSlPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measuredslpct"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "offered": {
+            "title": "Offered",
+            "type": "integer"
+          },
+          "queues": {
+            "items": {
+              "$ref": "#/components/schemas/QueueRefOut"
+            },
+            "title": "Queues",
+            "type": "array"
+          },
+          "risks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Risks",
+            "type": "array"
+          },
+          "slTargetPct": {
+            "title": "Sltargetpct",
+            "type": "number"
+          },
+          "slThresholdS": {
+            "title": "Slthresholds",
+            "type": "integer"
+          },
+          "underIntervals": {
+            "title": "Underintervals",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "customerId",
+          "customer",
+          "name",
+          "slTargetPct",
+          "slThresholdS",
+          "active",
+          "queues",
+          "offered",
+          "measuredSlPct",
+          "intervalsKnown",
+          "underIntervals",
+          "gap",
+          "atRisk",
+          "risks"
+        ],
+        "title": "ContractOut",
+        "type": "object"
+      },
       "Coverage": {
         "properties": {
           "intervalsTotal": {
@@ -742,6 +922,37 @@
           "intervalsTotal"
         ],
         "title": "Coverage",
+        "type": "object"
+      },
+      "CustomerIn": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CustomerIn",
+        "type": "object"
+      },
+      "CustomerOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CustomerOut",
         "type": "object"
       },
       "DayAccuracyOut": {
@@ -2929,6 +3140,24 @@
         "title": "QueueOut",
         "type": "object"
       },
+      "QueueRefOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "QueueRefOut",
+        "type": "object"
+      },
       "QueueSettingsIn": {
         "properties": {
           "occupancyCeilingPct": {
@@ -4381,6 +4610,203 @@
         "summary": "Set the permanent and seasonal pools",
         "tags": [
           "capacity"
+        ]
+      }
+    },
+    "/api/v1/contracts": {
+      "get": {
+        "operationId": "wfm_contracts_api_list_contracts",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Week Start"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ContractOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Contracts with their measured service level and the week's coverage",
+        "tags": [
+          "contracts"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_contracts_api_create_contract",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractCreateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Add a contract",
+        "tags": [
+          "contracts"
+        ]
+      }
+    },
+    "/api/v1/contracts/customers": {
+      "get": {
+        "operationId": "wfm_contracts_api_list_customers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CustomerOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Customers",
+        "tags": [
+          "contracts"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_contracts_api_create_customer",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Add a customer",
+        "tags": [
+          "contracts"
+        ]
+      }
+    },
+    "/api/v1/contracts/{contract_id}": {
+      "put": {
+        "operationId": "wfm_contracts_api_update_contract",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contract_id",
+            "required": true,
+            "schema": {
+              "title": "Contract Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractChangeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Change a contract",
+        "tags": [
+          "contracts"
         ]
       }
     },

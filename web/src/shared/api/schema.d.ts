@@ -174,6 +174,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contracts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Contracts with their measured service level and the week's coverage */
+        get: operations["wfm_contracts_api_list_contracts"];
+        put?: never;
+        /** Add a contract */
+        post: operations["wfm_contracts_api_create_contract"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contracts/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Customers */
+        get: operations["wfm_contracts_api_list_customers"];
+        put?: never;
+        /** Add a customer */
+        post: operations["wfm_contracts_api_create_customer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/contracts/{contract_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Change a contract */
+        put: operations["wfm_contracts_api_update_contract"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/forecasting/accuracy": {
         parameters: {
             query?: never;
@@ -1544,12 +1597,86 @@ export interface components {
              */
             weekStart: string;
         };
+        /** ContractChangeIn */
+        ContractChangeIn: {
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Name */
+            name: string;
+            /** Queueids */
+            queueIds?: number[];
+            /** Sltargetpct */
+            slTargetPct: number | string;
+            /** Slthresholds */
+            slThresholdS: number;
+        };
+        /** ContractCreateIn */
+        ContractCreateIn: {
+            /** Customerid */
+            customerId: number;
+            /** Name */
+            name: string;
+            /** Queueids */
+            queueIds?: number[];
+            /** Sltargetpct */
+            slTargetPct: number | string;
+            /** Slthresholds */
+            slThresholdS: number;
+        };
+        /** ContractOut */
+        ContractOut: {
+            /** Active */
+            active: boolean;
+            /** Atrisk */
+            atRisk: boolean;
+            /** Customer */
+            customer: string;
+            /** Customerid */
+            customerId: number;
+            /** Gap */
+            gap: number;
+            /** Id */
+            id: number;
+            /** Intervalsknown */
+            intervalsKnown: number;
+            /** Measuredslpct */
+            measuredSlPct: number | null;
+            /** Name */
+            name: string;
+            /** Offered */
+            offered: number;
+            /** Queues */
+            queues: components["schemas"]["QueueRefOut"][];
+            /** Risks */
+            risks: string[];
+            /** Sltargetpct */
+            slTargetPct: number;
+            /** Slthresholds */
+            slThresholdS: number;
+            /** Underintervals */
+            underIntervals: number;
+        };
         /** Coverage */
         Coverage: {
             /** Intervalstotal */
             intervalsTotal: number;
             /** Intervalsused */
             intervalsUsed: number;
+        };
+        /** CustomerIn */
+        CustomerIn: {
+            /** Name */
+            name: string;
+        };
+        /** CustomerOut */
+        CustomerOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
         };
         /** DayAccuracyOut */
         DayAccuracyOut: {
@@ -2360,6 +2487,13 @@ export interface components {
             /** Slthresholds */
             slThresholdS: number;
         };
+        /** QueueRefOut */
+        QueueRefOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+        };
         /** QueueSettingsIn */
         QueueSettingsIn: {
             /** Occupancyceilingpct */
@@ -3022,6 +3156,122 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LimitsOut"];
+                };
+            };
+        };
+    };
+    wfm_contracts_api_list_contracts: {
+        parameters: {
+            query?: {
+                week_start?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractOut"][];
+                };
+            };
+        };
+    };
+    wfm_contracts_api_create_contract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractOut"];
+                };
+            };
+        };
+    };
+    wfm_contracts_api_list_customers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerOut"][];
+                };
+            };
+        };
+    };
+    wfm_contracts_api_create_customer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerOut"];
+                };
+            };
+        };
+    };
+    wfm_contracts_api_update_contract: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contract_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractChangeIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractOut"];
                 };
             };
         };

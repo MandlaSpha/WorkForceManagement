@@ -121,6 +121,10 @@ As `planner` or `admin`, **Employees > Import employees**. Pick a CSV or Excel f
 
 Below the import, **ACD logins nobody owns yet** lists logins found on imported call data. Choose the person and press *Tie*; one person can have several logins.
 
+## Phase 3.5: Customers and contracts
+
+**Operate > Contracts.** As `admin`: add a customer, then a contract that holds queues to a promise ("80% in 20 s"). Saving it writes that target onto the queues, so the staffing numbers follow the contract. Everyone who reads it (planner, lead, executive, customer operations) sees, per contract, the **promise**, the service level **measured** over the last 28 days of calls, how **this week** looks against the forecast, and whether the contract is **at risk** with the reasons in words. A missing figure (no calls, no forecast) is shown as missing, never as zero. In the demo data *Claims line* (the Billing queue, short of people all week) is at risk; *Member support* is not.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, auto-scheduler,

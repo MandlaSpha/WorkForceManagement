@@ -111,6 +111,16 @@ export const NAV_ITEMS = [
     subtitle: 'Concrete fixes for the day’s coverage gaps. Apply one and watch coverage close.',
   },
   {
+    key: 'contracts',
+    path: '/contracts',
+    label: 'Contracts',
+    group: 'Operate',
+    icon: 'clipboard-check',
+    feature: 'capacity',
+    phase: 3,
+    subtitle: 'The service level each customer is promised, and which contracts are at risk.',
+  },
+  {
     key: 'capacity',
     path: '/capacity',
     label: 'Capacity',

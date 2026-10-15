@@ -164,3 +164,22 @@ def test_declared_availability_is_in_the_data_and_the_roster_respected_it(seeded
             employee=window.employee, day__week_day__isnull=False
         )
         assert not [a for a in worked if a.day.weekday() == window.weekday]
+
+
+def test_contracts_hold_the_queues_to_their_promises_and_billing_is_the_one_at_risk(
+    seeded: None,
+) -> None:
+    from django.contrib.auth import get_user_model
+
+    from wfm.contracts import selectors as contract_selectors
+
+    planner = get_user_model().objects.get(username="planner")
+    week = timezone.localdate() - timedelta(days=timezone.localdate().weekday())
+    rows = {r.contract.name: r for r in contract_selectors.contract_rows(planner, week)}
+    assert set(rows) == {"Member support", "Claims line"}
+    # The promise is written onto the queues the contract holds.
+    billing = Queue.objects.get(name="Demo Billing")
+    assert (float(billing.sl_target_pct), billing.sl_threshold_s) == (90.0, 30)
+    # Billing is short of people all week by design, so its contract is at risk.
+    assert rows["Claims line"].at_risk
+    assert rows["Claims line"].gap > 0

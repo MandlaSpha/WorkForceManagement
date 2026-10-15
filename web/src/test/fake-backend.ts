@@ -12,6 +12,7 @@ import type {
 } from '@/entities/leave'
 import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
+import type { ContractRow, Customer } from '@/entities/contract'
 import type { AdminUser } from '@/entities/user-admin'
 import type { EmployeeImportReport, UnmappedLogin } from '@/entities/scheduling'
 import type { MySchedule } from '@/entities/my-schedule'
@@ -131,6 +132,9 @@ export const backend = {
     csrf: string | null
   }>,
   unmapped: [] as UnmappedLogin[],
+  /** Customers and contracts, with how each is doing. */
+  contracts: [] as ContractRow[],
+  customers: [] as Customer[],
   /** User administration: every account, as the admin sees them. */
   users: [] as AdminUser[],
   /** Notifications: the signed-in person's inbox. */
@@ -208,6 +212,8 @@ export const backend = {
     this.decision = { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 }
     this.inbox = { unread: 0, items: [] }
     this.users = []
+    this.contracts = []
+    this.customers = []
     this.employeeImport = null
     this.employeeImports = []
     this.unmapped = []
@@ -566,6 +572,63 @@ export const handlers = [
     )
     backend.unmapped = backend.unmapped.filter((u) => !sent.logins.includes(u.login))
     return HttpResponse.json(backend.employees.find((e) => e.id === id))
+  }),
+
+  http.get('*/api/v1/contracts/customers', () => HttpResponse.json(backend.customers)),
+
+  http.post('*/api/v1/contracts/customers', async (info) => {
+    const sent = (await info.request.clone().json()) as { name: string }
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created: Customer = { id: 50 + backend.customers.length, name: sent.name }
+    backend.customers = [...backend.customers, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.get('*/api/v1/contracts', () => HttpResponse.json(backend.contracts)),
+
+  http.post('*/api/v1/contracts', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, unknown>
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created: ContractRow = {
+      id: 100 + backend.contracts.length,
+      customerId: Number(sent.customerId),
+      customer: backend.customers.find((c) => c.id === Number(sent.customerId))?.name ?? '',
+      name: String(sent.name),
+      slTargetPct: Number(sent.slTargetPct),
+      slThresholdS: Number(sent.slThresholdS),
+      active: true,
+      queues: [],
+      offered: 0,
+      measuredSlPct: null,
+      intervalsKnown: 0,
+      underIntervals: 0,
+      gap: 0,
+      atRisk: false,
+      risks: [],
+    }
+    backend.contracts = [...backend.contracts, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.put('*/api/v1/contracts/:id', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, unknown>
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.contracts = backend.contracts.map((c) =>
+      c.id === id
+        ? {
+            ...c,
+            name: String(sent.name),
+            slTargetPct: Number(sent.slTargetPct),
+            slThresholdS: Number(sent.slThresholdS),
+            active: Boolean(sent.active),
+          }
+        : c,
+    )
+    return HttpResponse.json(backend.contracts.find((c) => c.id === id))
   }),
 
   http.get('*/api/v1/users', () => HttpResponse.json(backend.users)),

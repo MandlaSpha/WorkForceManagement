@@ -36,6 +36,7 @@ from django.utils import timezone
 from wfm.accounts.models import Role, User
 from wfm.audit import services as audit
 from wfm.audit.models import ActorType
+from wfm.contracts import services as contract_services
 from wfm.core.errors import ApiError
 from wfm.devtools.demo_history import SHAPES, build_history
 from wfm.forecasting import event_services
@@ -161,6 +162,8 @@ class Command(BaseCommand):
         self.stdout.write("Rosters built.")
         self._leave(cast, staff["Demo Support"], today)
         self.stdout.write("Leave in every state.")
+        self._contracts(cast, queues)
+        self.stdout.write("Customers and contracts.")
         self._swaps(cast, queues["Demo Support"], today)
         self.stdout.write("Shift swaps in every state.")
         self._service_desk(today, zone)
@@ -469,6 +472,30 @@ class Command(BaseCommand):
             back -= timedelta(days=1)
         taken = ask(people[5], "sick", back, back + timedelta(days=1))
         leave_services.decide(user=cast.lead, request_id=taken.pk, approve=True)
+
+    # --- customers and contracts -----------------------------------------------------------------
+
+    def _contracts(self, cast: Cast, queues: dict[str, Queue]) -> None:
+        """Two customers: one whose queue is held to a promise it meets, one whose queue is short of
+        people all week (Billing), so the contracts screen shows both an OK and an at-risk row."""
+        acme = contract_services.create_customer(user=cast.admin, name="Demo Health Group")
+        beta = contract_services.create_customer(user=cast.admin, name="Demo Insurance Ltd")
+        contract_services.create_contract(
+            user=cast.admin,
+            customer_id=acme.pk,
+            name="Member support",
+            sl_target_pct=Decimal("80"),
+            sl_threshold_s=20,
+            queue_ids=[queues["Demo Support"].pk, queues["Demo Night Desk"].pk],
+        )
+        contract_services.create_contract(
+            user=cast.admin,
+            customer_id=beta.pk,
+            name="Claims line",
+            sl_target_pct=Decimal("90"),
+            sl_threshold_s=30,
+            queue_ids=[queues["Demo Billing"].pk],
+        )
 
     # --- shift swaps ---------------------------------------------------------------------------
 

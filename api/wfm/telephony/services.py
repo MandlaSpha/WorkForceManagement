@@ -324,5 +324,44 @@ def update_queue_settings(
     return queue
 
 
+def set_queue_service_level(
+    *, user: User, queue_id: int, sl_target_pct: Decimal, sl_threshold_s: int
+) -> Queue:
+    """Hold a queue to a service-level target and threshold (a contract's promise). Only those two
+    figures change: occupancy and shrinkage, and whether the settings are confirmed, are left as
+    they are, because the contract says nothing about them."""
+    if not Decimal(0) < sl_target_pct <= Decimal(100):
+        raise _bad(
+            "queue.sl_target_invalid", "The service-level target is above 0 and at most 100%."
+        )
+    if not 1 <= sl_threshold_s <= 600:
+        raise _bad("queue.sl_threshold_invalid", "The service-level threshold is 1 to 600 seconds.")
+    with transaction.atomic():
+        queue: Queue | None = (
+            Queue.objects.select_for_update(no_key=True).for_user(user).filter(pk=queue_id).first()
+        )
+        if queue is None:
+            raise not_found("No such queue.")
+        wanted = {"sl_target_pct": sl_target_pct, "sl_threshold_s": sl_threshold_s}
+        changes = [
+            audit.FieldChange("queue", str(queue.pk), name, str(getattr(queue, name)), str(value))
+            for name, value in wanted.items()
+            if Decimal(str(getattr(queue, name))) != Decimal(str(value))
+        ]
+        for name, value in wanted.items():
+            setattr(queue, name, value)
+        queue.save(update_fields=list(wanted))
+        if changes:
+            audit.record(  # last write of the transaction
+                actor=user,
+                action=Action.QUEUE_SETTINGS_CHANGED,
+                entity_type="queue",
+                entity_id=str(queue.pk),
+                reason="contract",
+                changes=changes,
+            )
+    return queue
+
+
 def _bad(code: str, detail: str) -> ApiError:
     return ApiError(422, code, "Invalid request", detail)
