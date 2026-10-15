@@ -462,3 +462,28 @@ class TestRoles:
 
     def test_an_unknown_swap_is_not_found(self) -> None:
         assert act(login(Role.LEAD), 999999, "approve").status_code == 404
+
+
+class TestTheShiftBeingGivenAwayIsNotHeldAgainstYou:
+    def test_two_people_can_swap_shifts_on_the_same_day(self, rota: dict[str, Any]) -> None:
+        # B works L1 on Monday as well; A (D1) and B (L1) trade within the day.
+        assign(login(), queue(), rota["b"], MON, rota["shifts"]["L1"])
+        give = ShiftAssignment.objects.get(employee=rota["a"], day=MON)
+        take = ShiftAssignment.objects.get(employee=rota["b"], day=MON)
+        swap_id = offer(login(Role.AGENT), give, take).json()["id"]
+        act(colleague_client(), swap_id, "accept")
+        # Failure caught: counting the person's own shift as 'already working that day' refuses
+        # every same-day swap.
+        assert act(login(Role.LEAD), swap_id, "approve").status_code == 200
+        assert (code(rota["a"], MON), code(rota["b"], MON)) == ("L1", "D1")
+
+    def test_rest_is_measured_without_the_shift_you_hand_over(self, rota: dict[str, Any]) -> None:
+        # P works L1 (13:00-22:00) on Tuesday, Q works E1 (07:00 start) on Wednesday. P takes Q's
+        # Wednesday E1 and hands over Tuesday's L1: with the L1 gone there is no short rest, but
+        # counting it would show 9 hours between 22:00 and 07:00 and wrongly refuse.
+        p, q = person("E020"), person("E021")
+        planner = login()
+        assign(planner, queue(), p, TUE, rota["shifts"]["L1"])
+        assign(planner, queue(), q, WED, rota["shifts"]["E1"])
+        response = offer(planner, row(p, TUE), row(q, WED), employeeId=p.pk)  # type: ignore[arg-type]
+        assert response.status_code == 201, response.content

@@ -77,3 +77,12 @@ describe('my schedule', () => {
     expect(await screen.findByTestId('no-record')).toHaveTextContent(/not on the employee list/)
   })
 })
+
+describe('the unpublished notice', () => {
+  it('is absent when every shift is published', async () => {
+    // Failure caught: a standing "0 shifts are not published" warning teaches people to ignore it.
+    await open({ unpublishedShifts: 0 })
+    await screen.findByTestId('day-2099-06-01')
+    expect(screen.queryByTestId('unpublished')).toBeNull()
+  })
+})

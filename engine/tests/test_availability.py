@@ -55,3 +55,9 @@ def test_an_overnight_shift_is_checked_against_the_next_days_windows_too() -> No
     # Monday 22:00 to Tuesday 06:00 covers Tuesday 00:00-02:00.
     assert touches(tuesday_early, MON, time(22, 0), time(6, 0))
     assert not touches(tuesday_early, MON, time(14, 0), time(22, 0))
+
+
+def test_a_shift_that_starts_exactly_when_a_window_starts_is_blocked() -> None:
+    # Failure caught: treating the first half-hour of a window as free lets a shift start inside it.
+    off = [window_of(0, time(12, 0), time(13, 0))]
+    assert touches(off, MON, time(12, 0), time(14, 0))

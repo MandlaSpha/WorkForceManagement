@@ -338,3 +338,16 @@ class TestMySchedule:
             422,
             "schedule.no_employee_record",
         )
+
+
+class TestOnlyTheOwnerOrAPlannerRemoves:
+    def test_a_lead_can_read_a_team_members_windows_but_not_remove_them(
+        self, staff: dict[str, Any]
+    ) -> None:
+        window_id = declare(login(Role.AGENT), 0, "12:00", "13:00").json()["id"]
+        lead = login(Role.LEAD)  # leads the team A is in (the fixture)
+        assert len(lead.get(AV, {"employee_id": staff["a"].pk}).json()) == 1
+        # Failure caught: being able to see a window is not being able to delete someone's
+        # declared hours.
+        assert lead.delete(f"{AV}/{window_id}").status_code == 404
+        assert Availability.objects.count() == 1
