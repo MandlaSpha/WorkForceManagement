@@ -149,3 +149,16 @@ def test_swaps_are_in_the_states_a_demo_needs_and_the_approved_one_moved_the_ros
     assert ShiftAssignment.objects.filter(
         employee=done.from_employee, day=done.to_day, template=done.to_template
     ).exists()
+
+
+def test_declared_availability_is_in_the_data_and_the_roster_respected_it(seeded: None) -> None:
+    from wfm.people.models import Availability
+
+    # Part-timers cannot work Thursday or Friday, the demo agent never works Sundays.
+    assert Availability.objects.filter(kind="unavailable").exists()
+    assert Availability.objects.filter(kind="preferred", employee__emp_no="DEMO-AGENT").exists()
+    for window in Availability.objects.filter(kind="unavailable"):
+        worked = ShiftAssignment.objects.filter(
+            employee=window.employee, day__week_day__isnull=False
+        )
+        assert not [a for a in worked if a.day.weekday() == window.weekday]

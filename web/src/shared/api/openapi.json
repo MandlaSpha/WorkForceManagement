@@ -194,6 +194,92 @@
         "title": "AttentionOut",
         "type": "object"
       },
+      "AvailabilityIn": {
+        "properties": {
+          "employeeId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employeeid"
+          },
+          "endTime": {
+            "format": "time",
+            "title": "Endtime",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "startTime": {
+            "format": "time",
+            "title": "Starttime",
+            "type": "string"
+          },
+          "weekday": {
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "weekday",
+          "startTime",
+          "endTime",
+          "kind"
+        ],
+        "title": "AvailabilityIn",
+        "type": "object"
+      },
+      "AvailabilityOut": {
+        "properties": {
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "endTime": {
+            "format": "time",
+            "title": "Endtime",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "startTime": {
+            "format": "time",
+            "title": "Starttime",
+            "type": "string"
+          },
+          "weekday": {
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "employeeId",
+          "employee",
+          "weekday",
+          "startTime",
+          "endTime",
+          "kind"
+        ],
+        "title": "AvailabilityOut",
+        "type": "object"
+      },
       "BacktestOut": {
         "properties": {
           "candidate": {
@@ -1660,6 +1746,123 @@
           "months"
         ],
         "title": "MonthsOut",
+        "type": "object"
+      },
+      "MyLeaveOut": {
+        "properties": {
+          "endDate": {
+            "format": "date",
+            "title": "Enddate",
+            "type": "string"
+          },
+          "leaveType": {
+            "title": "Leavetype",
+            "type": "string"
+          },
+          "startDate": {
+            "format": "date",
+            "title": "Startdate",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "endDate",
+          "leaveType",
+          "status"
+        ],
+        "title": "MyLeaveOut",
+        "type": "object"
+      },
+      "MyScheduleOut": {
+        "properties": {
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "fromDate": {
+            "format": "date",
+            "title": "Fromdate",
+            "type": "string"
+          },
+          "leave": {
+            "items": {
+              "$ref": "#/components/schemas/MyLeaveOut"
+            },
+            "title": "Leave",
+            "type": "array"
+          },
+          "openSwaps": {
+            "title": "Openswaps",
+            "type": "integer"
+          },
+          "shifts": {
+            "items": {
+              "$ref": "#/components/schemas/MyShiftOut"
+            },
+            "title": "Shifts",
+            "type": "array"
+          },
+          "toDate": {
+            "format": "date",
+            "title": "Todate",
+            "type": "string"
+          },
+          "unpublishedShifts": {
+            "title": "Unpublishedshifts",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "employee",
+          "fromDate",
+          "toDate",
+          "shifts",
+          "leave",
+          "unpublishedShifts",
+          "openSwaps"
+        ],
+        "title": "MyScheduleOut",
+        "type": "object"
+      },
+      "MyShiftOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "endTime": {
+            "format": "time",
+            "title": "Endtime",
+            "type": "string"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "shift": {
+            "title": "Shift",
+            "type": "string"
+          },
+          "startTime": {
+            "format": "time",
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "day",
+          "shift",
+          "startTime",
+          "endTime",
+          "queue"
+        ],
+        "title": "MyShiftOut",
         "type": "object"
       },
       "OverviewDayOut": {
@@ -4167,6 +4370,133 @@
         ]
       }
     },
+    "/api/v1/people/availability": {
+      "get": {
+        "operationId": "wfm_people_ess_api_list_availability",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "employee_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Employee Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AvailabilityOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Declared availability: your own, or anyone's for leads, planners and admins",
+        "tags": [
+          "people",
+          "people"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_people_ess_api_add_availability",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvailabilityIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Declare a weekly window you cannot work, or would rather work",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/availability/{window_id}": {
+      "delete": {
+        "operationId": "wfm_people_ess_api_remove_availability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "window_id",
+            "required": true,
+            "schema": {
+              "title": "Window Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Remove a window",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
     "/api/v1/people/leave/balances": {
       "get": {
         "operationId": "wfm_people_api_get_balances",
@@ -4541,6 +4871,69 @@
         ],
         "summary": "Set the days a year of a kind of leave",
         "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/my-schedule": {
+      "get": {
+        "operationId": "wfm_people_ess_api_my_schedule",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyScheduleOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Your published shifts and leave for the coming weeks",
+        "tags": [
+          "people",
           "people"
         ]
       }

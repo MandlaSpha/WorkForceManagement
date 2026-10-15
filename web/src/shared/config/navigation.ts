@@ -45,7 +45,7 @@ export const NAV_ITEMS = [
     label: 'My schedule',
     group: 'My work',
     icon: 'calendar',
-    feature: 'scheduling',
+    feature: 'people',
     phase: 3,
     subtitle: 'Your published shifts, breaks and leave.',
   },

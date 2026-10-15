@@ -19,6 +19,7 @@ from typing import Any
 
 from django.db import IntegrityError, transaction
 from django.db.models.functions import Now
+from wfm_engine import availability as rules_availability
 from wfm_engine.roster import (
     DEFAULT_MAX_CONSECUTIVE_DAYS,
     DEFAULT_MIN_REST_HOURS,
@@ -31,7 +32,7 @@ from wfm.accounts.models import User
 from wfm.audit import services as audit
 from wfm.audit.models import Action, Outcome
 from wfm.core.errors import ApiError, not_found
-from wfm.people.models import LeaveRequest, LeaveStatus
+from wfm.people.models import Availability, AvailabilityKind, LeaveRequest, LeaveStatus
 from wfm.telephony.models import Queue
 
 from .models import (
@@ -242,6 +243,18 @@ def _check_rules(
         employee=employee, status=LeaveStatus.APPROVED, start_date__lte=day, end_date__gte=day
     ).exists():
         raise _refused(user, queue, "roster.on_leave", "This person is on approved leave that day.")
+
+    declared = [
+        rules_availability.window_of(w.weekday, w.start_time, w.end_time)
+        for w in Availability.objects.filter(employee=employee, kind=AvailabilityKind.UNAVAILABLE)
+    ]
+    if rules_availability.touches(declared, day, template.start_time, template.end_time):
+        raise _refused(
+            user,
+            queue,
+            "roster.unavailable",
+            "This person said they cannot work some of those hours.",
+        )
 
     others = ShiftAssignment.objects.filter(
         employee=employee, day__gte=day - timedelta(days=7), day__lte=day + timedelta(days=7)

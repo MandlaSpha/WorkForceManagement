@@ -214,6 +214,15 @@ Requirement SWP-01. In `wfm.people` (`SwapRequest`, `swap_services.py`); the exc
 - **What colleagues see.** The "swap it for" list shows colleagues' name, day and shift for the same queue, only those that pass every rule for both people (at most 40, next 28 days), as on any posted roster. No reason text is stored.
 - **Not built:** open "shift board" offers to anyone, swaps across queues, notifications, team-scoped approval (a lead approves for everyone until employees have a manager link).
 
+### 4.3k Availability and the agent's own pages (Phase 3, built)
+Requirements SCH-08 and ESS-01. Pure rule in `wfm_engine/availability.py` (a window is a weekday and a run of half-hours; `touches` says whether a shift covers one, including the small hours of the next day for a night shift); the app is `wfm.people` (`Availability`, `availability_services.py`, `ess_api.py`).
+
+- **Two kinds.** *Cannot work* is a constraint: the roster refuses a shift covering it (`roster.unavailable`, audited like any roster refusal), and so does a swap. *Would rather work* is a wish: stored and shown, never enforced (the auto-scheduler will weigh it in Phase 4).
+- **Silence is not availability.** Windows repeat weekly; a person who declared nothing has told the planner nothing, and the screen says so. Overlapping windows on a day are refused (`availability.overlaps`); an end of 00:00 means the end of the day.
+- **Who.** Agent, lead, planner and admin declare their own; a planner or admin can for anyone; leads, planners and admins can read anyone's; agents see only their own. Executive and customer_ops are refused. Adds and removals are audited (`availability.added|removed`).
+- **My schedule** (`GET /people/my-schedule`) shows the signed-in person's PUBLISHED shifts and the leave they have asked for or been given, for up to 62 days (28 by default). Shifts in unpublished weeks are only counted (`unpublishedShifts`), never shown, because they can still change. It also counts open swaps.
+- **Not built:** dated one-off unavailability, per-queue availability, a planner view of everyone's declared times, notifications.
+
 ### 4.3b Roster and plan (Phase 2, built)
 **Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
 

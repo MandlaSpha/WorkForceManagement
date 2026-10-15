@@ -314,6 +314,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/people/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Declared availability: your own, or anyone's for leads, planners and admins */
+        get: operations["wfm_people_ess_api_list_availability"];
+        put?: never;
+        /** Declare a weekly window you cannot work, or would rather work */
+        post: operations["wfm_people_ess_api_add_availability"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/availability/{window_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a window */
+        delete: operations["wfm_people_ess_api_remove_availability"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/people/leave/balances": {
         parameters: {
             query?: never;
@@ -444,6 +479,23 @@ export interface paths {
         get?: never;
         /** Set the days a year of a kind of leave */
         put: operations["wfm_people_api_set_entitlement"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/my-schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Your published shifts and leave for the coming weeks */
+        get: operations["wfm_people_ess_api_my_schedule"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -1008,6 +1060,48 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** AvailabilityIn */
+        AvailabilityIn: {
+            /** Employeeid */
+            employeeId?: number | null;
+            /**
+             * Endtime
+             * Format: time
+             */
+            endTime: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Starttime
+             * Format: time
+             */
+            startTime: string;
+            /** Weekday */
+            weekday: number;
+        };
+        /** AvailabilityOut */
+        AvailabilityOut: {
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /**
+             * Endtime
+             * Format: time
+             */
+            endTime: string;
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /**
+             * Starttime
+             * Format: time
+             */
+            startTime: string;
+            /** Weekday */
+            weekday: number;
+        };
         /** BacktestOut */
         BacktestOut: {
             candidate: components["schemas"]["ScoreOut"];
@@ -1544,6 +1638,68 @@ export interface components {
         MonthsOut: {
             /** Months */
             months: string[];
+        };
+        /** MyLeaveOut */
+        MyLeaveOut: {
+            /**
+             * Enddate
+             * Format: date
+             */
+            endDate: string;
+            /** Leavetype */
+            leaveType: string;
+            /**
+             * Startdate
+             * Format: date
+             */
+            startDate: string;
+            /** Status */
+            status: string;
+        };
+        /** MyScheduleOut */
+        MyScheduleOut: {
+            /** Employee */
+            employee: string;
+            /**
+             * Fromdate
+             * Format: date
+             */
+            fromDate: string;
+            /** Leave */
+            leave: components["schemas"]["MyLeaveOut"][];
+            /** Openswaps */
+            openSwaps: number;
+            /** Shifts */
+            shifts: components["schemas"]["MyShiftOut"][];
+            /**
+             * Todate
+             * Format: date
+             */
+            toDate: string;
+            /** Unpublishedshifts */
+            unpublishedShifts: number;
+        };
+        /** MyShiftOut */
+        MyShiftOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Endtime
+             * Format: time
+             */
+            endTime: string;
+            /** Queue */
+            queue: string;
+            /** Shift */
+            shift: string;
+            /**
+             * Starttime
+             * Format: time
+             */
+            startTime: string;
         };
         /** OverviewDayOut */
         OverviewDayOut: {
@@ -2665,6 +2821,76 @@ export interface operations {
             };
         };
     };
+    wfm_people_ess_api_list_availability: {
+        parameters: {
+            query?: {
+                employee_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityOut"][];
+                };
+            };
+        };
+    };
+    wfm_people_ess_api_add_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvailabilityOut"];
+                };
+            };
+        };
+    };
+    wfm_people_ess_api_remove_availability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                window_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+        };
+    };
     wfm_people_api_get_balances: {
         parameters: {
             query: {
@@ -2865,6 +3091,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LeaveTypeOut"];
+                };
+            };
+        };
+    };
+    wfm_people_ess_api_my_schedule: {
+        parameters: {
+            query?: {
+                from_date?: string | null;
+                to_date?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyScheduleOut"];
                 };
             };
         };

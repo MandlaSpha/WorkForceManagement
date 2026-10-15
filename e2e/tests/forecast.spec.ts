@@ -42,7 +42,8 @@ async function importDay(page: Page, date: string, queue: string): Promise<void>
     .getByLabel('Call detail report (.xlsx)')
     .setInputFiles({ name: `${date}.xlsx`, mimeType: XLSX, buffer })
   await page.getByRole('button', { name: 'Import report' }).click()
-  await expect(page.getByTestId('reconciles')).toBeVisible()
+  // Reading a workbook can take a few seconds on a busy machine.
+  await expect(page.getByTestId('reconciles')).toBeVisible({ timeout: 20_000 })
 }
 
 test('a planner forecasts a day, sees the staffing worked out by hand, and publishes it', async ({

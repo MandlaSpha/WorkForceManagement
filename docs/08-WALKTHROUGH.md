@@ -89,10 +89,15 @@ the Roster for that week and see the shifts gone; sign in as agent and cancel.
 
 With the demo data there is already a swap waiting for the demo agent, one waiting for approval, one declined and one approved.
 
+## Phase 3: The agent's own pages and availability (SCH-08, ESS-01)
+
+Sign in as `agent`: you land on **My schedule**: your published shifts and leave for the next four weeks. Shifts in a week the planner has not published are only counted ("2 shifts are not published yet"), never shown, because they can still change. Links take you to Leave and Shift swaps.
+
+**My availability**: declare a weekly time you *cannot work* (the roster will refuse a shift covering it, and so will a swap) or would *rather work* (a wish the planner can see). Declaring nothing tells the planner nothing; it does not mean you are free. The demo agent never works Sundays and would rather finish early on Fridays; the demo part-timers cannot work Thursday or Friday, and the demo roster respects it.
+
 ## Not built yet (so you are not looking for it)
 
-Employee availability, agent "my schedule" and "my availability" pages, blackout
-periods, team-scoped lead views (a lead currently decides for everyone), auto-scheduler,
+Leave blackout periods and limits, team-scoped lead views (a lead currently decides for everyone), auto-scheduler,
 recommendations, overtime pricing, scheduled reports, intraday, adherence, ITSM and Azure AD
 integration. The menu lists some of these as placeholders.
 

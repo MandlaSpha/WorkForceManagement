@@ -47,6 +47,8 @@ class Action(models.TextChoices):
     LEAVE_REJECTED = "leave.rejected", "Leave rejected"
     LEAVE_CANCELLED = "leave.cancelled", "Leave cancelled"
     LEAVE_ENTITLEMENT_CHANGED = "leave.entitlement_changed", "Leave entitlement changed"
+    AVAILABILITY_ADDED = "availability.added", "Availability window added"
+    AVAILABILITY_REMOVED = "availability.removed", "Availability window removed"
     SWAP_REQUESTED = "swap.requested", "Shift swap requested"
     SWAP_ACCEPTED = "swap.accepted", "Shift swap accepted by the colleague"
     SWAP_DECLINED = "swap.declined", "Shift swap declined by the colleague"

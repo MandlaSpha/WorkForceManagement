@@ -10,6 +10,7 @@ from wfm.core.permissions import RoleSessionAuth, current_user
 from wfm.scheduling.models import Employee
 
 from . import selectors, services
+from .ess_api import router as ess_router
 from .models import LeaveRequest, LeaveType
 from .policy import APPROVE_ROLES, CONFIG_ROLES, SELF_ROLES
 from .schemas import (
@@ -26,6 +27,7 @@ from .swap_api import router as swap_router
 
 router = Router(tags=["people"])
 router.add_router("/swaps", swap_router)
+router.add_router("", ess_router)
 
 SELF = RoleSessionAuth(*sorted(SELF_ROLES), feature=Feature.PEOPLE)
 APPROVE = RoleSessionAuth(*sorted(APPROVE_ROLES), feature=Feature.PEOPLE)

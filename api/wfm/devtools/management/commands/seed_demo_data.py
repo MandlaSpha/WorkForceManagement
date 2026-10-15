@@ -41,8 +41,8 @@ from wfm.devtools.demo_history import SHAPES, build_history
 from wfm.forecasting import event_services
 from wfm.forecasting import services as forecast_services
 from wfm.forecasting.models import ForecastInterval, ForecastStatus
+from wfm.people import availability_services, swap_services
 from wfm.people import services as leave_services
-from wfm.people import swap_services
 from wfm.people.models import LeaveType
 from wfm.scheduling import roster_services
 from wfm.scheduling import services as scheduling_services
@@ -245,10 +245,32 @@ class Command(BaseCommand):
                     )
                 )
             staff[queue_name] = made
+            for part_timer in made[full : full + part]:  # part-timers work Monday to Wednesday
+                for weekday in (3, 4):
+                    self._declare(cast, part_timer, weekday, "cannot", time(0, 0), time(0, 0))
         for floor_person in demo_floor:  # the `agent` and `lead` logins work the Support queue
             EmployeeSkill.objects.get_or_create(employee=floor_person, queue=queues["Demo Support"])
             staff["Demo Support"].append(floor_person)
+        if (
+            demo_floor
+        ):  # the demo agent never works Sundays and would rather finish early on Fridays
+            agent = next(p for p in demo_floor if p.emp_no == "DEMO-AGENT")
+            self._declare(cast, agent, 6, "cannot", time(0, 0), time(0, 0))
+            self._declare(cast, agent, 4, "would rather", time(15, 0), time(0, 0))
         return staff
+
+    def _declare(
+        self, cast: Cast, person: Employee, weekday: int, kind: str, start: time, end: time
+    ) -> None:
+        """Declare a weekly window for someone, as the planner would after being told."""
+        availability_services.add_window(
+            user=cast.planner,
+            weekday=weekday,
+            start=start,
+            end=end,
+            kind="unavailable" if kind == "cannot" else "preferred",
+            employee_id=person.pk,
+        )
 
     # --- forecasts and events ------------------------------------------------------------------
 

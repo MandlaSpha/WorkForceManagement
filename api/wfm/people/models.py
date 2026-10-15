@@ -177,3 +177,45 @@ class SwapRequest(models.Model):
 
     def __str__(self) -> str:
         return f"{self.from_employee_id}<->{self.to_employee_id} ({self.status})"
+
+
+class AvailabilityKind(models.TextChoices):
+    UNAVAILABLE = "unavailable", "Cannot work"  # a constraint: the roster refuses it
+    PREFERRED = "preferred", "Would rather work"  # a wish: shown, never enforced
+
+
+class AvailabilityQuerySet(ScopedQuerySet):
+    def for_user(self, user: Any) -> Self:
+        if user.role in APPROVE_ROLES:
+            return self
+        if user.role == Role.AGENT:
+            return self.filter(employee__user=user)  # an agent sees only their own
+        return self.none()
+
+
+class Availability(models.Model):
+    """A weekly window in which a person declares they cannot work, or would rather. Nothing
+    declared means nothing is known: it is not the same as available (SCH-08)."""
+
+    employee = models.ForeignKey(
+        "scheduling.Employee", on_delete=models.CASCADE, related_name="availability"
+    )
+    weekday = models.PositiveSmallIntegerField()  # Monday is 0
+    start_time = models.TimeField()
+    end_time = models.TimeField()  # 00:00 means the end of the day
+    kind = models.CharField(max_length=12, choices=AvailabilityKind.choices)
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+
+    objects = AvailabilityQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["weekday", "start_time", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(weekday__gte=0) & models.Q(weekday__lte=6),
+                name="people_availability_weekday",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.employee_id} {self.weekday} {self.start_time}-{self.end_time} {self.kind}"

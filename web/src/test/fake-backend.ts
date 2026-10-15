@@ -3,6 +3,8 @@ import { http, HttpResponse } from 'msw'
 import type { ImportReport, KpiSummary, QueueInfo } from '@/entities/call-data'
 import type { Capacity } from '@/entities/capacity'
 import type { Balances, Impact, LeaveRequest, LeaveType } from '@/entities/leave'
+import type { AvailabilityWindow } from '@/entities/availability'
+import type { MySchedule } from '@/entities/my-schedule'
 import type { Swap, SwapShift } from '@/entities/swap'
 import type { Demand, WorkImport } from '@/entities/service-desk'
 import type {
@@ -107,6 +109,10 @@ export const backend = {
   impact: null as Impact | null,
   requestQueries: [] as string[],
   decision: { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 },
+  /** Self-service: declared availability and the signed-in person's own schedule. */
+  availability: [] as AvailabilityWindow[],
+  mySchedule: null as MySchedule | null,
+  noScheduleRecord: false,
   /** Shift swaps: my shifts, the colleagues' shifts on offer, and the swaps themselves. */
   myShifts: [] as SwapShift[],
   swapOptions: [] as SwapShift[],
@@ -170,6 +176,9 @@ export const backend = {
     this.impact = null
     this.requestQueries = []
     this.decision = { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 }
+    this.availability = []
+    this.mySchedule = null
+    this.noScheduleRecord = false
     this.myShifts = []
     this.swapOptions = []
     this.swaps = []
@@ -474,6 +483,42 @@ export const handlers = [
     )
     return HttpResponse.json(backend.leaveTypes.find((t) => t.id === Number(info.params.id)))
   }),
+
+  http.get('*/api/v1/people/availability', () =>
+    backend.noScheduleRecord
+      ? problem(422, 'availability.no_employee_record', 'Not on the employee list')
+      : HttpResponse.json(backend.availability),
+  ),
+
+  http.post('*/api/v1/people/availability', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, string | number>
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created: AvailabilityWindow = {
+      id: 100 + backend.availability.length,
+      employeeId: 10,
+      employee: 'Alex Agent',
+      weekday: Number(sent.weekday),
+      startTime: `${String(sent.startTime)}:00`,
+      endTime: `${String(sent.endTime)}:00`,
+      kind: String(sent.kind),
+    }
+    backend.availability = [...backend.availability, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.delete('*/api/v1/people/availability/:id', async (info) => {
+    const response = await schedulingWrite(info, 'DELETE')
+    if (response.ok)
+      backend.availability = backend.availability.filter((w) => w.id !== Number(info.params.id))
+    return response
+  }),
+
+  http.get('*/api/v1/people/my-schedule', () =>
+    backend.noScheduleRecord
+      ? problem(422, 'schedule.no_employee_record', 'Not on the employee list')
+      : HttpResponse.json(backend.mySchedule),
+  ),
 
   http.get('*/api/v1/people/swaps/my-shifts', () => HttpResponse.json(backend.myShifts)),
 
