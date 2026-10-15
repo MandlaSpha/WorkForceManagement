@@ -104,6 +104,10 @@ Sign in as `agent`: you land on **My schedule**: the whole month as a Monday-to-
 - **Away at once**: the most people who may be on approved leave the same day. Set it to 1, approve one request as `lead`, then try to approve another for the same day: refused with the day and the limit.
 Everyone who takes leave sees the coming blackouts and the limit on their *Leave* page, so a refusal is never a surprise.
 
+## Phase 3.5: Notifications
+
+The **bell** in the top bar (every role). Try: as `agent` ask for leave; as `lead` the bell shows "Leave is waiting for your decision"; approve it; as `agent` the bell shows "Your ... leave request for ... was approved." Publishing a roster tells everyone on it; a swap being taken tells the poster (not by whom) and asks the lead. Messages never name another person or give a reason. Email comes later behind the same call.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, auto-scheduler,

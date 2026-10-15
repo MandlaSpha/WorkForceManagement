@@ -19,6 +19,7 @@ from wfm.accounts.models import User
 from wfm.audit import services as audit
 from wfm.audit.models import Action
 from wfm.core.errors import ApiError, not_found
+from wfm.notifications import services as notifications
 from wfm.scheduling import roster_services
 from wfm.scheduling.models import Employee, EmployeeSkill, ShiftAssignment
 
@@ -150,6 +151,7 @@ def take(
                 "colleague_answered_at",
             ]
         )
+        _tell_taken(swap, taker=employee)
         audit.record(  # last write of the transaction
             actor=user,
             action=Action.SWAP_ACCEPTED,
@@ -163,6 +165,52 @@ def take(
             ],
         )
     return selectors.swap_for(user, swap.pk)
+
+
+def _shift_text(day: date, code: str) -> str:
+    return f"{code} on {day:%a %d %b}"
+
+
+def _tell_taken(swap: SwapRequest, taker: Employee) -> None:
+    """The poster hears it was taken (not by whom), and the leads of either person are asked."""
+    notifications.notify(
+        [swap.from_employee.user],
+        kind="swap.taken",
+        message=(
+            f"Your swap request for {_shift_text(swap.from_day, swap.from_template.code)} was "
+            "taken. A lead decides next."
+        ),
+        link="/shift-swaps",
+    )
+    deciders = [
+        e.manager.user
+        for e in (swap.from_employee, taker)
+        if e.manager is not None
+        and e.manager.user_id not in (swap.from_employee.user_id, taker.user_id)
+    ]
+    notifications.notify(
+        deciders,
+        kind="swap.to_approve",
+        message="A swap is waiting for your approval.",
+        link="/shift-swaps",
+    )
+
+
+def _tell_decided(actor: User, swap: SwapRequest, what: str) -> None:
+    """Each person hears the outcome about THEIR shift, not the other person's."""
+    if swap.to_employee is None or swap.to_day is None or swap.to_template is None:
+        return
+    for person, day, code in (
+        (swap.from_employee, swap.from_day, swap.from_template.code),
+        (swap.to_employee, swap.to_day, swap.to_template.code),
+    ):
+        if person.user_id != actor.pk:
+            notifications.notify(
+                [person.user],
+                kind=f"swap.{what}",
+                message=f"Your swap for {_shift_text(day, code)} was {what}.",
+                link="/shift-swaps",
+            )
 
 
 def _locked(user: User, swap_id: int) -> SwapRequest:
@@ -221,6 +269,7 @@ def decide(*, user: User, swap_id: int, approve: bool) -> SwapRequest:
         if swap.status != SwapStatus.AWAITING_APPROVAL:
             raise _refuse(409, "swap.not_waiting_for_approval", f"This swap is {swap.status}.")
         if not approve:
+            _tell_decided(user, swap, "rejected")
             return _move(user, swap, SwapStatus.REJECTED, Action.SWAP_REJECTED)
         _lock_people(swap.from_employee_id, swap.to_employee_id or 0)
         first, second = _current(swap)
@@ -232,6 +281,7 @@ def decide(*, user: User, swap_id: int, approve: bool) -> SwapRequest:
             for a, b in ((first, second), (second, first))
         ]
         roster_services.exchange(first, second)
+        _tell_decided(user, swap, "approved")
         return _move(user, swap, SwapStatus.APPROVED, Action.SWAP_APPROVED, extra=moves)
 
 

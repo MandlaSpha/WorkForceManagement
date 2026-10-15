@@ -3,6 +3,7 @@ import { Menu } from 'lucide-vue-next'
 import { computed } from 'vue'
 
 import { ContextBar } from '@/features/context-filters'
+import { NotificationBell } from '@/features/notification-bell'
 import { SignOutButton } from '@/features/sign-out'
 import { ThemeToggle } from '@/features/toggle-theme'
 import { ROLE_LABELS, useSessionStore } from '@/entities/session'
@@ -40,6 +41,7 @@ const initials = computed(() =>
     <ContextBar :show-scope="session.user?.role !== 'agent'" />
 
     <div class="ml-auto flex items-center gap-1">
+      <NotificationBell />
       <ThemeToggle />
       <div v-if="session.user" class="flex items-center gap-2 pl-2">
         <span

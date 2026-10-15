@@ -50,6 +50,12 @@ test('an agent asks for leave, a lead sees its effect and approves it, and the a
   // The lead: the request is waiting, with its effect on coverage, and is approved.
   await signIn(page, 'lead')
   await page.goto('/leave')
+  // The lead was told there is something to decide.
+  await page.getByRole('button', { name: /^Notifications/ }).click()
+  await expect(page.getByRole('region', { name: 'Notifications' })).toContainText(
+    'Leave is waiting for your decision.',
+  )
+  await page.keyboard.press('Escape')
   await page.getByRole('tab', { name: 'Approvals' }).click()
   const request = page
     .getByRole('listitem')
@@ -66,6 +72,10 @@ test('an agent asks for leave, a lead sees its effect and approves it, and the a
   // The agent: approved, and can still cancel it.
   await signIn(page, 'agent')
   await page.goto('/leave')
+  // And the agent was told the outcome, without being told who decided.
+  await page.getByRole('button', { name: /^Notifications/ }).click()
+  await expect(page.getByRole('region', { name: 'Notifications' })).toContainText('was approved.')
+  await page.keyboard.press('Escape')
   const mine = page.getByTestId('my-requests').getByRole('row').filter({ hasText: 'Unpaid leave' })
   const row = mine.filter({ hasText: 'Approved' }).first()
   await expect(row).toBeVisible()

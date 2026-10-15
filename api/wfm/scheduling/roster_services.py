@@ -32,6 +32,7 @@ from wfm.accounts.models import User
 from wfm.audit import services as audit
 from wfm.audit.models import Action, Outcome
 from wfm.core.errors import ApiError, not_found
+from wfm.notifications import services as notifications
 from wfm.people.models import Availability, AvailabilityKind, LeaveRequest, LeaveStatus
 from wfm.telephony.models import Queue
 
@@ -369,6 +370,12 @@ def publish(*, user: User, queue_id: int, week_start: date) -> RosterWeek:
         week.published_by = user
         week.save(update_fields=["status", "published_at", "published_by"])
         week.refresh_from_db()
+        notifications.notify(
+            User.objects.filter(employee__assignments__roster_week=week).distinct(),
+            kind="roster.published",
+            message=f"Your roster for the week of {week_start:%d %b} is published.",
+            link="/my-schedule",
+        )
         audit.record(  # last write of the transaction
             actor=user,
             action=Action.ROSTER_PUBLISHED,

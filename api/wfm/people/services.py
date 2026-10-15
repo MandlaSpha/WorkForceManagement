@@ -17,6 +17,7 @@ from wfm.accounts.models import User
 from wfm.audit import services as audit
 from wfm.audit.models import Action
 from wfm.core.errors import ApiError, not_found
+from wfm.notifications import services as notifications
 from wfm.scheduling.models import Employee, RosterWeek, ShiftAssignment
 
 from . import rules_services, selectors
@@ -88,6 +89,13 @@ def apply(
             days_by_year={str(year): n for year, n in by_year.items()},
             requested_by=user,
         )
+        if employee.manager is not None and employee.manager.user_id != user.pk:
+            notifications.notify(
+                [employee.manager.user],
+                kind="leave.requested",
+                message="Leave is waiting for your decision.",
+                link="/leave",
+            )
         audit.record(  # last write of the transaction
             actor=user,
             action=Action.LEAVE_REQUESTED,
@@ -140,6 +148,7 @@ def decide(*, user: User, request_id: int, approve: bool) -> Decision:
         leave.cleared_shifts = cleared
         leave.save(update_fields=["status", "decided_by", "decided_at", "cleared_shifts"])
         leave.refresh_from_db()
+        _tell_about(user, leave, "approved" if approve else "rejected")
         changes = [
             audit.FieldChange("leave_request", str(leave.pk), "status", "pending", leave.status)
         ]
@@ -183,6 +192,7 @@ def cancel(*, user: User, request_id: int) -> Decision:
         leave.decided_at = Now()
         leave.save(update_fields=["status", "decided_by", "decided_at"])
         leave.refresh_from_db()
+        _tell_about(user, leave, "cancelled")
         changes = [audit.FieldChange("leave_request", str(leave.pk), "status", was, "cancelled")]
         if was == LeaveStatus.APPROVED:
             changes += [
@@ -201,6 +211,24 @@ def cancel(*, user: User, request_id: int) -> Decision:
             changes=changes,
         )
     return Decision(leave, restored=restored, not_restored=skipped)
+
+
+def _tell_about(actor: User, leave: LeaveRequest, what: str) -> None:
+    """Tell the person their request was decided or cancelled by somebody else. The message
+    names the kind and the days, never who decided or why."""
+    if leave.employee.user is None or leave.employee.user_id == actor.pk:
+        return
+    span = (
+        f"{leave.start_date:%d %b}"
+        if leave.start_date == leave.end_date
+        else f"{leave.start_date:%d %b} to {leave.end_date:%d %b}"
+    )
+    notifications.notify(
+        [leave.employee.user],
+        kind=f"leave.{what}",
+        message=f"Your {leave.leave_type.name.lower()} request for {span} was {what}.",
+        link="/leave",
+    )
 
 
 def set_entitlement(*, user: User, type_id: int, days: Decimal | None) -> LeaveType:

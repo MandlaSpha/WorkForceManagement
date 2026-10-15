@@ -11,6 +11,7 @@ import type {
   LeaveType,
 } from '@/entities/leave'
 import type { AvailabilityWindow } from '@/entities/availability'
+import type { Inbox } from '@/entities/notification'
 import type { MySchedule } from '@/entities/my-schedule'
 import type { BoardEntry, Swap, SwapShift } from '@/entities/swap'
 import type { Demand, WorkImport } from '@/entities/service-desk'
@@ -118,6 +119,8 @@ export const backend = {
   impact: null as Impact | null,
   requestQueries: [] as string[],
   decision: { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 },
+  /** Notifications: the signed-in person's inbox. */
+  inbox: { unread: 0, items: [] } as Inbox,
   /** Self-service: declared availability and the signed-in person's own schedule. */
   availability: [] as AvailabilityWindow[],
   mySchedule: null as MySchedule | null,
@@ -189,6 +192,7 @@ export const backend = {
     this.impact = null
     this.requestQueries = []
     this.decision = { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 }
+    this.inbox = { unread: 0, items: [] }
     this.availability = []
     this.mySchedule = null
     this.noScheduleRecord = false
@@ -530,6 +534,28 @@ export const handlers = [
         : t,
     )
     return HttpResponse.json(backend.leaveTypes.find((t) => t.id === Number(info.params.id)))
+  }),
+
+  http.get('*/api/v1/notifications', () => HttpResponse.json(backend.inbox)),
+
+  http.post('*/api/v1/notifications/read-all', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    backend.inbox = {
+      unread: 0,
+      items: backend.inbox.items.map((n) => ({ ...n, read: true })),
+    }
+    return HttpResponse.json({ marked: 1 })
+  }),
+
+  http.post('*/api/v1/notifications/:id/read', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const items = backend.inbox.items.map((n) =>
+      n.id === Number(info.params.id) ? { ...n, read: true } : n,
+    )
+    backend.inbox = { unread: items.filter((n) => !n.read).length, items }
+    return HttpResponse.json(items.find((n) => n.id === Number(info.params.id)))
   }),
 
   http.get('*/api/v1/people/availability', () =>

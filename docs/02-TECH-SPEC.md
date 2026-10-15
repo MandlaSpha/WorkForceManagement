@@ -233,6 +233,15 @@ Requirements LV-04 and EMP-01 (manager). Pure rules in `wfm_engine/leave.py` (`w
 - **Away at once.** An admin may set the most people on approved restricted leave on the same working day. A request that would pass it is refused on the first day that does (`leave.too_many_away`), when asked and again when approved, with the limit row locked so two approvals made at once cannot both squeeze under it. Waiting requests do not use the limit up; weekends and public holidays are not counted. Sick leave neither counts toward it nor is blocked by it.
 - **Not built:** per-team or per-queue limits (the limit counts everyone), a blackout for one queue only, a warning when asking near a limit.
 
+### 4.3m Notification centre (Phase 3.5, built)
+Requirement CFG-05 (and SCH-06 "publish notifies agents", ESS-01). App `wfm.notifications`; a bell in the top bar for every role.
+
+- **What a notification is.** One short sentence about the RECIPIENT's own matter, a link into the app, and read/unread. It never names another person and never holds a reason: "Your swap request for D1 on Mon 25 May was taken. A lead decides next." (not by whom), "Your unpaid leave request for 25 May to 26 May was approved." (not by whom). So it is safe on a shared screen and safe to keep.
+- **Who is told, when.** Everyone on a roster when their week is published; a lead when a team member asks for leave; the person when their leave is approved, rejected or cancelled by somebody else; the poster when a swap request is taken; the leads of either person when a swap waits for approval; each person when their swap is approved or rejected, about their own shift. Nobody is told about their own action, a refused action tells nobody, and a person is told once even if two rules name them.
+- **How.** `notifications.services.notify(...)` is called inside the transaction of the change it reports, before that change's audit event (the audit insert stays the last write), so a rolled-back change sends nothing. Reading and marking read touch only the caller's own rows (a colleague's id is "not found"). Marking read is not audited (it is not business data).
+- **Screen.** The bell shows an unread count (and names it for screen readers), lists the latest 50 (read ones plain, unread bold), jumps to the linked screen, "Mark all as read", closes with Escape. It looks again every minute and when the window is focused.
+- **Not built:** email and SMS (`notify` is the single place to add them), coverage alerts (they arrive with intraday), per-person settings, retention clean-up (messages are small; a purge job can follow).
+
 ### 4.3b Roster and plan (Phase 2, built)
 **Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
 
