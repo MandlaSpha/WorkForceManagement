@@ -50,6 +50,13 @@ test('the agent sees their schedule, and others cannot open the agent pages', as
   await signIn(page, 'agent')
   await page.goto('/my-schedule')
   await expect(page.getByRole('heading', { name: 'My schedule' })).toBeVisible()
+  // The whole month, Monday to Sunday, and a way to move between months.
+  await expect(page.getByTestId('month-grid')).toBeVisible()
+  const title = await page.getByTestId('month-title').innerText()
+  await page.getByRole('button', { name: 'Next month' }).click()
+  await expect(page.getByTestId('month-title')).not.toHaveText(title)
+  await page.getByRole('button', { name: 'This month' }).click()
+  await expect(page.getByTestId('month-title')).toHaveText(title)
   await expect(page.getByRole('link', { name: 'Ask for leave' })).toBeVisible()
   await expectNoAccessibilityViolations(page)
   await signOut(page)

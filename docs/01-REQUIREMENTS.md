@@ -127,7 +127,7 @@ Priority: **M** = must (MVP), **S** = should (phase 2), **C** = could (later). U
 | LV-02 | Agent applies; Team Lead approves/rejects; approval writes leave into schedule and updates coverage; cancel reverses both | M | VID |
 | LV-03 | Show coverage impact (cost in hours, intervals affected) before approval | M | VID |
 | LV-04 | Blackout periods and max-concurrent-leave rules | S | PROP |
-| SWP-01 | Shift swap request → counterparty accept → lead approve, with rule validation | M | VID |
+| SWP-01 | Shift swap: a person posts a shift; colleagues on the queue whose own shifts fit the rules take it; a lead approves, with rule validation. Other agents never see the poster's name or schedule; names show only once matched (decision 15 Oct 2026, POPIA) | M | VID |
 | EMP-01 | Employee directory: ID, team, queues/skills (L1–L3), contract, hours, site/remote, manager | M | VID |
 | ATT-01 | Attendance: planned vs actual, timesheets, exceptions, clock events (labelled synthetic when no feed) | S | VID, DECK s8 |
 
@@ -215,7 +215,7 @@ The UIF wording "AI-driven demand forecasting" is separately met by FC-07, a sta
 ### 3.14 Employee self-service (agent portal)
 | ID | Requirement | Pri | Source |
 |---|---|---|---|
-| ESS-01 | My schedule, my leave (apply/balance), swaps, availability, notifications; mobile-friendly | M | GIJ, PROP |
+| ESS-01 | My schedule (a month view and a list), my leave (apply/balance), swaps, availability, notifications; mobile-friendly | M | GIJ, PROP |
 
 ### 3.15 Audit and accountability
 Goal: for any change or sensitive access, be able to answer **what happened, when, by whom, from where, and with what outcome**. The audit trail is a separate, tamper-resistant system from telemetry (OBS) and from the per-record version history.

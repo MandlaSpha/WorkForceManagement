@@ -114,15 +114,14 @@ class LeaveRequest(models.Model):
 
 
 class SwapStatus(models.TextChoices):
-    AWAITING_COLLEAGUE = "awaiting_colleague", "Waiting for the colleague"
+    OPEN = "open", "Open: waiting for a colleague"
     AWAITING_APPROVAL = "awaiting_approval", "Waiting for approval"
     APPROVED = "approved", "Approved"
-    DECLINED = "declined", "Declined by the colleague"
     REJECTED = "rejected", "Rejected"
     CANCELLED = "cancelled", "Cancelled"
 
 
-OPEN_SWAP_STATUSES = (SwapStatus.AWAITING_COLLEAGUE, SwapStatus.AWAITING_APPROVAL)
+OPEN_SWAP_STATUSES = (SwapStatus.OPEN, SwapStatus.AWAITING_APPROVAL)
 
 
 class SwapRequestQuerySet(ScopedQuerySet):
@@ -142,12 +141,21 @@ class SwapRequestQuerySet(ScopedQuerySet):
             )
         return self.none()
 
+    def open_to(self, employee: Any) -> Self:
+        """Requests still waiting for a colleague that `employee` could take: from someone else,
+        on a queue they are skilled on. This is the board; it deliberately does not go through
+        `for_user`, which shows an agent only the swaps they are in. It carries no names."""
+        return self.filter(status=SwapStatus.OPEN, queue__skilled__employee=employee).exclude(
+            from_employee=employee
+        )
+
 
 class SwapRequest(models.Model):
-    """Two people exchange shifts: `from_employee` gives up their shift on `from_day` and takes
-    `to_employee`'s on `to_day`. The shifts are kept as a snapshot (day and shift), because the
+    """A person posts one of their shifts (`from_*`). A colleague who could work it takes it by
+    offering one of their own (`to_*`, empty while the request is open); a lead then approves and
+    the two shifts are exchanged. The shifts are kept as a snapshot (day and shift), because the
     roster rows are replaced when the swap happens; approving checks the roster still matches.
-    No free text, like leave."""
+    No free text, like leave. Other agents see an open request without the poster's name."""
 
     queue = models.ForeignKey("telephony.Queue", on_delete=models.PROTECT, related_name="+")
     from_employee = models.ForeignKey(
@@ -158,15 +166,21 @@ class SwapRequest(models.Model):
         "scheduling.ShiftTemplate", on_delete=models.PROTECT, related_name="+"
     )
     to_employee = models.ForeignKey(
-        "scheduling.Employee", on_delete=models.PROTECT, related_name="swaps_offered"
+        "scheduling.Employee",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="swaps_offered",
     )
-    to_day = models.DateField()
+    to_day = models.DateField(null=True, blank=True)
     to_template = models.ForeignKey(
-        "scheduling.ShiftTemplate", on_delete=models.PROTECT, related_name="+"
+        "scheduling.ShiftTemplate",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="+",
     )
-    status = models.CharField(
-        max_length=20, choices=SwapStatus.choices, default=SwapStatus.AWAITING_COLLEAGUE
-    )
+    status = models.CharField(max_length=20, choices=SwapStatus.choices, default=SwapStatus.OPEN)
     requested_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
     created_at = models.DateTimeField(
         db_default=models.Func(function="now", output_field=models.DateTimeField())
@@ -185,6 +199,11 @@ class SwapRequest(models.Model):
             models.CheckConstraint(
                 condition=~models.Q(from_employee=models.F("to_employee")),
                 name="people_swap_two_people",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(to_employee__isnull=False)
+                | models.Q(status__in=["open", "cancelled", "rejected"]),
+                name="people_swap_matched_has_counterpart",
             ),
         ]
         indexes = [models.Index(fields=["status", "from_day"], name="people_swap_by_status")]

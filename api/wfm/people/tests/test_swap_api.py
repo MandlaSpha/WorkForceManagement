@@ -2,7 +2,11 @@
 
 Today is frozen at Wednesday 20 May 2026. Shifts: D1 09:00-17:30, E1 07:00-15:30, L1 13:00-22:00,
 P1 10:00-14:00 (4 paid hours). A (E001, the agent login) is on D1 Monday 25 May; B (E002, the
-colleague login) is on L1 Tuesday 26 May. Swapping puts A on L1 on Tuesday and B on D1 on Monday.
+colleague login) is on L1 Tuesday 26 May. A posts the Monday shift; B takes it by offering the
+Tuesday one; a lead approves; A then works L1 on Tuesday and B works D1 on Monday.
+
+Privacy: other agents see a posted request as a shift and a queue, never the poster's name; names
+are shown to the two people only once the request is matched, and to leads, planners and admins.
 
 The rules that must stop a bad swap, each with the numbers that break it:
 - rest: A also works E1 on Wednesday 27 (07:00). L1 on Tuesday ends 22:00, so 9 hours of rest
@@ -52,33 +56,50 @@ def login(role: Role = Role.PLANNER) -> Client:
     return scheduling_login(role)
 
 
-def colleague_client() -> Client:
-    user, _ = User.objects.get_or_create(username="u-colleague", defaults={"role": Role.AGENT})
+def as_agent(username: str) -> Client:
+    user, _ = User.objects.get_or_create(username=username, defaults={"role": Role.AGENT})
     client = Client()
     client.force_login(user)
     return client
 
 
-def row(employee: Employee, day: date) -> ShiftAssignment | None:
-    return (
-        ShiftAssignment.objects.filter(employee=employee, day=day)
-        .select_related("template")
-        .first()
+def colleague_client() -> Client:
+    return as_agent("u-colleague")
+
+
+def row(employee: Employee, day: date) -> ShiftAssignment:
+    found: ShiftAssignment = ShiftAssignment.objects.select_related("template").get(
+        employee=employee, day=day
     )
+    return found
 
 
 def code(employee: Employee, day: date) -> str | None:
-    found = row(employee, day)
-    return found.template.code if found else None
+    found = ShiftAssignment.objects.filter(employee=employee, day=day).select_related("template")
+    return found.first().template.code if found.exists() else None  # type: ignore[union-attr]
 
 
-def offer(client: Client, give: ShiftAssignment, take: ShiftAssignment, **extra: Any) -> Any:
-    body = {"giveAssignmentId": give.pk, "takeAssignmentId": take.pk, **extra}
+def post(client: Client, give: ShiftAssignment, **extra: Any) -> Any:
+    body = {"giveAssignmentId": give.pk, **extra}
     return client.post(SW, body, content_type="application/json")
+
+
+def take(client: Client, swap_id: int, mine: ShiftAssignment, **extra: Any) -> Any:
+    body = {"assignmentId": mine.pk, **extra}
+    return client.post(f"{SW}/{swap_id}/accept", body, content_type="application/json")
 
 
 def act(client: Client, swap_id: int, what: str) -> Any:
     return client.post(f"{SW}/{swap_id}/{what}")
+
+
+def trade(giver: Client, give: ShiftAssignment, taker: Client, mine: ShiftAssignment) -> Any:
+    """Post a shift and have a colleague take it by offering `mine`; returns the taking response
+    (or the posting one if posting itself was refused)."""
+    posted = post(giver, give)
+    if posted.status_code != 201:
+        return posted
+    return take(taker, posted.json()["id"], mine)
 
 
 @pytest.fixture
@@ -92,37 +113,32 @@ def rota() -> dict[str, Any]:
     planner = login()
     assign(planner, queue(), a, MON, shifts["D1"])
     assign(planner, queue(), b, TUE, shifts["L1"])
-    return {
-        "shifts": shifts,
-        "a": a,
-        "b": b,
-        "give": row(a, MON),
-        "take": row(b, TUE),
-    }
+    return {"shifts": shifts, "a": a, "b": b, "give": row(a, MON), "take": row(b, TUE)}
 
 
 def asked(rota: dict[str, Any]) -> int:
-    response = offer(login(Role.AGENT), rota["give"], rota["take"])
+    response = post(login(Role.AGENT), rota["give"])
     assert response.status_code == 201, response.content
     return int(response.json()["id"])
 
 
 def agreed(rota: dict[str, Any]) -> int:
     swap_id = asked(rota)
-    assert act(colleague_client(), swap_id, "accept").status_code == 200
+    response = take(colleague_client(), swap_id, rota["take"])
+    assert response.status_code == 200, response.content
     return swap_id
 
 
 class TestTheWholeFlow:
-    def test_ask_accept_approve_exchanges_the_two_shifts(self, rota: dict[str, Any]) -> None:
+    def test_post_take_approve_exchanges_the_two_shifts(self, rota: dict[str, Any]) -> None:
         a, b = rota["a"], rota["b"]
         swap_id = asked(rota)
-        assert SwapRequest.objects.get(pk=swap_id).status == SwapStatus.AWAITING_COLLEAGUE
+        assert SwapRequest.objects.get(pk=swap_id).status == SwapStatus.OPEN
         # Nothing moves until a lead agrees.
         assert (code(a, MON), code(b, TUE)) == ("D1", "L1")
 
-        accepted = act(colleague_client(), swap_id, "accept").json()
-        assert accepted["status"] == "awaiting_approval"
+        taken = take(colleague_client(), swap_id, rota["take"]).json()
+        assert taken["status"] == "awaiting_approval"
         assert (code(a, MON), code(b, TUE)) == ("D1", "L1")
 
         approved = act(login(Role.LEAD), swap_id, "approve").json()
@@ -154,39 +170,31 @@ class TestTheWholeFlow:
     def test_a_published_week_can_be_swapped_and_stays_published(
         self, rota: dict[str, Any]
     ) -> None:
-        # Publishing makes the roster final for planning, but an approved swap is the sanctioned
-        # way for it to change afterwards.
         login().post(
             "/api/v1/scheduling/roster/publish",
             {"queueId": queue().pk, "weekStart": str(MON)},
             content_type="application/json",
         )
-        assert (
-            RosterWeek.objects.get(queue=queue(), week_start=MON).status == RosterStatus.PUBLISHED
-        )
         swap_id = agreed(rota)
         assert act(login(Role.LEAD), swap_id, "approve").status_code == 200
-        assert (
-            RosterWeek.objects.get(queue=queue(), week_start=MON).status == RosterStatus.PUBLISHED
-        )
+        week = RosterWeek.objects.get(queue=queue(), week_start=MON)
+        assert week.status == RosterStatus.PUBLISHED
 
-    def test_the_colleague_can_decline_and_nothing_moves(self, rota: dict[str, Any]) -> None:
-        swap_id = asked(rota)
-        declined = act(colleague_client(), swap_id, "decline").json()
-        assert declined["status"] == "declined"
-        assert (code(rota["a"], MON), code(rota["b"], TUE)) == ("D1", "L1")
-        # A declined swap cannot be revived by approving it.
-        assert act(login(Role.LEAD), swap_id, "approve").status_code == 409
-
-    def test_a_lead_can_reject_an_agreed_swap(self, rota: dict[str, Any]) -> None:
+    def test_a_lead_can_reject_a_matched_swap(self, rota: dict[str, Any]) -> None:
         swap_id = agreed(rota)
         assert act(login(Role.LEAD), swap_id, "reject").json()["status"] == "rejected"
         assert (code(rota["a"], MON), code(rota["b"], TUE)) == ("D1", "L1")
 
-    def test_the_asker_can_withdraw_until_it_is_approved(self, rota: dict[str, Any]) -> None:
-        swap_id = agreed(rota)
-        assert act(login(Role.AGENT), swap_id, "cancel").json()["status"] == "cancelled"
-        assert act(login(Role.LEAD), swap_id, "approve").status_code == 409
+    def test_the_poster_can_withdraw_an_open_or_a_matched_request(
+        self, rota: dict[str, Any]
+    ) -> None:
+        open_id = asked(rota)
+        assert act(login(Role.AGENT), open_id, "cancel").json()["status"] == "cancelled"
+        # The shift is free to post again after withdrawing.
+        again = asked(rota)
+        take(colleague_client(), again, rota["take"])
+        assert act(login(Role.AGENT), again, "cancel").json()["status"] == "cancelled"
+        assert act(login(Role.LEAD), again, "approve").status_code == 409
 
     def test_an_approved_swap_cannot_be_withdrawn_it_would_leave_the_roster_half_done(
         self, rota: dict[str, Any]
@@ -197,32 +205,140 @@ class TestTheWholeFlow:
         assert (response.status_code, response.json()["code"]) == (409, "swap.not_cancellable")
         assert (code(rota["a"], TUE), code(rota["b"], MON)) == ("L1", "D1")
 
-    def test_a_swap_is_answered_in_order_the_colleague_before_the_lead(
-        self, rota: dict[str, Any]
-    ) -> None:
+    def test_a_lead_cannot_approve_a_request_nobody_has_taken(self, rota: dict[str, Any]) -> None:
         swap_id = asked(rota)
-        # The lead cannot skip the colleague's say.
         response = act(login(Role.LEAD), swap_id, "approve")
         assert (response.status_code, response.json()["code"]) == (
             409,
             "swap.not_waiting_for_approval",
         )
-        # And a colleague cannot answer twice.
-        act(colleague_client(), swap_id, "accept")
-        again = act(colleague_client(), swap_id, "accept")
-        assert (again.status_code, again.json()["code"]) == (409, "swap.not_waiting_for_colleague")
+
+    def test_a_request_can_only_be_taken_once(self, rota: dict[str, Any]) -> None:
+        swap_id = asked(rota)
+        take(colleague_client(), swap_id, rota["take"])
+        other = person(
+            "E030",
+            user=User.objects.get_or_create(username="u-other", defaults={"role": Role.AGENT})[0],
+        )
+        assign(login(), queue(), other, WED, rota["shifts"]["D1"])
+        again = take(as_agent("u-other"), swap_id, row(other, WED))
+        assert (again.status_code, again.json()["code"]) == (409, "swap.not_open")
+
+
+class TestOtherAgentsDoNotSeeWho:
+    """The poster's name must not reach another agent until the request is matched."""
+
+    def test_the_board_shows_the_shift_and_queue_but_no_name(self, rota: dict[str, Any]) -> None:
+        asked(rota)
+        listing = colleague_client().get(f"{SW}/board")
+        entry = listing.json()[0]
+        assert (entry["queue"], entry["day"], entry["shift"]) == ("QueueA", "2026-05-25", "D1")
+        # Failure caught: a name or an employee number anywhere in the payload.
+        assert "Person E001" not in listing.content.decode()
+        assert "E001" not in listing.content.decode()
+        assert set(entry) == {"id", "queue", "day", "shift", "startTime", "endTime", "createdAt"}
+
+    def test_another_agent_cannot_read_an_open_request_through_the_swap_list_or_by_id(
+        self, rota: dict[str, Any]
+    ) -> None:
+        swap_id = asked(rota)
+        assert colleague_client().get(SW).json() == []
+        for what in ("approve", "reject", "cancel"):
+            assert act(colleague_client(), swap_id, what).status_code in (403, 404)
+        assert SwapRequest.objects.get(pk=swap_id).status == SwapStatus.OPEN
+
+    def test_the_poster_does_not_see_their_own_request_on_the_board(
+        self, rota: dict[str, Any]
+    ) -> None:
+        asked(rota)
+        assert login(Role.AGENT).get(f"{SW}/board").json() == []
+
+    def test_names_are_shown_to_both_people_once_matched(self, rota: dict[str, Any]) -> None:
+        swap_id = agreed(rota)
+        for client in (login(Role.AGENT), colleague_client()):
+            seen = client.get(SW).json()[0]
+            assert seen["id"] == swap_id
+            assert (seen["fromEmployee"], seen["toEmployee"]) == ("Person E001", "Person E002")
+
+    def test_a_third_agent_never_sees_a_matched_swap_either(self, rota: dict[str, Any]) -> None:
+        agreed(rota)
+        assert as_agent("u-third").get(SW).json() == []
+        assert as_agent("u-third").get(f"{SW}/board").json() == []
+
+    def test_only_people_who_work_the_queue_can_see_or_take_the_request(
+        self, rota: dict[str, Any]
+    ) -> None:
+        swap_id = asked(rota)
+        other_queue = queue("QueueB")
+        user = User.objects.get_or_create(username="u-b-only", defaults={"role": Role.AGENT})[0]
+        outsider = person("E040", queues=("QueueB",), user=user)
+        assign(login(), other_queue, outsider, WED, rota["shifts"]["D1"])
+        client = as_agent("u-b-only")
+        assert client.get(f"{SW}/board").json() == []
+        # Failure caught: a request on a queue you do not work must look like it is not there.
+        assert take(client, swap_id, row(outsider, WED)).status_code == 404
+        assert client.get(f"{SW}/{swap_id}/offers").json() == []
+
+    def test_a_lead_sees_who_posted_a_team_members_request(self, rota: dict[str, Any]) -> None:
+        asked(rota)
+        seen = login(Role.LEAD).get(SW).json()[0]
+        assert seen["fromEmployee"] == "Person E001"
+        assert seen["toEmployee"] is None
+
+
+class TestOnlyWhatWorksIsOnTheBoard:
+    def test_a_request_is_hidden_when_none_of_my_shifts_would_work(
+        self, rota: dict[str, Any]
+    ) -> None:
+        # A also works E1 on Wednesday, so taking B's Tuesday L1 would leave 9 hours of rest. The
+        # trade is impossible from A's side, so B must not be offered A's request... but A is the
+        # poster here: B's only shift is the Tuesday L1.
+        assign(login(), queue(), rota["a"], WED, rota["shifts"]["E1"])
+        asked(rota)
+        assert colleague_client().get(f"{SW}/board").json() == []
+
+    def test_an_agent_with_no_shift_to_offer_sees_an_empty_board(
+        self, rota: dict[str, Any]
+    ) -> None:
+        asked(rota)
+        user = User.objects.get_or_create(username="u-free", defaults={"role": Role.AGENT})[0]
+        person("E041", user=user)  # skilled on the queue, but not rostered
+        assert as_agent("u-free").get(f"{SW}/board").json() == []
+
+    def test_offers_list_only_my_shifts_that_would_pass_every_rule(
+        self, rota: dict[str, Any]
+    ) -> None:
+        swap_id = asked(rota)
+        planner = login()
+        # B also works Thursday (D1) and Friday (E1): each could be traded for A's Monday D1.
+        thu, fri = date(2026, 5, 28), date(2026, 5, 29)
+        assign(planner, queue(), rota["b"], thu, rota["shifts"]["D1"])
+        assign(planner, queue(), rota["b"], fri, rota["shifts"]["E1"])
+        offered = colleague_client().get(f"{SW}/{swap_id}/offers").json()
+        assert sorted((o["day"], o["shift"]) for o in offered) == [
+            ("2026-05-26", "L1"),
+            ("2026-05-28", "D1"),
+            ("2026-05-29", "E1"),
+        ]
+
+    def test_offers_for_a_request_i_cannot_take_is_empty(self, rota: dict[str, Any]) -> None:
+        swap_id = asked(rota)
+        assert login(Role.AGENT).get(f"{SW}/{swap_id}/offers").json() == []  # my own request
+        assert as_agent("u-third").get(f"{SW}/{swap_id}/offers").json() == []
+        assert colleague_client().get(f"{SW}/999999/offers").json() == []
 
 
 class TestRulesStopABadSwap:
-    def test_less_than_eleven_hours_of_rest_is_refused_when_asked(
+    def test_less_than_eleven_hours_of_rest_is_refused_when_taken(
         self, rota: dict[str, Any]
     ) -> None:
         assign(login(), queue(), rota["a"], WED, rota["shifts"]["E1"])
-        response = offer(login(Role.AGENT), rota["give"], rota["take"])
+        response = trade(login(Role.AGENT), rota["give"], colleague_client(), rota["take"])
         assert (response.status_code, response.json()["code"]) == (422, "roster.rest_period")
-        assert SwapRequest.objects.count() == 0
+        # The request stays open for someone whose shifts do fit.
+        assert SwapRequest.objects.get().status == SwapStatus.OPEN
 
-    def test_a_rule_broken_after_it_was_asked_still_stops_the_approval(
+    def test_a_rule_broken_after_it_was_matched_still_stops_the_approval(
         self, rota: dict[str, Any]
     ) -> None:
         # The roster moves on while the swap waits: the checks run again at the decision, and
@@ -241,7 +357,15 @@ class TestRulesStopABadSwap:
         assign(login(), queue(), rota["b"], TUE, None)  # the planner takes B off Tuesday
         response = act(login(Role.LEAD), swap_id, "approve")
         assert (response.status_code, response.json()["code"]) == (409, "swap.changed")
-        assert row(rota["a"], MON) is not None  # A kept their own shift
+        assert ShiftAssignment.objects.filter(employee=rota["a"], day=MON).exists()
+
+    def test_taking_a_request_whose_shift_was_removed_is_refused(
+        self, rota: dict[str, Any]
+    ) -> None:
+        swap_id = asked(rota)
+        assign(login(), queue(), rota["a"], MON, None)
+        response = take(colleague_client(), swap_id, rota["take"])
+        assert (response.status_code, response.json()["code"]) == (409, "swap.changed")
 
     def test_contract_hours_apply_to_the_person_taking_the_longer_shift(self) -> None:
         shifts = standard_shifts()
@@ -252,7 +376,7 @@ class TestRulesStopABadSwap:
         planner = login()
         assign(planner, queue(), short, MON, shifts["P1"])  # 4 hours
         assign(planner, queue(), other, TUE, shifts["D1"])  # 8 hours
-        response = offer(login(Role.AGENT), row(short, MON), row(other, TUE))  # type: ignore[arg-type]
+        response = trade(login(Role.AGENT), row(short, MON), colleague_client(), row(other, TUE))
         assert (response.status_code, response.json()["code"]) == (422, "roster.over_hours")
 
     def test_a_person_on_approved_leave_cannot_take_a_shift_that_day(
@@ -264,154 +388,109 @@ class TestRulesStopABadSwap:
             {"leaveTypeId": kind, "startDate": str(TUE), "endDate": str(TUE)},
             content_type="application/json",
         )
-        assert (
-            login(Role.LEAD).post(f"{LEAVE}/requests/{leave.json()['id']}/approve").status_code
-            == 200
-        )
-        response = offer(login(Role.AGENT), rota["give"], rota["take"])
+        login(Role.LEAD).post(f"{LEAVE}/requests/{leave.json()['id']}/approve")
+        response = trade(login(Role.AGENT), rota["give"], colleague_client(), rota["take"])
         assert (response.status_code, response.json()["code"]) == (422, "roster.on_leave")
 
     def test_someone_already_working_that_day_cannot_take_a_second_shift(
         self, rota: dict[str, Any]
     ) -> None:
         assign(login(), queue(), rota["a"], TUE, rota["shifts"]["E1"])
-        response = offer(login(Role.AGENT), rota["give"], rota["take"])
+        response = trade(login(Role.AGENT), rota["give"], colleague_client(), rota["take"])
         assert (response.status_code, response.json()["code"]) == (422, "roster.already_rostered")
 
-    def test_both_shifts_must_be_on_the_same_queue(self, rota: dict[str, Any]) -> None:
+    def test_the_shift_offered_in_return_must_be_on_the_same_queue(
+        self, rota: dict[str, Any]
+    ) -> None:
         other_queue = queue("QueueB")
-        b2 = person("E003", queues=("QueueB",), user=None)
+        b2 = person("E003", queues=("QueueB", "QueueA"), user=None)
         assign(login(), other_queue, b2, TUE, rota["shifts"]["L1"])
-        response = offer(login(Role.AGENT), rota["give"], row(b2, TUE))  # type: ignore[arg-type]
+        swap_id = asked(rota)
+        response = take(login(), swap_id, row(b2, TUE), employeeId=b2.pk)
         assert (response.status_code, response.json()["code"]) == (422, "swap.different_queue")
 
-    def test_a_shift_cannot_be_swapped_with_yourself(self, rota: dict[str, Any]) -> None:
+    def test_you_cannot_take_your_own_request(self, rota: dict[str, Any]) -> None:
         assign(login(), queue(), rota["a"], TUE, rota["shifts"]["E1"])
-        response = offer(login(Role.AGENT), rota["give"], row(rota["a"], TUE))  # type: ignore[arg-type]
+        swap_id = asked(rota)
+        response = take(login(Role.AGENT), swap_id, row(rota["a"], TUE))
         assert (response.status_code, response.json()["code"]) == (422, "swap.same_person")
 
-    def test_a_shift_that_has_started_cannot_be_swapped(
+    def test_a_shift_that_has_started_cannot_be_posted(
         self, rota: dict[str, Any], monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setattr("wfm.people.services.timezone.localdate", lambda: TUE)  # Monday is gone
-        response = offer(login(Role.AGENT), rota["give"], rota["take"])
+        response = post(login(Role.AGENT), rota["give"])
         assert (response.status_code, response.json()["code"]) == (422, "swap.in_the_past")
 
     def test_a_shift_cannot_be_in_two_open_swaps_at_once(self, rota: dict[str, Any]) -> None:
         asked(rota)
-        c = person("E003", user=None)
-        assign(login(), queue(), c, WED, rota["shifts"]["D1"])
-        again = offer(login(Role.AGENT), rota["give"], row(c, WED))  # type: ignore[arg-type]
+        again = post(login(Role.AGENT), rota["give"])
         assert (again.status_code, again.json()["code"]) == (409, "swap.already_open")
+
+    def test_a_shift_in_an_open_request_cannot_also_be_offered_in_return(
+        self, rota: dict[str, Any]
+    ) -> None:
+        swap_id = asked(rota)  # A's Monday is posted
+        post(colleague_client(), rota["take"])  # and B has posted their own Tuesday
+        response = take(colleague_client(), swap_id, rota["take"])
+        assert (response.status_code, response.json()["code"]) == (409, "swap.already_open")
 
 
 class TestWhoMayDoWhat:
-    def test_you_can_only_give_away_your_own_shift(self, rota: dict[str, Any]) -> None:
-        # The colleague tries to offer A's shift as if it were theirs.
-        response = offer(colleague_client(), rota["give"], rota["take"])
-        assert response.status_code == 404
+    def test_you_can_only_post_your_own_shift(self, rota: dict[str, Any]) -> None:
+        # The colleague tries to post A's shift as if it were theirs.
+        assert post(colleague_client(), rota["give"]).status_code == 404
 
     def test_an_agent_cannot_act_for_someone_else_but_a_planner_can(
         self, rota: dict[str, Any]
     ) -> None:
-        on_behalf = {"employeeId": rota["a"].pk}
-        assert (
-            offer(
-                login(Role.AGENT), rota["give"], rota["take"], **{"employeeId": rota["b"].pk}
-            ).status_code
-            == 404
-        )
-        assert (
-            offer(login(Role.PLANNER), rota["give"], rota["take"], **on_behalf).status_code == 201
-        )
+        assert post(login(Role.AGENT), rota["give"], employeeId=rota["b"].pk).status_code == 404
+        assert post(login(Role.PLANNER), rota["give"], employeeId=rota["a"].pk).status_code == 201
 
-    def test_only_the_colleague_can_answer_not_the_asker_or_an_outsider(
+    def test_a_planner_can_take_a_request_on_someones_behalf_an_agent_cannot(
         self, rota: dict[str, Any]
     ) -> None:
         swap_id = asked(rota)
-        assert act(login(Role.AGENT), swap_id, "accept").status_code == 404  # the asker
-        # An outsider: another agent who is not in the swap.
-        outsider, _ = User.objects.get_or_create(
-            username="u-outsider", defaults={"role": Role.AGENT}
-        )
-        person("E009", user=outsider)
-        client = Client()
-        client.force_login(outsider)
-        assert act(client, swap_id, "accept").status_code == 404
-        assert act(client, swap_id, "decline").status_code == 404
-        assert act(client, swap_id, "cancel").status_code == 404
-        assert client.get(SW).json() == []  # and they cannot see it either
+        refused = take(as_agent("u-third"), swap_id, rota["take"], employeeId=rota["b"].pk)
+        assert refused.status_code == 404
+        taken = take(login(Role.PLANNER), swap_id, rota["take"], employeeId=rota["b"].pk)
+        assert taken.status_code == 200
+        assert taken.json()["status"] == "awaiting_approval"
 
-    def test_the_colleague_cannot_withdraw_the_askers_swap(self, rota: dict[str, Any]) -> None:
+    def test_you_can_only_offer_your_own_shift_in_return(self, rota: dict[str, Any]) -> None:
         swap_id = asked(rota)
-        assert act(colleague_client(), swap_id, "cancel").status_code == 404
+        # Another agent tries to offer A's own shift (the poster's) as theirs.
+        assert take(colleague_client(), swap_id, rota["give"]).status_code == 404
+
+    def test_only_the_poster_or_a_planner_withdraws(self, rota: dict[str, Any]) -> None:
+        swap_id = agreed(rota)
+        assert act(colleague_client(), swap_id, "cancel").status_code == 404  # who took it
+        assert act(as_agent("u-third"), swap_id, "cancel").status_code == 404
+        assert act(login(Role.PLANNER), swap_id, "cancel").json()["status"] == "cancelled"
 
     def test_nobody_decides_a_swap_they_are_part_of(self, rota: dict[str, Any]) -> None:
         # A lead who is one of the two people cannot approve it, even though leads can approve.
-        lead_user = User.objects.get_or_create(username="u-lead", defaults={"role": Role.LEAD})[0]
+        lead_user = User.objects.get(username="u-lead")
         lead_person = Employee.objects.get(user=lead_user)  # the team lead from the fixture
         assign(login(), queue(), lead_person, WED, rota["shifts"]["D1"])
-        response = offer(login(Role.AGENT), rota["give"], row(lead_person, WED))  # type: ignore[arg-type]
-        swap_id = response.json()["id"]
-        assert act(login(Role.LEAD), swap_id, "accept").status_code == 200
+        swap_id = asked(rota)
+        assert take(login(Role.LEAD), swap_id, row(lead_person, WED)).status_code == 200
         refused = act(login(Role.LEAD), swap_id, "approve")
         assert (refused.status_code, refused.json()["code"]) == (403, "swap.own_request")
         assert act(login(Role.PLANNER), swap_id, "approve").status_code == 200
 
-    def test_an_agent_sees_only_swaps_they_are_in_and_a_lead_sees_all(
+    def test_an_agent_sees_only_swaps_they_are_in_and_a_lead_sees_their_teams(
         self, rota: dict[str, Any]
     ) -> None:
         asked(rota)
         assert len(login(Role.AGENT).get(SW).json()) == 1
-        assert len(colleague_client().get(SW).json()) == 1
+        assert colleague_client().get(SW).json() == []  # an open request is not theirs to list
         assert len(login(Role.LEAD).get(SW).json()) == 1
-        outsider, _ = User.objects.get_or_create(
-            username="u-outsider", defaults={"role": Role.AGENT}
-        )
-        person("E009", user=outsider)
-        client = Client()
-        client.force_login(outsider)
-        assert client.get(SW).json() == []
 
     def test_a_person_with_no_employee_record_has_nothing_to_swap(self) -> None:
         response = login(Role.AGENT).get(f"{SW}/my-shifts")
         assert (response.status_code, response.json()) == (200, [])
-
-
-class TestChoosingAShiftToTake:
-    def test_options_are_colleagues_shifts_that_would_pass_every_rule(
-        self, rota: dict[str, Any]
-    ) -> None:
-        shifts = rota["shifts"]
-        planner = login()
-        assign(planner, queue(), rota["a"], WED, shifts["E1"])  # makes L1 on Tuesday break rest
-        d = person("E004", user=None)
-        assign(planner, queue(), d, TUE, shifts["E1"])  # ends 15:30, 15.5 hours before Wednesday
-        taken = person("E005", user=None)
-        assign(planner, queue(), taken, date(2026, 5, 28), shifts["D1"])
-        in_a_swap = row(taken, date(2026, 5, 28))
-        # E005's shift is already in someone else's swap, so it is not on offer.
-        outsider = person("E006", user=None)
-        assign(planner, queue(), outsider, date(2026, 5, 29), shifts["D1"])
-        login(Role.PLANNER).post(
-            SW,
-            {
-                "giveAssignmentId": row(outsider, date(2026, 5, 29)).pk,  # type: ignore[union-attr]
-                "takeAssignmentId": in_a_swap.pk,  # type: ignore[union-attr]
-                "employeeId": outsider.pk,
-            },
-            content_type="application/json",
-        )
-        mine = row(rota["a"], MON)
-        listing = login(Role.AGENT).get(f"{SW}/options", {"give_assignment_id": mine.pk}).json()  # type: ignore[union-attr]
-        offered = sorted((o["employee"], o["day"], o["shift"]) for o in listing)
-        # Only D's Tuesday E1: B's Tuesday L1 breaks A's rest, A's own shifts are never offered,
-        # and the two shifts in the open swap are taken.
-        assert offered == [("Person E004", "2026-05-26", "E1")]
-
-    def test_you_can_only_ask_for_options_on_your_own_shifts(self, rota: dict[str, Any]) -> None:
-        response = login(Role.AGENT).get(f"{SW}/options", {"give_assignment_id": rota["take"].pk})
-        assert response.status_code == 404
+        assert login(Role.AGENT).get(f"{SW}/board").json() == []
 
     def test_my_shifts_lists_only_my_coming_shifts_not_ones_already_in_a_swap(
         self, rota: dict[str, Any]
@@ -424,10 +503,10 @@ class TestChoosingAShiftToTake:
 ENDPOINTS = [
     ("get", f"{SW}"),
     ("get", f"{SW}/my-shifts"),
-    ("get", f"{SW}/options?give_assignment_id=1"),
+    ("get", f"{SW}/board"),
+    ("get", f"{SW}/1/offers"),
     ("post", f"{SW}"),
     ("post", f"{SW}/1/accept"),
-    ("post", f"{SW}/1/decline"),
     ("post", f"{SW}/1/approve"),
     ("post", f"{SW}/1/reject"),
     ("post", f"{SW}/1/cancel"),
@@ -468,13 +547,13 @@ class TestTheShiftBeingGivenAwayIsNotHeldAgainstYou:
     def test_two_people_can_swap_shifts_on_the_same_day(self, rota: dict[str, Any]) -> None:
         # B works L1 on Monday as well; A (D1) and B (L1) trade within the day.
         assign(login(), queue(), rota["b"], MON, rota["shifts"]["L1"])
-        give = ShiftAssignment.objects.get(employee=rota["a"], day=MON)
-        take = ShiftAssignment.objects.get(employee=rota["b"], day=MON)
-        swap_id = offer(login(Role.AGENT), give, take).json()["id"]
-        act(colleague_client(), swap_id, "accept")
+        response = trade(
+            login(Role.AGENT), row(rota["a"], MON), colleague_client(), row(rota["b"], MON)
+        )
         # Failure caught: counting the person's own shift as 'already working that day' refuses
         # every same-day swap.
-        assert act(login(Role.LEAD), swap_id, "approve").status_code == 200
+        assert response.status_code == 200, response.content
+        assert act(login(Role.LEAD), response.json()["id"], "approve").status_code == 200
         assert (code(rota["a"], MON), code(rota["b"], MON)) == ("L1", "D1")
 
     def test_rest_is_measured_without_the_shift_you_hand_over(self, rota: dict[str, Any]) -> None:
@@ -485,5 +564,6 @@ class TestTheShiftBeingGivenAwayIsNotHeldAgainstYou:
         planner = login()
         assign(planner, queue(), p, TUE, rota["shifts"]["L1"])
         assign(planner, queue(), q, WED, rota["shifts"]["E1"])
-        response = offer(planner, row(p, TUE), row(q, WED), employeeId=p.pk)  # type: ignore[arg-type]
-        assert response.status_code == 201, response.content
+        swap_id = post(planner, row(q, WED), employeeId=q.pk).json()["id"]
+        response = take(planner, swap_id, row(p, TUE), employeeId=p.pk)
+        assert response.status_code == 200, response.content

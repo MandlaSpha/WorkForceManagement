@@ -16,12 +16,16 @@ class SwapShiftOut(Schema):
     startTime: time  # noqa: N815
     endTime: time  # noqa: N815
     employeeId: int  # noqa: N815
-    employee: str
+    employee: str  # always the signed-in person's own shift
 
 
 class SwapIn(Schema):
-    giveAssignmentId: int  # noqa: N815 - your shift
-    takeAssignmentId: int  # noqa: N815 - the colleague's shift you would take
+    giveAssignmentId: int  # noqa: N815 - your shift, posted for a colleague to take
+    employeeId: int | None = None  # noqa: N815 - on someone's behalf; planners and admins only
+
+
+class TakeIn(Schema):
+    assignmentId: int  # noqa: N815 - your own shift, offered in return
     employeeId: int | None = None  # noqa: N815 - on someone's behalf; planners and admins only
 
 
@@ -29,13 +33,25 @@ class SwapOut(Schema):
     id: int
     queue: str
     status: str
-    fromEmployee: str  # noqa: N815
+    fromEmployee: str  # noqa: N815 - the poster
     fromDay: date  # noqa: N815
     fromShift: str  # noqa: N815
-    toEmployee: str  # noqa: N815
-    toDay: date  # noqa: N815
-    toShift: str  # noqa: N815
+    toEmployee: str | None  # noqa: N815 - none while the request is open
+    toDay: date | None  # noqa: N815
+    toShift: str | None  # noqa: N815
     createdAt: datetime  # noqa: N815
     decidedAt: datetime | None  # noqa: N815
-    asker: bool  # the signed-in person is the one who asked
-    colleague: bool  # the signed-in person is the one asked
+    asker: bool  # the signed-in person posted it
+    colleague: bool  # the signed-in person took it
+
+
+class BoardOut(Schema):
+    """An open request as other agents see it: the shift and queue, never the poster."""
+
+    id: int
+    queue: str
+    day: date
+    shift: str
+    startTime: time  # noqa: N815
+    endTime: time  # noqa: N815
+    createdAt: datetime  # noqa: N815

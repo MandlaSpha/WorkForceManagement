@@ -1,4 +1,12 @@
-export { answerSwap, fetchMyShifts, fetchOptions, fetchSwaps, offerSwap } from './api/swap'
+export {
+  answerSwap,
+  fetchBoard,
+  fetchMyShifts,
+  fetchOffers,
+  fetchSwaps,
+  postSwap,
+  takeSwap,
+} from './api/swap'
 export type { SwapAnswer } from './api/swap'
 export {
   describe,
@@ -8,5 +16,5 @@ export {
   STATUS_LABEL,
   STATUS_TONE,
 } from './model/format'
-export { swapKeys, useMyShifts, useOptions, useSwaps } from './model/queries'
-export type { Swap, SwapBody, SwapShift } from './model/types'
+export { swapKeys, useBoard, useMyShifts, useOffers, useSwaps } from './model/queries'
+export type { BoardEntry, Swap, SwapBody, SwapShift } from './model/types'

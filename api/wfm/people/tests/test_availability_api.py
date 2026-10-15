@@ -9,7 +9,7 @@ A person who says "Monday 12:00-13:00, I cannot work" cannot be rostered on D1 o
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date
 from typing import Any
 
 import pytest
@@ -231,9 +231,12 @@ class TestTheRosterHonoursIt:
 
         give = ShiftAssignment.objects.get(employee=staff["a"], day=MON)
         take = ShiftAssignment.objects.get(employee=staff["b"], day=TUE)
-        response = login(Role.AGENT).post(
-            "/api/v1/people/swaps",
-            {"giveAssignmentId": give.pk, "takeAssignmentId": take.pk},
+        posted = login(Role.AGENT).post(
+            "/api/v1/people/swaps", {"giveAssignmentId": give.pk}, content_type="application/json"
+        )
+        response = colleague_client().post(
+            f"/api/v1/people/swaps/{posted.json()['id']}/accept",
+            {"assignmentId": take.pk},
             content_type="application/json",
         )
         assert (response.status_code, response.json()["code"]) == (422, "roster.unavailable")
@@ -307,13 +310,8 @@ class TestMySchedule:
         from wfm.scheduling.models import ShiftAssignment
 
         give = ShiftAssignment.objects.get(employee=rota["a"], day=TUE)
-        later = NEXT_MON + timedelta(days=1)  # the week after is still a draft
-        assign(login(), queue(), rota["b"], later, rota["shifts"]["L1"])
-        take = ShiftAssignment.objects.get(employee=rota["b"], day=later)
         offered = login(Role.AGENT).post(
-            "/api/v1/people/swaps",
-            {"giveAssignmentId": give.pk, "takeAssignmentId": take.pk},
-            content_type="application/json",
+            "/api/v1/people/swaps", {"giveAssignmentId": give.pk}, content_type="application/json"
         )
         assert offered.status_code == 201, offered.content
         body = login(Role.AGENT).get(SCHEDULE, {"from_date": "2026-05-25"}).json()

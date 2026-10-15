@@ -98,34 +98,43 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
     await signOut(page)
   })
 
-  await test.step('the agent offers their early shift for the lead’s late one', async () => {
+  await test.step('the agent posts their early shift, without naming anybody', async () => {
     await signIn(page, 'agent')
     await page.goto('/shift-swaps')
-    const form = page.getByRole('form', { name: 'Offer a shift swap' })
-    const mine = form.getByLabel('Your shift')
+    const form = page.getByRole('form', { name: 'Post a shift swap' })
+    const mine = form.getByLabel(/swap away/)
     await mine.selectOption(await mine.locator('option', { hasText: early }).getAttribute('value'))
-    const theirs = form.getByLabel('Swap it for')
-    await expect(theirs.locator('option', { hasText: late })).toHaveCount(1)
-    await theirs.selectOption(await theirs.locator('option', { hasText: late }).getAttribute('value'))
     await expectNoAccessibilityViolations(page)
-    await form.getByRole('button', { name: 'Offer swap' }).click()
-    await expect(page.getByTestId('offer-result')).toContainText('waiting for Lee Lead to accept')
+    await form.getByRole('button', { name: 'Post swap request' }).click()
+    await expect(page.getByTestId('offer-result')).toContainText('will not see your name')
     await signOut(page)
   })
 
-  await test.step('the colleague accepts it', async () => {
+  await test.step('the colleague sees the request without the poster’s name and takes it', async () => {
     await signIn(page, 'lead')
     await page.goto('/shift-swaps')
-    const row = page.getByRole('listitem').filter({ hasText: early }).filter({ hasText: late }).first()
-    await row.getByRole('button', { name: /Accept the swap with Alex Agent/ }).click()
-    await expect(page.getByTestId('swap-result')).toContainText('Accepted')
+    await page.getByRole('tab', { name: 'Open requests' }).click()
+    const card = page.getByRole('listitem').filter({ hasText: early }).first()
+    await expect(card).toContainText('A colleague on')
+    await expect(card).not.toContainText('Alex Agent')
+    // The API says the same: the board carries no name or employee number.
+    const board = await (await page.request.get('/api/v1/people/swaps/board')).text()
+    expect(board).not.toContain('Alex Agent')
+    expect(board).not.toContain('DEMO-AGENT')
+    await card.getByRole('button', { name: new RegExp(`Take the ${early} request`) }).click()
+    const take = page.getByRole('form', { name: new RegExp(`Take the ${early} request`) })
+    const offered = take.getByLabel(/in return/)
+    await expect(offered.locator('option', { hasText: late })).toHaveCount(1)
+    await offered.selectOption(await offered.locator('option', { hasText: late }).getAttribute('value'))
+    await take.getByRole('button', { name: 'Take this swap' }).click()
+    await expect(page.getByTestId('swap-result')).toContainText('A lead decides next')
     // The lead is one of the two people, so cannot approve it even though leads may approve.
     const all = await (await page.request.get('/api/v1/people/swaps')).json()
-    const mine = all.find(
+    const matched = all.find(
       (x: { fromShift: string; toShift: string; status: string }) =>
         x.fromShift === early && x.toShift === late && x.status === 'awaiting_approval',
     )
-    const approve = await page.request.post(`/api/v1/people/swaps/${mine.id}/approve`, {
+    const approve = await page.request.post(`/api/v1/people/swaps/${matched.id}/approve`, {
       headers: { 'X-CSRFToken': await csrf(page) },
     })
     expect(approve.status()).toBe(403)

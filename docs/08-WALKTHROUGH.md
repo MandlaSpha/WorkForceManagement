@@ -81,17 +81,17 @@ the Roster for that week and see the shifts gone; sign in as agent and cancel.
 
 ## Phase 3: Shift swaps (SWP-01)
 
-**Agent** (`agent`): **Shift swaps** > *Offer a swap*. Pick one of your coming shifts, then a colleague's shift on the same queue. Only swaps that keep both people within the rest, hours and leave rules are listed, so you cannot offer something the roster would refuse. Offer it.
+Privacy first: an agent never sees another agent's name or schedule. A swap is a *request on a board*.
 
-**Colleague** (`lead` is the demo colleague): sees it under *Waiting for your answer* and accepts or declines.
+1. **Post** (`agent`): *Shift swaps > Post a swap request*. Pick one of your coming shifts and post it. Nobody is named.
+2. **Take** (`lead` is the demo colleague): *Open requests* shows "A colleague on Demo Support wants to swap away D1, Mon 25 May 09:00-17:30", with no name, and only requests where at least one of your own shifts would work (rest, hours, leave, availability, one shift a day). *Take it...* lists exactly those shifts of yours; pick the one you offer in return.
+3. **Approve** (`planner`, `admin` or the lead of the team): *Approvals*. Approving exchanges the two shifts on the roster (check the Roster page). Nobody approves a swap they are part of, so the demo lead's swap goes to a planner.
 
-**Lead / planner / admin**: *Approvals* tab. Approve exchanges the two shifts on the roster; check the Roster page. Nobody approves a swap they are part of: sign in as `lead` and the swap they are in shows 'Somebody else decides', so a planner or admin approves it.
-
-With the demo data there is already a swap waiting for the demo agent, one waiting for approval, one declined and one approved.
+The two people see each other's names once it is matched. With the demo data there are two open requests the demo agent can take, one matched and waiting for approval, and one approved.
 
 ## Phase 3: The agent's own pages and availability (SCH-08, ESS-01)
 
-Sign in as `agent`: you land on **My schedule**: your published shifts and leave for the next four weeks. Shifts in a week the planner has not published are only counted ("2 shifts are not published yet"), never shown, because they can still change. Links take you to Leave and Shift swaps.
+Sign in as `agent`: you land on **My schedule**: the whole month as a Monday-to-Sunday calendar with your published shifts and leave (use the arrows to move between months, *List* for a plain list). Shifts in a week the planner has not published are only counted ("2 shifts are not published yet"), never shown, because they can still change. Links take you to Leave and Shift swaps.
 
 **My availability**: declare a weekly time you *cannot work* (the roster will refuse a shift covering it, and so will a swap) or would *rather work* (a wish the planner can see). Declaring nothing tells the planner nothing; it does not mean you are free. The demo agent never works Sundays and would rather finish early on Fridays; the demo part-timers cannot work Thursday or Friday, and the demo roster respects it.
 

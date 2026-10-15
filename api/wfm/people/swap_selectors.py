@@ -1,4 +1,5 @@
-"""Reading shift swaps. Everything starts from `Model.objects.for_user(user)`."""
+"""Reading shift swaps. Everything starts from `Model.objects.for_user(user)`, except the board of
+open requests, which is scoped to what the person could actually take and carries no names."""
 
 from __future__ import annotations
 
@@ -10,13 +11,13 @@ from django.utils import timezone
 from wfm.accounts.models import User
 from wfm.core.errors import not_found
 from wfm.scheduling import roster_services
-from wfm.scheduling.models import ShiftAssignment
+from wfm.scheduling.models import Employee, ShiftAssignment
 
 from . import selectors
 from .models import OPEN_SWAP_STATUSES, SwapRequest
 
 LOOKAHEAD_DAYS = 28  # how far ahead a swap can be asked for
-MAX_OPTIONS = 40  # colleagues' shifts offered at once: each is checked against the rules
+MAX_BOARD = 30  # open requests looked at for one person: each is checked against the rules
 
 
 def swaps(user: User, *, status: str | None = None) -> QuerySet[SwapRequest]:
@@ -59,27 +60,65 @@ def my_shifts(user: User) -> list[ShiftAssignment]:
     return [a for a in found if not has_open_swap(a)]
 
 
-def options(user: User, give: ShiftAssignment) -> list[ShiftAssignment]:
-    """Colleagues' shifts on the same queue that this shift could be swapped for: not in another
-    swap, and passing every roster rule for both people. (A colleague's name and shift are shown
-    to the people who work the same queue, as on any posted roster.)"""
-    today = timezone.localdate()
-    candidates = (
+def posted_shift(swap: SwapRequest) -> ShiftAssignment | None:
+    """The roster row the request was posted for, or None if the roster has moved on."""
+    found: ShiftAssignment | None = (
         ShiftAssignment.objects.filter(
-            roster_week__queue=give.roster_week.queue,
-            day__gte=today,
-            day__lte=today + timedelta(days=LOOKAHEAD_DAYS),
+            employee_id=swap.from_employee_id, day=swap.from_day, template_id=swap.from_template_id
         )
-        .exclude(employee=give.employee)
-        .select_related("template", "roster_week__queue", "employee")
-        .order_by("day", "employee__name")
+        .select_related("template", "employee", "roster_week__queue")
+        .first()
     )
-    found: list[ShiftAssignment] = []
-    for candidate in candidates:
-        if has_open_swap(candidate):
+    return found
+
+
+def _open_for(employee: Employee) -> QuerySet[SwapRequest]:
+    today = timezone.localdate()
+    return (
+        SwapRequest.objects.open_to(employee)
+        .filter(from_day__gte=today, from_day__lte=today + timedelta(days=LOOKAHEAD_DAYS))
+        .select_related("queue", "from_template")
+        .order_by("from_day", "id")
+        .distinct()
+    )
+
+
+def open_request(user: User, swap_id: int) -> SwapRequest | None:
+    """An open request this person could take (on their queues, not their own), else None."""
+    own = selectors.own_employee(user)
+    return _open_for(own).filter(pk=swap_id).first() if own else None
+
+
+def offers_for(user: User, swap: SwapRequest, mine: list[ShiftAssignment]) -> list[ShiftAssignment]:
+    """Which of my shifts could be traded for this request without breaking a rule for either of
+    us (rest, hours, leave, availability, one shift a day)."""
+    posted = posted_shift(swap)
+    if posted is None:
+        return []
+    return [
+        m
+        for m in mine
+        if m.roster_week.queue_id == swap.queue_id
+        and roster_services.exchange_refusal(user, posted, m) is None
+    ]
+
+
+def board(user: User) -> list[SwapRequest]:
+    """Open requests I could take: on my queues, from someone else, and with at least one of my
+    shifts that works. The poster is not named."""
+    own = selectors.own_employee(user)
+    if own is None:
+        return []
+    mine = my_shifts(user)
+    found: list[SwapRequest] = []
+    for swap in _open_for(own)[:MAX_BOARD]:
+        posted = posted_shift(swap)
+        if posted is None:
             continue
-        if roster_services.exchange_refusal(user, give, candidate) is None:
-            found.append(candidate)
-            if len(found) == MAX_OPTIONS:
-                break
+        if any(
+            m.roster_week.queue_id == swap.queue_id
+            and roster_services.exchange_refusal(user, posted, m) is None
+            for m in mine
+        ):
+            found.append(swap)
     return found

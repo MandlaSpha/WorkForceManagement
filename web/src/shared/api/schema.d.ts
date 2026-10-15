@@ -566,8 +566,25 @@ export interface paths {
         /** Shift swaps you are part of, or all */
         get: operations["wfm_people_swap_api_list_swaps"];
         put?: never;
-        /** Offer a shift for a colleague's */
+        /** Post one of your shifts to swap */
         post: operations["wfm_people_swap_api_propose"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/swaps/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open requests you could take (the poster is not named) */
+        get: operations["wfm_people_swap_api_board"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -581,25 +598,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Your shifts you could swap */
+        /** Your shifts you could post */
         get: operations["wfm_people_swap_api_my_shifts"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/people/swaps/options": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Colleagues' shifts one of yours could be swapped for */
-        get: operations["wfm_people_swap_api_options"];
         put?: never;
         post?: never;
         delete?: never;
@@ -617,7 +617,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Accept a colleague's offer */
+        /** Take an open request by offering one of your own shifts in return */
         post: operations["wfm_people_swap_api_accept"];
         delete?: never;
         options?: never;
@@ -659,17 +659,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/people/swaps/{swap_id}/decline": {
+    "/api/v1/people/swaps/{swap_id}/offers": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Which of your shifts you could offer in return for an open request */
+        get: operations["wfm_people_swap_api_offers"];
         put?: never;
-        /** Decline an offer */
-        post: operations["wfm_people_swap_api_decline"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1223,6 +1223,38 @@ export interface components {
             id: number;
             /** Name */
             name: string;
+        };
+        /**
+         * BoardOut
+         * @description An open request as other agents see it: the shift and queue, never the poster.
+         */
+        BoardOut: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Endtime
+             * Format: time
+             */
+            endTime: string;
+            /** Id */
+            id: number;
+            /** Queue */
+            queue: string;
+            /** Shift */
+            shift: string;
+            /**
+             * Starttime
+             * Format: time
+             */
+            startTime: string;
         };
         /** CapacityDayOut */
         CapacityDayOut: {
@@ -2262,8 +2294,6 @@ export interface components {
             employeeId?: number | null;
             /** Giveassignmentid */
             giveAssignmentId: number;
-            /** Takeassignmentid */
-            takeAssignmentId: number;
         };
         /** SwapOut */
         SwapOut: {
@@ -2293,15 +2323,12 @@ export interface components {
             queue: string;
             /** Status */
             status: string;
-            /**
-             * Today
-             * Format: date
-             */
-            toDay: string;
+            /** Today */
+            toDay: string | null;
             /** Toemployee */
-            toEmployee: string;
+            toEmployee: string | null;
             /** Toshift */
-            toShift: string;
+            toShift: string | null;
         };
         /** SwapShiftOut */
         SwapShiftOut: {
@@ -2332,6 +2359,13 @@ export interface components {
              * Format: time
              */
             startTime: string;
+        };
+        /** TakeIn */
+        TakeIn: {
+            /** Assignmentid */
+            assignmentId: number;
+            /** Employeeid */
+            employeeId?: number | null;
         };
         /** TuningIn */
         TuningIn: {
@@ -3381,7 +3415,7 @@ export interface operations {
             };
         };
     };
-    wfm_people_swap_api_my_shifts: {
+    wfm_people_swap_api_board: {
         parameters: {
             query?: never;
             header?: never;
@@ -3396,16 +3430,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SwapShiftOut"][];
+                    "application/json": components["schemas"]["BoardOut"][];
                 };
             };
         };
     };
-    wfm_people_swap_api_options: {
+    wfm_people_swap_api_my_shifts: {
         parameters: {
-            query: {
-                give_assignment_id: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -3432,7 +3464,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TakeIn"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -3489,7 +3525,7 @@ export interface operations {
             };
         };
     };
-    wfm_people_swap_api_decline: {
+    wfm_people_swap_api_offers: {
         parameters: {
             query?: never;
             header?: never;
@@ -3506,7 +3542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SwapOut"];
+                    "application/json": components["schemas"]["SwapShiftOut"][];
                 };
             };
         };

@@ -178,7 +178,8 @@ test('a lead cannot see or decide leave of someone outside their team, a planner
   const unpaid = types.find((t: { code: string }) => t.code === 'unpaid').id
   const asked = await page.request.post('/api/v1/people/leave/requests', {
     headers: headers(),
-    data: { leaveTypeId: unpaid, startDate: day, endDate: day, employeeId },
+    // Monday to Friday: a single random Monday can be a public holiday, which has no working days.
+    data: { leaveTypeId: unpaid, startDate: day, endDate: addDays(day, 4), employeeId },
   })
   expect(asked.status()).toBe(201)
   const requestId = (await asked.json()).id

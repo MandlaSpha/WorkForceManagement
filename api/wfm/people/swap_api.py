@@ -4,7 +4,6 @@ from django.http import HttpRequest
 from ninja import Router, Status
 
 from wfm.accounts.models import User
-from wfm.core.errors import not_found
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 from wfm.scheduling.models import ShiftAssignment
@@ -13,7 +12,7 @@ from . import swap_selectors as selectors
 from . import swap_services as services
 from .models import SwapRequest
 from .policy import APPROVE_ROLES, SELF_ROLES
-from .swap_schemas import SwapIn, SwapOut, SwapShiftOut
+from .swap_schemas import BoardOut, SwapIn, SwapOut, SwapShiftOut, TakeIn
 
 router = Router(tags=["people"])
 
@@ -22,24 +21,45 @@ APPROVE = RoleSessionAuth(*sorted(APPROVE_ROLES), feature=Feature.PEOPLE)
 
 
 @router.get(
-    "/my-shifts", auth=SELF, response=list[SwapShiftOut], summary="Your shifts you could swap"
+    "/my-shifts", auth=SELF, response=list[SwapShiftOut], summary="Your shifts you could post"
 )
 def my_shifts(request: HttpRequest) -> list[SwapShiftOut]:
     return [_shift_out(a) for a in selectors.my_shifts(current_user(request))]
 
 
 @router.get(
-    "/options",
+    "/board",
+    auth=SELF,
+    response=list[BoardOut],
+    summary="Open requests you could take (the poster is not named)",
+)
+def board(request: HttpRequest) -> list[BoardOut]:
+    return [
+        BoardOut(
+            id=s.pk,
+            queue=s.queue.name,
+            day=s.from_day,
+            shift=s.from_template.code,
+            startTime=s.from_template.start_time,
+            endTime=s.from_template.end_time,
+            createdAt=s.created_at,
+        )
+        for s in selectors.board(current_user(request))
+    ]
+
+
+@router.get(
+    "/{swap_id}/offers",
     auth=SELF,
     response=list[SwapShiftOut],
-    summary="Colleagues' shifts one of yours could be swapped for",
+    summary="Which of your shifts you could offer in return for an open request",
 )
-def options(request: HttpRequest, give_assignment_id: int) -> list[SwapShiftOut]:
+def offers(request: HttpRequest, swap_id: int) -> list[SwapShiftOut]:
     user = current_user(request)
-    mine = {a.pk: a for a in selectors.my_shifts(user)}
-    if give_assignment_id not in mine:
-        raise not_found("No such shift.")
-    return [_shift_out(a) for a in selectors.options(user, mine[give_assignment_id])]
+    swap = selectors.open_request(user, swap_id)
+    if swap is None:
+        return []
+    return [_shift_out(a) for a in selectors.offers_for(user, swap, selectors.my_shifts(user))]
 
 
 @router.get("", auth=SELF, response=list[SwapOut], summary="Shift swaps you are part of, or all")
@@ -48,28 +68,27 @@ def list_swaps(request: HttpRequest, status: str | None = None) -> list[SwapOut]
     return [_swap_out(user, s) for s in selectors.swaps(user, status=status)]
 
 
-@router.post("", auth=SELF, response={201: SwapOut}, summary="Offer a shift for a colleague's")
+@router.post("", auth=SELF, response={201: SwapOut}, summary="Post one of your shifts to swap")
 def propose(request: HttpRequest, body: SwapIn) -> Status[SwapOut]:
     user = current_user(request)
-    swap = services.propose(
-        user=user,
-        give_id=body.giveAssignmentId,
-        take_id=body.takeAssignmentId,
-        employee_id=body.employeeId,
-    )
+    swap = services.propose(user=user, give_id=body.giveAssignmentId, employee_id=body.employeeId)
     return Status(201, _swap_out(user, swap))
 
 
-@router.post("/{swap_id}/accept", auth=SELF, response=SwapOut, summary="Accept a colleague's offer")
-def accept(request: HttpRequest, swap_id: int) -> SwapOut:
+@router.post(
+    "/{swap_id}/accept",
+    auth=SELF,
+    response=SwapOut,
+    summary="Take an open request by offering one of your own shifts in return",
+)
+def accept(request: HttpRequest, swap_id: int, body: TakeIn) -> SwapOut:
     user = current_user(request)
-    return _swap_out(user, services.respond(user=user, swap_id=swap_id, accept=True))
-
-
-@router.post("/{swap_id}/decline", auth=SELF, response=SwapOut, summary="Decline an offer")
-def decline(request: HttpRequest, swap_id: int) -> SwapOut:
-    user = current_user(request)
-    return _swap_out(user, services.respond(user=user, swap_id=swap_id, accept=False))
+    return _swap_out(
+        user,
+        services.take(
+            user=user, swap_id=swap_id, assignment_id=body.assignmentId, employee_id=body.employeeId
+        ),
+    )
 
 
 @router.post(
@@ -117,11 +136,11 @@ def _swap_out(user: User, s: SwapRequest) -> SwapOut:
         fromEmployee=s.from_employee.name,
         fromDay=s.from_day,
         fromShift=s.from_template.code,
-        toEmployee=s.to_employee.name,
+        toEmployee=s.to_employee.name if s.to_employee else None,
         toDay=s.to_day,
-        toShift=s.to_template.code,
+        toShift=s.to_template.code if s.to_template else None,
         createdAt=s.created_at,
         decidedAt=s.decided_at,
         asker=s.from_employee.user_id == user.pk,
-        colleague=s.to_employee.user_id == user.pk,
+        colleague=s.to_employee is not None and s.to_employee.user_id == user.pk,
     )

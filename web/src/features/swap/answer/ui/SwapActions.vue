@@ -12,9 +12,6 @@ const emit = defineEmits<{ answered: [what: SwapAnswer, swap: Swap] }>()
 const answer = useAnswerSwap((what, swap) => emit('answered', what, swap))
 
 // Cosmetic: the API enforces who may answer. These only decide which buttons to offer.
-const colleagueTurn = computed(
-  () => props.swap.status === 'awaiting_colleague' && props.swap.colleague,
-)
 const approverTurn = computed(
   () =>
     props.swap.status === 'awaiting_approval' &&
@@ -24,8 +21,7 @@ const approverTurn = computed(
 )
 const canWithdraw = computed(
   () =>
-    props.swap.asker &&
-    (props.swap.status === 'awaiting_colleague' || props.swap.status === 'awaiting_approval'),
+    props.swap.asker && (props.swap.status === 'open' || props.swap.status === 'awaiting_approval'),
 )
 
 function act(what: SwapAnswer): void {
@@ -35,23 +31,6 @@ function act(what: SwapAnswer): void {
 
 <template>
   <div class="flex flex-col items-end gap-1">
-    <div v-if="colleagueTurn" class="flex gap-2">
-      <AppButton
-        :aria-label="`Accept the swap with ${swap.fromEmployee}`"
-        :loading="answer.isPending.value"
-        @click="act('accept')"
-      >
-        Accept
-      </AppButton>
-      <AppButton
-        variant="secondary"
-        :aria-label="`Decline the swap with ${swap.fromEmployee}`"
-        :loading="answer.isPending.value"
-        @click="act('decline')"
-      >
-        Decline
-      </AppButton>
-    </div>
     <div v-if="approverTurn" class="flex gap-2">
       <AppButton
         :aria-label="`Approve the swap between ${swap.fromEmployee} and ${swap.toEmployee}`"
@@ -73,7 +52,7 @@ function act(what: SwapAnswer): void {
       v-if="canWithdraw"
       type="button"
       class="text-xs font-medium text-danger underline disabled:opacity-60"
-      :aria-label="`Withdraw the swap with ${swap.toEmployee}`"
+      aria-label="Withdraw this swap request"
       :disabled="answer.isPending.value"
       @click="act('cancel')"
     >

@@ -130,19 +130,21 @@ def test_the_seeding_is_audited_and_the_chain_still_verifies(seeded: None) -> No
 def test_swaps_are_in_the_states_a_demo_needs_and_the_approved_one_moved_the_roster(
     seeded: None,
 ) -> None:
-    states = set(SwapRequest.objects.values_list("status", flat=True))
-    assert states == {
-        SwapStatus.AWAITING_COLLEAGUE,
-        SwapStatus.AWAITING_APPROVAL,
-        SwapStatus.DECLINED,
-        SwapStatus.APPROVED,
-    }
-    # One is waiting for the demo agent's own answer, so their login has something to do.
-    assert SwapRequest.objects.filter(
-        status=SwapStatus.AWAITING_COLLEAGUE, to_employee__emp_no="DEMO-AGENT"
-    ).exists()
+    states = list(SwapRequest.objects.values_list("status", flat=True))
+    assert SwapStatus.OPEN in states
+    assert SwapStatus.AWAITING_APPROVAL in states
+    assert SwapStatus.APPROVED in states
+    # The open requests are ones the demo agent could take, so their board has something on it.
+    from django.contrib.auth import get_user_model
+
+    from wfm.people import swap_selectors
+
+    agent = get_user_model().objects.get(username="agent")
+    assert swap_selectors.board(agent), "the demo agent's board should not be empty"
     # The approved swap really happened: each person now holds the other's shift.
     done = SwapRequest.objects.get(status=SwapStatus.APPROVED)
+    assert done.to_employee is not None
+    assert done.to_day is not None
     assert ShiftAssignment.objects.filter(
         employee=done.to_employee, day=done.from_day, template=done.from_template
     ).exists()

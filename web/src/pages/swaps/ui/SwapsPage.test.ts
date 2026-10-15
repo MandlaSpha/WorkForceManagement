@@ -2,60 +2,53 @@ import userEvent from '@testing-library/user-event'
 import { screen, waitFor, within } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 
+import type { BoardEntry, Swap, SwapShift } from '@/entities/swap'
 import { backend } from '@/test/fake-backend'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
-import { shiftOf, swapOf, THEIRS } from '@/test/swap-fixtures'
+import { boardOf, matchedOf, shiftOf, swapOf } from '@/test/swap-fixtures'
 
 async function open(
   role = 'agent',
-  over: { swaps?: ReturnType<typeof swapOf>[]; options?: ReturnType<typeof shiftOf>[] } = {},
+  over: { swaps?: Swap[]; board?: BoardEntry[]; offers?: SwapShift[] } = {},
 ) {
   seedScheduling()
   backend.myShifts = [shiftOf(), shiftOf({ assignmentId: 3, day: '2099-06-03', shift: 'E1' })]
-  backend.swapOptions = over.options ?? [THEIRS]
+  backend.board = over.board ?? []
+  backend.swapOffers = over.offers ?? []
   backend.swaps = over.swaps ?? []
   return openScheduling('/shift-swaps', role)
 }
 
-describe('offering a swap', () => {
-  it('sends my shift and the colleague shift I picked, with the CSRF token, and says who must accept', async () => {
+describe('posting a swap request', () => {
+  it('sends only my own shift with the CSRF token, and says nobody sees my name until it is taken', async () => {
     const user = userEvent.setup()
     await open()
-    const form = await screen.findByRole('form', { name: 'Offer a shift swap' })
-    await within(form).findByRole('option', { name: /Sam Colleague: Tue 02 Jun, L1/ })
+    const form = await screen.findByRole('form', { name: 'Post a shift swap' })
+    await within(form).findByRole('option', { name: /Mon 01 Jun, D1/ })
 
-    await user.click(within(form).getByRole('button', { name: 'Offer swap' }))
+    await user.click(within(form).getByRole('button', { name: 'Post swap request' }))
 
     await waitFor(() => expect(backend.writes).toHaveLength(1))
-    // Failure caught: the two ids sent the wrong way round would swap who gives and who takes.
+    // Failure caught: the request names a colleague's shift or person; it must carry just mine.
     expect(backend.writes[0]).toEqual({
       method: 'POST',
       path: '/api/v1/people/swaps',
-      body: { giveAssignmentId: 1, takeAssignmentId: 2 },
+      body: { giveAssignmentId: 1 },
       csrf: 'test-csrf-token',
     })
     expect(await screen.findByTestId('offer-result')).toHaveTextContent(
-      /waiting for Sam Colleague to accept/,
+      /will not see your name until someone does/,
     )
   })
 
-  it('asks for the colleague shifts of the shift I pick, and forgets the earlier choice', async () => {
+  it('sends the shift I picked, not the first one', async () => {
     const user = userEvent.setup()
     await open()
-    const form = await screen.findByRole('form', { name: 'Offer a shift swap' })
-    await within(form).findByRole('option', { name: /Sam Colleague/ })
-
-    await user.selectOptions(within(form).getByLabelText('Your shift'), '3')
-
-    // Failure caught: options left over from the first shift would let me send a pair that was
-    // never checked against the rules for the second.
-    await waitFor(() => expect(backend.optionQueries).toContain('?give_assignment_id=3'))
-  })
-
-  it('says when no colleague shift fits, and does not let me send an empty offer', async () => {
-    await open('agent', { options: [] })
-    expect(await screen.findByTestId('no-options')).toHaveTextContent(/fits the rules/)
-    expect(screen.getByRole('button', { name: 'Offer swap' })).toBeDisabled()
+    const form = await screen.findByRole('form', { name: 'Post a shift swap' })
+    await within(form).findByRole('option', { name: /Wed 03 Jun, E1/ }) // the shifts load first
+    await user.selectOptions(within(form).getByLabelText(/swap away/), '3')
+    await user.click(within(form).getByRole('button', { name: 'Post swap request' }))
+    await waitFor(() => expect(backend.writes[0]?.body).toEqual({ giveAssignmentId: 3 }))
   })
 
   it('says so when I have no shift to give', async () => {
@@ -63,85 +56,127 @@ describe('offering a swap', () => {
     backend.myShifts = []
     await openScheduling('/shift-swaps', 'agent')
     expect(await screen.findByTestId('no-shifts')).toBeVisible()
-    expect(screen.queryByRole('form', { name: 'Offer a shift swap' })).toBeNull()
+    expect(screen.queryByRole('form', { name: 'Post a shift swap' })).toBeNull()
   })
 
-  it('shows why the swap was refused, in words', async () => {
+  it('shows why the request was refused, in words', async () => {
     const user = userEvent.setup()
     await open()
     backend.nextProblem = {
-      status: 422,
-      code: 'roster.rest_period',
+      status: 409,
+      code: 'swap.already_open',
       title: 'Swap refused',
-      detail: 'This would leave less than 11 hours of rest between shifts.',
+      detail: 'That shift is already in a swap.',
     }
-    const form = await screen.findByRole('form', { name: 'Offer a shift swap' })
-    await within(form).findByRole('option', { name: /Sam Colleague/ })
-    await user.click(within(form).getByRole('button', { name: 'Offer swap' }))
-    expect(await screen.findByTestId('offer-error')).toHaveTextContent(/11 hours of rest/)
-  })
-})
-
-describe('answering a swap', () => {
-  it('lets the colleague accept, and keeps saying what happened once the row has moved on', async () => {
-    const user = userEvent.setup()
-    await open('agent', {
-      swaps: [
-        swapOf({
-          asker: false,
-          colleague: true,
-          fromEmployee: 'Sam Colleague',
-          toEmployee: 'Alex Agent',
-        }),
-      ],
-    })
-    const row = await screen.findByTestId('for-me-1')
-    await user.click(
-      within(row).getByRole('button', { name: /Accept the swap with Sam Colleague/ }),
-    )
-
-    await waitFor(() => expect(backend.writes).toHaveLength(1))
-    expect(backend.writes[0]).toMatchObject({
-      method: 'POST',
-      path: '/api/v1/people/swaps/1/accept',
-      csrf: 'test-csrf-token',
-    })
-    // Failure caught: the row leaves "waiting for your answer" at once, and its message with it.
-    expect(await screen.findByTestId('swap-result')).toHaveTextContent(/^Accepted: /)
-    await waitFor(() => expect(screen.queryByTestId('for-me-1')).toBeNull())
+    const form = await screen.findByRole('form', { name: 'Post a shift swap' })
+    await within(form).findByRole('option', { name: /Mon 01 Jun, D1/ })
+    await user.click(within(form).getByRole('button', { name: 'Post swap request' }))
+    expect(await screen.findByTestId('offer-error')).toHaveTextContent(/already in a swap/)
   })
 
-  it('offers the asker only a way to withdraw, never to accept their own swap', async () => {
+  it('shows my open request as waiting, with a way to withdraw it', async () => {
     await open('agent', { swaps: [swapOf()] })
     const row = await screen.findByTestId('mine-1')
-    expect(
-      within(row).getByRole('button', { name: /Withdraw the swap with Sam Colleague/ }),
-    ).toBeVisible()
-    expect(within(row).queryByRole('button', { name: /Accept|Decline|Approve|Reject/ })).toBeNull()
+    expect(within(row).getByText('Open: waiting for a colleague')).toBeVisible()
+    expect(within(row).getByRole('button', { name: 'Withdraw this swap request' })).toBeVisible()
   })
 
   it('offers nothing on a swap that is finished', async () => {
     await open('agent', {
       swaps: [
-        swapOf({ id: 1, status: 'approved' }),
-        swapOf({ id: 2, status: 'declined' }),
-        swapOf({ id: 3, status: 'rejected' }),
-        swapOf({ id: 4, status: 'cancelled' }),
+        matchedOf({ id: 1, status: 'approved' }),
+        matchedOf({ id: 2, status: 'rejected' }),
+        swapOf({ id: 3, status: 'cancelled' }),
       ],
     })
     await screen.findByTestId('mine-1')
-    for (const id of [1, 2, 3, 4]) {
+    for (const id of [1, 2, 3]) {
       expect(within(screen.getByTestId(`mine-${id}`)).queryByRole('button')).toBeNull()
     }
-    expect(within(screen.getByTestId('mine-1')).getByText('Approved')).toBeVisible()
+  })
+
+  it('withdraws with a cancel and keeps saying what happened', async () => {
+    const user = userEvent.setup()
+    await open('agent', { swaps: [swapOf()] })
+    await user.click(await screen.findByRole('button', { name: 'Withdraw this swap request' }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]).toMatchObject({ path: '/api/v1/people/swaps/1/cancel' })
+    expect(await screen.findByTestId('swap-result')).toHaveTextContent(/^Withdrew: /)
+  })
+})
+
+describe('the open requests board', () => {
+  async function onBoard(over: Parameters<typeof open>[1] = {}) {
+    const user = userEvent.setup()
+    await open('agent', { board: [boardOf()], ...over })
+    await user.click(await screen.findByRole('tab', { name: 'Open requests' }))
+    return user
+  }
+
+  it('shows the shift and queue but never a name', async () => {
+    await onBoard()
+    const card = await screen.findByTestId('board-5')
+    expect(card).toHaveTextContent('QueueA')
+    expect(card).toHaveTextContent('Tue 02 Jun, L1 13:00-22:00')
+    // Failure caught: any name on a request nobody has taken yet.
+    expect(card).toHaveTextContent('A colleague')
+    expect(card.textContent).not.toMatch(/Alex|Sam|E00\d/)
+  })
+
+  it('says so when there is nothing I could take', async () => {
+    const user = userEvent.setup()
+    await open('agent', { board: [] })
+    await user.click(await screen.findByRole('tab', { name: 'Open requests' }))
+    expect(await screen.findByTestId('board-empty')).toBeVisible()
+  })
+
+  it('asks which of my shifts would work, and takes the request offering the one I pick', async () => {
+    const user = await onBoard({
+      offers: [shiftOf({ assignmentId: 7, day: '2099-06-04', shift: 'E1' })],
+    })
+    await user.click(await screen.findByRole('button', { name: /Take the L1 request/ }))
+    const form = await screen.findByRole('form', { name: 'Take the L1 request' })
+    expect(backend.offerQueries).toContain('/api/v1/people/swaps/5/offers')
+    await user.click(await within(form).findByRole('button', { name: 'Take this swap' }))
+
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    // Failure caught: offering the posted shift's id, or none, instead of one of mine.
+    expect(backend.writes[0]).toEqual({
+      method: 'POST',
+      path: '/api/v1/people/swaps/5/accept',
+      body: { assignmentId: 7 },
+      csrf: 'test-csrf-token',
+    })
+    expect(await screen.findByTestId('swap-result')).toHaveTextContent(/A lead decides next/)
+    await waitFor(() => expect(screen.queryByTestId('board-5')).toBeNull())
+  })
+
+  it('says when none of my shifts work any more, and offers no button', async () => {
+    const user = await onBoard({ offers: [] })
+    await user.click(await screen.findByRole('button', { name: /Take the L1 request/ }))
+    expect(await screen.findByTestId('no-offers')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Take this swap' })).toBeNull()
+  })
+
+  it('shows why taking was refused', async () => {
+    const user = await onBoard({ offers: [shiftOf({ assignmentId: 7, shift: 'E1' })] })
+    backend.nextProblem = {
+      status: 409,
+      code: 'swap.not_open',
+      title: 'Swap refused',
+      detail: 'That request has already been taken.',
+    }
+    await user.click(await screen.findByRole('button', { name: /Take the L1 request/ }))
+    await user.click(await screen.findByRole('button', { name: 'Take this swap' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/already been taken/)
   })
 })
 
 describe('approving a swap', () => {
-  const agreed = swapOf({ status: 'awaiting_approval', asker: false, colleague: false })
+  const matched = matchedOf({ asker: false, colleague: false })
 
   it('gives an agent no approvals tab', async () => {
-    await open('agent', { swaps: [agreed] })
+    await open('agent', { swaps: [matched] })
     await screen.findByRole('tab', { name: 'My swaps' })
     expect(screen.queryByRole('tab', { name: 'Approvals' })).toBeNull()
   })
@@ -150,7 +185,7 @@ describe('approving a swap', () => {
     'lets a %s approve, and says the roster changed',
     async (role) => {
       const user = userEvent.setup()
-      await open(role, { swaps: [agreed] })
+      await open(role, { swaps: [matched] })
       await user.click(await screen.findByRole('tab', { name: 'Approvals' }))
       const row = await screen.findByTestId('approve-1')
       await user.click(
@@ -158,7 +193,6 @@ describe('approving a swap', () => {
           name: /Approve the swap between Alex Agent and Sam Colleague/,
         }),
       )
-
       await waitFor(() => expect(backend.writes).toHaveLength(1))
       expect(backend.writes[0]).toMatchObject({ path: '/api/v1/people/swaps/1/approve' })
       expect(await screen.findByTestId('swap-result')).toHaveTextContent(/exchanged on the roster/)
@@ -167,7 +201,7 @@ describe('approving a swap', () => {
 
   it('can reject, which sends reject and not approve', async () => {
     const user = userEvent.setup()
-    await open('lead', { swaps: [agreed] })
+    await open('lead', { swaps: [matched] })
     await user.click(await screen.findByRole('tab', { name: 'Approvals' }))
     await user.click(await screen.findByRole('button', { name: /Reject the swap between/ }))
     await waitFor(() => expect(backend.writes).toHaveLength(1))
@@ -176,16 +210,16 @@ describe('approving a swap', () => {
 
   it('does not offer a decider the buttons for a swap they are in', async () => {
     const user = userEvent.setup()
-    await open('lead', { swaps: [swapOf({ status: 'awaiting_approval', asker: true })] })
+    await open('lead', { swaps: [matchedOf({ asker: true })] })
     await user.click(await screen.findByRole('tab', { name: 'Approvals' }))
     const row = await screen.findByTestId('approve-1')
     expect(within(row).getByText(/Somebody else decides/)).toBeVisible()
     expect(within(row).queryByRole('button')).toBeNull()
   })
 
-  it('says so when nothing waits for approval', async () => {
+  it('does not list a request nobody has taken for approval', async () => {
     const user = userEvent.setup()
-    await open('lead', { swaps: [swapOf({ status: 'awaiting_colleague', asker: false })] })
+    await open('lead', { swaps: [swapOf({ asker: false })] })
     await user.click(await screen.findByRole('tab', { name: 'Approvals' }))
     expect(await screen.findByTestId('nothing-to-approve')).toBeVisible()
   })

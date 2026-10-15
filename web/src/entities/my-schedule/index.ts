@@ -1,5 +1,7 @@
 export { fetchMySchedule } from './api/mySchedule'
 export { daysWithSomething } from './model/days'
+export { monthGrid, monthLabel, monthOf, shiftMonth } from './model/month'
+export type { MonthGrid } from './model/month'
 export type { ScheduleDay } from './model/days'
 export { myScheduleKeys, useMySchedule } from './model/queries'
 export type { MyLeave, MySchedule, MyShift } from './model/types'

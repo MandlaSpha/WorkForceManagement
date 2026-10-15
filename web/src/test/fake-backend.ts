@@ -12,7 +12,7 @@ import type {
 } from '@/entities/leave'
 import type { AvailabilityWindow } from '@/entities/availability'
 import type { MySchedule } from '@/entities/my-schedule'
-import type { Swap, SwapShift } from '@/entities/swap'
+import type { BoardEntry, Swap, SwapShift } from '@/entities/swap'
 import type { Demand, WorkImport } from '@/entities/service-desk'
 import type {
   Backtest,
@@ -122,11 +122,13 @@ export const backend = {
   availability: [] as AvailabilityWindow[],
   mySchedule: null as MySchedule | null,
   noScheduleRecord: false,
+  scheduleQueries: [] as string[],
   /** Shift swaps: my shifts, the colleagues' shifts on offer, and the swaps themselves. */
   myShifts: [] as SwapShift[],
-  swapOptions: [] as SwapShift[],
+  board: [] as BoardEntry[],
+  swapOffers: [] as SwapShift[],
   swaps: [] as Swap[],
-  optionQueries: [] as string[],
+  offerQueries: [] as string[],
   /** Service desk: the workload, the answer to an import, and the queries it was asked. */
   demand: null as Demand | null,
   workImport: null as WorkImport | null,
@@ -190,10 +192,12 @@ export const backend = {
     this.availability = []
     this.mySchedule = null
     this.noScheduleRecord = false
+    this.scheduleQueries = []
     this.myShifts = []
-    this.swapOptions = []
+    this.board = []
+    this.swapOffers = []
     this.swaps = []
-    this.optionQueries = []
+    this.offerQueries = []
     this.workImport = null
     this.demandQueries = []
     this.capacityQueries = []
@@ -558,17 +562,32 @@ export const handlers = [
     return response
   }),
 
-  http.get('*/api/v1/people/my-schedule', () =>
-    backend.noScheduleRecord
-      ? problem(422, 'schedule.no_employee_record', 'Not on the employee list')
-      : HttpResponse.json(backend.mySchedule),
-  ),
+  http.get('*/api/v1/people/my-schedule', ({ request }) => {
+    const query = new URL(request.url).searchParams
+    backend.scheduleQueries.push(new URL(request.url).search)
+    if (backend.noScheduleRecord)
+      return problem(422, 'schedule.no_employee_record', 'Not on the employee list')
+    const all = backend.mySchedule
+    if (!all) return problem(404, 'resource.not_found', 'Not found')
+    // Answer for the range that was asked for, like the API does.
+    const fromDate = query.get('from_date') ?? all.fromDate
+    const toDate = query.get('to_date') ?? all.toDate
+    return HttpResponse.json({
+      ...all,
+      fromDate,
+      toDate,
+      shifts: all.shifts.filter((s) => s.day >= fromDate && s.day <= toDate),
+      leave: all.leave.filter((l) => l.endDate >= fromDate && l.startDate <= toDate),
+    })
+  }),
 
   http.get('*/api/v1/people/swaps/my-shifts', () => HttpResponse.json(backend.myShifts)),
 
-  http.get('*/api/v1/people/swaps/options', ({ request }) => {
-    backend.optionQueries.push(new URL(request.url).search)
-    return HttpResponse.json(backend.swapOptions)
+  http.get('*/api/v1/people/swaps/board', () => HttpResponse.json(backend.board)),
+
+  http.get('*/api/v1/people/swaps/:id/offers', ({ request }) => {
+    backend.offerQueries.push(new URL(request.url).pathname)
+    return HttpResponse.json(backend.swapOffers)
   }),
 
   http.get('*/api/v1/people/swaps', ({ request }) => {
@@ -581,17 +600,16 @@ export const handlers = [
     const response = await schedulingWrite(info, 'POST', 201)
     if (!response.ok) return response
     const give = backend.myShifts.find((s) => s.assignmentId === sent.giveAssignmentId)
-    const take = backend.swapOptions.find((s) => s.assignmentId === sent.takeAssignmentId)
     const created: Swap = {
       id: 100 + backend.swaps.length,
       queue: give?.queue ?? '',
-      status: 'awaiting_colleague',
+      status: 'open',
       fromEmployee: give?.employee ?? '',
       fromDay: give?.day ?? '',
       fromShift: give?.shift ?? '',
-      toEmployee: take?.employee ?? '',
-      toDay: take?.day ?? '',
-      toShift: take?.shift ?? '',
+      toEmployee: null,
+      toDay: null,
+      toShift: null,
       createdAt: '2026-05-20T08:00:00Z',
       decidedAt: null,
       asker: true,
@@ -601,17 +619,39 @@ export const handlers = [
     return HttpResponse.json(created, { status: 201 })
   }),
 
+  http.post('*/api/v1/people/swaps/:id/accept', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, number>
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const mine = backend.swapOffers.find((s) => s.assignmentId === sent.assignmentId)
+    const id = Number(info.params.id)
+    const posted = backend.board.find((b) => b.id === id)
+    const taken: Swap = {
+      id,
+      queue: posted?.queue ?? '',
+      status: 'awaiting_approval',
+      fromEmployee: 'Sam Colleague',
+      fromDay: posted?.day ?? '',
+      fromShift: posted?.shift ?? '',
+      toEmployee: mine?.employee ?? '',
+      toDay: mine?.day ?? '',
+      toShift: mine?.shift ?? '',
+      createdAt: '2026-05-20T08:00:00Z',
+      decidedAt: null,
+      asker: false,
+      colleague: true,
+    }
+    backend.board = backend.board.filter((b) => b.id !== id)
+    backend.swaps = [...backend.swaps.filter((s) => s.id !== id), taken]
+    return HttpResponse.json(taken)
+  }),
+
   http.post('*/api/v1/people/swaps/:id/:what', async (info) => {
     const response = await schedulingWrite(info, 'POST')
     if (!response.ok) return response
     const status =
-      {
-        accept: 'awaiting_approval',
-        decline: 'declined',
-        approve: 'approved',
-        reject: 'rejected',
-        cancel: 'cancelled',
-      }[String(info.params.what)] ?? 'awaiting_colleague'
+      { approve: 'approved', reject: 'rejected', cancel: 'cancelled' }[String(info.params.what)] ??
+      'open'
     backend.swaps = backend.swaps.map((s) =>
       s.id === Number(info.params.id) ? { ...s, status } : s,
     )

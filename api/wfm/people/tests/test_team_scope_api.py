@@ -145,13 +145,14 @@ class TestSwapsAreScopedToTheTeam:
         give = ShiftAssignment.objects.get(employee=teams["a"], day=MON)
         take = ShiftAssignment.objects.get(employee=teams["b"], day=TUE)
         response = as_user("u-agent", Role.AGENT).post(
-            SW,
-            {"giveAssignmentId": give.pk, "takeAssignmentId": take.pk},
-            content_type="application/json",
+            SW, {"giveAssignmentId": give.pk}, content_type="application/json"
         )
         assert response.status_code == 201, response.content
         swap_id = int(response.json()["id"])
-        assert as_user("u-colleague", Role.AGENT).post(f"{SW}/{swap_id}/accept").status_code == 200
+        taken = as_user("u-colleague", Role.AGENT).post(
+            f"{SW}/{swap_id}/accept", {"assignmentId": take.pk}, content_type="application/json"
+        )
+        assert taken.status_code == 200, taken.content
         return swap_id
 
     def test_both_teams_leads_can_see_a_swap_between_the_teams_and_either_may_decide(

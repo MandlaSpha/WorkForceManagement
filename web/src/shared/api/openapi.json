@@ -456,6 +456,54 @@
         "title": "BlackoutOut",
         "type": "object"
       },
+      "BoardOut": {
+        "description": "An open request as other agents see it: the shift and queue, never the poster.",
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "endTime": {
+            "format": "time",
+            "title": "Endtime",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "shift": {
+            "title": "Shift",
+            "type": "string"
+          },
+          "startTime": {
+            "format": "time",
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "queue",
+          "day",
+          "shift",
+          "startTime",
+          "endTime",
+          "createdAt"
+        ],
+        "title": "BoardOut",
+        "type": "object"
+      },
       "CapacityDayOut": {
         "properties": {
           "complete": {
@@ -3265,15 +3313,10 @@
           "giveAssignmentId": {
             "title": "Giveassignmentid",
             "type": "integer"
-          },
-          "takeAssignmentId": {
-            "title": "Takeassignmentid",
-            "type": "integer"
           }
         },
         "required": [
-          "giveAssignmentId",
-          "takeAssignmentId"
+          "giveAssignmentId"
         ],
         "title": "SwapIn",
         "type": "object"
@@ -3331,17 +3374,38 @@
             "type": "string"
           },
           "toDay": {
-            "format": "date",
-            "title": "Today",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Today"
           },
           "toEmployee": {
-            "title": "Toemployee",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Toemployee"
           },
           "toShift": {
-            "title": "Toshift",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Toshift"
           }
         },
         "required": [
@@ -3416,6 +3480,30 @@
           "employee"
         ],
         "title": "SwapShiftOut",
+        "type": "object"
+      },
+      "TakeIn": {
+        "properties": {
+          "assignmentId": {
+            "title": "Assignmentid",
+            "type": "integer"
+          },
+          "employeeId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employeeid"
+          }
+        },
+        "required": [
+          "assignmentId"
+        ],
+        "title": "TakeIn",
         "type": "object"
       },
       "TuningIn": {
@@ -5330,7 +5418,39 @@
             "RoleSessionAuth": []
           }
         ],
-        "summary": "Offer a shift for a colleague's",
+        "summary": "Post one of your shifts to swap",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/swaps/board": {
+      "get": {
+        "operationId": "wfm_people_swap_api_board",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BoardOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Open requests you could take (the poster is not named)",
         "tags": [
           "people",
           "people"
@@ -5362,49 +5482,7 @@
             "RoleSessionAuth": []
           }
         ],
-        "summary": "Your shifts you could swap",
-        "tags": [
-          "people",
-          "people"
-        ]
-      }
-    },
-    "/api/v1/people/swaps/options": {
-      "get": {
-        "operationId": "wfm_people_swap_api_options",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "give_assignment_id",
-            "required": true,
-            "schema": {
-              "title": "Give Assignment Id",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/SwapShiftOut"
-                  },
-                  "title": "Response",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          }
-        },
-        "security": [
-          {
-            "RoleSessionAuth": []
-          }
-        ],
-        "summary": "Colleagues' shifts one of yours could be swapped for",
+        "summary": "Your shifts you could post",
         "tags": [
           "people",
           "people"
@@ -5425,6 +5503,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TakeIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -5442,7 +5530,7 @@
             "RoleSessionAuth": []
           }
         ],
-        "summary": "Accept a colleague's offer",
+        "summary": "Take an open request by offering one of your own shifts in return",
         "tags": [
           "people",
           "people"
@@ -5525,9 +5613,9 @@
         ]
       }
     },
-    "/api/v1/people/swaps/{swap_id}/decline": {
-      "post": {
-        "operationId": "wfm_people_swap_api_decline",
+    "/api/v1/people/swaps/{swap_id}/offers": {
+      "get": {
+        "operationId": "wfm_people_swap_api_offers",
         "parameters": [
           {
             "in": "path",
@@ -5544,7 +5632,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SwapOut"
+                  "items": {
+                    "$ref": "#/components/schemas/SwapShiftOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
                 }
               }
             },
@@ -5556,7 +5648,7 @@
             "RoleSessionAuth": []
           }
         ],
-        "summary": "Decline an offer",
+        "summary": "Which of your shifts you could offer in return for an open request",
         "tags": [
           "people",
           "people"

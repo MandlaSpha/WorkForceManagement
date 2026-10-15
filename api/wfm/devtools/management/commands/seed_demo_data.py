@@ -473,51 +473,68 @@ class Command(BaseCommand):
     # --- shift swaps ---------------------------------------------------------------------------
 
     def _swaps(self, cast: Cast, queue: Queue, today: date) -> None:
-        """Swaps next week on the Support queue: one waiting for the demo agent's answer, one
-        waiting for the lead, one declined and one already approved (the roster shows it)."""
+        """Swaps next week on the Support queue: two open requests the demo agent could take (they
+        see the shift, not who posted it), one matched and waiting for the lead, and one already
+        approved (the roster shows it)."""
         monday = today - timedelta(days=today.weekday()) + timedelta(days=7)
         shifts = list(
             ShiftAssignment.objects.filter(
                 roster_week__queue=queue, day__gte=monday, day__lt=monday + timedelta(days=7)
             )
-            .select_related("employee")
+            .select_related("employee", "template", "roster_week__queue")
             .order_by("day", "pk")
         )
+        agent = User.objects.filter(username="agent").first()
+        # People the lead decides for or is: left out, because nobody decides their own swap.
+        free = [s for s in shifts if cast.lead.pk != s.employee.user_id]
         used: set[int] = set()
 
-        def offer(want_colleague: str | None = None) -> Any:
-            for give in shifts:
-                for take in shifts:
-                    if give.pk in used or take.pk in used or give.employee_id == take.employee_id:
-                        continue
-                    if cast.lead.pk in (give.employee.user_id, take.employee.user_id):
-                        continue  # the lead decides these, and nobody decides their own swap
-                    if want_colleague and take.employee.emp_no != want_colleague:
-                        continue
-                    try:
-                        swap = swap_services.propose(
-                            user=cast.planner,
-                            give_id=give.pk,
-                            take_id=take.pk,
-                            employee_id=give.employee_id,
-                        )
-                    except ApiError:
-                        continue  # a roster rule refuses this pair: try another
-                    used.update((give.pk, take.pk))
-                    return swap
-            return None
+        def fits(a: ShiftAssignment, b: ShiftAssignment) -> bool:
+            return (
+                a.employee_id != b.employee_id
+                and a.pk not in used
+                and b.pk not in used
+                and roster_services.exchange_refusal(cast.planner, a, b) is None
+            )
 
-        offer("DEMO-AGENT")  # waits for the demo agent to accept
-        agreed = offer()
-        if agreed is not None:
-            swap_services.respond(user=cast.planner, swap_id=agreed.pk, accept=True)
-        declined = offer()
-        if declined is not None:
-            swap_services.respond(user=cast.planner, swap_id=declined.pk, accept=False)
-        done = offer()
-        if done is not None:
-            swap_services.respond(user=cast.planner, swap_id=done.pk, accept=True)
-            swap_services.decide(user=cast.lead, swap_id=done.pk, approve=True)
+        def post_for(give: ShiftAssignment) -> Any:
+            used.add(give.pk)
+            return swap_services.propose(
+                user=cast.planner, give_id=give.pk, employee_id=give.employee_id
+            )
+
+        # Two requests the demo agent can take, so their board has something to show.
+        mine = [s for s in free if agent and s.employee.user_id == agent.pk]
+        posted = 0
+        for give in free:
+            if posted == 2:
+                break
+            if give.employee.user_id == (agent.pk if agent else None):
+                continue
+            if any(fits(give, m) for m in mine):
+                post_for(give)
+                posted += 1
+
+        # One matched and waiting for the lead, one approved.
+        others = [s for s in free if not (agent and s.employee.user_id == agent.pk)]
+        for stage in ("matched", "approved"):
+            pair = next(
+                ((g, t) for g in others for t in others if fits(g, t)),
+                None,
+            )
+            if pair is None:
+                continue
+            give, take = pair
+            swap = post_for(give)
+            used.add(take.pk)
+            swap_services.take(
+                user=cast.planner,
+                swap_id=swap.pk,
+                assignment_id=take.pk,
+                employee_id=take.employee_id,
+            )
+            if stage == "approved":
+                swap_services.decide(user=cast.lead, swap_id=swap.pk, approve=True)
 
     # --- service desk --------------------------------------------------------------------------
 
