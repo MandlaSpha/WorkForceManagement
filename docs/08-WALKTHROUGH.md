@@ -131,10 +131,11 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Operate > Roster > Auto-schedule** (planner or admin, week not published). Click it: a preview says how many shifts it would add, the half-hours short before and after, and lists them. Nothing is written yet. "Apply these shifts" puts each one in through the normal roster checks; the roster and the planner heatmap update at once. Existing shifts are never changed, and running it again adds nothing. Try it as `lead`: the button is not there and the API refuses.
 
+**Operate > Recommendations** (planner or admin). With a queue and week chosen, the screen shows the half-hours short and a ranked list of single fixes, each a sentence ("Add Pat to D1 on Mon 25 May: closes 17 half-hours short"). Apply one: the roster takes the shift through the normal checks, and the gap and the list recalculate at once. Applying a suggestion twice, or one that is no longer on the list, is refused.
+
 ## Not built yet (so you are not looking for it)
 
-Per-team leave limits, auto-scheduler,
-recommendations, overtime pricing, scheduled reports, intraday, adherence, ITSM and Azure AD
+Per-team leave limits, overtime pricing, scheduled reports, intraday, adherence, ITSM and Azure AD
 integration. The menu lists some of these as placeholders.
 
 ## Loading the demo data

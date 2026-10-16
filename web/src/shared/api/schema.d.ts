@@ -969,6 +969,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ranked fixes for the week's gaps */
+        get: operations["wfm_scheduling_recommendation_api_list_recommendations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/recommendations/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply one suggestion */
+        post: operations["wfm_scheduling_recommendation_api_apply_recommendation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/roster": {
         parameters: {
             query?: never;
@@ -1425,6 +1459,25 @@ export interface components {
             };
             /** Status */
             status: string;
+        };
+        /** ApplyIn */
+        ApplyIn: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Queueid */
+            queueId: number;
+            /** Templateid */
+            templateId: number;
+            /**
+             * Weekstart
+             * Format: date
+             */
+            weekStart: string;
         };
         /** AssignIn */
         AssignIn: {
@@ -2616,6 +2669,39 @@ export interface components {
             slTargetPct: number | string;
             /** Slthresholds */
             slThresholdS: number;
+        };
+        /** RecommendationAppliedOut */
+        RecommendationAppliedOut: {
+            /** Applied */
+            applied: boolean;
+            /** Closes */
+            closes: number;
+        };
+        /** RecommendationOut */
+        RecommendationOut: {
+            /** Addsover */
+            addsOver: number;
+            /** Closes */
+            closes: number;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Kind */
+            kind: string;
+            /** Replaces */
+            replaces: string | null;
+            /** Shift */
+            shift: string;
+            /** Templateid */
+            templateId: number;
+            /** Text */
+            text: string;
         };
         /** RoleIn */
         RoleIn: {
@@ -4668,6 +4754,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_recommendation_api_list_recommendations: {
+        parameters: {
+            query: {
+                queue_id: number;
+                week_start: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationOut"][];
+                };
+            };
+        };
+    };
+    wfm_scheduling_recommendation_api_apply_recommendation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationAppliedOut"];
                 };
             };
         };

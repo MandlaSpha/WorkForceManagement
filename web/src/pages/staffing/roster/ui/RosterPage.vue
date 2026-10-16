@@ -11,7 +11,7 @@ import {
   useRoster,
 } from '@/entities/scheduling'
 import { ShiftCellSelect } from '@/features/assign-shift'
-import { AutoScheduleButton } from '@/features/auto-schedule'
+import { AutoScheduleButton } from '@/features/optimise/auto-schedule'
 import { useContextStore } from '@/features/context-filters'
 import { PublishRosterButton } from '@/features/publish-roster'
 import { problemMessage } from '@/shared/api'

@@ -16,6 +16,7 @@ import type { ContractRow, Customer } from '@/entities/contract'
 import type { AdminUser } from '@/entities/user-admin'
 import type {
   AutoScheduleProposal,
+  Recommendation,
   ComplianceRulesState,
   EmployeeImportReport,
   UnmappedLogin,
@@ -154,6 +155,8 @@ export const backend = {
     kept: 0,
   } as AutoScheduleProposal,
   autoSkipped: {} as Record<string, number>,
+  /** Recommendations for the chosen queue and week; applying one takes it off the list. */
+  recommendations: [] as Recommendation[],
   /** Customers and contracts, with how each is doing. */
   contracts: [] as ContractRow[],
   customers: [] as Customer[],
@@ -256,6 +259,7 @@ export const backend = {
       kept: 0,
     }
     this.autoSkipped = {}
+    this.recommendations = []
     this.employeeImport = null
     this.employeeImports = []
     this.unmapped = []
@@ -631,6 +635,24 @@ export const handlers = [
       placed: backend.autoProposal.placements.length - refused,
       skipped: backend.autoSkipped,
     })
+  }),
+
+  http.get('*/api/v1/scheduling/recommendations', () => HttpResponse.json(backend.recommendations)),
+
+  http.post('*/api/v1/scheduling/recommendations/apply', async (info) => {
+    const sent = (await info.request.clone().json()) as {
+      employeeId: number
+      day: string
+      templateId: number
+    }
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const applied = backend.recommendations.find(
+      (r) =>
+        r.employeeId === sent.employeeId && r.day === sent.day && r.templateId === sent.templateId,
+    )
+    backend.recommendations = backend.recommendations.filter((r) => r !== applied)
+    return HttpResponse.json({ applied: true, closes: applied?.closes ?? 0 })
   }),
 
   http.get('*/api/v1/scheduling/compliance-rules', () => HttpResponse.json(backend.rules)),

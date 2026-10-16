@@ -6,6 +6,7 @@ import {
   fetchEmployees,
   fetchOverview,
   fetchPlan,
+  fetchRecommendations,
   fetchRoster,
   fetchShifts,
   fetchUnmappedLogins,
@@ -17,6 +18,8 @@ export const schedulingKeys = {
   all: ['scheduling'] as const,
   shifts: ['scheduling', 'shifts'] as const,
   rules: ['scheduling', 'rules'] as const,
+  recommendations: (queueId: number, week: string) =>
+    ['scheduling', 'recommendations', queueId, week] as const,
   unmappedLogins: ['scheduling', 'unmapped-logins'] as const,
   employees: (queueId: number | null) => ['scheduling', 'employees', queueId] as const,
   roster: (queueId: number, week: string) => ['scheduling', 'roster', queueId, week] as const,
@@ -65,4 +68,12 @@ export function useUnmappedLogins() {
 
 export function useComplianceRules() {
   return useQuery({ queryKey: schedulingKeys.rules, queryFn: fetchComplianceRules })
+}
+
+export function useRecommendations(queueId: MaybeRef<number | null>, week: MaybeRef<string>) {
+  return useQuery({
+    queryKey: computed(() => schedulingKeys.recommendations(toValue(queueId) ?? 0, toValue(week))),
+    queryFn: () => fetchRecommendations(toValue(queueId) as number, toValue(week)),
+    enabled: computed(() => toValue(queueId) !== null),
+  })
 }

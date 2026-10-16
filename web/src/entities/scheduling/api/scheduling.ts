@@ -2,6 +2,8 @@ import { api, unwrap } from '@/shared/api'
 
 import type {
   AutoScheduleProposal,
+  Recommendation,
+  RecommendationApply,
   AutoScheduleRequest,
   AutoScheduleResult,
   ComplianceRulesRequest,
@@ -150,4 +152,19 @@ export async function previewAutoSchedule(
 
 export async function applyAutoSchedule(body: AutoScheduleRequest): Promise<AutoScheduleResult> {
   return unwrap(await api.POST('/api/v1/scheduling/roster/auto-schedule', { body }))
+}
+
+export async function fetchRecommendations(
+  queueId: number,
+  weekStart: string,
+): Promise<Recommendation[]> {
+  return unwrap(
+    await api.GET('/api/v1/scheduling/recommendations', {
+      params: { query: { queue_id: queueId, week_start: weekStart } },
+    }),
+  )
+}
+
+export async function applyRecommendation(body: RecommendationApply): Promise<{ closes: number }> {
+  return unwrap(await api.POST('/api/v1/scheduling/recommendations/apply', { body }))
 }

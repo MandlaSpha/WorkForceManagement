@@ -30,6 +30,15 @@ CONTEXT_DAYS = 7  # shifts this far either side of the week matter to rest and d
 
 
 @dataclass(frozen=True, slots=True)
+class Context:
+    """The week as the optimiser sees it, with the records its ids stand for."""
+
+    problem: engine.Problem
+    employees: dict[int, Employee]
+    templates: dict[int, ShiftTemplate]
+
+
+@dataclass(frozen=True, slots=True)
 class Proposal:
     problem: engine.Problem
     solution: engine.Solution
@@ -52,8 +61,8 @@ def _windows(
     return {k: tuple(v) for k, v in found.items()}
 
 
-def propose(user: User, queue_id: int, week_start: date) -> Proposal:
-    """The shifts that would best fill this queue's week, given what is already rostered."""
+def build_context(user: User, queue_id: int, week_start: date) -> Context:
+    """Everything the optimiser needs about this queue's week, read from the database."""
     plan = week_plan(user, queue_id, week_start)  # refuses a bad queue or a non-Monday
     if plan.roster_status == RosterStatus.PUBLISHED:
         raise _refuse(
@@ -146,9 +155,15 @@ def propose(user: User, queue_id: int, week_start: date) -> Proposal:
         rules=rules,
         max_time_s=float(settings.AUTOSCHEDULE_TIME_LIMIT_S),
     )
+    return Context(problem=problem, employees={p.pk: p for p in people}, templates=templates)
+
+
+def propose(user: User, queue_id: int, week_start: date) -> Proposal:
+    """The shifts that would best fill this queue's week, given what is already rostered."""
+    context = build_context(user, queue_id, week_start)
     return Proposal(
-        problem=problem,
-        solution=engine.solve(problem),
-        employees={p.pk: p for p in people},
-        templates=templates,
+        problem=context.problem,
+        solution=engine.solve(context.problem),
+        employees=context.employees,
+        templates=context.templates,
     )

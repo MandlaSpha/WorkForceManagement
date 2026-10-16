@@ -1,6 +1,7 @@
 export { ATTENTION_ROUTE, attentionRoute, barShare } from './model/overview'
 export {
   applyAutoSchedule,
+  applyRecommendation,
   assignShift,
   createEmployee,
   createShift,
@@ -30,6 +31,7 @@ export {
   schedulingKeys,
   useComplianceRules,
   useEmployees,
+  useRecommendations,
   useOverview,
   usePlan,
   useRoster,
@@ -38,6 +40,8 @@ export {
 } from './model/queries'
 export type {
   AssignRequest,
+  Recommendation,
+  RecommendationApply,
   AutoScheduleProposal,
   AutoScheduleRequest,
   AutoScheduleResult,

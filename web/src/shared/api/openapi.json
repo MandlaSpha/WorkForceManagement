@@ -156,6 +156,41 @@
         "title": "AppliedOut",
         "type": "object"
       },
+      "ApplyIn": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "templateId": {
+            "title": "Templateid",
+            "type": "integer"
+          },
+          "weekStart": {
+            "format": "date",
+            "title": "Weekstart",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueId",
+          "weekStart",
+          "employeeId",
+          "day",
+          "templateId"
+        ],
+        "title": "ApplyIn",
+        "type": "object"
+      },
       "AssignIn": {
         "properties": {
           "day": {
@@ -3348,6 +3383,90 @@
           "shrinkagePct"
         ],
         "title": "QueueSettingsIn",
+        "type": "object"
+      },
+      "RecommendationAppliedOut": {
+        "properties": {
+          "applied": {
+            "title": "Applied",
+            "type": "boolean"
+          },
+          "closes": {
+            "title": "Closes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "applied",
+          "closes"
+        ],
+        "title": "RecommendationAppliedOut",
+        "type": "object"
+      },
+      "RecommendationOut": {
+        "properties": {
+          "addsOver": {
+            "title": "Addsover",
+            "type": "integer"
+          },
+          "closes": {
+            "title": "Closes",
+            "type": "integer"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "replaces": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replaces"
+          },
+          "shift": {
+            "title": "Shift",
+            "type": "string"
+          },
+          "templateId": {
+            "title": "Templateid",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "employeeId",
+          "employee",
+          "day",
+          "templateId",
+          "shift",
+          "replaces",
+          "closes",
+          "addsOver",
+          "text"
+        ],
+        "title": "RecommendationOut",
         "type": "object"
       },
       "RoleIn": {
@@ -7336,6 +7455,94 @@
           }
         ],
         "summary": "Scheduled against required, per half-hour",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/recommendations": {
+      "get": {
+        "operationId": "wfm_scheduling_recommendation_api_list_recommendations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Week Start",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecommendationOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Ranked fixes for the week's gaps",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/recommendations/apply": {
+      "post": {
+        "operationId": "wfm_scheduling_recommendation_api_apply_recommendation",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationAppliedOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Apply one suggestion",
         "tags": [
           "scheduling"
         ]

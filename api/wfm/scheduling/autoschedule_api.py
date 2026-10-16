@@ -7,15 +7,15 @@ from datetime import date
 from django.http import HttpRequest
 from ninja import Router, Schema
 
+from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
 from . import autoschedule_selectors as selectors
 from . import autoschedule_services as services
-from .api import FEATURE
 from .policy import ROSTER_WRITE_ROLES
 
 router = Router(tags=["scheduling"])
-ROSTER_WRITE = RoleSessionAuth(*sorted(ROSTER_WRITE_ROLES), feature=FEATURE)
+ROSTER_WRITE = RoleSessionAuth(*sorted(ROSTER_WRITE_ROLES), feature=Feature.OPTIMISATION)
 
 
 class AutoIn(Schema):

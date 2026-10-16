@@ -18,6 +18,7 @@ from wfm.people.api import router as people_router
 from wfm.scheduling.api import router as scheduling_router
 from wfm.scheduling.autoschedule_api import router as autoschedule_router
 from wfm.scheduling.compliance_api import router as compliance_router
+from wfm.scheduling.recommendation_api import router as recommendation_router
 from wfm.servicedesk.api import router as servicedesk_router
 from wfm.telephony.api import router as telephony_router
 
@@ -42,6 +43,7 @@ api.add_router("/telephony", telephony_router)
 api.add_router("/forecasting", forecasting_router)
 api.add_router("/scheduling/compliance-rules", compliance_router)
 api.add_router("/scheduling/roster/auto-schedule", autoschedule_router)
+api.add_router("/scheduling/recommendations", recommendation_router)
 api.add_router("/scheduling", scheduling_router)
 api.add_router("/capacity", capacity_router)
 api.add_router("/contracts", contracts_router)

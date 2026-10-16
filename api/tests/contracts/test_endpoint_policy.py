@@ -165,14 +165,20 @@ MODULE_FEATURE = {
     "/api/v1/contracts": "capacity",
     "/api/v1/service-desk": "service_desk",
     "/api/v1/people": "people",
+    # Auto-scheduling and recommendations are the optimisation feature, though they live with the
+    # roster they act on: the most specific prefix wins.
+    "/api/v1/scheduling/roster/auto-schedule": "optimisation",
+    "/api/v1/scheduling/recommendations": "optimisation",
 }
 
 
 @pytest.mark.parametrize("op", PROTECTED, ids=lambda op: op.id)
 def test_each_module_belongs_to_its_own_feature(op: Operation) -> None:
-    for prefix, feature in MODULE_FEATURE.items():
-        if op.path.startswith(prefix + "/"):
-            assert op.feature == feature, (
-                f"{op.id} must be in the {feature} feature, not {op.feature}: "
-                "otherwise switching the feature off would not switch it off"
-            )
+    matching = [p for p in MODULE_FEATURE if op.path == p or op.path.startswith(p + "/")]
+    if not matching:
+        return
+    feature = MODULE_FEATURE[max(matching, key=len)]
+    assert op.feature == feature, (
+        f"{op.id} must be in the {feature} feature, not {op.feature}: "
+        "otherwise switching the feature off would not switch it off"
+    )

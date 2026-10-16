@@ -301,8 +301,14 @@ Requirements SCH-05 and PLN-04. OR-Tools CP-SAT (`wfm_engine.autoschedule`, pure
 - **Refusals.** No published forecast for the week (`autoschedule.no_forecast`), a published week (`autoschedule.published`), an empty shift library (`autoschedule.no_shifts`); an unknown queue is a 404.
 - **Honest limits.** It runs inside the request (a few seconds for a queue-week); moving it to the worker as a job is a later step. It plans one queue at a time, so a person skilled on two queues goes to whichever is planned first. It does not model breaks (SCH-03), nor split a requirement across queues. A requirement with many half-hours of known zero makes long shifts unattractive: if no library shift fits the demand, it adds nothing and says why.
 
-### 4.5 Recommendations
-Greedy search over candidate moves (shift start ±30/60 min, swap template, add shift to agent under hours, reassign queue for multi-skilled agent) checked against the same hard constraints; ranked by reduction in Σ|negative variance|; apply = write assignment + recalc.
+### 4.5 Recommendations (Phase 4, step 3, built)
+Requirement REC-01. `wfm_engine.recommend` (pure) proposes single moves on the roster as it stands: **add** a free person to a shift, or **change** the shift somebody already has on the queue to a different one (which covers moving or extending it).
+
+- **Legal by construction.** Each candidate is checked with the same rules as the roster (skill, leave and blocked days, "cannot work" windows, one shift a day across queues, rest, days in a row, weekly hours, the compliance rules in force), so applying one is never refused for a rule.
+- **Ranked by the auto-scheduler's aim:** `30 x half-hours no longer short - 10 x half-hours newly overstaffed - 3 for a new shift`. Only moves that score above zero are listed, so a move that would overstaff far more than it closes never appears. Where many people could make the same move, the one with the lightest week is offered; the list is the top ten.
+- **Endpoints** (planner and admin; the optimisation feature, which now also holds auto-schedule): `GET /scheduling/recommendations?queue_id&week_start`, each with a plain sentence ("Add Pat to D1 on Mon 25 May: closes 17 half-hours short"); `POST /scheduling/recommendations/apply`. Applying recomputes the list and the request must match a suggestion still on it, otherwise `recommendation.stale` (409): a replayed, double-clicked or forged suggestion cannot write. The shift then goes in through the normal `assign`, so it is audited as `roster.assigned` like any other.
+- **Screen.** Operate > Recommendations: the half-hours short this week, and the list; Apply recalculates both at once.
+- **Not built:** moving a person between queues (it needs both queues planned together), and recommendations for the intraday view.
 
 ### 4.6 Overtime pricing (BCEA)
 Hourly rate = monthly salary / (weekly hours × 4.333). Overtime 1.5×; Sunday 2× (or 1.5× if ordinarily works Sundays); public holiday 2×. Configurable.
