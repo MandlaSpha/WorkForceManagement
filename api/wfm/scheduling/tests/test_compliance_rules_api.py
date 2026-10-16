@@ -91,7 +91,52 @@ class TestWhoMayDoWhat:
             "minRestHours": 12,
             "maxConsecutiveDays": 6,
             "maxWeeklyHours": 45,
+            "overtimeMultiplier": 1.5,
+            "sundayMultiplier": 2.0,
+            "holidayMultiplier": 2.0,
         }
+
+
+class TestOvertimePay:
+    def test_the_multipliers_are_saved_and_read_back(self) -> None:
+        # Failure caught: pay rates accepted by the screen and silently dropped.
+        day = timezone.localdate() + timedelta(days=2)
+        response = put(
+            login(Role.ADMIN),
+            day,
+            overtimeMultiplier=1.75,
+            sundayMultiplier=2.5,
+            holidayMultiplier=3,
+        )
+        assert response.status_code == 200, response.content
+        assert response.json()["warnings"] == []
+        row = ComplianceRuleVersion.objects.get()
+        assert (str(row.overtime_multiplier), str(row.sunday_multiplier)) == ("1.75", "2.50")
+        state = login(Role.PLANNER).get(RULES, {"on": str(day)}).json()["inForce"]
+        assert (state["overtimeMultiplier"], state["holidayMultiplier"]) == (1.75, 3.0)
+
+    def test_pay_below_the_statutory_rate_is_saved_with_a_warning(self) -> None:
+        response = put(login(Role.ADMIN), overtimeMultiplier=1.25, holidayMultiplier=1.5)
+        assert response.status_code == 200
+        warnings = response.json()["warnings"]
+        assert len(warnings) == 2
+        assert any("Overtime pay of 1.25x" in w for w in warnings)
+
+    @pytest.mark.parametrize(
+        "field", ["overtimeMultiplier", "sundayMultiplier", "holidayMultiplier"]
+    )
+    @pytest.mark.parametrize("bad", [0.5, 5])
+    def test_a_multiplier_outside_one_to_four_is_refused(self, field: str, bad: float) -> None:
+        extra: dict[str, Any] = {field: bad}
+        response = put(login(Role.ADMIN), **extra)
+        assert response.status_code == 422
+        assert response.json()["code"] == "rules.invalid"
+        assert ComplianceRuleVersion.objects.count() == 0
+
+    def test_the_audit_shows_the_rates(self) -> None:
+        put(login(Role.ADMIN), overtimeMultiplier=1.75)
+        change = AuditEvent.objects.get(action=Action.COMPLIANCE_RULES_CHANGED).changes.get()
+        assert "overtime 1.75x" in (change.new_value or "")
 
 
 class TestWhatTheRulesAre:
@@ -102,6 +147,9 @@ class TestWhatTheRulesAre:
             "minRestHours": 11,
             "maxConsecutiveDays": 6,
             "maxWeeklyHours": None,
+            "overtimeMultiplier": 1.5,
+            "sundayMultiplier": 2.0,
+            "holidayMultiplier": 2.0,
         }
         assert (state["versions"], state["warnings"]) == ([], [])
 

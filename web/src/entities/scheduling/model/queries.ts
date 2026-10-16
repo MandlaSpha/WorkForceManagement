@@ -31,10 +31,14 @@ export function useShifts() {
   return useQuery({ queryKey: schedulingKeys.shifts, queryFn: fetchShifts })
 }
 
-export function useEmployees(queueId: MaybeRef<number | null> = null) {
+export function useEmployees(
+  queueId: MaybeRef<number | null> = null,
+  enabled: MaybeRef<boolean> = true,
+) {
   return useQuery({
     queryKey: computed(() => schedulingKeys.employees(toValue(queueId))),
     queryFn: () => fetchEmployees(toValue(queueId)),
+    enabled,
   })
 }
 

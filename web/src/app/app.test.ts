@@ -200,7 +200,7 @@ describe('honest empty states', () => {
 
   it('says which phase builds a screen that does not exist yet', async () => {
     backend.signedIn = { username: 'planner', displayName: 'Pat Planner', role: 'planner' }
-    await renderApp('/overtime')
+    await renderApp('/scheduling')
 
     expect(await screen.findByRole('status')).toHaveTextContent(/built in Phase 4/)
   })

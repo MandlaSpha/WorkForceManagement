@@ -435,6 +435,109 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/overtime/pay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who has a salary on file (never the figure) */
+        get: operations["wfm_overtime_api_list_pay"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/pay/{employee_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set or clear a salary */
+        put: operations["wfm_overtime_api_put_pay"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Overtime requests the signed-in person may see */
+        get: operations["wfm_overtime_api_list_requests"];
+        put?: never;
+        /** Ask for overtime */
+        post: operations["wfm_overtime_api_ask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/requests/{request_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve overtime */
+        post: operations["wfm_overtime_api_approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/requests/{request_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel overtime */
+        post: operations["wfm_overtime_api_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/requests/{request_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject overtime */
+        post: operations["wfm_overtime_api_reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/people/availability": {
         parameters: {
             query?: never;
@@ -2388,6 +2491,104 @@ export interface components {
             /** Read */
             read: boolean;
         };
+        /** OvertimeIn */
+        OvertimeIn: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employeeid */
+            employeeId: number;
+            /**
+             * Endtime
+             * Format: time
+             */
+            endTime: string;
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+            /**
+             * Starttime
+             * Format: time
+             */
+            startTime: string;
+        };
+        /** OvertimeOut */
+        OvertimeOut: {
+            /** Costmissing */
+            costMissing: boolean;
+            /** Costrands */
+            costRands: number | null;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /**
+             * Endtime
+             * Format: time
+             */
+            endTime: string;
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Mine */
+            mine: boolean;
+            /** Minutes */
+            minutes: number;
+            /** Reason */
+            reason: string;
+            /**
+             * Starttime
+             * Format: time
+             */
+            startTime: string;
+            /** Status */
+            status: string;
+        };
+        /** OvertimePayIn */
+        OvertimePayIn: {
+            /**
+             * Clear
+             * @default false
+             */
+            clear: boolean;
+            /** Monthlysalary */
+            monthlySalary?: number | null;
+            /**
+             * Ordinarilyworkssundays
+             * @default false
+             */
+            ordinarilyWorksSundays: boolean;
+        };
+        /** OvertimePayOut */
+        OvertimePayOut: {
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Hassalary */
+            hasSalary: boolean;
+            /** Ordinarilyworkssundays */
+            ordinarilyWorksSundays: boolean;
+        };
+        /**
+         * OvertimeStatus
+         * @enum {string}
+         */
+        OvertimeStatus: "pending" | "approved" | "rejected" | "cancelled";
         /** OverviewDayOut */
         OverviewDayOut: {
             /**
@@ -2770,23 +2971,44 @@ export interface components {
              * Format: date
              */
             effectiveFrom: string;
+            /**
+             * Holidaymultiplier
+             * @default 2
+             */
+            holidayMultiplier: number;
             /** Maxconsecutivedays */
             maxConsecutiveDays: number;
             /** Maxweeklyhours */
             maxWeeklyHours?: number | null;
             /** Minresthours */
             minRestHours: number;
+            /**
+             * Overtimemultiplier
+             * @default 1.5
+             */
+            overtimeMultiplier: number;
+            /**
+             * Sundaymultiplier
+             * @default 2
+             */
+            sundayMultiplier: number;
         };
         /** RulesOut */
         RulesOut: {
             /** Effectivefrom */
             effectiveFrom: string | null;
+            /** Holidaymultiplier */
+            holidayMultiplier: number;
             /** Maxconsecutivedays */
             maxConsecutiveDays: number;
             /** Maxweeklyhours */
             maxWeeklyHours: number | null;
             /** Minresthours */
             minRestHours: number;
+            /** Overtimemultiplier */
+            overtimeMultiplier: number;
+            /** Sundaymultiplier */
+            sundayMultiplier: number;
         };
         /** RulesSaved */
         RulesSaved: {
@@ -3878,6 +4100,166 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_api_list_pay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimePayOut"][];
+                };
+            };
+        };
+    };
+    wfm_overtime_api_put_pay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                employee_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OvertimePayIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimePayOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_api_list_requests: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["OvertimeStatus"] | null;
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimeOut"][];
+                };
+            };
+        };
+    };
+    wfm_overtime_api_ask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OvertimeIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimeOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_api_approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimeOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_api_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimeOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_api_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimeOut"];
                 };
             };
         };

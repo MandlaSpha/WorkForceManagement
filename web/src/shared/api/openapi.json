@@ -2548,6 +2548,200 @@
         "title": "NotificationOut",
         "type": "object"
       },
+      "OvertimeIn": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "endTime": {
+            "format": "time",
+            "title": "Endtime",
+            "type": "string"
+          },
+          "reason": {
+            "default": "",
+            "title": "Reason",
+            "type": "string"
+          },
+          "startTime": {
+            "format": "time",
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "day",
+          "startTime",
+          "endTime"
+        ],
+        "title": "OvertimeIn",
+        "type": "object"
+      },
+      "OvertimeOut": {
+        "properties": {
+          "costMissing": {
+            "title": "Costmissing",
+            "type": "boolean"
+          },
+          "costRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costrands"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "endTime": {
+            "format": "time",
+            "title": "Endtime",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "mine": {
+            "title": "Mine",
+            "type": "boolean"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "startTime": {
+            "format": "time",
+            "title": "Starttime",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "employeeId",
+          "employee",
+          "empNo",
+          "day",
+          "startTime",
+          "endTime",
+          "minutes",
+          "reason",
+          "status",
+          "kind",
+          "costRands",
+          "costMissing",
+          "mine"
+        ],
+        "title": "OvertimeOut",
+        "type": "object"
+      },
+      "OvertimePayIn": {
+        "properties": {
+          "clear": {
+            "default": false,
+            "title": "Clear",
+            "type": "boolean"
+          },
+          "monthlySalary": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthlysalary"
+          },
+          "ordinarilyWorksSundays": {
+            "default": false,
+            "title": "Ordinarilyworkssundays",
+            "type": "boolean"
+          }
+        },
+        "title": "OvertimePayIn",
+        "type": "object"
+      },
+      "OvertimePayOut": {
+        "properties": {
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "hasSalary": {
+            "title": "Hassalary",
+            "type": "boolean"
+          },
+          "ordinarilyWorksSundays": {
+            "title": "Ordinarilyworkssundays",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "employeeId",
+          "employee",
+          "empNo",
+          "hasSalary",
+          "ordinarilyWorksSundays"
+        ],
+        "title": "OvertimePayOut",
+        "type": "object"
+      },
+      "OvertimeStatus": {
+        "enum": [
+          "pending",
+          "approved",
+          "rejected",
+          "cancelled"
+        ],
+        "title": "OvertimeStatus",
+        "type": "string"
+      },
       "OverviewDayOut": {
         "properties": {
           "day": {
@@ -3634,6 +3828,11 @@
             "title": "Effectivefrom",
             "type": "string"
           },
+          "holidayMultiplier": {
+            "default": 2,
+            "title": "Holidaymultiplier",
+            "type": "number"
+          },
           "maxConsecutiveDays": {
             "title": "Maxconsecutivedays",
             "type": "integer"
@@ -3652,6 +3851,16 @@
           "minRestHours": {
             "title": "Minresthours",
             "type": "integer"
+          },
+          "overtimeMultiplier": {
+            "default": 1.5,
+            "title": "Overtimemultiplier",
+            "type": "number"
+          },
+          "sundayMultiplier": {
+            "default": 2,
+            "title": "Sundaymultiplier",
+            "type": "number"
           }
         },
         "required": [
@@ -3676,6 +3885,10 @@
             ],
             "title": "Effectivefrom"
           },
+          "holidayMultiplier": {
+            "title": "Holidaymultiplier",
+            "type": "number"
+          },
           "maxConsecutiveDays": {
             "title": "Maxconsecutivedays",
             "type": "integer"
@@ -3694,13 +3907,24 @@
           "minRestHours": {
             "title": "Minresthours",
             "type": "integer"
+          },
+          "overtimeMultiplier": {
+            "title": "Overtimemultiplier",
+            "type": "number"
+          },
+          "sundayMultiplier": {
+            "title": "Sundaymultiplier",
+            "type": "number"
           }
         },
         "required": [
           "effectiveFrom",
           "minRestHours",
           "maxConsecutiveDays",
-          "maxWeeklyHours"
+          "maxWeeklyHours",
+          "overtimeMultiplier",
+          "sundayMultiplier",
+          "holidayMultiplier"
         ],
         "title": "RulesOut",
         "type": "object"
@@ -5883,6 +6107,311 @@
         "summary": "Mark one read",
         "tags": [
           "notifications"
+        ]
+      }
+    },
+    "/api/v1/overtime/pay": {
+      "get": {
+        "operationId": "wfm_overtime_api_list_pay",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OvertimePayOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Who has a salary on file (never the figure)",
+        "tags": [
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/pay/{employee_id}": {
+      "put": {
+        "operationId": "wfm_overtime_api_put_pay",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employee_id",
+            "required": true,
+            "schema": {
+              "title": "Employee Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OvertimePayIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OvertimePayOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set or clear a salary",
+        "tags": [
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/requests": {
+      "get": {
+        "operationId": "wfm_overtime_api_list_requests",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/OvertimeStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OvertimeOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Overtime requests the signed-in person may see",
+        "tags": [
+          "overtime"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_overtime_api_ask",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OvertimeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OvertimeOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Ask for overtime",
+        "tags": [
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/requests/{request_id}/approve": {
+      "post": {
+        "operationId": "wfm_overtime_api_approve",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OvertimeOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Approve overtime",
+        "tags": [
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/requests/{request_id}/cancel": {
+      "post": {
+        "operationId": "wfm_overtime_api_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OvertimeOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Cancel overtime",
+        "tags": [
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/requests/{request_id}/reject": {
+      "post": {
+        "operationId": "wfm_overtime_api_reject",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OvertimeOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Reject overtime",
+        "tags": [
+          "overtime"
         ]
       }
     },

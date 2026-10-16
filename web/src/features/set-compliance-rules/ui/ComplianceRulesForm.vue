@@ -18,6 +18,9 @@ const effectiveFrom = ref(addDays(todayInJohannesburg(), 1))
 const rest = ref('11')
 const days = ref('6')
 const cap = ref('')
+const overtime = ref('1.5')
+const sunday = ref('2')
+const holiday = ref('2')
 const warnings = ref<string[]>([])
 
 watch(
@@ -27,6 +30,9 @@ watch(
     rest.value = String(now.minRestHours)
     days.value = String(now.maxConsecutiveDays)
     cap.value = now.maxWeeklyHours === null ? '' : String(now.maxWeeklyHours)
+    overtime.value = String(now.overtimeMultiplier)
+    sunday.value = String(now.sundayMultiplier)
+    holiday.value = String(now.holidayMultiplier)
   },
   { immediate: true },
 )
@@ -39,6 +45,9 @@ function submit(): void {
       minRestHours: Number(String(rest.value).trim()),
       maxConsecutiveDays: Number(String(days.value).trim()),
       maxWeeklyHours: capText === '' ? null : Number(capText),
+      overtimeMultiplier: Number(String(overtime.value).trim()),
+      sundayMultiplier: Number(String(sunday.value).trim()),
+      holidayMultiplier: Number(String(holiday.value).trim()),
     },
     { onSuccess: (saved) => (warnings.value = saved.warnings) },
   )
@@ -74,6 +83,11 @@ function describe(r: {
         (built-in defaults)</template
       >
     </p>
+    <p v-if="rules.data.value" class="text-sm text-ink" data-testid="rules-pay">
+      <strong>Overtime pays:</strong> {{ rules.data.value.inForce.overtimeMultiplier }}x on a
+      weekday, {{ rules.data.value.inForce.sundayMultiplier }}x on a Sunday,
+      {{ rules.data.value.inForce.holidayMultiplier }}x on a public holiday.
+    </p>
     <NoticeBox
       v-for="w in rules.data.value?.warnings ?? []"
       :key="w"
@@ -99,6 +113,32 @@ function describe(r: {
         label="Weekly hours cap (blank: contract hours only)"
         :min="1"
         :max="90"
+      />
+    </div>
+    <div class="grid gap-3 sm:grid-cols-3">
+      <TextField
+        v-model="overtime"
+        type="number"
+        label="Overtime pay (times the hourly rate)"
+        :min="1"
+        :max="4"
+        :step="0.05"
+      />
+      <TextField
+        v-model="sunday"
+        type="number"
+        label="Sunday pay (times the hourly rate)"
+        :min="1"
+        :max="4"
+        :step="0.05"
+      />
+      <TextField
+        v-model="holiday"
+        type="number"
+        label="Public holiday pay (times the hourly rate)"
+        :min="1"
+        :max="4"
+        :step="0.05"
       />
     </div>
     <AppButton type="submit" :loading="save.isPending.value" :disabled="rules.isPending.value">

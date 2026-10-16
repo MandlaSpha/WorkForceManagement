@@ -13,21 +13,25 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 
 from .roster import DEFAULT_MAX_CONSECUTIVE_DAYS, DEFAULT_MIN_REST_HOURS
 
 MIN_REST_HOURS_LIMITS = (1, 24)
 MAX_CONSECUTIVE_DAYS_LIMITS = (1, 14)
 MAX_WEEKLY_HOURS_LIMITS = (1, 90)
+MULTIPLIER_LIMITS = (Decimal(1), Decimal(4))
 
 
 @dataclass(frozen=True)
 class Rules:
     min_rest_hours: int = DEFAULT_MIN_REST_HOURS
     max_consecutive_days: int = DEFAULT_MAX_CONSECUTIVE_DAYS
-    max_weekly_hours: int | None = (
-        None  # a cap for everybody, on top of each person's contract hours
-    )
+    max_weekly_hours: int | None = None  # a cap for everybody, on top of contract hours
+    # Overtime pay, as a multiple of the hourly rate (CFG-06, OT-01).
+    overtime_multiplier: Decimal = Decimal("1.5")
+    sunday_multiplier: Decimal = Decimal("2")
+    holiday_multiplier: Decimal = Decimal("2")
 
 
 DEFAULT_RULES = Rules()
@@ -55,6 +59,13 @@ def invalid_reason(rules: Rules) -> str | None:
     cap = rules.max_weekly_hours
     if cap is not None and not MAX_WEEKLY_HOURS_LIMITS[0] <= cap <= MAX_WEEKLY_HOURS_LIMITS[1]:
         return "The weekly hours cap must be 1 to 90."
+    for multiplier in (
+        rules.overtime_multiplier,
+        rules.sunday_multiplier,
+        rules.holiday_multiplier,
+    ):
+        if not MULTIPLIER_LIMITS[0] <= multiplier <= MULTIPLIER_LIMITS[1]:
+            return "An overtime multiplier must be between 1 and 4."
     return None
 
 
@@ -72,6 +83,13 @@ def floor_warnings(rules: Rules) -> list[str]:
             f"{rules.max_consecutive_days} days in a row is above the statutory "
             f"{STATUTORY_FLOOR.max_consecutive_days}."
         )
+    for label, value, floor in (
+        ("Overtime", rules.overtime_multiplier, STATUTORY_FLOOR.overtime_multiplier),
+        ("Sunday", rules.sunday_multiplier, STATUTORY_FLOOR.sunday_multiplier),
+        ("Public holiday", rules.holiday_multiplier, STATUTORY_FLOOR.holiday_multiplier),
+    ):
+        if value < floor:
+            found.append(f"{label} pay of {value}x is below the statutory {floor}x.")
     return found
 
 
@@ -87,4 +105,7 @@ def tightest(versions: Iterable[Rules]) -> Rules:
         min_rest_hours=max(r.min_rest_hours for r in found),
         max_consecutive_days=min(r.max_consecutive_days for r in found),
         max_weekly_hours=min(caps) if caps else None,
+        overtime_multiplier=max(r.overtime_multiplier for r in found),
+        sunday_multiplier=max(r.sunday_multiplier for r in found),
+        holiday_multiplier=max(r.holiday_multiplier for r in found),
     )

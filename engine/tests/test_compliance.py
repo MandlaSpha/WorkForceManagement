@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 
 import pytest
 
@@ -103,3 +104,36 @@ def test_the_tightest_takes_the_strictest_of_each_rule():
 
 def test_the_tightest_of_nothing_is_the_defaults():
     assert tightest([]) == DEFAULT_RULES
+
+
+@pytest.mark.parametrize(
+    ("rules", "mentions"),
+    [
+        (Rules(overtime_multiplier=Decimal("1.25")), "Overtime pay of 1.25x"),
+        (Rules(sunday_multiplier=Decimal("1.5")), "Sunday pay of 1.5x"),
+        (Rules(holiday_multiplier=Decimal("1.5")), "Public holiday pay of 1.5x"),
+    ],
+)
+def test_pay_below_the_statutory_multiplier_warns(rules, mentions):
+    # Failure caught: overtime paid under the BCEA rate with nobody told.
+    (only,) = floor_warnings(rules)
+    assert mentions in only
+
+
+def test_paying_more_than_the_statutory_multiplier_never_warns():
+    assert (
+        floor_warnings(Rules(overtime_multiplier=Decimal("2"), holiday_multiplier=Decimal("3")))
+        == []
+    )
+
+
+@pytest.mark.parametrize("bad", [Decimal("0.5"), Decimal("4.5")])
+def test_a_multiplier_outside_one_to_four_is_nonsense(bad):
+    assert invalid_reason(Rules(overtime_multiplier=bad)) is not None
+    assert invalid_reason(Rules(holiday_multiplier=bad)) is not None
+
+
+def test_the_tightest_pays_the_highest_multiplier():
+    a = Rules(overtime_multiplier=Decimal("1.5"))
+    b = Rules(overtime_multiplier=Decimal("1.75"))
+    assert tightest([a, b]).overtime_multiplier == Decimal("1.75")

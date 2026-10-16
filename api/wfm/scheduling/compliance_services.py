@@ -16,6 +16,7 @@ from wfm.audit.models import Action
 from wfm.core.errors import ApiError
 
 from .models import ComplianceRuleVersion
+from .selectors import rules_of
 
 
 def _label(rules: Rules | None) -> str | None:
@@ -24,7 +25,8 @@ def _label(rules: Rules | None) -> str | None:
     cap = rules.max_weekly_hours if rules.max_weekly_hours is not None else "none"
     return (
         f"rest {rules.min_rest_hours} h, {rules.max_consecutive_days} days in a row, "
-        f"weekly cap {cap}"
+        f"weekly cap {cap}, overtime {rules.overtime_multiplier}x, "
+        f"Sunday {rules.sunday_multiplier}x, holiday {rules.holiday_multiplier}x"
     )
 
 
@@ -46,17 +48,16 @@ def set_rules(
             .filter(effective_from=effective_from)
             .first()
         )
-        before = (
-            Rules(existing.min_rest_hours, existing.max_consecutive_days, existing.max_weekly_hours)
-            if existing
-            else None
-        )
+        before = rules_of(existing) if existing else None
         version, _ = ComplianceRuleVersion.objects.update_or_create(
             effective_from=effective_from,
             defaults={
                 "min_rest_hours": rules.min_rest_hours,
                 "max_consecutive_days": rules.max_consecutive_days,
                 "max_weekly_hours": rules.max_weekly_hours,
+                "overtime_multiplier": rules.overtime_multiplier,
+                "sunday_multiplier": rules.sunday_multiplier,
+                "holiday_multiplier": rules.holiday_multiplier,
                 "created_by": user,
             },
         )

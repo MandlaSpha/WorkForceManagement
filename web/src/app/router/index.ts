@@ -32,6 +32,7 @@ const BUILT_SCREENS: Partial<Record<NavKey, RouteRecordRaw['component']>> = {
   swaps: () => import('@/pages/swaps'),
   users: () => import('@/pages/users'),
   contracts: () => import('@/pages/contracts'),
+  overtime: () => import('@/pages/overtime'),
   'my-schedule': () => import('@/pages/my/schedule'),
   'my-availability': () => import('@/pages/my/availability'),
   'service-desk': () => import('@/pages/service-desk'),

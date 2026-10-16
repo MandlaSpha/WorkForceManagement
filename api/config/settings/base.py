@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "wfm.servicedesk",
     "wfm.people",
     "wfm.notifications",
+    "wfm.overtime",
 ]
 
 # No django.contrib.admin on purpose: it would be a write path that bypasses the audited

@@ -133,9 +133,11 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Operate > Recommendations** (planner or admin). With a queue and week chosen, the screen shows the half-hours short and a ranked list of single fixes, each a sentence ("Add Pat to D1 on Mon 25 May: closes 17 half-hours short"). Apply one: the roster takes the shift through the normal checks, and the gap and the list recalculate at once. Applying a suggestion twice, or one that is no longer on the list, is refused.
 
+**People > Overtime.** As `planner`: ask for two hours of overtime for somebody on a future day; the roster rules still hold (it is refused over leave, on top of a shift, or without the rest between days), and the cost shows in rands, worked out at the rates in Configure > Rules. As `admin`: on the **Pay** tab put a salary on file (it is never shown again), then approve the request: the price is kept as approved. As `lead`: you can ask for your own team and cancel, but see no rands. As `agent`: there is no overtime screen; you are told the day and outcome in the bell.
+
 ## Not built yet (so you are not looking for it)
 
-Per-team leave limits, overtime pricing, scheduled reports, intraday, adherence, ITSM and Azure AD
+Per-team leave limits, standby and overtime reconciliation, scheduled reports, intraday, adherence, ITSM and Azure AD
 integration. The menu lists some of these as placeholders.
 
 ## Loading the demo data

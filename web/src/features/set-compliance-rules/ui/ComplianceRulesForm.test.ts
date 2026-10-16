@@ -35,7 +35,14 @@ describe('compliance rules', () => {
     expect(backend.writes[0]).toMatchObject({
       method: 'PUT',
       path: '/api/v1/scheduling/compliance-rules',
-      body: { minRestHours: 12, maxConsecutiveDays: 6, maxWeeklyHours: null },
+      body: {
+        minRestHours: 12,
+        maxConsecutiveDays: 6,
+        maxWeeklyHours: null,
+        overtimeMultiplier: 1.5,
+        sundayMultiplier: 2,
+        holidayMultiplier: 2,
+      },
       csrf: 'test-csrf-token',
     })
     expect(await screen.findByTestId('rules-saved')).toBeVisible()
@@ -82,6 +89,9 @@ describe('compliance rules', () => {
           minRestHours: 12,
           maxConsecutiveDays: 5,
           maxWeeklyHours: 45,
+          overtimeMultiplier: 1.5,
+          sundayMultiplier: 2,
+          holidayMultiplier: 2,
         },
       ],
     }
@@ -103,5 +113,26 @@ describe('compliance rules', () => {
     }
     await user.click(await screen.findByRole('button', { name: 'Save rules' }))
     expect(await screen.findByTestId('rules-error')).toHaveTextContent('today or later')
+  })
+
+  it('shows what overtime pays and sends the three multipliers as numbers', async () => {
+    // Failure caught: pay rates typed on the screen but sent as text or dropped.
+    const user = await open()
+    expect(await screen.findByTestId('rules-pay')).toHaveTextContent(
+      '1.5x on a weekday, 2x on a Sunday, 2x on a public holiday',
+    )
+    const overtime = screen.getByLabelText('Overtime pay (times the hourly rate)')
+    await user.clear(overtime)
+    await user.type(overtime, '1.75')
+    const holiday = screen.getByLabelText('Public holiday pay (times the hourly rate)')
+    await user.clear(holiday)
+    await user.type(holiday, '3')
+    await user.click(screen.getByRole('button', { name: 'Save rules' }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]?.body).toMatchObject({
+      overtimeMultiplier: 1.75,
+      sundayMultiplier: 2,
+      holidayMultiplier: 3,
+    })
   })
 })

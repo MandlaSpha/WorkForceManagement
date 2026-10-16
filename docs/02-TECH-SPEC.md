@@ -310,8 +310,17 @@ Requirement REC-01. `wfm_engine.recommend` (pure) proposes single moves on the r
 - **Screen.** Operate > Recommendations: the half-hours short this week, and the list; Apply recalculates both at once.
 - **Not built:** moving a person between queues (it needs both queues planned together), and recommendations for the intraday view.
 
-### 4.6 Overtime pricing (BCEA)
-Hourly rate = monthly salary / (weekly hours × 4.333). Overtime 1.5×; Sunday 2× (or 1.5× if ordinarily works Sundays); public holiday 2×. Configurable.
+### 4.6 Overtime (Phase 4, step 4, built)
+Requirement OT-01 (and the overtime part of CFG-06). App `wfm.overtime`, feature `overtime`.
+
+- **Pricing** (`wfm_engine.overtime`, pure, `Decimal`): hourly rate = monthly salary / (weekly contract hours x 4.333); the rate paid is that times a multiplier by kind of day: a public holiday pays the holiday multiplier, a Sunday the Sunday multiplier (the ordinary overtime multiplier for somebody who ordinarily works Sundays), any other day the ordinary overtime multiplier; a Sunday that is a holiday is a holiday. Rounded half up to the cent, only at the end.
+- **The multipliers are compliance rules.** The versioned `ComplianceRuleVersion` now carries `overtime_multiplier` (default 1.5), `sunday_multiplier` (2) and `holiday_multiplier` (2), admin-edited on Configure > Rules with the rest. Between 1 and 4 or refused; below the statutory defaults saves with a warning, like the other rules.
+- **A request** (who it is for, the day, from and to, a reason): a lead asks for their own team (anyone else is a 404), a planner or admin for anybody. It is checked against the roster's own rules when asked and again when approved, with the employee row locked: not employed, on approved leave, **overlap** with a shift or other overtime that day (overtime may sit beside a shift: that is what it usually is), rest between days, days in a row, and the weekly cap. A day more than 31 back or 366 ahead, a span over 12 hours, or a reason over 200 letters is refused.
+- **Deciding.** Planner and admin approve or reject; nobody decides their own (`overtime.own_request`). Approving stores the price it was approved at (`approved_cost`), so a later change of rules or salary does not rewrite what was agreed. Whoever asked, or a planner or admin, can cancel a waiting or future approved request.
+- **Pay is payroll data.** `EmployeePay` (monthly salary and "ordinarily works Sundays") is set only by the customer's admin, **never returned by the API** (the list says only whether one is on file), never in the audit trail (the event says pay changed, not what it is), a notification, a log or a trace. Saving with no new salary changes only the Sunday flag; removing is its own action.
+- **Who sees rands.** Only planner and admin (the roles that approve it); a lead sees hours and status and no cost. An agent has no overtime screen (pay-related screens stay away from agents) and is only told, by a notification, the day and outcome. No salary on file shows "No salary on file", never R 0.00.
+- **Audit:** `overtime.requested`, `.approved`, `.rejected`, `.cancelled`, `.pay_changed`. Notifications: approvers are told a request is waiting; the person is told the day and outcome, never an amount.
+- **Not built:** standby allowances and call-outs (OT-02), reconciling worked against approved and the pay/budget view (OT-03), a payroll CSV export (RPT-04), overtime thresholds in hours (it is the weekly cap and the roster that bound it today), per-site pay rules.
 
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).

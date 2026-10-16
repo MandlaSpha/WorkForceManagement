@@ -204,6 +204,10 @@ class ComplianceRuleVersion(models.Model):
     min_rest_hours = models.PositiveSmallIntegerField()
     max_consecutive_days = models.PositiveSmallIntegerField()
     max_weekly_hours = models.PositiveSmallIntegerField(null=True, blank=True)
+    # Overtime pay as a multiple of the hourly rate (OT-01).
+    overtime_multiplier = models.DecimalField(max_digits=3, decimal_places=2, default=1.5)
+    sunday_multiplier = models.DecimalField(max_digits=3, decimal_places=2, default=2)
+    holiday_multiplier = models.DecimalField(max_digits=3, decimal_places=2, default=2)
     created_by = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )

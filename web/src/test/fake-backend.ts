@@ -13,6 +13,7 @@ import type {
 import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
+import type { Overtime, PayStatus } from '@/entities/overtime'
 import type { AdminUser } from '@/entities/user-admin'
 import type {
   AutoScheduleProposal,
@@ -140,7 +141,15 @@ export const backend = {
   unmapped: [] as UnmappedLogin[],
   /** Compliance rules: what is in force and the versions; `rulesWarnings` is what a save returns. */
   rules: {
-    inForce: { effectiveFrom: null, minRestHours: 11, maxConsecutiveDays: 6, maxWeeklyHours: null },
+    inForce: {
+      effectiveFrom: null,
+      minRestHours: 11,
+      maxConsecutiveDays: 6,
+      maxWeeklyHours: null,
+      overtimeMultiplier: 1.5,
+      sundayMultiplier: 2,
+      holidayMultiplier: 2,
+    },
     versions: [],
     warnings: [],
   } as ComplianceRulesState,
@@ -157,6 +166,10 @@ export const backend = {
   autoSkipped: {} as Record<string, number>,
   /** Recommendations for the chosen queue and week; applying one takes it off the list. */
   recommendations: [] as Recommendation[],
+  /** Overtime requests as the signed-in person may see them, and who has a salary on file. */
+  overtime: [] as Overtime[],
+  overtimeQueries: [] as string[],
+  pay: [] as PayStatus[],
   /** Customers and contracts, with how each is doing. */
   contracts: [] as ContractRow[],
   customers: [] as Customer[],
@@ -239,12 +252,18 @@ export const backend = {
     this.users = []
     this.contracts = []
     this.customers = []
+    this.overtime = []
+    this.overtimeQueries = []
+    this.pay = []
     this.rules = {
       inForce: {
         effectiveFrom: null,
         minRestHours: 11,
         maxConsecutiveDays: 6,
         maxWeeklyHours: null,
+        overtimeMultiplier: 1.5,
+        sundayMultiplier: 2,
+        holidayMultiplier: 2,
       },
       versions: [],
       warnings: [],
@@ -662,6 +681,70 @@ export const handlers = [
     const response = await schedulingWrite(info, 'PUT')
     if (!response.ok) return response
     return HttpResponse.json({ saved: sent, warnings: backend.rulesWarnings })
+  }),
+
+  http.get('*/api/v1/overtime/requests', ({ request }) => {
+    const status = new URL(request.url).searchParams.get('status')
+    backend.overtimeQueries.push(status ?? '')
+    return HttpResponse.json(backend.overtime.filter((r) => status === null || r.status === status))
+  }),
+
+  http.post('*/api/v1/overtime/requests', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, unknown>
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created = {
+      id: 500 + backend.overtime.length,
+      employeeId: Number(sent.employeeId),
+      employee: 'Asked For',
+      empNo: 'E999',
+      day: String(sent.day),
+      startTime: String(sent.startTime),
+      endTime: String(sent.endTime),
+      minutes: 120,
+      reason: String(sent.reason ?? ''),
+      status: 'pending',
+      kind: 'weekday',
+      costRands: null,
+      costMissing: false,
+      mine: false,
+    } as Overtime
+    backend.overtime = [...backend.overtime, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.post('*/api/v1/overtime/requests/:id/:what', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    const status = { approve: 'approved', reject: 'rejected', cancel: 'cancelled' }[
+      String(info.params.what)
+    ] as Overtime['status']
+    backend.overtime = backend.overtime.map((r) => (r.id === id ? { ...r, status } : r))
+    return HttpResponse.json(backend.overtime.find((r) => r.id === id))
+  }),
+
+  http.get('*/api/v1/overtime/pay', () => HttpResponse.json(backend.pay)),
+
+  http.put('*/api/v1/overtime/pay/:id', async (info) => {
+    const sent = (await info.request.clone().json()) as {
+      monthlySalary: number | null
+      ordinarilyWorksSundays: boolean
+      clear: boolean
+    }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.pay = backend.pay.map((p) =>
+      p.employeeId === id
+        ? {
+            ...p,
+            hasSalary: sent.clear ? false : sent.monthlySalary !== null || p.hasSalary,
+            ordinarilyWorksSundays: sent.ordinarilyWorksSundays,
+          }
+        : p,
+    )
+    return HttpResponse.json(backend.pay.find((p) => p.employeeId === id))
   }),
 
   http.get('*/api/v1/contracts/customers', () => HttpResponse.json(backend.customers)),

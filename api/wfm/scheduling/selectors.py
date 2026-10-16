@@ -295,7 +295,7 @@ def overview(user: User, week_start: date) -> Overview:
 def rules_on(day: date) -> Rules:
     """The compliance rules in force on `day`."""
     versions = [
-        (v.effective_from, Rules(v.min_rest_hours, v.max_consecutive_days, v.max_weekly_hours))
+        (v.effective_from, rules_of(v))
         for v in ComplianceRuleVersion.objects.filter(effective_from__lte=day)
     ]
     return rules_in_force(versions, day)
@@ -304,3 +304,14 @@ def rules_on(day: date) -> Rules:
 def rule_versions() -> list[ComplianceRuleVersion]:
     """Every version, newest first (readers are checked at the endpoint)."""
     return list(ComplianceRuleVersion.objects.all())
+
+
+def rules_of(version: ComplianceRuleVersion) -> Rules:
+    return Rules(
+        min_rest_hours=version.min_rest_hours,
+        max_consecutive_days=version.max_consecutive_days,
+        max_weekly_hours=version.max_weekly_hours,
+        overtime_multiplier=version.overtime_multiplier,
+        sunday_multiplier=version.sunday_multiplier,
+        holiday_multiplier=version.holiday_multiplier,
+    )
