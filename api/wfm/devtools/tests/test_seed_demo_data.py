@@ -11,6 +11,7 @@ from django.utils import timezone
 
 from wfm.audit.models import AuditEvent
 from wfm.devtools.demo_history import outage_day, recorder_gap_day
+from wfm.devtools.management.commands.seed_demo_data import planning_monday
 from wfm.forecasting.models import ForecastStatus, ForecastVersion
 from wfm.people.models import LeaveRequest, LeaveStatus, SwapRequest, SwapStatus
 from wfm.scheduling.models import Employee, RosterStatus, RosterWeek, ShiftAssignment
@@ -81,7 +82,7 @@ def test_forecasts_are_live_and_rosters_are_in_the_planned_states(seeded: None) 
     statuses = {
         (week.week_start, week.queue.name): week.status for week in RosterWeek.objects.all()
     }
-    week0 = timezone.localdate() - timedelta(days=timezone.localdate().weekday())
+    week0 = planning_monday(timezone.localdate())
     for name in ("Demo Support", "Demo Billing", "Demo Night Desk"):
         assert statuses[(week0, name)] == RosterStatus.PUBLISHED
         assert statuses[(week0 + timedelta(days=7), name)] == RosterStatus.PUBLISHED
@@ -174,7 +175,7 @@ def test_contracts_hold_the_queues_to_their_promises_and_billing_is_the_one_at_r
     from wfm.contracts import selectors as contract_selectors
 
     planner = get_user_model().objects.get(username="planner")
-    week = timezone.localdate() - timedelta(days=timezone.localdate().weekday())
+    week = planning_monday(timezone.localdate())
     rows = {r.contract.name: r for r in contract_selectors.contract_rows(planner, week)}
     assert set(rows) == {"Member support", "Claims line"}
     # The promise is written onto the queues the contract holds.

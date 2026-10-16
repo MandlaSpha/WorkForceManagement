@@ -14,6 +14,7 @@ import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, PayStatus } from '@/entities/overtime'
+import type { Shrinkage } from '@/entities/shrinkage'
 import type { AdminUser } from '@/entities/user-admin'
 import type {
   AutoScheduleProposal,
@@ -168,6 +169,9 @@ export const backend = {
   recommendations: [] as Recommendation[],
   /** Overtime requests as the signed-in person may see them, and who has a salary on file. */
   overtime: [] as Overtime[],
+  /** Planned shrinkage by team, and the months asked for. */
+  shrinkage: { month: '2026-10-01', teams: [], unplannedMeasured: false } as Shrinkage,
+  shrinkageQueries: [] as string[],
   overtimeQueries: [] as string[],
   pay: [] as PayStatus[],
   /** Customers and contracts, with how each is doing. */
@@ -253,6 +257,8 @@ export const backend = {
     this.contracts = []
     this.customers = []
     this.overtime = []
+    this.shrinkage = { month: '2026-10-01', teams: [], unplannedMeasured: false }
+    this.shrinkageQueries = []
     this.overtimeQueries = []
     this.pay = []
     this.rules = {
@@ -681,6 +687,11 @@ export const handlers = [
     const response = await schedulingWrite(info, 'PUT')
     if (!response.ok) return response
     return HttpResponse.json({ saved: sent, warnings: backend.rulesWarnings })
+  }),
+
+  http.get('*/api/v1/people/shrinkage', ({ request }) => {
+    backend.shrinkageQueries.push(new URL(request.url).searchParams.get('month') ?? '')
+    return HttpResponse.json(backend.shrinkage)
   }),
 
   http.get('*/api/v1/overtime/requests', ({ request }) => {

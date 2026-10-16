@@ -43,6 +43,7 @@ export const ACCESS: Record<NavKey, readonly Role[]> = {
   swaps: ['agent', 'lead', 'planner', 'admin'],
   employees: ['planner', 'lead', 'admin'],
   overtime: ['lead', 'planner', 'admin'],
+  shrinkage: ['lead', 'planner', 'admin'],
   attendance: ['lead', 'planner', 'admin'],
 
   analytics: ['planner', 'admin', 'executive', 'customer_ops'],

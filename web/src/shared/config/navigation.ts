@@ -203,6 +203,16 @@ export const NAV_ITEMS = [
     subtitle: 'Authorise premium pay, run the standby rota and reconcile worked against approved.',
   },
   {
+    key: 'shrinkage',
+    path: '/shrinkage',
+    label: 'Shrinkage',
+    group: 'People',
+    icon: 'clipboard-check',
+    feature: 'people',
+    phase: 4,
+    subtitle: 'Time away from the phones by team, measured from approved leave.',
+  },
+  {
     key: 'attendance',
     path: '/attendance',
     label: 'Attendance',

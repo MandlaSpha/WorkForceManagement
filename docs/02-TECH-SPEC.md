@@ -322,6 +322,15 @@ Requirement OT-01 (and the overtime part of CFG-06). App `wfm.overtime`, feature
 - **Audit:** `overtime.requested`, `.approved`, `.rejected`, `.cancelled`, `.pay_changed`. Notifications: approvers are told a request is waiting; the person is told the day and outcome, never an amount.
 - **Not built:** standby allowances and call-outs (OT-02), reconciling worked against approved and the pay/budget view (OT-03), a payroll CSV export (RPT-04), overtime thresholds in hours (it is the weekly cap and the roster that bound it today), per-site pay rules.
 
+### 4.7 Shrinkage from actuals (Phase 4, built in part)
+Requirement SHR-01. Feature `people`, endpoint `GET /api/v1/people/shrinkage?month=`; People > Shrinkage.
+
+- **Planned shrinkage is measured**: for a calendar month and each team (the people who share a lead; people with no lead are one group), approved leave hours divided by contracted hours (`wfm_engine.shrinkage`, pure). A day counts only if it is a working day (Monday to Friday, not a public holiday) on which the person was employed; hours are weekly hours / 5 a day, so part-timers weigh by their hours. Pending, rejected and cancelled leave is not counted. A team with no contracted hours shows "-", never 0%.
+- **Assumed** is the mean planning assumption (`shrinkage_pct`, planned and unplanned together) of the queues the team is skilled on, shown beside the measured share so a planner sees how far the assumption is from the leave actually taken.
+- **Unplanned shrinkage (absence, lateness) is not measured and not guessed**: it needs an attendance feed (ATT-01). The response says `unplannedMeasured: false` and the screen says so.
+- Planner and admin see every team; a lead only their own team; nobody else may read it. Training and meetings are not recorded anywhere yet, so they are not in the figure.
+- Not built: unplanned shrinkage, training and meetings, a target per team, a trend over months, feeding the measured share back into the requirement.
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 

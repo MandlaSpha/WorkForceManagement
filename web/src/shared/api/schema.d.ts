@@ -780,6 +780,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/people/shrinkage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Planned shrinkage per team for a month, from approved leave */
+        get: operations["wfm_people_shrinkage_api_shrinkage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/people/swaps": {
         parameters: {
             query?: never;
@@ -3166,6 +3183,18 @@ export interface components {
             /** Starttime */
             startTime: string;
         };
+        /** ShrinkageOut */
+        ShrinkageOut: {
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Teams */
+            teams: components["schemas"]["TeamShrinkageOut"][];
+            /** Unplannedmeasured */
+            unplannedMeasured: boolean;
+        };
         /** SkillIn */
         SkillIn: {
             /**
@@ -3263,6 +3292,21 @@ export interface components {
             assignmentId: number;
             /** Employeeid */
             employeeId?: number | null;
+        };
+        /** TeamShrinkageOut */
+        TeamShrinkageOut: {
+            /** Assumedpct */
+            assumedPct: string | null;
+            /** Awayhours */
+            awayHours: string;
+            /** Contractedhours */
+            contractedHours: string;
+            /** People */
+            people: number;
+            /** Plannedpct */
+            plannedPct: string | null;
+            /** Team */
+            team: string;
         };
         /** TuningIn */
         TuningIn: {
@@ -4669,6 +4713,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyScheduleOut"];
+                };
+            };
+        };
+    };
+    wfm_people_shrinkage_api_shrinkage: {
+        parameters: {
+            query?: {
+                month?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShrinkageOut"];
                 };
             };
         };

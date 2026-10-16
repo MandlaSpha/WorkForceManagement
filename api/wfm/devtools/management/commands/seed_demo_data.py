@@ -139,6 +139,13 @@ class Cast:
     admin: User
 
 
+def planning_monday(today: date) -> date:
+    """The Monday of the week the demo rosters from: this week on a weekday, and next week on a
+    weekend, when little of this one is left to roster."""
+    monday = today - timedelta(days=today.weekday())
+    return monday + timedelta(days=7) if today.weekday() >= 5 else monday
+
+
 class Command(BaseCommand):
     help = "Fill a development database with an invented, believable contact centre."
 
@@ -323,7 +330,7 @@ class Command(BaseCommand):
     ) -> None:
         zone = ZoneInfo(settings.TIME_ZONE)
         shifts = {s.code: s for s in ShiftTemplate.objects.all()}
-        week0 = today - timedelta(days=today.weekday())
+        week0 = planning_monday(today)
         for queue_name, queue in queues.items():
             need = self._need(queue, zone)
             covered: dict[datetime, int] = {}
@@ -331,7 +338,7 @@ class Command(BaseCommand):
             codes = SHIFTS_OF_QUEUE[queue_name]
             for offset in range(ROSTERED_WEEKS * 7):
                 day = week0 + timedelta(days=offset)
-                if day < today:
+                if day < max(today, week0):
                     continue
                 week = offset // 7
                 scale = 1.0

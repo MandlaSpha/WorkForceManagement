@@ -4317,6 +4317,33 @@
         "title": "ShiftOut",
         "type": "object"
       },
+      "ShrinkageOut": {
+        "properties": {
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/TeamShrinkageOut"
+            },
+            "title": "Teams",
+            "type": "array"
+          },
+          "unplannedMeasured": {
+            "title": "Unplannedmeasured",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "month",
+          "teams",
+          "unplannedMeasured"
+        ],
+        "title": "ShrinkageOut",
+        "type": "object"
+      },
       "SkillIn": {
         "properties": {
           "level": {
@@ -4565,6 +4592,58 @@
           "assignmentId"
         ],
         "title": "TakeIn",
+        "type": "object"
+      },
+      "TeamShrinkageOut": {
+        "properties": {
+          "assumedPct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assumedpct"
+          },
+          "awayHours": {
+            "title": "Awayhours",
+            "type": "string"
+          },
+          "contractedHours": {
+            "title": "Contractedhours",
+            "type": "string"
+          },
+          "people": {
+            "title": "People",
+            "type": "integer"
+          },
+          "plannedPct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plannedpct"
+          },
+          "team": {
+            "title": "Team",
+            "type": "string"
+          }
+        },
+        "required": [
+          "team",
+          "people",
+          "contractedHours",
+          "awayHours",
+          "plannedPct",
+          "assumedPct"
+        ],
+        "title": "TeamShrinkageOut",
         "type": "object"
       },
       "TuningIn": {
@@ -7151,6 +7230,52 @@
           }
         ],
         "summary": "Your published shifts and leave for the coming weeks",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/shrinkage": {
+      "get": {
+        "operationId": "wfm_people_shrinkage_api_shrinkage",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShrinkageOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Planned shrinkage per team for a month, from approved leave",
         "tags": [
           "people",
           "people"
