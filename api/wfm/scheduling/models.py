@@ -193,3 +193,24 @@ class ShiftAssignment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.employee_id} {self.day} {self.template_id}"
+
+
+class ComplianceRuleVersion(models.Model):
+    """One version of the compliance rules (CFG-06), taking effect on `effective_from`. Versions are
+    only ever added, so what applied on a given day can always be answered. The rules in force on a
+    day are those of the latest version that started on or before it (built-in defaults if none)."""
+
+    effective_from = models.DateField(unique=True)
+    min_rest_hours = models.PositiveSmallIntegerField()
+    max_consecutive_days = models.PositiveSmallIntegerField()
+    max_weekly_hours = models.PositiveSmallIntegerField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-effective_from"]
+
+    def __str__(self) -> str:
+        return f"rules from {self.effective_from}"

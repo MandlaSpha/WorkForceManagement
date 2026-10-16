@@ -270,6 +270,15 @@ Requirements ENG-05 (per contract), CFG-01 (contracts) and CAP-04 (capacity and 
 - **Audit.** `customer.created`, `contract.created`, `contract.changed` (what changed, and the queue names), plus the queue change events.
 - **Not built:** support tiers (L1/L2/L3) per contract, contract start and end dates, cost per contract, a history of measured service level by month, per-contract occupancy or shrinkage.
 
+### 4.3q Compliance rules (Phase 4, step 1, built)
+Requirement CFG-06. The roster used to carry fixed numbers (11 h rest, 6 days in a row); they now come from versioned, admin-editable rules.
+
+- **Engine** (`wfm_engine.compliance`, pure): `Rules` (minimum rest hours, most days in a row, optional weekly hours cap), `rules_in_force(versions, day)` (the latest version that started on or before the day, built-in defaults when none), `invalid_reason` (1-24 h, 1-14 days, 1-90 h cap: nonsense is refused outright) and `floor_warnings` (loosening below the statutory floor warns, never refuses).
+- **Storage.** `ComplianceRuleVersion` rows, one per start day; a version can only start today or later, so what applied on a past day cannot be rewritten. Setting a day that already has a version replaces it (the audit event carries both values). Audit action `compliance.rules_changed`, written last.
+- **Who.** Admin (the customer's) changes them; admin, planner and lead read them. Others get 403. `GET/PUT /scheduling/compliance-rules` (`?on=` gives the rules of a day). Configure screen, "Rules" tab.
+- **Where they bite.** `roster_services` checks each assignment against the rules in force on the day being assigned: rest (`roster.rest_period`), days in a row (`roster.too_many_days`), the weekly cap (`roster.over_weekly_cap`, on top of each person's contract hours, never raising them). Swaps go through the same check.
+- **Not built yet (this is step 1 of CFG-06):** per-site or per-contract rules (one global set today), overtime thresholds and multipliers, Sunday and public-holiday rules. These arrive with overtime pricing (OT-01). The statutory floor is the spec's 11 h / 6 days; confirm the legal figures with the customer.
+
 ### 4.3b Roster and plan (Phase 2, built)
 **Pieces.** Shift templates (admin), employees with queue skills and a skill level 1-3 (planner or admin), a roster week per queue (draft, then published), and the planner view that compares the roster with the published forecast. Pure rules live in `wfm_engine/roster.py`; writes in `wfm/scheduling/roster_services.py`; reads in `selectors.py`.
 

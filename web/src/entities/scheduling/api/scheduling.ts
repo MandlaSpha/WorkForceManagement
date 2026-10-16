@@ -1,6 +1,9 @@
 import { api, unwrap } from '@/shared/api'
 
 import type {
+  ComplianceRulesRequest,
+  ComplianceRulesSaved,
+  ComplianceRulesState,
   Overview,
   AssignRequest,
   AssignResult,
@@ -124,4 +127,14 @@ export async function setAgentLogins(employeeId: number, logins: string[]): Prom
       body: { logins },
     }),
   )
+}
+
+export async function fetchComplianceRules(): Promise<ComplianceRulesState> {
+  return unwrap(await api.GET('/api/v1/scheduling/compliance-rules', { params: { query: {} } }))
+}
+
+export async function saveComplianceRules(
+  body: ComplianceRulesRequest,
+): Promise<ComplianceRulesSaved> {
+  return unwrap(await api.PUT('/api/v1/scheduling/compliance-rules', { body }))
 }

@@ -60,6 +60,7 @@ class Action(models.TextChoices):
     LEAVE_BLACKOUT_ADDED = "leave.blackout_added", "Leave blackout period added"
     LEAVE_BLACKOUT_REMOVED = "leave.blackout_removed", "Leave blackout period removed"
     LEAVE_LIMIT_CHANGED = "leave.limit_changed", "Limit on people away at once changed"
+    COMPLIANCE_RULES_CHANGED = "compliance.rules_changed", "Compliance rules changed"
     AVAILABILITY_ADDED = "availability.added", "Availability window added"
     AVAILABILITY_REMOVED = "availability.removed", "Availability window removed"
     SWAP_REQUESTED = "swap.requested", "Shift swap requested"

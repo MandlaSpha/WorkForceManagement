@@ -14,7 +14,11 @@ import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
 import type { AdminUser } from '@/entities/user-admin'
-import type { EmployeeImportReport, UnmappedLogin } from '@/entities/scheduling'
+import type {
+  ComplianceRulesState,
+  EmployeeImportReport,
+  UnmappedLogin,
+} from '@/entities/scheduling'
 import type { MySchedule } from '@/entities/my-schedule'
 import type { BoardEntry, Swap, SwapShift } from '@/entities/swap'
 import type { Demand, WorkImport } from '@/entities/service-desk'
@@ -132,6 +136,13 @@ export const backend = {
     csrf: string | null
   }>,
   unmapped: [] as UnmappedLogin[],
+  /** Compliance rules: what is in force and the versions; `rulesWarnings` is what a save returns. */
+  rules: {
+    inForce: { effectiveFrom: null, minRestHours: 11, maxConsecutiveDays: 6, maxWeeklyHours: null },
+    versions: [],
+    warnings: [],
+  } as ComplianceRulesState,
+  rulesWarnings: [] as string[],
   /** Customers and contracts, with how each is doing. */
   contracts: [] as ContractRow[],
   customers: [] as Customer[],
@@ -214,6 +225,17 @@ export const backend = {
     this.users = []
     this.contracts = []
     this.customers = []
+    this.rules = {
+      inForce: {
+        effectiveFrom: null,
+        minRestHours: 11,
+        maxConsecutiveDays: 6,
+        maxWeeklyHours: null,
+      },
+      versions: [],
+      warnings: [],
+    }
+    this.rulesWarnings = []
     this.employeeImport = null
     this.employeeImports = []
     this.unmapped = []
@@ -572,6 +594,15 @@ export const handlers = [
     )
     backend.unmapped = backend.unmapped.filter((u) => !sent.logins.includes(u.login))
     return HttpResponse.json(backend.employees.find((e) => e.id === id))
+  }),
+
+  http.get('*/api/v1/scheduling/compliance-rules', () => HttpResponse.json(backend.rules)),
+
+  http.put('*/api/v1/scheduling/compliance-rules', async (info) => {
+    const sent = (await info.request.clone().json()) as ComplianceRulesState['inForce']
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    return HttpResponse.json({ saved: sent, warnings: backend.rulesWarnings })
   }),
 
   http.get('*/api/v1/contracts/customers', () => HttpResponse.json(backend.customers)),

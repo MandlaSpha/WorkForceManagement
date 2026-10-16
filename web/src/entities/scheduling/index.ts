@@ -4,6 +4,7 @@ export {
   createEmployee,
   createShift,
   deleteShift,
+  saveComplianceRules,
   fetchUnmappedLogins,
   importEmployees,
   publishRoster,
@@ -25,6 +26,7 @@ export {
 export type { HeatTone } from './model/plan'
 export {
   schedulingKeys,
+  useComplianceRules,
   useEmployees,
   useOverview,
   usePlan,
@@ -38,6 +40,10 @@ export type {
   Overview,
   OverviewQueue,
   AssignResult,
+  ComplianceRules,
+  ComplianceRulesRequest,
+  ComplianceRulesSaved,
+  ComplianceRulesState,
   Employee,
   EmployeeImportReport,
   EmployeeRequest,

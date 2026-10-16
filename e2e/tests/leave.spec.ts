@@ -116,7 +116,8 @@ test('an admin sets a blackout period, leave inside it is refused with the reaso
   test.setTimeout(120_000)
   // Far enough ahead (about two years) not to touch any other spec's leave, which is under 90 weeks.
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
-  const start = addDays(today, 700)
+  // A random week, so a run that died before its clean-up cannot make every later run collide with it.
+  const start = addDays(today, 600 + 7 * rand(14))
   const weekday = new Date(`${start}T00:00:00Z`).getUTCDay() // 0 is Sunday
   const wednesday = addDays(start, (3 - weekday + 7) % 7)
   const name = `E2E close ${rand(100_000)}`
@@ -165,7 +166,7 @@ test('an admin sets a blackout period, leave inside it is refused with the reaso
   await page.goto('/leave')
   await page.getByRole('tab', { name: 'Rules' }).click()
   await page.getByRole('button', { name: `Remove ${name}` }).click()
-  await expect(page.getByRole('list', { name: 'Blackout periods' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: `Remove ${name}` })).toHaveCount(0)
 })
 
 test('a lead cannot see or decide leave of someone outside their team, a planner can', async ({

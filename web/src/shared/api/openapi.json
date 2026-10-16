@@ -3365,6 +3365,132 @@
         "title": "RosterRowOut",
         "type": "object"
       },
+      "RulesIn": {
+        "properties": {
+          "effectiveFrom": {
+            "format": "date",
+            "title": "Effectivefrom",
+            "type": "string"
+          },
+          "maxConsecutiveDays": {
+            "title": "Maxconsecutivedays",
+            "type": "integer"
+          },
+          "maxWeeklyHours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxweeklyhours"
+          },
+          "minRestHours": {
+            "title": "Minresthours",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "effectiveFrom",
+          "minRestHours",
+          "maxConsecutiveDays"
+        ],
+        "title": "RulesIn",
+        "type": "object"
+      },
+      "RulesOut": {
+        "properties": {
+          "effectiveFrom": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effectivefrom"
+          },
+          "maxConsecutiveDays": {
+            "title": "Maxconsecutivedays",
+            "type": "integer"
+          },
+          "maxWeeklyHours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maxweeklyhours"
+          },
+          "minRestHours": {
+            "title": "Minresthours",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "effectiveFrom",
+          "minRestHours",
+          "maxConsecutiveDays",
+          "maxWeeklyHours"
+        ],
+        "title": "RulesOut",
+        "type": "object"
+      },
+      "RulesSaved": {
+        "properties": {
+          "saved": {
+            "$ref": "#/components/schemas/RulesOut"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "saved",
+          "warnings"
+        ],
+        "title": "RulesSaved",
+        "type": "object"
+      },
+      "RulesState": {
+        "properties": {
+          "inForce": {
+            "$ref": "#/components/schemas/RulesOut"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/RulesOut"
+            },
+            "title": "Versions",
+            "type": "array"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "inForce",
+          "versions",
+          "warnings"
+        ],
+        "title": "RulesState",
+        "type": "object"
+      },
       "RunForecastIn": {
         "properties": {
           "dateFrom": {
@@ -6619,6 +6745,86 @@
           }
         ],
         "summary": "ACD logins seen on calls that belong to nobody yet",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/compliance-rules": {
+      "get": {
+        "operationId": "wfm_scheduling_compliance_api_get_rules",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "on",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "On"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesState"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "The compliance rules, now and by version",
+        "tags": [
+          "scheduling"
+        ]
+      },
+      "put": {
+        "operationId": "wfm_scheduling_compliance_api_put_rules",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RulesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesSaved"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set the rules from a day onwards",
         "tags": [
           "scheduling"
         ]

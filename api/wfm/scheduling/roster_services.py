@@ -1,10 +1,11 @@
 """Building the roster: assigning shifts, publishing, exporting (SCH-02, SCH-04, SCH-06, SCH-07).
 
 Every assignment is checked before it is written: the person is skilled on the queue and employed
-that day, is not already rostered elsewhere that day, keeps the 11-hour rest between shifts, does
-not work more than six days in a row, and stays within their contract hours for the week. The
-person's row is locked while it is checked, so two planners cannot each add a shift that is fine
-alone and wrong together. The audit event is the LAST write of the transaction.
+that day, is not already rostered elsewhere that day, keeps the rest between shifts, does
+not work more days in a row than the compliance rules (CFG-06) allow, and stays within their
+contract hours for the week. The person's row is locked while it is checked, so two planners
+cannot each add a shift that is fine alone and wrong together. The audit event is the LAST
+write of the transaction.
 """
 
 from __future__ import annotations
@@ -21,8 +22,6 @@ from django.db import IntegrityError, transaction
 from django.db.models.functions import Now
 from wfm_engine import availability as rules_availability
 from wfm_engine.roster import (
-    DEFAULT_MAX_CONSECUTIVE_DAYS,
-    DEFAULT_MIN_REST_HOURS,
     breaks_rest_rule,
     consecutive_run,
     shift_span,
@@ -44,6 +43,7 @@ from .models import (
     ShiftAssignment,
     ShiftTemplate,
 )
+from .selectors import rules_on
 
 _FORMULA_STARTS = ("=", "+", "-", "@", "\t", "\r")
 
@@ -268,25 +268,35 @@ def _check_rules(
 
     candidate = shift_span(day, template.start_time, template.end_time)
     spans = [shift_span(a.day, a.template.start_time, a.template.end_time) for a in others_list]
-    if breaks_rest_rule(spans, candidate, min_hours=DEFAULT_MIN_REST_HOURS):
+    rules = rules_on(day)
+    if breaks_rest_rule(spans, candidate, min_hours=rules.min_rest_hours):
         raise _refused(
             user,
             queue,
             "roster.rest_period",
-            f"This would leave less than {DEFAULT_MIN_REST_HOURS} hours of rest between shifts.",
+            f"This would leave less than {rules.min_rest_hours} hours of rest between shifts.",
         )
-    if consecutive_run([a.day for a in others_list], day) > DEFAULT_MAX_CONSECUTIVE_DAYS:
+    if consecutive_run([a.day for a in others_list], day) > rules.max_consecutive_days:
         raise _refused(
             user,
             queue,
             "roster.too_many_days",
-            f"This would be more than {DEFAULT_MAX_CONSECUTIVE_DAYS} days in a row.",
+            f"This would be more than {rules.max_consecutive_days} days in a row.",
         )
 
     start = week_start_of(day)
     this_week = sum(
         a.template.paid_minutes for a in others_list if start <= a.day <= start + timedelta(days=6)
     )
+    if rules.max_weekly_hours is not None and (
+        this_week + template.paid_minutes > rules.max_weekly_hours * 60
+    ):
+        raise _refused(
+            user,
+            queue,
+            "roster.over_weekly_cap",
+            f"This would take the person over the {rules.max_weekly_hours} hour weekly limit.",
+        )
     limit = float(employee.weekly_hours) * 60
     if this_week + template.paid_minutes > limit:
         raise _refused(

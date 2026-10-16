@@ -831,6 +831,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/compliance-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The compliance rules, now and by version */
+        get: operations["wfm_scheduling_compliance_api_get_rules"];
+        /** Set the rules from a day onwards */
+        put: operations["wfm_scheduling_compliance_api_put_rules"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/employees": {
         parameters: {
             query?: never;
@@ -2565,6 +2583,45 @@ export interface components {
             /** Weeklyhours */
             weeklyHours: number;
         };
+        /** RulesIn */
+        RulesIn: {
+            /**
+             * Effectivefrom
+             * Format: date
+             */
+            effectiveFrom: string;
+            /** Maxconsecutivedays */
+            maxConsecutiveDays: number;
+            /** Maxweeklyhours */
+            maxWeeklyHours?: number | null;
+            /** Minresthours */
+            minRestHours: number;
+        };
+        /** RulesOut */
+        RulesOut: {
+            /** Effectivefrom */
+            effectiveFrom: string | null;
+            /** Maxconsecutivedays */
+            maxConsecutiveDays: number;
+            /** Maxweeklyhours */
+            maxWeeklyHours: number | null;
+            /** Minresthours */
+            minRestHours: number;
+        };
+        /** RulesSaved */
+        RulesSaved: {
+            saved: components["schemas"]["RulesOut"];
+            /** Warnings */
+            warnings: string[];
+        };
+        /** RulesState */
+        RulesState: {
+            inForce: components["schemas"]["RulesOut"];
+            /** Versions */
+            versions: components["schemas"]["RulesOut"][];
+            /** Warnings */
+            warnings: string[];
+        };
         /** RunForecastIn */
         RunForecastIn: {
             /**
@@ -4270,6 +4327,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UnmappedLoginOut"][];
+                };
+            };
+        };
+    };
+    wfm_scheduling_compliance_api_get_rules: {
+        parameters: {
+            query?: {
+                on?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulesState"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_compliance_api_put_rules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RulesIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RulesSaved"];
                 };
             };
         };

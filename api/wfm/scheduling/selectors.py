@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from django.conf import settings
 from django.db.models import Q
 from wfm_engine.attention import Item, QueueWeek, attention
+from wfm_engine.compliance import Rules, rules_in_force
 from wfm_engine.roster import (
     SLOTS_PER_DAY,
     WeekSummary,
@@ -24,6 +25,7 @@ from wfm.forecasting.models import ForecastInterval, ForecastStatus, ForecastVer
 from wfm.telephony.models import Queue
 
 from .models import (
+    ComplianceRuleVersion,
     Employee,
     EmployeeSkill,
     RosterStatus,
@@ -285,3 +287,20 @@ def overview(user: User, week_start: date) -> Overview:
         for plan in plans
     ]
     return Overview(week_start, plans, days, headcount, attention(facts))
+
+
+# --- compliance rules (CFG-06) -------------------------------------------------------------------
+
+
+def rules_on(day: date) -> Rules:
+    """The compliance rules in force on `day`."""
+    versions = [
+        (v.effective_from, Rules(v.min_rest_hours, v.max_consecutive_days, v.max_weekly_hours))
+        for v in ComplianceRuleVersion.objects.filter(effective_from__lte=day)
+    ]
+    return rules_in_force(versions, day)
+
+
+def rule_versions() -> list[ComplianceRuleVersion]:
+    """Every version, newest first (readers are checked at the endpoint)."""
+    return list(ComplianceRuleVersion.objects.all())

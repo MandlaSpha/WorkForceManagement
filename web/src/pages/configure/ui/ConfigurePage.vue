@@ -5,6 +5,7 @@ import { useQueues } from '@/entities/call-data'
 import { QueueSettingsForm } from '@/features/confirm-queue-settings'
 import { ShiftLibrary } from '@/features/manage-shifts'
 import { LimitsForm } from '@/features/set-capacity-limits'
+import { ComplianceRulesForm } from '@/features/set-compliance-rules'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
@@ -19,6 +20,7 @@ const TABS = [
   { key: 'shifts', label: 'Shifts' },
   { key: 'queues', label: 'Queues' },
   { key: 'workforce', label: 'Workforce' },
+  { key: 'rules', label: 'Rules' },
 ]
 </script>
 
@@ -44,6 +46,15 @@ const TABS = [
       aria-labelledby="configure-tab-workforce"
     >
       <LimitsForm />
+    </div>
+
+    <div
+      v-else-if="tab === 'rules'"
+      id="configure-panel-rules"
+      role="tabpanel"
+      aria-labelledby="configure-tab-rules"
+    >
+      <ComplianceRulesForm />
     </div>
 
     <div

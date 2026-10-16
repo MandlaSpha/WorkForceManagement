@@ -125,6 +125,10 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Operate > Contracts.** As `admin`: add a customer, then a contract that holds queues to a promise ("80% in 20 s"). Saving it writes that target onto the queues, so the staffing numbers follow the contract. Everyone who reads it (planner, lead, executive, customer operations) sees, per contract, the **promise**, the service level **measured** over the last 28 days of calls, how **this week** looks against the forecast, and whether the contract is **at risk** with the reasons in words. A missing figure (no calls, no forecast) is shown as missing, never as zero. In the demo data *Claims line* (the Billing queue, short of people all week) is at risk; *Member support* is not.
 
+## Phase 4: Compliance rules
+
+**Admin > Configure > Rules.** As `admin`: see the rules in force (built-in 11 h rest, 6 days in a row, no weekly cap), choose a start day and change them. Loosening below the statutory minimum saves but warns. Then, as `planner`, try to roster someone against the new rule on a day after it starts: the roster refuses with the rule's number in the message. Days before the start day are unaffected.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, auto-scheduler,
