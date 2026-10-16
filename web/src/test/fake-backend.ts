@@ -15,6 +15,7 @@ import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
 import type { AdminUser } from '@/entities/user-admin'
 import type {
+  AutoScheduleProposal,
   ComplianceRulesState,
   EmployeeImportReport,
   UnmappedLogin,
@@ -143,6 +144,16 @@ export const backend = {
     warnings: [],
   } as ComplianceRulesState,
   rulesWarnings: [] as string[],
+  /** Auto-schedule: what a preview returns, and what the roster refused when applying. */
+  autoProposal: {
+    status: 'optimal',
+    placements: [],
+    shortBefore: 0,
+    shortAfter: 0,
+    overAfter: 0,
+    kept: 0,
+  } as AutoScheduleProposal,
+  autoSkipped: {} as Record<string, number>,
   /** Customers and contracts, with how each is doing. */
   contracts: [] as ContractRow[],
   customers: [] as Customer[],
@@ -236,6 +247,15 @@ export const backend = {
       warnings: [],
     }
     this.rulesWarnings = []
+    this.autoProposal = {
+      status: 'optimal',
+      placements: [],
+      shortBefore: 0,
+      shortAfter: 0,
+      overAfter: 0,
+      kept: 0,
+    }
+    this.autoSkipped = {}
     this.employeeImport = null
     this.employeeImports = []
     this.unmapped = []
@@ -594,6 +614,23 @@ export const handlers = [
     )
     backend.unmapped = backend.unmapped.filter((u) => !sent.logins.includes(u.login))
     return HttpResponse.json(backend.employees.find((e) => e.id === id))
+  }),
+
+  http.post('*/api/v1/scheduling/roster/auto-schedule/preview', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    return HttpResponse.json(backend.autoProposal)
+  }),
+
+  http.post('*/api/v1/scheduling/roster/auto-schedule', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const refused = Object.values(backend.autoSkipped).reduce((a, b) => a + b, 0)
+    return HttpResponse.json({
+      ...backend.autoProposal,
+      placed: backend.autoProposal.placements.length - refused,
+      skipped: backend.autoSkipped,
+    })
   }),
 
   http.get('*/api/v1/scheduling/compliance-rules', () => HttpResponse.json(backend.rules)),

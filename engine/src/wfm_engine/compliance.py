@@ -73,3 +73,18 @@ def floor_warnings(rules: Rules) -> list[str]:
             f"{STATUTORY_FLOOR.max_consecutive_days}."
         )
     return found
+
+
+def tightest(versions: Iterable[Rules]) -> Rules:
+    """The strictest of several rule sets, field by field: the longest rest, the fewest days in a
+    row, the lowest weekly cap. For planning across days that straddle a change of rules, so
+    whatever is proposed is allowed under every one of them."""
+    found = list(versions)
+    if not found:
+        return DEFAULT_RULES
+    caps = [r.max_weekly_hours for r in found if r.max_weekly_hours is not None]
+    return Rules(
+        min_rest_hours=max(r.min_rest_hours for r in found),
+        max_consecutive_days=min(r.max_consecutive_days for r in found),
+        max_weekly_hours=min(caps) if caps else None,
+    )

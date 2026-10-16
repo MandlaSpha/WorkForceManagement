@@ -99,6 +99,10 @@ LOGIN_LOCKOUT_MINUTES = 15
 # Time: store UTC, display Africa/Johannesburg at the edge (NFR-07).
 USE_TZ = True
 TIME_ZONE = "Africa/Johannesburg"
+
+# Seconds the auto-scheduler may think for one queue-week (SCH-05).
+AUTOSCHEDULE_TIME_LIMIT_S = 10
+
 LANGUAGE_CODE = "en-za"
 USE_I18N = False
 

@@ -1003,6 +1003,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/roster/auto-schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fill the week automatically */
+        post: operations["wfm_scheduling_autoschedule_api_apply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/roster/auto-schedule/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What auto-schedule would add */
+        post: operations["wfm_scheduling_autoschedule_api_preview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/roster/export.csv": {
         parameters: {
             query?: never;
@@ -1371,6 +1405,27 @@ export interface components {
             /** Logins */
             logins: string[];
         };
+        /** AppliedOut */
+        AppliedOut: {
+            /** Kept */
+            kept: number;
+            /** Overafter */
+            overAfter: number;
+            /** Placed */
+            placed: number;
+            /** Placements */
+            placements: components["schemas"]["PlacementOut"][];
+            /** Shortafter */
+            shortAfter: number;
+            /** Shortbefore */
+            shortBefore: number;
+            /** Skipped */
+            skipped: {
+                [key: string]: number;
+            };
+            /** Status */
+            status: string;
+        };
         /** AssignIn */
         AssignIn: {
             /**
@@ -1415,6 +1470,16 @@ export interface components {
             severity: string;
             /** Text */
             text: string;
+        };
+        /** AutoIn */
+        AutoIn: {
+            /** Queueid */
+            queueId: number;
+            /**
+             * Weekstart
+             * Format: date
+             */
+            weekStart: string;
         };
         /** AvailabilityIn */
         AvailabilityIn: {
@@ -2355,6 +2420,20 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** PlacementOut */
+        PlacementOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Shift */
+            shift: string;
+        };
         /** PlanCellOut */
         PlanCellOut: {
             /** Required */
@@ -2448,6 +2527,21 @@ export interface components {
         PoolIn: {
             /** Productiveminutesperday */
             productiveMinutesPerDay: number;
+        };
+        /** ProposalOut */
+        ProposalOut: {
+            /** Kept */
+            kept: number;
+            /** Overafter */
+            overAfter: number;
+            /** Placements */
+            placements: components["schemas"]["PlacementOut"][];
+            /** Shortafter */
+            shortAfter: number;
+            /** Shortbefore */
+            shortBefore: number;
+            /** Status */
+            status: string;
         };
         /** ProviderOut */
         ProviderOut: {
@@ -4621,6 +4715,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssignOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_autoschedule_api_apply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppliedOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_autoschedule_api_preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalOut"];
                 };
             };
         };

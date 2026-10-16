@@ -1,6 +1,9 @@
 import { api, unwrap } from '@/shared/api'
 
 import type {
+  AutoScheduleProposal,
+  AutoScheduleRequest,
+  AutoScheduleResult,
   ComplianceRulesRequest,
   ComplianceRulesSaved,
   ComplianceRulesState,
@@ -137,4 +140,14 @@ export async function saveComplianceRules(
   body: ComplianceRulesRequest,
 ): Promise<ComplianceRulesSaved> {
   return unwrap(await api.PUT('/api/v1/scheduling/compliance-rules', { body }))
+}
+
+export async function previewAutoSchedule(
+  body: AutoScheduleRequest,
+): Promise<AutoScheduleProposal> {
+  return unwrap(await api.POST('/api/v1/scheduling/roster/auto-schedule/preview', { body }))
+}
+
+export async function applyAutoSchedule(body: AutoScheduleRequest): Promise<AutoScheduleResult> {
+  return unwrap(await api.POST('/api/v1/scheduling/roster/auto-schedule', { body }))
 }

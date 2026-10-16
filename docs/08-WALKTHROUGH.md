@@ -129,6 +129,8 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Admin > Configure > Rules.** As `admin`: see the rules in force (built-in 11 h rest, 6 days in a row, no weekly cap), choose a start day and change them. Loosening below the statutory minimum saves but warns. Then, as `planner`, try to roster someone against the new rule on a day after it starts: the roster refuses with the rule's number in the message. Days before the start day are unaffected.
 
+**Operate > Roster > Auto-schedule** (planner or admin, week not published). Click it: a preview says how many shifts it would add, the half-hours short before and after, and lists them. Nothing is written yet. "Apply these shifts" puts each one in through the normal roster checks; the roster and the planner heatmap update at once. Existing shifts are never changed, and running it again adds nothing. Try it as `lead`: the button is not there and the API refuses.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, auto-scheduler,

@@ -102,6 +102,60 @@
         "title": "AgentLoginsIn",
         "type": "object"
       },
+      "AppliedOut": {
+        "properties": {
+          "kept": {
+            "title": "Kept",
+            "type": "integer"
+          },
+          "overAfter": {
+            "title": "Overafter",
+            "type": "integer"
+          },
+          "placed": {
+            "title": "Placed",
+            "type": "integer"
+          },
+          "placements": {
+            "items": {
+              "$ref": "#/components/schemas/PlacementOut"
+            },
+            "title": "Placements",
+            "type": "array"
+          },
+          "shortAfter": {
+            "title": "Shortafter",
+            "type": "integer"
+          },
+          "shortBefore": {
+            "title": "Shortbefore",
+            "type": "integer"
+          },
+          "skipped": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Skipped",
+            "type": "object"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "placements",
+          "shortBefore",
+          "shortAfter",
+          "overAfter",
+          "kept",
+          "placed",
+          "skipped"
+        ],
+        "title": "AppliedOut",
+        "type": "object"
+      },
       "AssignIn": {
         "properties": {
           "day": {
@@ -221,6 +275,25 @@
           "count"
         ],
         "title": "AttentionOut",
+        "type": "object"
+      },
+      "AutoIn": {
+        "properties": {
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "weekStart": {
+            "format": "date",
+            "title": "Weekstart",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueId",
+          "weekStart"
+        ],
+        "title": "AutoIn",
         "type": "object"
       },
       "AvailabilityIn": {
@@ -2689,6 +2762,35 @@
         "title": "PasswordIn",
         "type": "object"
       },
+      "PlacementOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "shift": {
+            "title": "Shift",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "employee",
+          "day",
+          "shift"
+        ],
+        "title": "PlacementOut",
+        "type": "object"
+      },
       "PlanCellOut": {
         "properties": {
           "required": {
@@ -2985,6 +3087,47 @@
           "productiveMinutesPerDay"
         ],
         "title": "PoolIn",
+        "type": "object"
+      },
+      "ProposalOut": {
+        "properties": {
+          "kept": {
+            "title": "Kept",
+            "type": "integer"
+          },
+          "overAfter": {
+            "title": "Overafter",
+            "type": "integer"
+          },
+          "placements": {
+            "items": {
+              "$ref": "#/components/schemas/PlacementOut"
+            },
+            "title": "Placements",
+            "type": "array"
+          },
+          "shortAfter": {
+            "title": "Shortafter",
+            "type": "integer"
+          },
+          "shortBefore": {
+            "title": "Shortbefore",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "placements",
+          "shortBefore",
+          "shortAfter",
+          "overAfter",
+          "kept"
+        ],
+        "title": "ProposalOut",
         "type": "object"
       },
       "ProviderOut": {
@@ -7277,6 +7420,80 @@
           }
         ],
         "summary": "Put a person on a shift, or clear it",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster/auto-schedule": {
+      "post": {
+        "operationId": "wfm_scheduling_autoschedule_api_apply",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppliedOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Fill the week automatically",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster/auto-schedule/preview": {
+      "post": {
+        "operationId": "wfm_scheduling_autoschedule_api_preview",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "What auto-schedule would add",
         "tags": [
           "scheduling"
         ]

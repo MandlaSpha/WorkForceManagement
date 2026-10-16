@@ -11,6 +11,7 @@ import {
   useRoster,
 } from '@/entities/scheduling'
 import { ShiftCellSelect } from '@/features/assign-shift'
+import { AutoScheduleButton } from '@/features/auto-schedule'
 import { useContextStore } from '@/features/context-filters'
 import { PublishRosterButton } from '@/features/publish-roster'
 import { problemMessage } from '@/shared/api'
@@ -80,6 +81,12 @@ const shiftIdOf = (row: { cells: ReadonlyArray<{ day: string; shiftId: number }>
       <NoticeBox v-else-if="!canChange">
         You can read the roster here. Planners and admins build it.
       </NoticeBox>
+
+      <AutoScheduleButton
+        v-if="editable && context.queueNumber !== null"
+        :queue-id="context.queueNumber"
+        :week-start="context.weekStart"
+      />
 
       <NoticeBox v-if="refusal" tone="danger" data-testid="assign-refusal">
         <p class="font-medium">That change was not made.</p>

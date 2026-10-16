@@ -3,7 +3,7 @@ name = "wfm-engine"
 version = "0.1.0"
 description = "Pure-Python workforce management maths: Erlang C, coverage, rules, KPIs. No Django, no I/O."
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["ortools>=9.10"]
 
 [dependency-groups]
 dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11"]

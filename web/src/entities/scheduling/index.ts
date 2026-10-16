@@ -1,5 +1,6 @@
 export { ATTENTION_ROUTE, attentionRoute, barShare } from './model/overview'
 export {
+  applyAutoSchedule,
   assignShift,
   createEmployee,
   createShift,
@@ -7,6 +8,7 @@ export {
   saveComplianceRules,
   fetchUnmappedLogins,
   importEmployees,
+  previewAutoSchedule,
   publishRoster,
   reopenRoster,
   rosterExportUrl,
@@ -36,6 +38,9 @@ export {
 } from './model/queries'
 export type {
   AssignRequest,
+  AutoScheduleProposal,
+  AutoScheduleRequest,
+  AutoScheduleResult,
   Attention,
   Overview,
   OverviewQueue,

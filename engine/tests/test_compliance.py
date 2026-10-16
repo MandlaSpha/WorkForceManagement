@@ -8,6 +8,7 @@ from wfm_engine.compliance import (
     floor_warnings,
     invalid_reason,
     rules_in_force,
+    tightest,
 )
 
 JAN, MAR, JUN = date(2027, 1, 1), date(2027, 3, 1), date(2027, 6, 1)
@@ -89,3 +90,16 @@ def test_nonsense_is_refused_outright(rules):
 )
 def test_sensible_values_are_accepted_even_when_loose(rules):
     assert invalid_reason(rules) is None
+
+
+def test_the_tightest_takes_the_strictest_of_each_rule():
+    # Failure caught: planning across a change of rules with only the first day's rules.
+    a = Rules(min_rest_hours=11, max_consecutive_days=6, max_weekly_hours=None)
+    b = Rules(min_rest_hours=12, max_consecutive_days=5, max_weekly_hours=45)
+    c = Rules(min_rest_hours=8, max_consecutive_days=7, max_weekly_hours=40)
+    assert tightest([a, b, c]) == Rules(12, 5, 40)
+    assert tightest([a]) == a
+
+
+def test_the_tightest_of_nothing_is_the_defaults():
+    assert tightest([]) == DEFAULT_RULES
