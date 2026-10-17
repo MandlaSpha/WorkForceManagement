@@ -238,7 +238,7 @@ export const NAV_ITEMS = [
     group: 'Insight',
     icon: 'bar-chart-3',
     feature: 'insight',
-    phase: 5,
+    phase: 0,
     subtitle: 'Executive KPIs and what-if planning, each labelled measured or modelled.',
   },
   {

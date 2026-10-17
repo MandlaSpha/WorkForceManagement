@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "wfm.people",
     "wfm.notifications",
     "wfm.jobs",
+    "wfm.insight",
     "wfm.overtime",
 ]
 

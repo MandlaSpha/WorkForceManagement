@@ -106,3 +106,11 @@ def interval_start(moment: datetime, minutes: int = INTERVAL_MINUTES) -> datetim
         raise ValueError("interval length must divide an hour")
     floored = moment.minute - moment.minute % minutes
     return moment.replace(minute=floored, second=0, microsecond=0)
+
+
+def occupancy_pct(handle_s: int, scheduled_s: int) -> float | None:
+    """Handling time as a share of the time people were scheduled for. None when nobody was
+    scheduled (so no share can be given), never 0."""
+    if scheduled_s <= 0:
+        return None
+    return handle_s / scheduled_s * 100

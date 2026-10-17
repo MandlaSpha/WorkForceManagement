@@ -405,6 +405,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/insight/scorecard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Service, workload and planning figures for a range, each labelled by its source */
+        get: operations["wfm_insight_api_scorecard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jobs/{job_id}": {
         parameters: {
             query?: never;
@@ -2501,6 +2518,21 @@ export interface components {
             /** Start */
             start: string;
         };
+        /** ItemOut */
+        ItemOut: {
+            /** Basis */
+            basis: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Note */
+            note: string;
+            /** Unit */
+            unit: string;
+            /** Value */
+            value: number | null;
+        };
         /** JobOut */
         JobOut: {
             /**
@@ -3448,6 +3480,35 @@ export interface components {
             days: number;
             /** Intervalpct */
             intervalPct: number | null;
+        };
+        /** ScorecardDayOut */
+        ScorecardDayOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Offered */
+            offered: number;
+            /** Servicelevelpct */
+            serviceLevelPct: number | null;
+        };
+        /** ScorecardOut */
+        ScorecardOut: {
+            /**
+             * Datefrom
+             * Format: date
+             */
+            dateFrom: string;
+            /**
+             * Dateto
+             * Format: date
+             */
+            dateTo: string;
+            /** Days */
+            days: components["schemas"]["ScorecardDayOut"][];
+            /** Items */
+            items: components["schemas"]["ItemOut"][];
         };
         /** ShiftIn */
         ShiftIn: {
@@ -4494,6 +4555,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ForecastVersionOut"];
+                };
+            };
+        };
+    };
+    wfm_insight_api_scorecard: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScorecardOut"];
                 };
             };
         };

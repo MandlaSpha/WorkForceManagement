@@ -2087,6 +2087,51 @@
         "title": "IntervalOut",
         "type": "object"
       },
+      "ItemOut": {
+        "properties": {
+          "basis": {
+            "title": "Basis",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value",
+          "unit",
+          "basis",
+          "note"
+        ],
+        "title": "ItemOut",
+        "type": "object"
+      },
       "JobOut": {
         "properties": {
           "createdAt": {
@@ -4533,6 +4578,73 @@
         "title": "ScoreOut",
         "type": "object"
       },
+      "ScorecardDayOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "offered": {
+            "title": "Offered",
+            "type": "integer"
+          },
+          "serviceLevelPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servicelevelpct"
+          }
+        },
+        "required": [
+          "day",
+          "offered",
+          "serviceLevelPct"
+        ],
+        "title": "ScorecardDayOut",
+        "type": "object"
+      },
+      "ScorecardOut": {
+        "properties": {
+          "dateFrom": {
+            "format": "date",
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "format": "date",
+            "title": "Dateto",
+            "type": "string"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/ScorecardDayOut"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dateFrom",
+          "dateTo",
+          "items",
+          "days"
+        ],
+        "title": "ScorecardOut",
+        "type": "object"
+      },
       "ShiftIn": {
         "properties": {
           "code": {
@@ -6655,6 +6767,54 @@
         "summary": "Make a draft the live forecast of its queue",
         "tags": [
           "forecasting"
+        ]
+      }
+    },
+    "/api/v1/insight/scorecard": {
+      "get": {
+        "operationId": "wfm_insight_api_scorecard",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScorecardOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Service, workload and planning figures for a range, each labelled by its source",
+        "tags": [
+          "insight"
         ]
       }
     },

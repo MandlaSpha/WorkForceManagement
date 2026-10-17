@@ -15,6 +15,7 @@ import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
 import type { Peaks } from '@/entities/peaks'
+import type { Scorecard } from '@/entities/scorecard'
 import type { Shrinkage } from '@/entities/shrinkage'
 import type { AdminUser } from '@/entities/user-admin'
 import type {
@@ -176,6 +177,8 @@ export const backend = {
   /** The peaks report, and the queue/range of each request. */
   peaks: null as Peaks | null,
   peaksQueries: [] as string[],
+  /** The analytics scorecard. */
+  scorecard: null as Scorecard | null,
   overtimeQueries: [] as string[],
   /** Standby, and the month summary the overtime page asks for. */
   standby: [] as Standby[],
@@ -268,6 +271,7 @@ export const backend = {
     this.shrinkageQueries = []
     this.peaks = null
     this.peaksQueries = []
+    this.scorecard = null
     this.overtimeQueries = []
     this.standby = []
     this.summary = null
@@ -723,6 +727,8 @@ export const handlers = [
     if (!response.ok) return response
     return HttpResponse.json({ saved: sent, warnings: backend.rulesWarnings })
   }),
+
+  http.get('*/api/v1/insight/scorecard', () => HttpResponse.json(backend.scorecard)),
 
   http.get('*/api/v1/telephony/peaks', ({ request }) => {
     const q = new URL(request.url).searchParams

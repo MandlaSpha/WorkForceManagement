@@ -124,3 +124,12 @@ class TestIntervals:
         assert interval_start(datetime(2026, 5, 1, 8, 14), 15) == datetime(2026, 5, 1, 8, 0)
         with pytest.raises(ValueError, match="divide an hour"):
             interval_start(datetime(2026, 5, 1, 8, 14), 25)
+
+
+def test_occupancy_is_handling_time_over_scheduled_time() -> None:
+    from wfm_engine.kpi import occupancy_pct
+
+    assert occupancy_pct(1800, 3600) == 50.0
+    # Failure caught: "nobody scheduled" reported as 0% occupancy, or a division by zero.
+    assert occupancy_pct(1800, 0) is None
+    assert occupancy_pct(0, 3600) == 0.0

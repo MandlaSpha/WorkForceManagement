@@ -354,6 +354,14 @@ Requirements OT-02 and OT-03, in `wfm.overtime`, feature `overtime`.
 - **Who sees rands:** allowances, call-out costs, worked cost, the summary and the rates are for planner and admin; a lead sees the rota and the worked minutes but no money; agents have no screen for any of it. No audit event, notification or log holds a money figure.
 - Not built: a minimum call-out payment, standby rota templates, overtime thresholds in hours, a payroll CSV (RPT-08), exporting the month.
 
+### 4.11 The analytics scorecard (Phase 5, built)
+Requirements RPT-02 and RPT-05. `GET /api/v1/insight/scorecard?date_from&date_to` (feature `insight`; admin, planner, executive, customer ops within their contract queues); Insight > Analytics. Each figure carries its **basis**: `measured` (imported calls, approved leave, past forecasts), `modelled` (measured work against a plan) or `needs_data` (a figure that cannot honestly be given, with what is missing). A figure with nothing behind it is null and shown as a dash, never 0; a figure a role may not see is left out.
+
+- **Measured:** service level (over calls offered), abandon rate, ASA, AHT, calls offered; forecast accuracy (daily, the five busiest queues, a backtest on real past days).
+- **Planner and admin only:** occupancy (handling time over paid time on PUBLISHED rosters, modelled; `wfm_engine.kpi.occupancy_pct`), planned shrinkage (approved leave over contracted hours, in the month of the last day) and the coverage gap (people-half-hours short in the week of the last day, over up to 20 queues with a published forecast).
+- **Cost per contact** is `needs_data`: it needs payroll cost, which is kept out of this view.
+- A daily trend (calls offered and service level) feeds the chart. Not built: per-contract views here, scheduled packs (RPT-04, RPT-10), payroll CSV (RPT-08).
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 
