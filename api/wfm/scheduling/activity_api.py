@@ -106,6 +106,26 @@ def add_activity(request: HttpRequest, body: ActivityIn) -> Status[ActivityOut]:
     return Status(201, _out(made))
 
 
+class ActivityMoveIn(Schema):
+    startTime: time  # noqa: N815 - the new start, on the hour or half-hour
+
+
+@router.post(
+    "/{activity_id}/move",
+    auth=WRITE,
+    response=ActivityOut,
+    summary="Move a break or activity to another start inside its shift",
+)
+def move_activity(request: HttpRequest, activity_id: int, body: ActivityMoveIn) -> ActivityOut:
+    made = services.move(
+        user=current_user(request), activity_id=activity_id, start_time=body.startTime
+    )
+    made = ShiftActivity.objects.select_related("assignment__employee", "assignment__template").get(
+        pk=made.pk
+    )
+    return _out(made)
+
+
 @router.delete(
     "/{activity_id}", auth=WRITE, response={204: None}, summary="Remove a break or activity"
 )

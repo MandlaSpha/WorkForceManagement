@@ -3,9 +3,12 @@ import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { slotLabel, useIntraday } from '@/entities/intraday'
+import { useSessionStore } from '@/entities/session'
 import { useContextStore } from '@/features/context-filters'
+import { ShortageActions } from '@/features/intraday/act'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
+import AppButton from '@/shared/ui/AppButton.vue'
 import IntervalChart from '@/shared/ui/IntervalChart.vue'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
@@ -25,6 +28,19 @@ const points = computed(() =>
     line: s.scheduled,
   })),
 )
+
+// Cosmetic: the API refuses suggestions to anyone but a planner or admin.
+const session = useSessionStore()
+const canAct = computed(() => ['planner', 'admin'].includes(session.user?.role ?? ''))
+const openSlot = ref<number | null>(null)
+
+/** Where the short stretch that begins at `slot` ends: the run of consecutive short half-hours. */
+function runEnd(slot: number): string {
+  const short = new Set((intraday.data.value?.alerts ?? []).map((a) => a.slot))
+  let last = slot
+  while (short.has(last + 1)) last += 1
+  return last >= 47 ? '23:59' : slotLabel(last + 1)
+}
 
 const percent = computed(() =>
   intraday.data.value?.ratio == null ? null : Math.round(intraday.data.value.ratio * 100),
@@ -105,26 +121,40 @@ const critical = computed(
         </NoticeBox>
         <template v-else>
           <ul class="space-y-1 text-sm" aria-label="Alerts">
-            <li
-              v-for="a in intraday.data.value.alerts"
-              :key="a.slot"
-              class="flex items-center gap-2"
-              :data-testid="`alert-${a.slot}`"
-            >
-              <span
-                class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                :class="
-                  a.severity === 'critical'
-                    ? 'bg-danger-soft text-danger'
-                    : 'bg-warn-soft text-warn'
-                "
-              >
-                {{ a.severity === 'critical' ? 'Critical' : 'Warning' }}
-              </span>
-              {{ slotLabel(a.slot) }}: {{ a.scheduled }} scheduled, {{ a.required }} needed ({{
-                a.short
-              }}
-              short)
+            <li v-for="a in intraday.data.value.alerts" :key="a.slot">
+              <div class="flex items-center gap-2" :data-testid="`alert-${a.slot}`">
+                <span
+                  class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                  :class="
+                    a.severity === 'critical'
+                      ? 'bg-danger-soft text-danger'
+                      : 'bg-warn-soft text-warn'
+                  "
+                >
+                  {{ a.severity === 'critical' ? 'Critical' : 'Warning' }}
+                </span>
+                {{ slotLabel(a.slot) }}: {{ a.scheduled }} scheduled, {{ a.required }} needed ({{
+                  a.short
+                }}
+                short)
+                <AppButton
+                  v-if="canAct && context.queueNumber !== null"
+                  variant="ghost"
+                  :aria-expanded="openSlot === a.slot"
+                  :aria-label="`What can be done about ${slotLabel(a.slot)}`"
+                  @click="openSlot = openSlot === a.slot ? null : a.slot"
+                >
+                  What can I do?
+                </AppButton>
+              </div>
+              <ShortageActions
+                v-if="canAct && context.queueNumber !== null && openSlot === a.slot"
+                :queue-id="context.queueNumber"
+                :day="day"
+                :half-hour="a.slot"
+                :from="slotLabel(a.slot)"
+                :to="runEnd(a.slot)"
+              />
             </li>
           </ul>
           <p class="text-sm text-ink-muted" data-testid="actions">

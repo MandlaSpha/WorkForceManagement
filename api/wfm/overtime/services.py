@@ -133,6 +133,17 @@ def _check(
             )
 
 
+def refusal_for(employee: Employee, day: date, start: time, end: time) -> str | None:
+    """The code of the rule that would refuse this overtime span for this person, or None when it
+    would pass. Read only: nothing is written (INT-04 uses it to suggest people)."""
+    began, finished = _span(day, start, end)
+    try:
+        _check(employee, day, start, end, int((finished - began).total_seconds() // 60))
+    except ApiError as refused:
+        return refused.code
+    return None
+
+
 def _tell_approvers(actor: User) -> None:
     approvers = User.objects.filter(role__in=DECIDE_ROLES, is_active=True).exclude(pk=actor.pk)
     notifications.notify(

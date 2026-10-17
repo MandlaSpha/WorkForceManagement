@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { useSessionStore } from '@/entities/session'
 import {
@@ -36,6 +37,20 @@ const canAsk = computed(() => ['lead', 'planner', 'admin'].includes(role.value))
 const canDecide = computed(() => ['planner', 'admin'].includes(role.value))
 const seesCost = canDecide
 const isAdmin = computed(() => role.value === 'admin')
+
+// The form can arrive filled in, e.g. from an intraday alert: /overtime?employeeId&day&from&to.
+// The form is held back until the people have loaded so the person can be selected.
+const route = useRoute()
+const prefill = computed(() => {
+  const one = (v: unknown) => (typeof v === 'string' && v !== '' ? v : undefined)
+  const found = {
+    employeeId: one(route.query.employeeId),
+    day: one(route.query.day),
+    from: one(route.query.from),
+    to: one(route.query.to),
+  }
+  return Object.values(found).some(Boolean) ? found : null
+})
 
 const tab = ref('requests')
 const tabs = computed(() => [
@@ -90,7 +105,11 @@ const STATUS_LABEL: Record<string, string> = {
       class="space-y-4"
       aria-live="polite"
     >
-      <OvertimeRequestForm v-if="canAsk" :employees="employees.data.value ?? []" />
+      <OvertimeRequestForm
+        v-if="canAsk && (prefill === null || employees.data.value)"
+        :employees="employees.data.value ?? []"
+        :prefill="prefill ?? undefined"
+      />
 
       <div class="max-w-48">
         <SelectField v-model="status" label="Show" :options="statusOptions" />

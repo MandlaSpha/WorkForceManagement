@@ -133,3 +133,49 @@ def remove(*, user: User, activity_id: int) -> None:
                 )
             ],
         )
+
+
+def move(*, user: User, activity_id: int, start_time: time) -> ShiftActivity:
+    """Move a break or activity to another start inside the same shift (INT-04): the new one is
+    added and the old one removed in ONE transaction, so there is never a moment with both or
+    neither, and the audit trail shows the removal and the addition, last."""
+    if not _on_grid(start_time):
+        raise _refuse("activity.not_on_grid", "Start on the hour or half-hour, in half-hours.")
+    with transaction.atomic():
+        old = (
+            ShiftActivity.objects.select_related("assignment")
+            .filter(pk=activity_id, assignment__in=ShiftAssignment.objects.for_user(user))
+            .first()
+        )
+        if old is None:
+            raise not_found("No such break or activity.")
+        shift = _locked(user, old.assignment_id)
+        began = shift.template.start_time.hour * 60 + shift.template.start_time.minute
+        at = start_time.hour * 60 + start_time.minute
+        offset_slots = ((at - began) % (24 * 60)) // 30
+        others = list(shift.activities.exclude(pk=old.pk).values_list("offset_slots", "slots"))
+        length = shift_length_slots(shift.template.start_time, shift.template.end_time)
+        why = check_activity(length, (offset_slots, old.slots), others)
+        if why is not None:
+            code, detail = _WHY[why]
+            raise _refuse(code, detail)
+        kind, slots = old.kind, old.slots
+        old.delete()
+        made = ShiftActivity.objects.create(
+            assignment=shift, kind=kind, offset_slots=offset_slots, slots=slots, created_by=user
+        )
+        for action, before, after in (
+            (Action.ROSTER_ACTIVITY_REMOVED, f"{kind} x{slots}", None),
+            (Action.ROSTER_ACTIVITY_ADDED, None, f"{kind} x{slots}"),
+        ):
+            audit.record(  # the last writes of the transaction
+                actor=user,
+                action=action,
+                entity_type="shift_assignment",
+                entity_id=str(shift.pk),
+                subject_employee_id=shift.employee_id,
+                changes=[
+                    audit.FieldChange("shift_assignment", str(shift.pk), "activity", before, after)
+                ],
+            )
+    return made

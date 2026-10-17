@@ -151,6 +151,10 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Operate > Hiring plan.** As `planner`, make a plan: people employed now, how many leave each month, how fast a new hire gets productive, and the people needed for each of 12 to 18 months. It shows how many to hire and when (a hire is made as many months ahead as the ramp is long), the months that are short, and the months where no hire could have helped in time. As `executive` you read the same plan without any rand figure.
 
+**Operate > Intraday > What can I do?** (planner and admin). Next to each short half-hour: up to five people who could be asked for overtime (skilled on the queue, not working that day, not on leave, within the rest and hours rules, lightest week first), each with an Ask for overtime link that opens the Overtime page with the form already filled in (person, day, the whole short stretch), and, where the person in the short half-hour is in a break or lunch, a one-click Move to a time that keeps the phones covered. A lead sees the alerts but no button.
+
+**Insight > Reports > Investment-board KPI pack.** Schedule it as `executive`, `planner` or `admin` (or customer operations): an emailed workbook with Headline (scorecard figures and where each comes from), By queue, Capacity (the latest hiring plan; absent for customer operations) and Notes. It never holds a rand figure.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD

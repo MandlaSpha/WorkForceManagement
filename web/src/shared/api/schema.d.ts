@@ -476,6 +476,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/intraday/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who could be asked for overtime, and which breaks could move, for a short half-hour */
+        get: operations["wfm_intraday_api_get_suggestions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jobs/{job_id}": {
         parameters: {
             query?: never;
@@ -1492,6 +1509,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/roster/activities/{activity_id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move a break or activity to another start inside its shift */
+        post: operations["wfm_scheduling_activity_api_move_activity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/roster/assignments": {
         parameters: {
             query?: never;
@@ -1959,6 +1993,14 @@ export interface components {
             minutes: number;
             /** Queueid */
             queueId: number;
+            /**
+             * Starttime
+             * Format: time
+             */
+            startTime: string;
+        };
+        /** ActivityMoveIn */
+        ActivityMoveIn: {
             /**
              * Starttime
              * Format: time
@@ -2843,6 +2885,23 @@ export interface components {
             /** Slot */
             slot: number;
         };
+        /** IntradayBreakOut */
+        IntradayBreakOut: {
+            /** Activityid */
+            activityId: number;
+            /** Employee */
+            employee: string;
+            /** End */
+            end: string;
+            /** Kind */
+            kind: string;
+            /** Moveto */
+            moveTo: string;
+            /** Slots */
+            slots: number;
+            /** Start */
+            start: string;
+        };
         /** IntradayOut */
         IntradayOut: {
             /** Alerts */
@@ -2867,6 +2926,15 @@ export interface components {
             /** Slots */
             slots: components["schemas"]["IntradaySlotOut"][];
         };
+        /** IntradayPersonOut */
+        IntradayPersonOut: {
+            /** Employeeid */
+            employeeId: number;
+            /** Name */
+            name: string;
+            /** Weekminutes */
+            weekMinutes: number;
+        };
         /** IntradaySlotOut */
         IntradaySlotOut: {
             /** Actual */
@@ -2883,6 +2951,17 @@ export interface components {
             scheduled: number;
             /** Slot */
             slot: number;
+        };
+        /** IntradaySuggestionsOut */
+        IntradaySuggestionsOut: {
+            /** Breaks */
+            breaks: components["schemas"]["IntradayBreakOut"][];
+            /** Overtimeend */
+            overtimeEnd: string;
+            /** Overtimestart */
+            overtimeStart: string;
+            /** People */
+            people: components["schemas"]["IntradayPersonOut"][];
         };
         /** ItemOut */
         ItemOut: {
@@ -5179,6 +5258,30 @@ export interface operations {
             };
         };
     };
+    wfm_intraday_api_get_suggestions: {
+        parameters: {
+            query: {
+                queue_id: number;
+                day: string;
+                slot: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntradaySuggestionsOut"];
+                };
+            };
+        };
+    };
     wfm_jobs_api_get_job: {
         parameters: {
             query?: never;
@@ -6824,6 +6927,32 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    wfm_scheduling_activity_api_move_activity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityMoveIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"];
+                };
             };
         };
     };

@@ -37,7 +37,14 @@ MAX_RECIPIENTS = 10
 MAX_SCHEDULES_PER_PERSON = 20
 SCORECARD_ROLES = frozenset({Role.ADMIN, Role.PLANNER, Role.EXECUTIVE, Role.CUSTOMER_OPS})
 PEAKS_ROLES = frozenset({Role.ADMIN, Role.PLANNER, Role.LEAD, Role.EXECUTIVE, Role.CUSTOMER_OPS})
-ROLES_FOR = {ReportKind.SCORECARD: SCORECARD_ROLES, ReportKind.PEAKS: PEAKS_ROLES}
+# The board pack is for executives and the planning roles; customer operations get the queue
+# figures of their own contracts (and never the hiring sheet).
+BOARD_ROLES = frozenset({Role.ADMIN, Role.PLANNER, Role.EXECUTIVE, Role.CUSTOMER_OPS})
+ROLES_FOR = {
+    ReportKind.SCORECARD: SCORECARD_ROLES,
+    ReportKind.PEAKS: PEAKS_ROLES,
+    ReportKind.BOARD: BOARD_ROLES,
+}
 MAX_DOMAINS = 50
 
 

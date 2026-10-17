@@ -5,6 +5,7 @@ that nothing audited holds an address or a figure."""
 from __future__ import annotations
 
 import io
+import re
 from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -326,3 +327,97 @@ class TestSending:
         text = mail.outbox[0].body
         assert "11 March 2031" in text
         assert "%" not in text
+
+
+@pytest.mark.usefixtures("domain")
+class TestBoardPack:
+    """RPT-09: the investment-board KPI pack, built as its owner."""
+
+    COST = 91234.5  # a rand figure on the hiring plan, which only planner and admin may read
+
+    def seed(self) -> None:
+        from datetime import date
+
+        from wfm.capacity.models import HiringPlan
+        from wfm.telephony.models import IntervalActual
+
+        q, _ = Queue.objects.get_or_create(name="BoardQueue")
+        IntervalActual.objects.create(
+            queue=q,
+            interval_start=datetime(2031, 3, 11, 9, 0, tzinfo=ZONE),
+            offered=40,
+            answered=36,
+            abandoned=4,
+            answered_in_sl=30,
+            sum_wait_s=360,
+            sum_handle_s=36 * 200,
+        )
+        HiringPlan.objects.create(
+            name="Plan 2031",
+            start_month=date(2031, 4, 1),
+            incumbents=100,
+            attrition_pct=2,
+            ramp=[0.5, 1],
+            required=[110] * 12,
+            cost_per_person=self.COST,
+            created_by=User.objects.get_or_create(username="u-admin", defaults={"role": "admin"})[
+                0
+            ],
+        )
+
+    def book_for(self, role: Role) -> Any:
+        self.seed()
+        make(role, report="board")
+        services.send_due(NOW)
+        assert len(mail.outbox) == 1
+        _, content, _ = mail.outbox[0].attachments[0]
+        return load_workbook(io.BytesIO(content))
+
+    @staticmethod
+    def cells(book: Any) -> list[Any]:
+        return [c for sheet in book for row in sheet.iter_rows(values_only=True) for c in row]
+
+    @pytest.mark.parametrize("role", [Role.ADMIN, Role.PLANNER, Role.EXECUTIVE, Role.CUSTOMER_OPS])
+    def test_these_roles_can_schedule_it(self, role: Role) -> None:
+        r = post(client(role), body(report="board"))
+        assert r.status_code == 201, r.content
+        assert r.json()["report"] == "board"
+
+    @pytest.mark.parametrize("role", [Role.LEAD, Role.AGENT])
+    def test_a_lead_or_agent_cannot(self, role: Role) -> None:
+        # Failure caught: a role with no investment figures scheduling the board pack.
+        assert post(client(role), body(report="board")).status_code == 403
+        assert not ReportSchedule.objects.exists()
+
+    def test_an_executive_pack_has_no_rand_figure_and_a_planner_pack_has_the_headcount(
+        self,
+    ) -> None:
+        # Failure caught: the hiring plan's cost per person (pay data) reaching an executive's
+        # inbox, or a rand figure anywhere in the pack for any role.
+        executive = self.book_for(Role.EXECUTIVE)
+        assert executive.sheetnames == ["Headline", "By queue", "Capacity", "Notes"]
+        cells = self.cells(executive)
+        assert self.COST not in cells
+        assert "R" not in cells
+        assert not any(isinstance(c, str) and re.search(r"\bR\s?\d", c) for c in cells)
+        # The capacity sheet is headcount: needed, on the books, hires, effective, gap.
+        header = [c.value for c in executive["Capacity"][2]]
+        assert header == ["Month", "Needed", "On the books", "Hires", "Effective", "Gap"]
+        assert [c.value for c in executive["By queue"][2]][:2] == ["BoardQueue", 40]
+
+    def test_customer_ops_see_no_hiring_sheet_and_only_their_contract_queues(self) -> None:
+        # Failure caught: a customer reading the employer's hiring plan, or queues that are not
+        # in their contracts (none are until contracts link them).
+        book = self.book_for(Role.CUSTOMER_OPS)
+        assert book.sheetnames == ["Headline", "By queue", "Notes"]
+        assert "BoardQueue" not in self.cells(book)
+        assert "Plan 2031" not in self.cells(book)
+        assert book["By queue"].max_row == 1  # the header only: no queue is theirs
+
+    def test_the_headline_carries_the_basis_of_each_figure(self) -> None:
+        # Failure caught: a board figure with no statement of where it comes from.
+        book = self.book_for(Role.PLANNER)
+        rows = list(book["Headline"].iter_rows(min_row=3, values_only=True))
+        assert rows
+        assert all(r[3] in ("measured", "modelled", "needs_data") for r in rows)
+        assert "Service level" in {r[0] for r in rows}

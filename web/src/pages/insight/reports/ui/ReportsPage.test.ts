@@ -89,6 +89,30 @@ describe('scheduling a report', () => {
     expect(await screen.findByTestId('schedule-error')).toHaveTextContent('not on a domain')
   })
 
+  it.each(['admin', 'planner', 'executive', 'customer_ops'])(
+    'offers %s the board pack, which needs no queue',
+    async (role) => {
+      // Failure caught: the board pack missing from the choices, or sent with a queue it has none of.
+      const user = userEvent.setup()
+      await open(role)
+      const form = await screen.findByRole('form', { name: 'Schedule a report' })
+      await user.selectOptions(within(form).getByLabelText('Report'), 'Investment-board KPI pack')
+      expect(within(form).queryByLabelText('Queue')).toBeNull()
+      await user.type(within(form).getByLabelText(/Send to/), 'board@example.co.za')
+      await user.click(within(form).getByRole('button', { name: 'Schedule report' }))
+      await waitFor(() => expect(backend.writes).toHaveLength(1))
+      expect(backend.writes[0]?.body).toMatchObject({ report: 'board', queueId: null })
+    },
+  )
+
+  it('does not offer a lead the board pack', async () => {
+    // Failure caught: offering a lead a pack the API will refuse.
+    await open('lead')
+    const form = await screen.findByRole('form', { name: 'Schedule a report' })
+    const options = within(within(form).getByLabelText('Report')).getAllByRole('option')
+    expect(options.map((o) => o.textContent)).not.toContain('Investment-board KPI pack')
+  })
+
   it('offers a lead only the report a lead may see', async () => {
     // Failure caught: offering a lead a report the API will refuse.
     await open('lead')
