@@ -98,3 +98,40 @@ body {
     transition-duration: 0s !important;
   }
 }
+
+/* MOB-01: a table that turns into one card per row below the sm breakpoint (640px). Put
+   `stack-on-phone` on the table and `data-label="Column"` on each cell that needs its column
+   name; the header row is kept for screen readers. */
+@media (max-width: 639px) {
+  .stack-on-phone,
+  .stack-on-phone tbody,
+  .stack-on-phone tr,
+  .stack-on-phone th[scope='row'],
+  .stack-on-phone td {
+    display: block;
+  }
+  .stack-on-phone thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .stack-on-phone tr {
+    padding: 0.5rem 0;
+  }
+  .stack-on-phone td {
+    text-align: right;
+  }
+  .stack-on-phone td[data-label] {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .stack-on-phone td[data-label]::before {
+    content: attr(data-label);
+    color: var(--ink-muted);
+    font-size: 0.75rem;
+    text-align: left;
+  }
+}
