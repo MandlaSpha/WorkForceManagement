@@ -141,9 +141,11 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Insight > Peaks & troughs.** Pick a queue and a date range (the last 28 days by default). It lists the busiest and quietest days, the busiest half-hours of the day, and the quietest half-hours while the queue is open, from measured calls.
 
+**People > Overtime: worked time, standby and the month.** As `planner`, on an approved request whose day has passed, type the minutes really worked (try more than was approved: the extra is shown and not paid). On the **Standby** tab put someone on standby and, once the day has come, record a call-out. The **Month** tab adds overtime, standby allowances and call-outs and shows what is left of the budget; as `admin` set the standby allowance and the month's budget there. As `lead` you see the standby rota and the worked minutes, never a rand figure.
+
 ## Not built yet (so you are not looking for it)
 
-Per-team leave limits, standby and overtime reconciliation, scheduled reports, intraday, adherence, ITSM and Azure AD
+Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD
 integration. The menu lists some of these as placeholders.
 
 ## Loading the demo data

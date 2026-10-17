@@ -641,6 +641,62 @@
         "title": "BoardOut",
         "type": "object"
       },
+      "BudgetIn": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          }
+        },
+        "title": "BudgetIn",
+        "type": "object"
+      },
+      "BudgetOut": {
+        "properties": {
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          }
+        },
+        "required": [
+          "month",
+          "amount"
+        ],
+        "title": "BudgetOut",
+        "type": "object"
+      },
+      "CallOutIn": {
+        "properties": {
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "minutes"
+        ],
+        "title": "CallOutIn",
+        "type": "object"
+      },
       "CapacityDayOut": {
         "properties": {
           "complete": {
@@ -2725,6 +2781,10 @@
             "title": "Endtime",
             "type": "string"
           },
+          "extraMinutes": {
+            "title": "Extraminutes",
+            "type": "integer"
+          },
           "id": {
             "title": "Id",
             "type": "integer"
@@ -2741,6 +2801,17 @@
             "title": "Minutes",
             "type": "integer"
           },
+          "paidMinutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paidminutes"
+          },
           "reason": {
             "title": "Reason",
             "type": "string"
@@ -2753,6 +2824,28 @@
           "status": {
             "title": "Status",
             "type": "string"
+          },
+          "workedCostRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workedcostrands"
+          },
+          "workedMinutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workedminutes"
           }
         },
         "required": [
@@ -2769,7 +2862,11 @@
           "kind",
           "costRands",
           "costMissing",
-          "mine"
+          "mine",
+          "workedMinutes",
+          "paidMinutes",
+          "extraMinutes",
+          "workedCostRands"
         ],
         "title": "OvertimeOut",
         "type": "object"
@@ -3751,6 +3848,32 @@
         "title": "QueueSettingsIn",
         "type": "object"
       },
+      "RatesIn": {
+        "properties": {
+          "standbyAllowance": {
+            "title": "Standbyallowance",
+            "type": "number"
+          }
+        },
+        "required": [
+          "standbyAllowance"
+        ],
+        "title": "RatesIn",
+        "type": "object"
+      },
+      "RatesOut": {
+        "properties": {
+          "standbyAllowance": {
+            "title": "Standbyallowance",
+            "type": "number"
+          }
+        },
+        "required": [
+          "standbyAllowance"
+        ],
+        "title": "RatesOut",
+        "type": "object"
+      },
       "RecommendationAppliedOut": {
         "properties": {
           "applied": {
@@ -4580,6 +4703,201 @@
         "title": "SlotOut",
         "type": "object"
       },
+      "StandbyIn": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "employeeId",
+          "day"
+        ],
+        "title": "StandbyIn",
+        "type": "object"
+      },
+      "StandbyOut": {
+        "properties": {
+          "allowanceRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowancerands"
+          },
+          "callOutCostMissing": {
+            "title": "Calloutcostmissing",
+            "type": "boolean"
+          },
+          "callOutCostRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calloutcostrands"
+          },
+          "callOutMinutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calloutminutes"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "mine": {
+            "title": "Mine",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "employeeId",
+          "employee",
+          "empNo",
+          "day",
+          "status",
+          "allowanceRands",
+          "callOutMinutes",
+          "callOutCostRands",
+          "callOutCostMissing",
+          "mine"
+        ],
+        "title": "StandbyOut",
+        "type": "object"
+      },
+      "SummaryOut": {
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "integer"
+          },
+          "approvedMinutes": {
+            "title": "Approvedminutes",
+            "type": "integer"
+          },
+          "budgetRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budgetrands"
+          },
+          "callOutCostRands": {
+            "title": "Calloutcostrands",
+            "type": "number"
+          },
+          "callOutMinutes": {
+            "title": "Calloutminutes",
+            "type": "integer"
+          },
+          "extraMinutes": {
+            "title": "Extraminutes",
+            "type": "integer"
+          },
+          "missingPrices": {
+            "title": "Missingprices",
+            "type": "integer"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "overtimeCostRands": {
+            "title": "Overtimecostrands",
+            "type": "number"
+          },
+          "standbyAllowanceRands": {
+            "title": "Standbyallowancerands",
+            "type": "number"
+          },
+          "standbyAllowancesRands": {
+            "title": "Standbyallowancesrands",
+            "type": "number"
+          },
+          "standbyDays": {
+            "title": "Standbydays",
+            "type": "integer"
+          },
+          "totalRands": {
+            "title": "Totalrands",
+            "type": "number"
+          },
+          "unreconciled": {
+            "title": "Unreconciled",
+            "type": "integer"
+          },
+          "workedMinutes": {
+            "title": "Workedminutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "month",
+          "approved",
+          "approvedMinutes",
+          "unreconciled",
+          "workedMinutes",
+          "extraMinutes",
+          "overtimeCostRands",
+          "missingPrices",
+          "standbyDays",
+          "standbyAllowancesRands",
+          "callOutMinutes",
+          "callOutCostRands",
+          "totalRands",
+          "budgetRands",
+          "standbyAllowanceRands"
+        ],
+        "title": "SummaryOut",
+        "type": "object"
+      },
       "SwapIn": {
         "properties": {
           "employeeId": {
@@ -5139,6 +5457,19 @@
           "ignoredColumns"
         ],
         "title": "WorkImportOut",
+        "type": "object"
+      },
+      "WorkedIn": {
+        "properties": {
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "minutes"
+        ],
+        "title": "WorkedIn",
         "type": "object"
       },
       "WorkerPingOut": {
@@ -6459,6 +6790,54 @@
         ]
       }
     },
+    "/api/v1/overtime/budget/{month}": {
+      "put": {
+        "operationId": "wfm_overtime_api_put_budget",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set the budget for a month",
+        "tags": [
+          "overtime"
+        ]
+      }
+    },
     "/api/v1/overtime/pay": {
       "get": {
         "operationId": "wfm_overtime_api_list_pay",
@@ -6532,6 +6911,43 @@
           }
         ],
         "summary": "Set or clear a salary",
+        "tags": [
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/rates": {
+      "put": {
+        "operationId": "wfm_overtime_api_put_rates",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatesOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set the standby allowance for a day",
         "tags": [
           "overtime"
         ]
@@ -6759,6 +7175,280 @@
           }
         ],
         "summary": "Reject overtime",
+        "tags": [
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/requests/{request_id}/worked": {
+      "post": {
+        "operationId": "wfm_overtime_api_record_worked",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "title": "Request Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkedIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OvertimeOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Record how long approved overtime really lasted",
+        "tags": [
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/standby": {
+      "get": {
+        "operationId": "wfm_overtime_standby_api_list_standby",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StandbyOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Standby the signed-in person may see",
+        "tags": [
+          "overtime",
+          "overtime"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_overtime_standby_api_book",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StandbyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandbyOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Put somebody on standby",
+        "tags": [
+          "overtime",
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/standby/{standby_id}/call-out": {
+      "post": {
+        "operationId": "wfm_overtime_standby_api_call_out",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standby_id",
+            "required": true,
+            "schema": {
+              "title": "Standby Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CallOutIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandbyOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Record a call-out",
+        "tags": [
+          "overtime",
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/standby/{standby_id}/cancel": {
+      "post": {
+        "operationId": "wfm_overtime_standby_api_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "standby_id",
+            "required": true,
+            "schema": {
+              "title": "Standby Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandbyOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Cancel standby",
+        "tags": [
+          "overtime",
+          "overtime"
+        ]
+      }
+    },
+    "/api/v1/overtime/summary": {
+      "get": {
+        "operationId": "wfm_overtime_api_month_summary",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Overtime and standby for a month against the budget",
         "tags": [
           "overtime"
         ]

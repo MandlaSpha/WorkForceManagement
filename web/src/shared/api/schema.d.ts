@@ -473,6 +473,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/overtime/budget/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the budget for a month */
+        put: operations["wfm_overtime_api_put_budget"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/overtime/pay": {
         parameters: {
             query?: never;
@@ -500,6 +517,23 @@ export interface paths {
         get?: never;
         /** Set or clear a salary */
         put: operations["wfm_overtime_api_put_pay"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/rates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set the standby allowance for a day */
+        put: operations["wfm_overtime_api_put_rates"];
         post?: never;
         delete?: never;
         options?: never;
@@ -570,6 +604,92 @@ export interface paths {
         put?: never;
         /** Reject overtime */
         post: operations["wfm_overtime_api_reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/requests/{request_id}/worked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record how long approved overtime really lasted */
+        post: operations["wfm_overtime_api_record_worked"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/standby": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Standby the signed-in person may see */
+        get: operations["wfm_overtime_standby_api_list_standby"];
+        put?: never;
+        /** Put somebody on standby */
+        post: operations["wfm_overtime_standby_api_book"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/standby/{standby_id}/call-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record a call-out */
+        post: operations["wfm_overtime_standby_api_call_out"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/standby/{standby_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel standby */
+        post: operations["wfm_overtime_standby_api_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/overtime/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Overtime and standby for a month against the budget */
+        get: operations["wfm_overtime_api_month_summary"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1873,6 +1993,26 @@ export interface components {
              */
             startTime: string;
         };
+        /** BudgetIn */
+        BudgetIn: {
+            /** Amount */
+            amount?: number | null;
+        };
+        /** BudgetOut */
+        BudgetOut: {
+            /** Amount */
+            amount: number | null;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+        };
+        /** CallOutIn */
+        CallOutIn: {
+            /** Minutes */
+            minutes: number;
+        };
         /** CapacityDayOut */
         CapacityDayOut: {
             /** Complete */
@@ -2672,6 +2812,8 @@ export interface components {
              * Format: time
              */
             endTime: string;
+            /** Extraminutes */
+            extraMinutes: number;
             /** Id */
             id: number;
             /** Kind */
@@ -2680,6 +2822,8 @@ export interface components {
             mine: boolean;
             /** Minutes */
             minutes: number;
+            /** Paidminutes */
+            paidMinutes: number | null;
             /** Reason */
             reason: string;
             /**
@@ -2689,6 +2833,10 @@ export interface components {
             startTime: string;
             /** Status */
             status: string;
+            /** Workedcostrands */
+            workedCostRands: number | null;
+            /** Workedminutes */
+            workedMinutes: number | null;
         };
         /** OvertimePayIn */
         OvertimePayIn: {
@@ -3032,6 +3180,16 @@ export interface components {
             /** Slthresholds */
             slThresholdS: number;
         };
+        /** RatesIn */
+        RatesIn: {
+            /** Standbyallowance */
+            standbyAllowance: number;
+        };
+        /** RatesOut */
+        RatesOut: {
+            /** Standbyallowance */
+            standbyAllowance: number;
+        };
         /** RecommendationAppliedOut */
         RecommendationAppliedOut: {
             /** Applied */
@@ -3367,6 +3525,80 @@ export interface components {
             /** Slot */
             slot: string;
         };
+        /** StandbyIn */
+        StandbyIn: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employeeid */
+            employeeId: number;
+        };
+        /** StandbyOut */
+        StandbyOut: {
+            /** Allowancerands */
+            allowanceRands: number | null;
+            /** Calloutcostmissing */
+            callOutCostMissing: boolean;
+            /** Calloutcostrands */
+            callOutCostRands: number | null;
+            /** Calloutminutes */
+            callOutMinutes: number | null;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Id */
+            id: number;
+            /** Mine */
+            mine: boolean;
+            /** Status */
+            status: string;
+        };
+        /** SummaryOut */
+        SummaryOut: {
+            /** Approved */
+            approved: number;
+            /** Approvedminutes */
+            approvedMinutes: number;
+            /** Budgetrands */
+            budgetRands: number | null;
+            /** Calloutcostrands */
+            callOutCostRands: number;
+            /** Calloutminutes */
+            callOutMinutes: number;
+            /** Extraminutes */
+            extraMinutes: number;
+            /** Missingprices */
+            missingPrices: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Overtimecostrands */
+            overtimeCostRands: number;
+            /** Standbyallowancerands */
+            standbyAllowanceRands: number;
+            /** Standbyallowancesrands */
+            standbyAllowancesRands: number;
+            /** Standbydays */
+            standbyDays: number;
+            /** Totalrands */
+            totalRands: number;
+            /** Unreconciled */
+            unreconciled: number;
+            /** Workedminutes */
+            workedMinutes: number;
+        };
         /** SwapIn */
         SwapIn: {
             /** Employeeid */
@@ -3574,6 +3806,11 @@ export interface components {
             unchanged: number;
             /** Updated */
             updated: number;
+        };
+        /** WorkedIn */
+        WorkedIn: {
+            /** Minutes */
+            minutes: number;
         };
         /** WorkerPingOut */
         WorkerPingOut: {
@@ -4347,6 +4584,32 @@ export interface operations {
             };
         };
     };
+    wfm_overtime_api_put_budget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                month: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetOut"];
+                };
+            };
+        };
+    };
     wfm_overtime_api_list_pay: {
         parameters: {
             query?: never;
@@ -4389,6 +4652,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OvertimePayOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_api_put_rates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatesIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RatesOut"];
                 };
             };
         };
@@ -4503,6 +4790,149 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OvertimeOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_api_record_worked: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkedIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OvertimeOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_standby_api_list_standby: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandbyOut"][];
+                };
+            };
+        };
+    };
+    wfm_overtime_standby_api_book: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StandbyIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandbyOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_standby_api_call_out: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                standby_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CallOutIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandbyOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_standby_api_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                standby_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandbyOut"];
+                };
+            };
+        };
+    };
+    wfm_overtime_api_month_summary: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryOut"];
                 };
             };
         };

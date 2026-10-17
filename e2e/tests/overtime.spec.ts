@@ -128,3 +128,129 @@ test('overtime is asked for, approved and priced from the salary on file, which 
   })
   expect(agentAsk.status()).toBe(403)
 })
+
+/** A Wednesday between 14 and 40 days ago (inside the 31 days back that overtime is accepted),
+ * chosen at random so repeated runs do not meet each other's overtime. */
+function aRecentWednesday(): string {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
+  const back = addDays(today, -(10 + rand(20)))
+  const weekday = new Date(`${back}T00:00:00Z`).getUTCDay()
+  return addDays(back, -((weekday + 4) % 7)) // back to the Wednesday on or before
+}
+
+test('worked time is reconciled against what was approved, standby and a call-out join the month, and the budget shows what is left', async ({
+  page,
+}) => {
+  test.setTimeout(150_000)
+  const id = rand(1_000_000)
+  const name = `Rena Reconcile ${id}`
+  const day = aRecentWednesday()
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
+
+  await signIn(page, 'planner')
+  await page.getByRole('link', { name: 'Employees' }).click()
+  await page.getByRole('button', { name: 'Add employee' }).click()
+  const add = page.getByRole('form', { name: 'Add an employee' })
+  await add.getByLabel('Employee number').fill(`R${id}`)
+  await add.getByLabel('Name', { exact: true }).fill(name)
+  await add.getByRole('button', { name: 'Add employee' }).click()
+  await expect(page.getByRole('table', { name: 'Employees' }).getByText(name)).toBeVisible()
+  await signOut(page)
+
+  await signIn(page, 'admin')
+  await page.getByRole('link', { name: 'Overtime' }).click()
+  await page.getByRole('tab', { name: 'Pay' }).click()
+  const pay = page.getByRole('form', { name: `Pay for ${name}` })
+  await pay.getByLabel(`Monthly salary for ${name} (R)`).fill('17332')
+  await pay.getByRole('button', { name: 'Save pay' }).click()
+  await expect(page.getByTestId(`pay-R${id}`)).toContainText('Salary on file')
+  await signOut(page)
+
+  // Ask for two hours on a day that has passed, and approve it.
+  await signIn(page, 'planner')
+  await page.getByRole('link', { name: 'Overtime' }).click()
+  const ask = page.getByRole('form', { name: 'Ask for overtime' })
+  await ask.getByLabel('Person').selectOption({ label: name })
+  await ask.getByLabel('Day').fill(day)
+  await ask.getByLabel('From').fill('18:00')
+  await ask.getByLabel('To').fill('20:00')
+  await ask.getByRole('button', { name: 'Ask for overtime' }).click()
+  await expect(page.getByTestId('ask-result')).toBeVisible()
+  await signOut(page)
+  await signIn(page, 'admin')
+  await page.getByRole('link', { name: 'Overtime' }).click()
+  await page
+    .getByRole('row')
+    .filter({ hasText: name })
+    .getByRole('button', { name: /^Approve overtime for/ })
+    .click()
+  await expect(page.getByRole('row').filter({ hasText: name })).toContainText('Approved')
+
+  // The admin sets the rate and this month's budget; the planner will see them applied.
+  await page.getByRole('tab', { name: 'Month' }).click()
+  const allowance = page.getByRole('form', { name: 'Standby allowance' })
+  await allowance.getByLabel(/Allowance for a day/).fill('150')
+  await allowance.getByRole('button', { name: 'Save allowance' }).click()
+  const budget = page.getByRole('form', { name: 'Budget for the month' })
+  await budget.getByLabel(/Budget for this month/).fill('100000')
+  await budget.getByRole('button', { name: 'Save budget' }).click()
+  await expect(page.getByTestId('budget-line')).toContainText(/Budget R\s*100\s?000[.,]00/)
+  await signOut(page)
+
+  // The planner records 90 of the 120 approved minutes: only 90 are paid, at the approved price.
+  await signIn(page, 'planner')
+  await page.getByRole('link', { name: 'Overtime' }).click()
+  const row = page.getByRole('row').filter({ hasText: name })
+  const record = row.getByRole('form', { name: /Record worked time for/ })
+  await record.getByLabel('Minutes worked').fill('90')
+  await record.getByRole('button', { name: 'Record' }).click()
+  await expect(row.getByTestId('worked')).toContainText('1h 30m worked')
+  await expect(row.getByTestId('worked-cost')).toContainText(/Paid R\s*\d/)
+  // More than was approved is shown, and not paid.
+  await row
+    .getByRole('form', { name: /Record worked time for/ })
+    .getByLabel('Minutes worked')
+    .fill('150')
+  await row
+    .getByRole('form', { name: /Record worked time for/ })
+    .getByRole('button', { name: 'Correct' })
+    .click()
+  await expect(row.getByTestId('extra')).toContainText('0h 30m beyond what was approved')
+  await expectNoAccessibilityViolations(page)
+
+  // Standby today, with a one-hour call-out.
+  await page.getByRole('tab', { name: 'Standby' }).click()
+  const book = page.getByRole('form', { name: 'Put somebody on standby' })
+  await book.getByLabel('Person').selectOption({ label: name })
+  await book.getByLabel('Day').fill(today)
+  await book.getByRole('button', { name: 'Put on standby' }).click()
+  const standbyRow = page.getByRole('listitem').filter({ hasText: name })
+  await expect(standbyRow).toContainText(/allowance R\s*150[.,]00/)
+  await standbyRow.getByLabel('Call-out minutes').fill('60')
+  await standbyRow.getByRole('button', { name: 'Record' }).click()
+  await expect(standbyRow).toContainText('called out for 60 minutes')
+
+  // The month adds it up against the budget, and the planner cannot change either figure.
+  await page.getByRole('tab', { name: 'Month' }).click()
+  await expect(page.getByTestId('total-cost')).toContainText(/R\s*\d/)
+  await expect(page.getByTestId('budget-line')).toContainText('left')
+  // The overtime may be last month's: look at the month it happened in for the unpaid extra time.
+  await page.locator('input[type=month]').fill(day.slice(0, 7))
+  await expect(page.getByTestId('extra-minutes')).toBeVisible()
+  await expect(page.getByRole('form', { name: 'Standby allowance' })).toHaveCount(0)
+  await expectNoAccessibilityViolations(page)
+  const token = await csrf(page)
+  const refused = await page.request.put('/api/v1/overtime/rates', {
+    headers: { 'X-CSRFToken': token },
+    data: { standbyAllowance: 1 },
+  })
+  expect(refused.status()).toBe(403)
+  await signOut(page)
+
+  // A lead sees the rota and the worked time, never a rand figure or the month.
+  await signIn(page, 'lead')
+  const summary = await page.request.get(`/api/v1/overtime/summary?month=${today.slice(0, 7)}-01`)
+  expect(summary.status()).toBe(403)
+  const standbyList = await (await page.request.get('/api/v1/overtime/standby')).text()
+  expect(standbyList).not.toContain('allowanceRands":150')
+})

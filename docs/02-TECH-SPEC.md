@@ -320,7 +320,7 @@ Requirement OT-01 (and the overtime part of CFG-06). App `wfm.overtime`, feature
 - **Pay is payroll data.** `EmployeePay` (monthly salary and "ordinarily works Sundays") is set only by the customer's admin, **never returned by the API** (the list says only whether one is on file), never in the audit trail (the event says pay changed, not what it is), a notification, a log or a trace. Saving with no new salary changes only the Sunday flag; removing is its own action.
 - **Who sees rands.** Only planner and admin (the roles that approve it); a lead sees hours and status and no cost. An agent has no overtime screen (pay-related screens stay away from agents) and is only told, by a notification, the day and outcome. No salary on file shows "No salary on file", never R 0.00.
 - **Audit:** `overtime.requested`, `.approved`, `.rejected`, `.cancelled`, `.pay_changed`. Notifications: approvers are told a request is waiting; the person is told the day and outcome, never an amount.
-- **Not built:** standby allowances and call-outs (OT-02), reconciling worked against approved and the pay/budget view (OT-03), a payroll CSV export (RPT-04), overtime thresholds in hours (it is the weekly cap and the roster that bound it today), per-site pay rules.
+- **Not built:** a payroll CSV export (RPT-08), overtime thresholds in hours (it is the weekly cap and the roster that bound it today), per-site pay rules. Reconciliation, standby and the budget are in 4.10.
 
 ### 4.7 Shrinkage from actuals (Phase 4, built in part)
 Requirement SHR-01. Feature `people`, endpoint `GET /api/v1/people/shrinkage?month=`; People > Shrinkage.
@@ -343,6 +343,16 @@ Slow work runs on the Celery worker, not in the web request. App `wfm.jobs`; `GE
 - **No personal data:** parameters are ids and dates, results are counts and ids (no names). Only the owner can read a job, whatever their role (others get 404). Finished jobs are deleted after a week by a nightly task.
 - **Screens** start the job and ask every second until it finishes (the button stays busy as before), giving up with a plain message after ten minutes. The inline endpoints remain.
 - Not moved: the auto-schedule preview (read only), recommendations. Not built: progress percentages, cancelling a job, a list of a person's jobs.
+
+### 4.10 Reconciling overtime, standby and call-outs, and the month against a budget (Phase 4, built)
+Requirements OT-02 and OT-03, in `wfm.overtime`, feature `overtime`.
+
+- **Worked against approved (OT-03).** After the day has come, a planner or admin records how many minutes an approved request really lasted (`POST /requests/{id}/worked`, 0 to 12 hours, correctable by recording again, never for oneself). **Paid time is the lesser of worked and approved**; time beyond the approval is shown as `extraMinutes` and is not paid. Its cost is the approved price in proportion to the paid time (`worked_cost`, rounded half up), so a later change of rules or pay cannot move what was agreed. The audit event carries the minutes only.
+- **Standby (OT-02).** A standby day (`StandbyShift`) is booked by a lead (own team), planner or admin; one booked day per person (a cancelled one can be booked again); refused on approved leave, outside employment, or too far back or ahead. The **allowance** (`OvertimeRates.standby_allowance`, set by the admin) is copied onto the booking, so raising the rate later does not rewrite standby already rostered. The person is told the day, never an amount.
+- **Call-outs.** The time actually worked while on standby is recorded afterwards by a planner or admin (once the day has come, never for oneself, 0 clears it) and priced exactly like overtime on that day: the person's hourly rate x the multiplier for the kind of day at the rules in force. No salary on file means the cost is "missing", not R 0. Standby that had a call-out cannot be cancelled.
+- **The month (`GET /summary?month=`).** For planner and admin only: approved overtime (worked cost where reconciled, approved cost where not), standby allowances, call-out cost, the total, how many approved requests have happened but are unreconciled, unpaid extra minutes, requests with no salary on file (counted, not priced), and the month's **budget**, set by the admin (`PUT /budget/{month}`, none to remove). The screen says by how much the budget is left or exceeded.
+- **Who sees rands:** allowances, call-out costs, worked cost, the summary and the rates are for planner and admin; a lead sees the rota and the worked minutes but no money; agents have no screen for any of it. No audit event, notification or log holds a money figure.
+- Not built: a minimum call-out payment, standby rota templates, overtime thresholds in hours, a payroll CSV (RPT-08), exporting the month.
 
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).

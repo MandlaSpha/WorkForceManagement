@@ -13,7 +13,7 @@ import type {
 import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
-import type { Overtime, PayStatus } from '@/entities/overtime'
+import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
 import type { Peaks } from '@/entities/peaks'
 import type { Shrinkage } from '@/entities/shrinkage'
 import type { AdminUser } from '@/entities/user-admin'
@@ -177,6 +177,9 @@ export const backend = {
   peaks: null as Peaks | null,
   peaksQueries: [] as string[],
   overtimeQueries: [] as string[],
+  /** Standby, and the month summary the overtime page asks for. */
+  standby: [] as Standby[],
+  summary: null as OvertimeSummary | null,
   pay: [] as PayStatus[],
   /** Customers and contracts, with how each is doing. */
   contracts: [] as ContractRow[],
@@ -266,6 +269,8 @@ export const backend = {
     this.peaks = null
     this.peaksQueries = []
     this.overtimeQueries = []
+    this.standby = []
+    this.summary = null
     this.pay = []
     this.rules = {
       inForce: {
@@ -755,9 +760,31 @@ export const handlers = [
       costRands: null,
       costMissing: false,
       mine: false,
+      workedMinutes: null,
+      paidMinutes: null,
+      extraMinutes: 0,
+      workedCostRands: null,
     } as Overtime
     backend.overtime = [...backend.overtime, created]
     return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.post('*/api/v1/overtime/requests/:id/worked', async (info) => {
+    const sent = (await info.request.clone().json()) as { minutes: number }
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.overtime = backend.overtime.map((r) =>
+      r.id === id
+        ? {
+            ...r,
+            workedMinutes: sent.minutes,
+            paidMinutes: Math.min(sent.minutes, r.minutes),
+            extraMinutes: Math.max(0, sent.minutes - r.minutes),
+          }
+        : r,
+    )
+    return HttpResponse.json(backend.overtime.find((r) => r.id === id))
   }),
 
   http.post('*/api/v1/overtime/requests/:id/:what', async (info) => {
@@ -769,6 +796,68 @@ export const handlers = [
     ] as Overtime['status']
     backend.overtime = backend.overtime.map((r) => (r.id === id ? { ...r, status } : r))
     return HttpResponse.json(backend.overtime.find((r) => r.id === id))
+  }),
+
+  http.get('*/api/v1/overtime/summary', () =>
+    backend.summary === null
+      ? problem(404, 'resource.not_found', 'Not found')
+      : HttpResponse.json(backend.summary),
+  ),
+
+  http.put('*/api/v1/overtime/rates', async (info) => {
+    const sent = (await info.request.clone().json()) as { standbyAllowance: number }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    return HttpResponse.json(sent)
+  }),
+
+  http.put('*/api/v1/overtime/budget/:month', async (info) => {
+    const sent = (await info.request.clone().json()) as { amount: number | null }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    return HttpResponse.json({ month: String(info.params.month), amount: sent.amount })
+  }),
+
+  http.get('*/api/v1/overtime/standby', () => HttpResponse.json(backend.standby)),
+
+  http.post('*/api/v1/overtime/standby', async (info) => {
+    const sent = (await info.request.clone().json()) as { employeeId: number; day: string }
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created = {
+      id: 700 + backend.standby.length,
+      employeeId: sent.employeeId,
+      employee: 'Put On Standby',
+      empNo: 'E998',
+      day: sent.day,
+      status: 'booked',
+      allowanceRands: 150,
+      callOutMinutes: null,
+      callOutCostRands: null,
+      callOutCostMissing: false,
+      mine: false,
+    } as Standby
+    backend.standby = [...backend.standby, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.post('*/api/v1/overtime/standby/:id/cancel', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.standby = backend.standby.map((s) => (s.id === id ? { ...s, status: 'cancelled' } : s))
+    return HttpResponse.json(backend.standby.find((s) => s.id === id))
+  }),
+
+  http.post('*/api/v1/overtime/standby/:id/call-out', async (info) => {
+    const sent = (await info.request.clone().json()) as { minutes: number }
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.standby = backend.standby.map((s) =>
+      s.id === id ? { ...s, callOutMinutes: sent.minutes || null } : s,
+    )
+    return HttpResponse.json(backend.standby.find((s) => s.id === id))
   }),
 
   http.get('*/api/v1/overtime/pay', () => HttpResponse.json(backend.pay)),

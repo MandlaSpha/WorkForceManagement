@@ -11,11 +11,13 @@ from ninja import Router, Schema, Status
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
-from . import selectors, services
+from . import reconcile_services, selectors, services
 from .models import OvertimeStatus
 from .policy import DECIDE_ROLES, PAY_ROLES, READ_ROLES, REQUEST_ROLES
+from .standby_api import router as standby_router
 
 router = Router(tags=["overtime"])
+router.add_router("/standby", standby_router)
 FEATURE = Feature.OVERTIME
 READ = RoleSessionAuth(*sorted(READ_ROLES), feature=FEATURE)
 REQUEST = RoleSessionAuth(*sorted(REQUEST_ROLES), feature=FEATURE)
@@ -49,6 +51,12 @@ class OvertimeOut(Schema):
     costRands: float | None  # noqa: N815
     costMissing: bool  # noqa: N815
     mine: bool  # it is the signed-in person's own overtime
+    # OT-03. Minutes recorded as really worked (null until recorded), how many of them were paid
+    # (never more than approved), and how many were beyond what was approved.
+    workedMinutes: int | None  # noqa: N815
+    paidMinutes: int | None  # noqa: N815
+    extraMinutes: int  # noqa: N815
+    workedCostRands: float | None  # noqa: N815 - the paid time at the approved price
 
 
 class OvertimePayIn(Schema):
@@ -83,6 +91,10 @@ def _out(row: selectors.Row, user_id: int) -> OvertimeOut:
         costRands=float(row.cost) if row.cost is not None else None,
         costMissing=row.cost_missing,
         mine=r.employee.user_id == user_id,
+        workedMinutes=r.worked_minutes,
+        paidMinutes=reconcile_services.payable_minutes(r),
+        extraMinutes=max(0, (r.worked_minutes or 0) - r.minutes),
+        workedCostRands=float(row.worked_cost) if row.worked_cost is not None else None,
     )
 
 
@@ -181,4 +193,105 @@ def _pay(status: selectors.PayStatus) -> OvertimePayOut:
         empNo=status.employee.emp_no,
         hasSalary=status.has_salary,
         ordinarilyWorksSundays=status.ordinarily_works_sundays,
+    )
+
+
+class WorkedIn(Schema):
+    minutes: int
+
+
+@router.post(
+    "/requests/{request_id}/worked",
+    auth=DECIDE,
+    response=OvertimeOut,
+    summary="Record how long approved overtime really lasted",
+)
+def record_worked(request: HttpRequest, request_id: int, body: WorkedIn) -> OvertimeOut:
+    reconcile_services.record_worked(
+        user=current_user(request), request_id=request_id, worked_minutes=body.minutes
+    )
+    return _one(request, request_id)
+
+
+class SummaryOut(Schema):
+    month: date
+    approved: int
+    approvedMinutes: int  # noqa: N815
+    unreconciled: int
+    workedMinutes: int  # noqa: N815
+    extraMinutes: int  # noqa: N815
+    overtimeCostRands: float  # noqa: N815
+    missingPrices: int  # noqa: N815
+    standbyDays: int  # noqa: N815
+    standbyAllowancesRands: float  # noqa: N815
+    callOutMinutes: int  # noqa: N815
+    callOutCostRands: float  # noqa: N815
+    totalRands: float  # noqa: N815
+    budgetRands: float | None  # noqa: N815
+    standbyAllowanceRands: float  # noqa: N815 - the rate for a day on standby
+
+
+@router.get(
+    "/summary",
+    auth=DECIDE,
+    response=SummaryOut,
+    summary="Overtime and standby for a month against the budget",
+)
+def month_summary(request: HttpRequest, month: date) -> SummaryOut:
+    user = current_user(request)
+    s = selectors.summary(user, month)
+    rate = selectors.standby_allowance(user) or 0
+    return SummaryOut(
+        month=s.month,
+        approved=s.approved,
+        approvedMinutes=s.approved_minutes,
+        unreconciled=s.unreconciled,
+        workedMinutes=s.worked_minutes,
+        extraMinutes=s.extra_minutes,
+        overtimeCostRands=float(s.overtime_cost),
+        missingPrices=s.missing_prices,
+        standbyDays=s.standby_days,
+        standbyAllowancesRands=float(s.standby_allowances),
+        callOutMinutes=s.call_out_minutes,
+        callOutCostRands=float(s.call_out_cost),
+        totalRands=float(s.total),
+        budgetRands=float(s.budget) if s.budget is not None else None,
+        standbyAllowanceRands=float(rate),
+    )
+
+
+class RatesIn(Schema):
+    standbyAllowance: float  # noqa: N815
+
+
+class RatesOut(Schema):
+    standbyAllowance: float  # noqa: N815
+
+
+@router.put("/rates", auth=PAY, response=RatesOut, summary="Set the standby allowance for a day")
+def put_rates(request: HttpRequest, body: RatesIn) -> RatesOut:
+    rates = reconcile_services.set_standby_allowance(
+        user=current_user(request), amount=Decimal(str(body.standbyAllowance))
+    )
+    return RatesOut(standbyAllowance=float(rates.standby_allowance))
+
+
+class BudgetIn(Schema):
+    amount: float | None = None  # none removes the budget
+
+
+class BudgetOut(Schema):
+    month: date
+    amount: float | None
+
+
+@router.put("/budget/{month}", auth=PAY, response=BudgetOut, summary="Set the budget for a month")
+def put_budget(request: HttpRequest, month: date, body: BudgetIn) -> BudgetOut:
+    saved = reconcile_services.set_budget(
+        user=current_user(request),
+        month=month,
+        amount=Decimal(str(body.amount)) if body.amount is not None else None,
+    )
+    return BudgetOut(
+        month=month.replace(day=1), amount=float(saved.amount) if saved is not None else None
     )

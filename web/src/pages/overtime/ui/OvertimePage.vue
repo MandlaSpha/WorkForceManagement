@@ -2,11 +2,23 @@
 import { computed, ref } from 'vue'
 
 import { useSessionStore } from '@/entities/session'
-import { canCancel, KIND_LABEL, rands, timeLabel, useOvertime, usePay } from '@/entities/overtime'
+import {
+  canCancel,
+  KIND_LABEL,
+  rands,
+  timeLabel,
+  useOvertime,
+  usePay,
+  useStandby,
+  useSummary,
+} from '@/entities/overtime'
 import { useEmployees } from '@/entities/scheduling'
 import { OvertimeActions } from '@/features/overtime/decide'
+import { RatesBudgetForm } from '@/features/overtime/budget'
 import { PayForm } from '@/features/overtime/pay'
 import { OvertimeRequestForm } from '@/features/overtime/request'
+import { BookStandbyForm, StandbyActions } from '@/features/overtime/standby'
+import { WorkedCell } from '@/features/overtime/worked'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import { formatDayLabel } from '@/shared/lib/datetime'
@@ -28,6 +40,8 @@ const isAdmin = computed(() => role.value === 'admin')
 const tab = ref('requests')
 const tabs = computed(() => [
   { key: 'requests', label: 'Requests' },
+  { key: 'standby', label: 'Standby' },
+  ...(canDecide.value ? [{ key: 'summary', label: 'Month' }] : []),
   ...(isAdmin.value ? [{ key: 'pay', label: 'Pay' }] : []),
 ])
 
@@ -43,6 +57,10 @@ const requests = useOvertime(computed(() => (status.value === '' ? null : status
 const employees = useEmployees(null, canAsk)
 const pay = usePay(isAdmin)
 const today = todayInJohannesburg()
+const standby = useStandby()
+const month = ref(today.slice(0, 7))
+const monthFirst = computed(() => `${month.value}-01`)
+const summary = useSummary(monthFirst, canDecide)
 
 const STATUS_TONE: Record<string, string> = {
   pending: 'bg-warn-soft text-warn',
@@ -62,7 +80,7 @@ const STATUS_LABEL: Record<string, string> = {
   <PageHeader eyebrow="People" :title="screen?.label ?? 'Overtime'" :subtitle="screen?.subtitle" />
 
   <div class="space-y-6">
-    <TabBar v-if="isAdmin" v-model="tab" :tabs="tabs" label="Overtime" id-prefix="overtime" />
+    <TabBar v-model="tab" :tabs="tabs" label="Overtime" id-prefix="overtime" />
 
     <section
       v-if="tab === 'requests'"
@@ -96,6 +114,7 @@ const STATUS_LABEL: Record<string, string> = {
               <th scope="col" class="px-3 py-2 font-medium">When</th>
               <th scope="col" class="px-3 py-2 font-medium">Kind of day</th>
               <th v-if="seesCost" scope="col" class="px-3 py-2 font-medium">Cost</th>
+              <th scope="col" class="px-3 py-2 font-medium">Worked</th>
               <th scope="col" class="px-3 py-2 font-medium">Status</th>
               <th scope="col" class="px-4 py-2 text-right font-medium">
                 <span class="sr-only">Actions</span>
@@ -128,6 +147,25 @@ const STATUS_LABEL: Record<string, string> = {
                 <span v-else class="text-ink-muted">—</span>
               </td>
               <td class="px-3 py-2">
+                <WorkedCell
+                  v-if="r.status === 'approved'"
+                  :request-id="r.id"
+                  :who="`${r.employee} on ${formatDayLabel(r.day)}`"
+                  :worked-minutes="r.workedMinutes"
+                  :extra-minutes="r.extraMinutes"
+                  :can-record="canDecide && r.day <= today"
+                  :own="r.mine"
+                />
+                <span v-else class="text-ink-muted">—</span>
+                <span
+                  v-if="seesCost && r.workedCostRands !== null"
+                  class="block text-xs text-ink-muted tabular-nums"
+                  data-testid="worked-cost"
+                >
+                  Paid {{ rands(r.workedCostRands) }}
+                </span>
+              </td>
+              <td class="px-3 py-2">
                 <span
                   class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
                   :class="STATUS_TONE[r.status]"
@@ -148,6 +186,155 @@ const STATUS_LABEL: Record<string, string> = {
           </tbody>
         </table>
       </div>
+    </section>
+
+    <section
+      v-else-if="tab === 'standby'"
+      id="overtime-panel-standby"
+      role="tabpanel"
+      aria-labelledby="overtime-tab-standby"
+      class="space-y-4"
+      aria-live="polite"
+    >
+      <BookStandbyForm v-if="canAsk" :employees="employees.data.value ?? []" />
+      <p v-if="standby.isPending.value" class="text-sm text-ink-muted">Loading…</p>
+      <NoticeBox v-else-if="standby.isError.value" tone="danger">
+        Could not load standby. {{ problemMessage(standby.error.value) }}
+      </NoticeBox>
+      <NoticeBox v-else-if="(standby.data.value ?? []).length === 0" data-testid="no-standby">
+        Nobody is on standby yet.
+      </NoticeBox>
+      <ul v-else class="space-y-2" aria-label="Standby">
+        <li
+          v-for="s in standby.data.value"
+          :key="s.id"
+          class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-4"
+          :class="s.status === 'cancelled' ? 'opacity-60' : ''"
+          :data-testid="`standby-${s.id}`"
+        >
+          <div class="text-sm">
+            <p class="font-medium text-ink">{{ s.employee }}, {{ formatDayLabel(s.day) }}</p>
+            <p class="text-xs text-ink-muted">
+              {{ s.status === 'cancelled' ? 'Cancelled' : 'On standby' }}
+              <template v-if="seesCost && s.allowanceRands !== null">
+                , allowance {{ rands(s.allowanceRands) }}
+              </template>
+              <template v-if="s.callOutMinutes">
+                , called out for {{ s.callOutMinutes }} minutes
+                <template v-if="seesCost && s.callOutCostRands !== null">
+                  ({{ rands(s.callOutCostRands) }})
+                </template>
+                <template v-else-if="seesCost && s.callOutCostMissing">
+                  (no salary on file)
+                </template>
+              </template>
+            </p>
+          </div>
+          <StandbyActions
+            :standby-id="s.id"
+            :who="`${s.employee} on ${formatDayLabel(s.day)}`"
+            :booked="s.status === 'booked'"
+            :can-cancel="canAsk && s.day >= today && !s.callOutMinutes"
+            :can-record="canDecide && s.day <= today"
+            :own="s.mine"
+          />
+        </li>
+      </ul>
+    </section>
+
+    <section
+      v-else-if="tab === 'summary'"
+      id="overtime-panel-summary"
+      role="tabpanel"
+      aria-labelledby="overtime-tab-summary"
+      class="space-y-4"
+      aria-live="polite"
+    >
+      <label class="flex items-center gap-2 text-sm text-ink">
+        Month
+        <input
+          v-model="month"
+          type="month"
+          class="rounded-lg border border-line bg-surface px-2 py-1"
+        />
+      </label>
+      <p v-if="summary.isPending.value" class="text-sm text-ink-muted">Loading…</p>
+      <NoticeBox v-else-if="summary.isError.value" tone="danger">
+        Could not load the month. {{ problemMessage(summary.error.value) }}
+      </NoticeBox>
+      <template v-else-if="summary.data.value">
+        <dl class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="summary">
+          <div class="rounded-xl border border-line bg-surface p-4">
+            <dt class="text-xs text-ink-muted">Overtime</dt>
+            <dd class="text-lg font-semibold tabular-nums" data-testid="overtime-cost">
+              {{ rands(summary.data.value.overtimeCostRands) }}
+            </dd>
+            <dd class="text-xs text-ink-muted">
+              {{ summary.data.value.approved }} approved, {{ summary.data.value.workedMinutes }}
+              minutes paid
+            </dd>
+          </div>
+          <div class="rounded-xl border border-line bg-surface p-4">
+            <dt class="text-xs text-ink-muted">Standby allowances</dt>
+            <dd class="text-lg font-semibold tabular-nums" data-testid="standby-cost">
+              {{ rands(summary.data.value.standbyAllowancesRands) }}
+            </dd>
+            <dd class="text-xs text-ink-muted">{{ summary.data.value.standbyDays }} days</dd>
+          </div>
+          <div class="rounded-xl border border-line bg-surface p-4">
+            <dt class="text-xs text-ink-muted">Call-outs</dt>
+            <dd class="text-lg font-semibold tabular-nums" data-testid="callout-cost">
+              {{ rands(summary.data.value.callOutCostRands) }}
+            </dd>
+            <dd class="text-xs text-ink-muted">{{ summary.data.value.callOutMinutes }} minutes</dd>
+          </div>
+          <div class="rounded-xl border border-line bg-surface p-4">
+            <dt class="text-xs text-ink-muted">Total</dt>
+            <dd class="text-lg font-semibold tabular-nums" data-testid="total-cost">
+              {{ rands(summary.data.value.totalRands) }}
+            </dd>
+            <dd class="text-xs text-ink-muted" data-testid="budget-line">
+              <template v-if="summary.data.value.budgetRands !== null">
+                Budget {{ rands(summary.data.value.budgetRands) }}:
+                {{
+                  summary.data.value.totalRands > summary.data.value.budgetRands
+                    ? `${rands(summary.data.value.totalRands - summary.data.value.budgetRands)} over`
+                    : `${rands(summary.data.value.budgetRands - summary.data.value.totalRands)} left`
+                }}
+              </template>
+              <template v-else>No budget set for this month</template>
+            </dd>
+          </div>
+        </dl>
+        <NoticeBox
+          v-if="summary.data.value.unreconciled > 0"
+          tone="warn"
+          data-testid="unreconciled"
+        >
+          {{ summary.data.value.unreconciled }} approved
+          {{ summary.data.value.unreconciled === 1 ? 'request has' : 'requests have' }} happened but
+          {{ summary.data.value.unreconciled === 1 ? 'has' : 'have' }} no worked time recorded yet,
+          so the approved amount is counted.
+        </NoticeBox>
+        <NoticeBox
+          v-if="summary.data.value.extraMinutes > 0"
+          tone="warn"
+          data-testid="extra-minutes"
+        >
+          {{ summary.data.value.extraMinutes }} minutes were worked beyond what was approved. They
+          are not paid and not in the total.
+        </NoticeBox>
+        <NoticeBox
+          v-if="summary.data.value.missingPrices > 0"
+          tone="warn"
+          data-testid="missing-prices"
+        >
+          {{ summary.data.value.missingPrices }}
+          {{ summary.data.value.missingPrices === 1 ? 'request has' : 'requests have' }} no salary
+          on file and {{ summary.data.value.missingPrices === 1 ? 'is' : 'are' }} not in the total.
+        </NoticeBox>
+        <RatesBudgetForm v-if="isAdmin" :month="monthFirst" />
+      </template>
     </section>
 
     <section
