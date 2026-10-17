@@ -29,6 +29,11 @@ class ReadScopedQuerySet(ScopedQuerySet):
         and publishes no row on to anyone who may not read the roster itself."""
         return self if user.role in roles else self.none()
 
+    def counts_for(self, user: Any, roles: frozenset[Any]) -> Self:
+        """For a module that only COUNTS who is rostered (business continuity): the caller names
+        the roles it allows and must not pass names on to a role that may not see them."""
+        return self if user.role in roles else self.none()
+
 
 class ShiftTemplate(models.Model):
     """A named shift on the half-hour grid, for example D1 09:00-17:30. An end that is not after

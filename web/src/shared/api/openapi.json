@@ -919,6 +919,111 @@
         "title": "BacktestOut",
         "type": "object"
       },
+      "BackupMemberIn": {
+        "properties": {
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "employeeId"
+        ],
+        "title": "BackupMemberIn",
+        "type": "object"
+      },
+      "BackupPersonOut": {
+        "properties": {
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "remoteCapable": {
+            "title": "Remotecapable",
+            "type": "boolean"
+          },
+          "workMode": {
+            "title": "Workmode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "empNo",
+          "employee",
+          "workMode",
+          "remoteCapable"
+        ],
+        "title": "BackupPersonOut",
+        "type": "object"
+      },
+      "BackupTeamIn": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queueId",
+          "name"
+        ],
+        "title": "BackupTeamIn",
+        "type": "object"
+      },
+      "BackupTeamOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "memberCount": {
+            "title": "Membercount",
+            "type": "integer"
+          },
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/BackupPersonOut"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "queueId",
+          "queue",
+          "name",
+          "memberCount",
+          "members"
+        ],
+        "title": "BackupTeamOut",
+        "type": "object"
+      },
       "BalanceDayOut": {
         "properties": {
           "day": {
@@ -3885,6 +3990,197 @@
           "coverage"
         ],
         "title": "Metric",
+        "type": "object"
+      },
+      "MobiliseCandidateOut": {
+        "properties": {
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "remoteCapable": {
+            "title": "Remotecapable",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "usable": {
+            "title": "Usable",
+            "type": "boolean"
+          },
+          "workMode": {
+            "title": "Workmode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "empNo",
+          "employee",
+          "workMode",
+          "remoteCapable",
+          "status",
+          "usable"
+        ],
+        "title": "MobiliseCandidateOut",
+        "type": "object"
+      },
+      "MobiliseImpactOut": {
+        "properties": {
+          "coveragePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coveragepct"
+          },
+          "coveredAfter": {
+            "title": "Coveredafter",
+            "type": "integer"
+          },
+          "lost": {
+            "title": "Lost",
+            "type": "integer"
+          },
+          "recovered": {
+            "title": "Recovered",
+            "type": "integer"
+          },
+          "remaining": {
+            "title": "Remaining",
+            "type": "integer"
+          },
+          "rostered": {
+            "title": "Rostered",
+            "type": "integer"
+          },
+          "shortfall": {
+            "title": "Shortfall",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rostered",
+          "lost",
+          "remaining",
+          "recovered",
+          "coveredAfter",
+          "shortfall",
+          "coveragePct"
+        ],
+        "title": "MobiliseImpactOut",
+        "type": "object"
+      },
+      "MobiliseOut": {
+        "properties": {
+          "byStatus": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Bystatus",
+            "type": "object"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "impact": {
+            "$ref": "#/components/schemas/MobiliseImpactOut"
+          },
+          "lostPct": {
+            "title": "Lostpct",
+            "type": "integer"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "rosteredByMode": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Rosteredbymode",
+            "type": "object"
+          },
+          "scenario": {
+            "title": "Scenario",
+            "type": "string"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/MobiliseTeamOut"
+            },
+            "title": "Teams",
+            "type": "array"
+          },
+          "usableDistinct": {
+            "title": "Usabledistinct",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queue",
+          "day",
+          "scenario",
+          "lostPct",
+          "rosteredByMode",
+          "impact",
+          "byStatus",
+          "usableDistinct",
+          "teams"
+        ],
+        "title": "MobiliseOut",
+        "type": "object"
+      },
+      "MobiliseTeamOut": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/MobiliseCandidateOut"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "memberCount": {
+            "title": "Membercount",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "teamId": {
+            "title": "Teamid",
+            "type": "integer"
+          },
+          "usableCount": {
+            "title": "Usablecount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "teamId",
+          "name",
+          "memberCount",
+          "usableCount",
+          "candidates"
+        ],
+        "title": "MobiliseTeamOut",
         "type": "object"
       },
       "MonthsOut": {
@@ -8642,6 +8938,294 @@
         "summary": "Set the permanent and seasonal pools",
         "tags": [
           "capacity"
+        ]
+      }
+    },
+    "/api/v1/continuity/mobilise": {
+      "get": {
+        "operationId": "wfm_continuity_api_get_mobilise",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "day",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Day",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "scenario",
+            "required": false,
+            "schema": {
+              "default": "site",
+              "title": "Scenario",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "lost_pct",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "title": "Lost Pct",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobiliseOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Who on the backup teams could cover a failed site or outbreak, and the roster impact",
+        "tags": [
+          "continuity"
+        ]
+      }
+    },
+    "/api/v1/continuity/teams": {
+      "get": {
+        "operationId": "wfm_continuity_api_list_teams",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Queue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BackupTeamOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Backup teams, optionally for one queue (an executive: counts, no names)",
+        "tags": [
+          "continuity"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_continuity_api_create_team",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupTeamIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupTeamOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Name a backup team for a queue",
+        "tags": [
+          "continuity"
+        ]
+      }
+    },
+    "/api/v1/continuity/teams/{team_id}": {
+      "delete": {
+        "operationId": "wfm_continuity_api_delete_team",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "schema": {
+              "title": "Team Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Delete a backup team",
+        "tags": [
+          "continuity"
+        ]
+      }
+    },
+    "/api/v1/continuity/teams/{team_id}/members": {
+      "post": {
+        "operationId": "wfm_continuity_api_add_member",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "schema": {
+              "title": "Team Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupMemberIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupTeamOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Add a person to a backup team",
+        "tags": [
+          "continuity"
+        ]
+      }
+    },
+    "/api/v1/continuity/teams/{team_id}/members/{employee_id}": {
+      "delete": {
+        "operationId": "wfm_continuity_api_remove_member",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "schema": {
+              "title": "Team Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "employee_id",
+            "required": true,
+            "schema": {
+              "title": "Employee Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Remove a person from a backup team",
+        "tags": [
+          "continuity"
         ]
       }
     },

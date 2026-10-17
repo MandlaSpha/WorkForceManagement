@@ -20,6 +20,7 @@ import type { CostReport, UtilisationReport } from '@/entities/workforce/utilisa
 import type { WorkloadBalance } from '@/entities/workforce/workload-balance'
 import type { Credential, Requirement, SkillGap } from '@/entities/workforce/skills'
 import type { Wellbeing } from '@/entities/workforce/wellbeing'
+import type { BackupTeam, Mobilise } from '@/entities/workforce/continuity'
 import type { Intraday, IntradaySuggestions } from '@/entities/intraday'
 import type { ShiftActivity } from '@/entities/scheduling'
 import type { Peaks } from '@/entities/peaks'
@@ -208,6 +209,11 @@ export const backend = {
   requirements: [] as Requirement[],
   gaps: [] as SkillGap[],
   wellbeing: null as Wellbeing | null,
+  /** Business continuity: the backup teams, and the mobilise answer (null: the queue is unknown).
+   * The queries asked are kept so a test can check what was sent. */
+  backupTeams: [] as BackupTeam[],
+  mobilise: null as Mobilise | null,
+  mobiliseQueries: [] as Array<Record<string, string>>,
   /** What could be done about a short half-hour, and the half-hours asked about. */
   suggestions: null as IntradaySuggestions | null,
   suggestionQueries: [] as Array<Record<string, string>>,
@@ -327,6 +333,9 @@ export const backend = {
     this.requirements = []
     this.gaps = []
     this.wellbeing = null
+    this.backupTeams = []
+    this.mobilise = null
+    this.mobiliseQueries = []
     this.suggestions = null
     this.suggestionQueries = []
     this.schedules = []
@@ -1019,6 +1028,69 @@ export const handlers = [
       ? HttpResponse.json(backend.balance)
       : problem(404, 'resource.not_found', 'Not found'),
   ),
+  http.get('*/api/v1/continuity/teams', () => HttpResponse.json(backend.backupTeams)),
+
+  http.get('*/api/v1/continuity/mobilise', ({ request }) => {
+    backend.mobiliseQueries.push(Object.fromEntries(new URL(request.url).searchParams))
+    return backend.mobilise
+      ? HttpResponse.json(backend.mobilise)
+      : problem(404, 'resource.not_found', 'Not found')
+  }),
+
+  http.post('*/api/v1/continuity/teams', async (info) => {
+    const sent = (await info.request.clone().json()) as { queueId: number; name: string }
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created: BackupTeam = {
+      id: 500 + backend.backupTeams.length,
+      queueId: sent.queueId,
+      queue: 'QueueA',
+      name: sent.name,
+      memberCount: 0,
+      members: [],
+    }
+    backend.backupTeams = [...backend.backupTeams, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.delete('*/api/v1/continuity/teams/:id', async (info) => {
+    const response = await schedulingWrite(info, 'DELETE')
+    if (!response.ok) return response
+    backend.backupTeams = backend.backupTeams.filter((t) => t.id !== Number(info.params.id))
+    return HttpResponse.json({ ok: true })
+  }),
+
+  http.post('*/api/v1/continuity/teams/:id/members', async (info) => {
+    const sent = (await info.request.clone().json()) as { employeeId: number }
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const person = backend.employees.find((e) => e.id === sent.employeeId)
+    const team = backend.backupTeams.find((t) => t.id === Number(info.params.id))
+    if (!person || !team) return problem(404, 'resource.not_found', 'Not found')
+    team.members = [
+      ...team.members,
+      {
+        employeeId: person.id,
+        empNo: person.empNo,
+        employee: person.name,
+        workMode: 'remote',
+        remoteCapable: true,
+      },
+    ]
+    team.memberCount = team.members.length
+    return HttpResponse.json(team, { status: 201 })
+  }),
+
+  http.delete('*/api/v1/continuity/teams/:id/members/:employeeId', async (info) => {
+    const response = await schedulingWrite(info, 'DELETE')
+    if (!response.ok) return response
+    const team = backend.backupTeams.find((t) => t.id === Number(info.params.id))
+    if (team) {
+      team.members = team.members.filter((m) => m.employeeId !== Number(info.params.employeeId))
+      team.memberCount = team.members.length
+    }
+    return HttpResponse.json({ ok: true })
+  }),
 
   http.get('*/api/v1/attendance/mine', () =>
     backend.myAttendance

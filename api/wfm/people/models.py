@@ -63,6 +63,12 @@ class LeaveRequestQuerySet(ScopedQuerySet):
             return self.filter(employee__user=user)  # an agent sees only their own
         return self.none()
 
+    def coverage_for(self, user: Any, roles: frozenset[Any]) -> Self:
+        """For a module that only asks "is this person away / unavailable that day" (business
+        continuity): the caller names the roles it allows and uses the answer as a yes or no,
+        never the leave type or the reason. Everyone else gets nothing."""
+        return self if user.role in roles else self.none()
+
 
 class LeaveRequest(models.Model):
     employee = models.ForeignKey(
@@ -228,6 +234,12 @@ class AvailabilityQuerySet(ScopedQuerySet):
         if user.role == Role.AGENT:
             return self.filter(employee__user=user)  # an agent sees only their own
         return self.none()
+
+    def coverage_for(self, user: Any, roles: frozenset[Any]) -> Self:
+        """For a module that only asks "is this person away / unavailable that day" (business
+        continuity): the caller names the roles it allows and uses the answer as a yes or no,
+        never the leave type or the reason. Everyone else gets nothing."""
+        return self if user.role in roles else self.none()
 
 
 class Availability(models.Model):

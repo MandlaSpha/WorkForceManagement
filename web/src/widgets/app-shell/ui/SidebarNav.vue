@@ -33,7 +33,7 @@ const groups = computed(() => (session.user ? visibleNav(session.user) : []))
           <li v-for="item in g.items" :key="item.key">
             <RouterLink
               :to="item.path"
-              class="flex min-h-9 items-center gap-3 rounded-lg px-2 text-sm"
+              class="flex min-h-11 items-center gap-3 lg:min-h-9 rounded-lg px-2 text-sm"
               :class="
                 isActivePath(item.path, route.path)
                   ? 'bg-brand-soft font-medium text-brand-ink'

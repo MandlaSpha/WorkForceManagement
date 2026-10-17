@@ -160,6 +160,17 @@ export const NAV_ITEMS = [
     subtitle: 'Availability, cross-queue flexing, standby rota and rotations.',
   },
   {
+    key: 'continuity',
+    path: '/continuity',
+    label: 'Continuity',
+    group: 'Operate',
+    icon: 'shield-check',
+    feature: 'people',
+    context: ['queue'],
+    phase: 8,
+    subtitle: 'Backup teams per queue, and who could cover a failed site or an outbreak.',
+  },
+  {
     key: 'imports',
     path: '/imports',
     label: 'Data import',

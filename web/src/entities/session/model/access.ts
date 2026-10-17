@@ -37,6 +37,7 @@ export const ACCESS: Record<NavKey, readonly Role[]> = {
   capacity: ['planner', 'admin', 'executive', 'customer_ops'],
   contracts: ['planner', 'lead', 'admin', 'executive', 'customer_ops'],
   scheduling: ['planner', 'lead', 'admin'],
+  continuity: ['planner', 'lead', 'admin', 'executive'],
   imports: ['planner', 'admin'],
   'service-desk': ['planner', 'admin', 'customer_ops'],
 

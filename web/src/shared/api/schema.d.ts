@@ -262,6 +262,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/continuity/mobilise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who on the backup teams could cover a failed site or outbreak, and the roster impact */
+        get: operations["wfm_continuity_api_get_mobilise"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/continuity/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Backup teams, optionally for one queue (an executive: counts, no names) */
+        get: operations["wfm_continuity_api_list_teams"];
+        put?: never;
+        /** Name a backup team for a queue */
+        post: operations["wfm_continuity_api_create_team"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/continuity/teams/{team_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a backup team */
+        delete: operations["wfm_continuity_api_delete_team"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/continuity/teams/{team_id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a person to a backup team */
+        post: operations["wfm_continuity_api_add_member"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/continuity/teams/{team_id}/members/{employee_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a person from a backup team */
+        delete: operations["wfm_continuity_api_remove_member"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contracts": {
         parameters: {
             query?: never;
@@ -2613,6 +2699,46 @@ export interface components {
             /** Suggestedvolumemultiplier */
             suggestedVolumeMultiplier: number | null;
         };
+        /** BackupMemberIn */
+        BackupMemberIn: {
+            /** Employeeid */
+            employeeId: number;
+        };
+        /** BackupPersonOut */
+        BackupPersonOut: {
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Remotecapable */
+            remoteCapable: boolean;
+            /** Workmode */
+            workMode: string;
+        };
+        /** BackupTeamIn */
+        BackupTeamIn: {
+            /** Name */
+            name: string;
+            /** Queueid */
+            queueId: number;
+        };
+        /** BackupTeamOut */
+        BackupTeamOut: {
+            /** Id */
+            id: number;
+            /** Membercount */
+            memberCount: number;
+            /** Members */
+            members: components["schemas"]["BackupPersonOut"][];
+            /** Name */
+            name: string;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+        };
         /** BalanceDayOut */
         BalanceDayOut: {
             /**
@@ -3691,6 +3817,80 @@ export interface components {
             coverage: components["schemas"]["Coverage"];
             /** Value */
             value: number | null;
+        };
+        /** MobiliseCandidateOut */
+        MobiliseCandidateOut: {
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Remotecapable */
+            remoteCapable: boolean;
+            /** Status */
+            status: string;
+            /** Usable */
+            usable: boolean;
+            /** Workmode */
+            workMode: string;
+        };
+        /** MobiliseImpactOut */
+        MobiliseImpactOut: {
+            /** Coveragepct */
+            coveragePct: number | null;
+            /** Coveredafter */
+            coveredAfter: number;
+            /** Lost */
+            lost: number;
+            /** Recovered */
+            recovered: number;
+            /** Remaining */
+            remaining: number;
+            /** Rostered */
+            rostered: number;
+            /** Shortfall */
+            shortfall: number;
+        };
+        /** MobiliseOut */
+        MobiliseOut: {
+            /** Bystatus */
+            byStatus: {
+                [key: string]: number;
+            };
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            impact: components["schemas"]["MobiliseImpactOut"];
+            /** Lostpct */
+            lostPct: number;
+            /** Queue */
+            queue: string;
+            /** Rosteredbymode */
+            rosteredByMode: {
+                [key: string]: number;
+            };
+            /** Scenario */
+            scenario: string;
+            /** Teams */
+            teams: components["schemas"]["MobiliseTeamOut"][];
+            /** Usabledistinct */
+            usableDistinct: number;
+        };
+        /** MobiliseTeamOut */
+        MobiliseTeamOut: {
+            /** Candidates */
+            candidates: components["schemas"]["MobiliseCandidateOut"][];
+            /** Membercount */
+            memberCount: number;
+            /** Name */
+            name: string;
+            /** Teamid */
+            teamId: number;
+            /** Usablecount */
+            usableCount: number;
         };
         /**
          * MonthsOut
@@ -5639,6 +5839,152 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LimitsOut"];
+                };
+            };
+        };
+    };
+    wfm_continuity_api_get_mobilise: {
+        parameters: {
+            query: {
+                queue_id: number;
+                day: string;
+                scenario?: string;
+                lost_pct?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MobiliseOut"];
+                };
+            };
+        };
+    };
+    wfm_continuity_api_list_teams: {
+        parameters: {
+            query?: {
+                queue_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupTeamOut"][];
+                };
+            };
+        };
+    };
+    wfm_continuity_api_create_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BackupTeamIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupTeamOut"];
+                };
+            };
+        };
+    };
+    wfm_continuity_api_delete_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+        };
+    };
+    wfm_continuity_api_add_member: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BackupMemberIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackupTeamOut"];
+                };
+            };
+        };
+    };
+    wfm_continuity_api_remove_member: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                team_id: number;
+                employee_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
                 };
             };
         };

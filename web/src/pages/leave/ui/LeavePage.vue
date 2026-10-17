@@ -168,7 +168,10 @@ const TABS = computed(() => [
             >You have not asked for any leave yet.</NoticeBox
           >
           <div v-else class="overflow-x-auto rounded-xl border border-line bg-surface">
-            <table class="w-full min-w-[34rem] text-left text-sm" data-testid="my-requests">
+            <table
+              class="stack-on-phone w-full text-left text-sm sm:min-w-[34rem]"
+              data-testid="my-requests"
+            >
               <caption class="sr-only">
                 My leave requests
               </caption>
@@ -191,9 +194,11 @@ const TABS = computed(() => [
                   :data-testid="`mine-${r.id}`"
                 >
                   <th scope="row" class="px-4 py-2 font-medium text-ink">{{ r.leaveType }}</th>
-                  <td class="px-3 py-2">{{ rangeLabel(r.startDate, r.endDate) }}</td>
-                  <td class="px-3 py-2 text-right tabular-nums">{{ r.days }}</td>
-                  <td class="px-3 py-2">
+                  <td data-label="Dates" class="px-3 py-2">
+                    {{ rangeLabel(r.startDate, r.endDate) }}
+                  </td>
+                  <td data-label="Days" class="px-3 py-2 text-right tabular-nums">{{ r.days }}</td>
+                  <td data-label="Status" class="px-3 py-2">
                     <span
                       class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
                       :class="STATUS_TONE[r.status]"

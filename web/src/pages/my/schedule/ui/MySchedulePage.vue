@@ -16,6 +16,7 @@ import { OwnDay } from '@/features/attendance/own-day'
 import { ApiProblem, problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import { formatDayLabel } from '@/shared/lib/datetime'
+import { isPhone } from '@/shared/ui/viewport'
 import { todayInJohannesburg } from '@/shared/lib/week'
 import AppButton from '@/shared/ui/AppButton.vue'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
@@ -34,7 +35,8 @@ const ACTIVITY: Record<string, string> = {
 }
 
 const month = ref(monthOf(today))
-const view = ref<'month' | 'list'>('month')
+// A month grid does not fit a phone, so a phone starts on the list of days.
+const view = ref<'month' | 'list'>(isPhone() ? 'list' : 'month')
 const grid = computed(() => monthGrid(month.value))
 const from = computed(() => grid.value.from)
 const to = computed(() => grid.value.to)

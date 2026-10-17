@@ -48,7 +48,7 @@ onBeforeUnmount(() => {
     <button
       ref="trigger"
       type="button"
-      class="flex items-center gap-2 rounded-lg p-1 hover:bg-surface-muted"
+      class="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg p-1 hover:bg-surface-muted"
       aria-haspopup="menu"
       :aria-expanded="open"
       aria-controls="account-menu"

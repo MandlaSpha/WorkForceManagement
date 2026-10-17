@@ -20,7 +20,7 @@ const session = useSessionStore()
   >
     <button
       type="button"
-      class="inline-flex size-9 items-center justify-center rounded-lg text-ink-muted hover:bg-surface-muted lg:hidden"
+      class="inline-flex size-11 items-center justify-center rounded-lg text-ink-muted hover:bg-surface-muted lg:hidden"
       aria-label="Open navigation"
       aria-controls="sidebar"
       :aria-expanded="menuOpen"

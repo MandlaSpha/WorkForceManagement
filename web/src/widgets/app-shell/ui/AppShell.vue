@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 import SidebarNav from './SidebarNav.vue'
@@ -15,6 +15,13 @@ watch(
     menuOpen.value = false
   },
 )
+
+// Escape closes the drawer, as it does any dialog-like panel.
+function onKey(event: KeyboardEvent): void {
+  if (event.key === 'Escape' && menuOpen.value) menuOpen.value = false
+}
+onMounted(() => document.addEventListener('keydown', onKey))
+onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 </script>
 
 <template>
@@ -37,7 +44,7 @@ watch(
     <aside
       id="sidebar"
       class="fixed inset-y-0 left-0 z-40 w-64 shrink-0 border-r border-line bg-surface transition-transform lg:static lg:translate-x-0"
-      :class="menuOpen ? 'translate-x-0' : '-translate-x-full'"
+      :class="menuOpen ? 'translate-x-0' : 'invisible -translate-x-full lg:visible'"
     >
       <SidebarNav />
     </aside>
