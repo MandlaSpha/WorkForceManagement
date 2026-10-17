@@ -1,0 +1,111 @@
+# Portable deployment: any host with Docker. Hosting is undecided, so nothing here is specific to
+# a cloud. Put a TLS-terminating reverse proxy (or the platform's load balancer) in front of `web`.
+#
+#   cp .env.example .env     (then fill in every value; never commit .env)
+#   docker compose build
+#   docker compose up -d
+#
+# Build context is the repository root (the API image needs the engine next to it).
+name: wfm
+
+x-api: &api
+  build:
+    context: ..
+    dockerfile: api/Dockerfile
+  image: wfm-api:latest
+  env_file: .env
+  environment:
+    DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    WFM_BROKER_URL: redis://valkey:6379/0
+  restart: unless-stopped
+  depends_on:
+    db: { condition: service_healthy }
+    valkey: { condition: service_healthy }
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    command: ["valkey-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    <<: *api
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    restart: "no"
+
+  api:
+    <<: *api
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      db: { condition: service_healthy }
+      valkey: { condition: service_healthy }
+
+  worker:
+    <<: *api
+    command: ["celery", "-A", "config", "worker", "-l", "info", "--concurrency", "2"]
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping -d celery@$$HOSTNAME --timeout 5 || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      valkey: { condition: service_healthy }
+
+  beat:
+    <<: *api
+    command: ["celery", "-A", "config", "beat", "-l", "info", "--schedule", "/tmp/celerybeat-schedule"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      valkey: { condition: service_healthy }
+
+  web:
+    build:
+      context: ../web
+    image: wfm-web:latest
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    depends_on:
+      api: { condition: service_started }
+    restart: unless-stopped
+
+  # Nightly database backup (see deploy/README.md). Not started by default:
+  #   docker compose --profile backup run --rm backup
+  backup:
+    image: postgres:16-alpine
+    profiles: ["backup"]
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER}
+      PGDATABASE: ${POSTGRES_DB}
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backup.sh:/backup.sh:ro
+      - ${BACKUP_DIR:-./backups}:/backups
+    entrypoint: ["sh", "/backup.sh"]
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  dbdata:

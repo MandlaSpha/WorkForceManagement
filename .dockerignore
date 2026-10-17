@@ -1,0 +1,22 @@
+# The API image is built from the repository root (it needs the engine next to it). Keep out
+# everything it does not need, and above all the source material: real staff and caller data.
+Files/
+.git/
+web/
+e2e/
+docs/
+infra/
+deploy/
+**/node_modules/
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.coverage
+**/htmlcov/
+**/*.xlsx
+**/*.xls
+.env
+.env.*
+**/celerybeat-schedule*
