@@ -149,6 +149,8 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Operate > Roster > Breaks and activities.** Under the roster grid, pick a person, a day they work, what (break, lunch, training...), the time and how long. Coverage on the Planner then counts only the people on the phones, so a training session opens a gap you can see. Planner and admin change them (even in a published week); a lead reads them; the agent sees their own on My schedule.
 
+**Operate > Hiring plan.** As `planner`, make a plan: people employed now, how many leave each month, how fast a new hire gets productive, and the people needed for each of 12 to 18 months. It shows how many to hire and when (a hire is made as many months ahead as the ramp is long), the months that are short, and the months where no hire could have helped in time. As `executive` you read the same plan without any rand figure.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD

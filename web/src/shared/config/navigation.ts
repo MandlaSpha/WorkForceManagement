@@ -129,6 +129,16 @@ export const NAV_ITEMS = [
     subtitle: 'The service level each customer is promised, and which contracts are at risk.',
   },
   {
+    key: 'hiring',
+    path: '/hiring',
+    label: 'Hiring plan',
+    group: 'Operate',
+    icon: 'users',
+    feature: 'capacity',
+    phase: 0,
+    subtitle: 'A 12 to 18 month plan of people needed, attrition and hiring with a ramp-up.',
+  },
+  {
     key: 'capacity',
     path: '/capacity',
     label: 'Capacity',

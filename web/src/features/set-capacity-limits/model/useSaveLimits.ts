@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 
-import { capacityKeys, saveLimits, type LimitsRequest } from '@/entities/capacity'
+import { capacityKeys, saveLimits, type LimitsRequest } from '@/entities/workforce/capacity'
 import { refreshQueries } from '@/shared/lib/refresh'
 
 export function useSaveLimits() {

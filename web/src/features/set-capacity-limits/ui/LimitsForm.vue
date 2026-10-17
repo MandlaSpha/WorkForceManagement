@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
-import { useCapacity } from '@/entities/capacity'
+import { useCapacity } from '@/entities/workforce/capacity'
 import { problemMessage } from '@/shared/api'
 import { todayInJohannesburg, weekStartOf } from '@/shared/lib/week'
 import AppButton from '@/shared/ui/AppButton.vue'

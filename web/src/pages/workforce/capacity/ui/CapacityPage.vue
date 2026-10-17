@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 
-import { dayStatus, figure, useCapacity, type CapacityDay } from '@/entities/capacity'
+import { dayStatus, figure, useCapacity, type CapacityDay } from '@/entities/workforce/capacity'
 import { useContextStore } from '@/features/context-filters'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'

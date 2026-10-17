@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw'
 
 import type { ImportReport, KpiSummary, QueueInfo } from '@/entities/call-data'
-import type { Capacity } from '@/entities/capacity'
+import type { Capacity } from '@/entities/workforce/capacity'
 import type {
   AwayLimit,
   Balances,
@@ -14,6 +14,7 @@ import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
+import type { HiringPlan, HiringPlanSummary } from '@/entities/workforce/hiring-plan'
 import type { Intraday } from '@/entities/intraday'
 import type { ShiftActivity } from '@/entities/scheduling'
 import type { Peaks } from '@/entities/peaks'
@@ -180,6 +181,8 @@ export const backend = {
   /** The peaks report, and the queue/range of each request. */
   peaks: null as Peaks | null,
   peaksQueries: [] as string[],
+  /** Hiring plans, worked out as the API would. */
+  hiringPlans: [] as HiringPlan[],
   /** Breaks and activities in the roster's shifts. */
   activities: [] as ShiftActivity[],
   /** The intraday view of a day. */
@@ -281,6 +284,7 @@ export const backend = {
     this.shrinkageQueries = []
     this.peaks = null
     this.peaksQueries = []
+    this.hiringPlans = []
     this.activities = []
     this.intraday = null
     this.schedules = []
@@ -831,6 +835,65 @@ export const handlers = [
   }),
 
   http.get('*/api/v1/intraday', () => HttpResponse.json(backend.intraday)),
+
+  http.get('*/api/v1/capacity/hiring-plans', () =>
+    HttpResponse.json(
+      backend.hiringPlans.map(
+        (p) =>
+          ({
+            id: p.id,
+            name: p.name,
+            startMonth: p.startMonth,
+            months: p.rows.length,
+          }) satisfies HiringPlanSummary,
+      ),
+    ),
+  ),
+
+  http.get('*/api/v1/capacity/hiring-plans/:id', ({ params }) => {
+    const found = backend.hiringPlans.find((p) => p.id === Number(params.id))
+    return found ? HttpResponse.json(found) : problem(404, 'resource.not_found', 'Not found')
+  }),
+
+  http.post('*/api/v1/capacity/hiring-plans', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, unknown>
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created = {
+      id: 600 + backend.hiringPlans.length,
+      name: String(sent.name),
+      startMonth: String(sent.startMonth),
+      incumbents: Number(sent.incumbents),
+      attritionPctPerMonth: Number(sent.attritionPctPerMonth),
+      ramp: sent.ramp as number[],
+      costPerPersonMonth: (sent.costPerPersonMonth as number | null) ?? null,
+      totalHires: 0,
+      shortfallMonths: 0,
+      unavoidableMonths: 0,
+      totalCostRands: null,
+      rows: [],
+    } as HiringPlan
+    backend.hiringPlans = [...backend.hiringPlans, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.put('*/api/v1/capacity/hiring-plans/:id', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, unknown>
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.hiringPlans = backend.hiringPlans.map((p) =>
+      p.id === id ? { ...p, name: String(sent.name) } : p,
+    )
+    return HttpResponse.json(backend.hiringPlans.find((p) => p.id === id))
+  }),
+
+  http.delete('*/api/v1/capacity/hiring-plans/:id', async (info) => {
+    const response = await schedulingWrite(info, 'DELETE', 204)
+    if (!response.ok) return response
+    backend.hiringPlans = backend.hiringPlans.filter((p) => p.id !== Number(info.params.id))
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   http.get('*/api/v1/insight/scorecard', () => HttpResponse.json(backend.scorecard)),
 

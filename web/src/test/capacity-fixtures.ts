@@ -1,4 +1,4 @@
-import type { Capacity, CapacityDay, Limits } from '@/entities/capacity'
+import type { Capacity, CapacityDay, Limits } from '@/entities/workforce/capacity'
 
 import { DAYS, WEEK } from './scheduling-fixtures'
 

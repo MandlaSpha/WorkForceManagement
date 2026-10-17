@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 
-import { capacityKeys } from '@/entities/capacity'
+import { capacityKeys } from '@/entities/workforce/capacity'
 import { forecastKeys, publishVersion } from '@/entities/forecast'
 import { schedulingKeys } from '@/entities/scheduling'
 import { refreshQueries } from '@/shared/lib/refresh'

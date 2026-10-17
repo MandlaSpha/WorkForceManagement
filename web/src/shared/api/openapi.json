@@ -2012,6 +2012,253 @@
         "title": "ForecastVersionOut",
         "type": "object"
       },
+      "HiringPlanIn": {
+        "properties": {
+          "attritionPctPerMonth": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Attritionpctpermonth"
+          },
+          "costPerPersonMonth": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costperpersonmonth"
+          },
+          "incumbents": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Incumbents"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ramp": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ramp",
+            "type": "array"
+          },
+          "required": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Required",
+            "type": "array"
+          },
+          "startMonth": {
+            "format": "date",
+            "title": "Startmonth",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "startMonth",
+          "incumbents",
+          "attritionPctPerMonth",
+          "ramp",
+          "required"
+        ],
+        "title": "HiringPlanIn",
+        "type": "object"
+      },
+      "HiringPlanOut": {
+        "properties": {
+          "attritionPctPerMonth": {
+            "title": "Attritionpctpermonth",
+            "type": "number"
+          },
+          "costPerPersonMonth": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costperpersonmonth"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "incumbents": {
+            "title": "Incumbents",
+            "type": "number"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ramp": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ramp",
+            "type": "array"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/HiringRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "shortfallMonths": {
+            "title": "Shortfallmonths",
+            "type": "integer"
+          },
+          "startMonth": {
+            "format": "date",
+            "title": "Startmonth",
+            "type": "string"
+          },
+          "totalCostRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totalcostrands"
+          },
+          "totalHires": {
+            "title": "Totalhires",
+            "type": "integer"
+          },
+          "unavoidableMonths": {
+            "title": "Unavoidablemonths",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "startMonth",
+          "incumbents",
+          "attritionPctPerMonth",
+          "ramp",
+          "costPerPersonMonth",
+          "totalHires",
+          "shortfallMonths",
+          "unavoidableMonths",
+          "totalCostRands",
+          "rows"
+        ],
+        "title": "HiringPlanOut",
+        "type": "object"
+      },
+      "HiringPlanSummaryOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "months": {
+            "title": "Months",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "startMonth": {
+            "format": "date",
+            "title": "Startmonth",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "startMonth",
+          "months"
+        ],
+        "title": "HiringPlanSummaryOut",
+        "type": "object"
+      },
+      "HiringRowOut": {
+        "properties": {
+          "costRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costrands"
+          },
+          "effective": {
+            "title": "Effective",
+            "type": "number"
+          },
+          "gap": {
+            "title": "Gap",
+            "type": "number"
+          },
+          "headcount": {
+            "title": "Headcount",
+            "type": "number"
+          },
+          "hires": {
+            "title": "Hires",
+            "type": "integer"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "number"
+          },
+          "unavoidable": {
+            "title": "Unavoidable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "month",
+          "required",
+          "headcount",
+          "hires",
+          "effective",
+          "gap",
+          "unavoidable",
+          "costRands"
+        ],
+        "title": "HiringRowOut",
+        "type": "object"
+      },
       "ImpactOut": {
         "properties": {
           "alreadyUnder": {
@@ -6504,6 +6751,187 @@
         ],
         "summary": "Agents needed at the busiest moment of each day, by permanent and seasonal pool",
         "tags": [
+          "capacity"
+        ]
+      }
+    },
+    "/api/v1/capacity/hiring-plans": {
+      "get": {
+        "operationId": "wfm_capacity_hiring_api_list_plans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HiringPlanSummaryOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Hiring plans",
+        "tags": [
+          "capacity",
+          "capacity"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_capacity_hiring_api_create_plan",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HiringPlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiringPlanOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Make a plan",
+        "tags": [
+          "capacity",
+          "capacity"
+        ]
+      }
+    },
+    "/api/v1/capacity/hiring-plans/{plan_id}": {
+      "delete": {
+        "operationId": "wfm_capacity_hiring_api_delete_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Delete a plan",
+        "tags": [
+          "capacity",
+          "capacity"
+        ]
+      },
+      "get": {
+        "operationId": "wfm_capacity_hiring_api_get_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiringPlanOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "One plan, worked out",
+        "tags": [
+          "capacity",
+          "capacity"
+        ]
+      },
+      "put": {
+        "operationId": "wfm_capacity_hiring_api_change_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HiringPlanIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiringPlanOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Change a plan",
+        "tags": [
+          "capacity",
           "capacity"
         ]
       }

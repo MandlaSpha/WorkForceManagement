@@ -402,6 +402,13 @@ A `ShiftActivity` is time inside a shift when someone is not on the phones: brea
 - **The agent sees their own** breaks on their schedule (month cell and list); a colleague's are never in it.
 - Not built: suggesting break times to level coverage, a break rule (a break after so many hours), paid and unpaid break distinction beyond the template's paid minutes.
 
+### 4.17 The hiring plan (CAP-01)
+Operate > Hiring plan; `/api/v1/capacity/hiring-plans` (feature `capacity`; planner, admin and executive read; planner and admin make, change and delete; customer operations, leads and agents do not see it). A plan stores its inputs: a first month, people employed now, the share who leave each month, how productive a new hire is month by month (ends at 1) and the people needed each month for 12 to 18 months; the plan itself is worked out from them each time it is read (`wfm_engine.hiring.plan`, pure), so it cannot disagree with the engine.
+
+- **Hires are made as many months before they are needed as the ramp is long**, because a hire is paid from the month they start but reaches full strength later. Attrition takes the same share of every group each month. Hires are whole people, rounded up. A month that falls inside the lead time with fewer people than needed is a shortfall **no hire could have prevented** (`unavoidable`), and the screen says so instead of telling the planner to hire for it. Nothing is hired for a month after the plan ends.
+- **Cost** (rands per person-month, optional) is pay data: it is stored and returned only for planner and admin; an executive sees the plan with no rand figure anywhere. Audit events name the plan and never a cost.
+- The plan is generous by design in ramp-up months (a later group that is partly productive earlier is not counted when sizing an earlier one). Not built: deriving the monthly need from the forecast (it is typed in), seasonal pools (the 100 permanent and 250 seasonal split), recruitment cost per hire, and comparing two plans side by side.
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 

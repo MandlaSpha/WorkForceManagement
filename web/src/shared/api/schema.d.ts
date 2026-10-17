@@ -157,6 +157,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/capacity/hiring-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Hiring plans */
+        get: operations["wfm_capacity_hiring_api_list_plans"];
+        put?: never;
+        /** Make a plan */
+        post: operations["wfm_capacity_hiring_api_create_plan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capacity/hiring-plans/{plan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One plan, worked out */
+        get: operations["wfm_capacity_hiring_api_get_plan"];
+        /** Change a plan */
+        put: operations["wfm_capacity_hiring_api_change_plan"];
+        post?: never;
+        /** Delete a plan */
+        delete: operations["wfm_capacity_hiring_api_delete_plan"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/capacity/limits": {
         parameters: {
             query?: never;
@@ -2625,6 +2662,92 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** HiringPlanIn */
+        HiringPlanIn: {
+            /** Attritionpctpermonth */
+            attritionPctPerMonth: number | string;
+            /** Costperpersonmonth */
+            costPerPersonMonth?: number | string | null;
+            /** Incumbents */
+            incumbents: number | string;
+            /** Name */
+            name: string;
+            /** Ramp */
+            ramp: number[];
+            /** Required */
+            required: number[];
+            /**
+             * Startmonth
+             * Format: date
+             */
+            startMonth: string;
+        };
+        /** HiringPlanOut */
+        HiringPlanOut: {
+            /** Attritionpctpermonth */
+            attritionPctPerMonth: number;
+            /** Costperpersonmonth */
+            costPerPersonMonth: number | null;
+            /** Id */
+            id: number;
+            /** Incumbents */
+            incumbents: number;
+            /** Name */
+            name: string;
+            /** Ramp */
+            ramp: number[];
+            /** Rows */
+            rows: components["schemas"]["HiringRowOut"][];
+            /** Shortfallmonths */
+            shortfallMonths: number;
+            /**
+             * Startmonth
+             * Format: date
+             */
+            startMonth: string;
+            /** Totalcostrands */
+            totalCostRands: number | null;
+            /** Totalhires */
+            totalHires: number;
+            /** Unavoidablemonths */
+            unavoidableMonths: number;
+        };
+        /** HiringPlanSummaryOut */
+        HiringPlanSummaryOut: {
+            /** Id */
+            id: number;
+            /** Months */
+            months: number;
+            /** Name */
+            name: string;
+            /**
+             * Startmonth
+             * Format: date
+             */
+            startMonth: string;
+        };
+        /** HiringRowOut */
+        HiringRowOut: {
+            /** Costrands */
+            costRands: number | null;
+            /** Effective */
+            effective: number;
+            /** Gap */
+            gap: number;
+            /** Headcount */
+            headcount: number;
+            /** Hires */
+            hires: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Required */
+            required: number;
+            /** Unavoidable */
+            unavoidable: boolean;
+        };
         /** ImpactOut */
         ImpactOut: {
             /** Alreadyunder */
@@ -4426,6 +4549,118 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CapacityOut"];
                 };
+            };
+        };
+    };
+    wfm_capacity_hiring_api_list_plans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HiringPlanSummaryOut"][];
+                };
+            };
+        };
+    };
+    wfm_capacity_hiring_api_create_plan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HiringPlanIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HiringPlanOut"];
+                };
+            };
+        };
+    };
+    wfm_capacity_hiring_api_get_plan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HiringPlanOut"];
+                };
+            };
+        };
+    };
+    wfm_capacity_hiring_api_change_plan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HiringPlanIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HiringPlanOut"];
+                };
+            };
+        };
+    };
+    wfm_capacity_hiring_api_delete_plan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

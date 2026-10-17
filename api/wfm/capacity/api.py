@@ -9,11 +9,13 @@ from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
 from . import selectors, services
+from .hiring_api import router as hiring_router
 from .models import CapacityLimits
 from .policy import READ_ROLES, WRITE_ROLES
 from .schemas import CapacityDayOut, CapacityOut, CapacityWeekOut, LimitsIn, LimitsOut
 
 router = Router(tags=["capacity"])
+router.add_router("", hiring_router)
 
 READ = RoleSessionAuth(*sorted(READ_ROLES), feature=Feature.CAPACITY)
 WRITE = RoleSessionAuth(*sorted(WRITE_ROLES), feature=Feature.CAPACITY)

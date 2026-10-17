@@ -9,7 +9,7 @@ from django.db import models
 from wfm.accounts.models import User
 from wfm.core.scoping import ScopedQuerySet
 
-from .policy import READ_ROLES
+from .policy import PLAN_READ_ROLES, READ_ROLES
 
 # The UIF tender: up to 350 agents, 100 permanent and 250 seasonal.
 TENDER_PERMANENT = 100
@@ -42,3 +42,34 @@ class CapacityLimits(models.Model):
 
     def __str__(self) -> str:
         return f"{self.permanent_limit} permanent + {self.seasonal_limit} seasonal"
+
+
+class HiringPlanQuerySet(ScopedQuerySet):
+    def for_user(self, user: Any) -> Self:
+        return self if user.role in PLAN_READ_ROLES else self.none()
+
+
+class HiringPlan(models.Model):
+    """A named monthly hiring plan over 12 to 18 months (CAP-01). Its inputs are stored; the plan
+    itself (hires, effective people, gaps) is worked out from them whenever it is read, so it can
+    never disagree with the engine."""
+
+    name = models.CharField(max_length=80)
+    start_month = models.DateField()  # the first day of the first month
+    incumbents = models.DecimalField(max_digits=8, decimal_places=1)
+    attrition_pct = models.DecimalField(max_digits=5, decimal_places=2)  # per month
+    ramp = models.JSONField(default=list)  # share of full strength by months since hired
+    required = models.JSONField(default=list)  # people needed each month
+    cost_per_person = models.DecimalField(  # rands per person per month; pay data
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = HiringPlanQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["name", "id"]
+
+    def __str__(self) -> str:
+        return self.name
