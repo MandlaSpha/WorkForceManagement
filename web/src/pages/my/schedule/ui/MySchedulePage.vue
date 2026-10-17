@@ -128,12 +128,10 @@ const dayNumber = (iso: string) => String(Number(iso.slice(8)))
       </NoticeBox>
       <template v-else-if="schedule.data.value">
         <NoticeBox v-if="schedule.data.value.unpublishedShifts > 0" data-testid="unpublished">
-          Your planner has pencilled in {{ schedule.data.value.unpublishedShifts }} more
-          {{ schedule.data.value.unpublishedShifts === 1 ? 'shift' : 'shifts' }} for you, but that
-          roster is not final yet. Do not plan around
-          {{ schedule.data.value.unpublishedShifts === 1 ? 'it' : 'them' }}: you will see
-          {{ schedule.data.value.unpublishedShifts === 1 ? 'it' : 'them' }} here once the roster is
-          published.
+          {{ schedule.data.value.unpublishedShifts }}
+          {{ schedule.data.value.unpublishedShifts === 1 ? 'more shift is' : 'more shifts are' }}
+          still being planned. You will see
+          {{ schedule.data.value.unpublishedShifts === 1 ? 'it' : 'them' }} here once published.
         </NoticeBox>
         <NoticeBox v-if="schedule.data.value.openSwaps > 0" data-testid="open-swaps">
           {{ schedule.data.value.openSwaps }}

@@ -97,8 +97,11 @@ def board_book(owner: User, first: date, last: date) -> bytes:
         headline.append([i.label, i.value, i.unit, i.basis, _cell(i.note)])  # type: ignore[union-attr]
     queues = book.create_sheet("By queue")
     queues.append(["Queue", "Calls offered", "Service level (%)", "Abandon rate (%)"])
-    for q in kpi_summary(owner, first, last).queues:
+    rows = kpi_summary(owner, first, last).queues
+    for q in rows:
         queues.append([_cell(q.name), q.kpis.offered, q.kpis.service_level_pct, q.kpis.abandon_pct])
+    if not rows:  # a customer's manager sees only queues linked to their contracts
+        queues.append(["No queues are linked to your contracts yet."])
     plan = latest_plan(owner)
     if plan is not None:
         capacity = book.create_sheet("Capacity")

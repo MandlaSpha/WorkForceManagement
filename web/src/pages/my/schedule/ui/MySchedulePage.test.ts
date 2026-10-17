@@ -129,7 +129,7 @@ describe('notices', () => {
     // Failure caught: showing draft shifts as final tells someone to plan around a roster that
     // can still change.
     expect(await screen.findByTestId('unpublished')).toHaveTextContent(
-      /pencilled in 2 more shifts for you, but that roster is not final yet/,
+      /2 more shifts are still being planned/,
     )
   })
 

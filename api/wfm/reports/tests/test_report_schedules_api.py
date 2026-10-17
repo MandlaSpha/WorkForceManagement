@@ -412,7 +412,9 @@ class TestBoardPack:
         assert book.sheetnames == ["Headline", "By queue", "Notes"]
         assert "BoardQueue" not in self.cells(book)
         assert "Plan 2031" not in self.cells(book)
-        assert book["By queue"].max_row == 1  # the header only: no queue is theirs
+        # The sheet says why it is empty instead of looking broken, and names no queue.
+        assert book["By queue"].max_row == 2
+        assert "No queues are linked to your contracts yet." in self.cells(book)
 
     def test_the_headline_carries_the_basis_of_each_figure(self) -> None:
         # Failure caught: a board figure with no statement of where it comes from.
