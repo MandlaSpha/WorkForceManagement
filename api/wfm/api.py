@@ -7,6 +7,7 @@ from ninja import NinjaAPI
 
 from wfm.accounts.api import router as auth_router
 from wfm.accounts.user_api import router as users_router
+from wfm.attendance.api import router as attendance_router
 from wfm.capacity.api import router as capacity_router
 from wfm.contracts.api import router as contracts_router
 from wfm.core.api import router as system_router
@@ -58,6 +59,7 @@ api.add_router("/people", people_router)
 api.add_router("/jobs", jobs_router)
 api.add_router("/insight", insight_router)
 api.add_router("/intraday", intraday_router)
+api.add_router("/attendance", attendance_router)
 api.add_router("/reports", reports_router)
 api.add_router("/notifications", notifications_router)
 api.add_router("/overtime", overtime_router)

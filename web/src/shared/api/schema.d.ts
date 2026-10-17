@@ -4,6 +4,57 @@
  */
 
 export interface paths {
+    "/api/v1/attendance/adherence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Adherence of every person rostered on a queue that day (a lead: their own team) */
+        get: operations["wfm_attendance_api_get_adherence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import an agent-state file (CSV: login, state, from, to) */
+        post: operations["wfm_attendance_api_import_states"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's own planned and actual day */
+        get: operations["wfm_attendance_api_get_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/change-password": {
         parameters: {
             query?: never;
@@ -2118,6 +2169,141 @@ export interface components {
             shiftId: number | null;
             /** Weekstatus */
             weekStatus: string;
+        };
+        /** AttendanceImportOut */
+        AttendanceImportOut: {
+            /** Errors */
+            errors: components["schemas"]["AttendanceRowError"][];
+            /** Filename */
+            fileName: string;
+            /** Id */
+            id: number;
+            /** Rowsduplicate */
+            rowsDuplicate: number;
+            /** Rowsinserted */
+            rowsInserted: number;
+            /** Rowsread */
+            rowsRead: number;
+            /** Rowsrejected */
+            rowsRejected: number;
+            /** Rowsunmapped */
+            rowsUnmapped: number;
+            /** Unmappedlogincount */
+            unmappedLoginCount: number;
+            /** Unmappedlogins */
+            unmappedLogins: string[];
+        };
+        /** AttendanceMineOut */
+        AttendanceMineOut: {
+            /** Actual */
+            actual: components["schemas"]["AttendanceStateOut"][];
+            /** Adherencepct */
+            adherencePct: number | null;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Earlyfinishmin */
+            earlyFinishMin: number;
+            /** Exceptions */
+            exceptions: string[];
+            /** Hasdata */
+            hasData: boolean;
+            /** Hasshift */
+            hasShift: boolean;
+            /** Inadherencemin */
+            inAdherenceMin: number;
+            /** Latestartmin */
+            lateStartMin: number;
+            /** Outofadherencemin */
+            outOfAdherenceMin: number;
+            /** Planned */
+            planned: components["schemas"]["AttendanceSpanOut"][];
+            /** Scheduledmin */
+            scheduledMin: number;
+            /** Shiftcode */
+            shiftCode: string | null;
+        };
+        /** AttendancePersonOut */
+        AttendancePersonOut: {
+            /** Adherencepct */
+            adherencePct: number | null;
+            /** Earlyfinishmin */
+            earlyFinishMin: number;
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Exceptions */
+            exceptions: string[];
+            /** Hasdata */
+            hasData: boolean;
+            /** Inadherencemin */
+            inAdherenceMin: number;
+            /** Latestartmin */
+            lateStartMin: number;
+            /** Outofadherencemin */
+            outOfAdherenceMin: number;
+            /** Scheduledmin */
+            scheduledMin: number;
+            /** Shiftcode */
+            shiftCode: string;
+        };
+        /** AttendanceQueueDayOut */
+        AttendanceQueueDayOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** People */
+            people: components["schemas"]["AttendancePersonOut"][];
+            /** Queue */
+            queue: string;
+            /** Teamadherencepct */
+            teamAdherencePct: number | null;
+            /** Withdata */
+            withData: number;
+            /** Withoutdata */
+            withoutData: number;
+        };
+        /** AttendanceRowError */
+        AttendanceRowError: {
+            /** Reason */
+            reason: string;
+            /** Row */
+            row: number;
+        };
+        /** AttendanceSpanOut */
+        AttendanceSpanOut: {
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+        };
+        /** AttendanceStateOut */
+        AttendanceStateOut: {
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /** State */
+            state: string;
         };
         /** AttentionOut */
         AttentionOut: {
@@ -4473,6 +4659,81 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    wfm_attendance_api_get_adherence: {
+        parameters: {
+            query: {
+                queue_id: number;
+                day: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceQueueDayOut"];
+                };
+            };
+        };
+    };
+    wfm_attendance_api_import_states: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceImportOut"];
+                };
+            };
+        };
+    };
+    wfm_attendance_api_get_mine: {
+        parameters: {
+            query: {
+                day: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceMineOut"];
+                };
+            };
+        };
+    };
     wfm_accounts_api_change_password: {
         parameters: {
             query?: never;

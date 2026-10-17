@@ -378,6 +378,357 @@
         "title": "AssignOut",
         "type": "object"
       },
+      "AttendanceImportOut": {
+        "properties": {
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/AttendanceRowError"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "fileName": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "rowsDuplicate": {
+            "title": "Rowsduplicate",
+            "type": "integer"
+          },
+          "rowsInserted": {
+            "title": "Rowsinserted",
+            "type": "integer"
+          },
+          "rowsRead": {
+            "title": "Rowsread",
+            "type": "integer"
+          },
+          "rowsRejected": {
+            "title": "Rowsrejected",
+            "type": "integer"
+          },
+          "rowsUnmapped": {
+            "title": "Rowsunmapped",
+            "type": "integer"
+          },
+          "unmappedLoginCount": {
+            "title": "Unmappedlogincount",
+            "type": "integer"
+          },
+          "unmappedLogins": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unmappedlogins",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "rowsRead",
+          "rowsInserted",
+          "rowsDuplicate",
+          "rowsRejected",
+          "rowsUnmapped",
+          "errors",
+          "unmappedLogins",
+          "unmappedLoginCount"
+        ],
+        "title": "AttendanceImportOut",
+        "type": "object"
+      },
+      "AttendanceMineOut": {
+        "properties": {
+          "actual": {
+            "items": {
+              "$ref": "#/components/schemas/AttendanceStateOut"
+            },
+            "title": "Actual",
+            "type": "array"
+          },
+          "adherencePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adherencepct"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "earlyFinishMin": {
+            "title": "Earlyfinishmin",
+            "type": "integer"
+          },
+          "exceptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exceptions",
+            "type": "array"
+          },
+          "hasData": {
+            "title": "Hasdata",
+            "type": "boolean"
+          },
+          "hasShift": {
+            "title": "Hasshift",
+            "type": "boolean"
+          },
+          "inAdherenceMin": {
+            "title": "Inadherencemin",
+            "type": "integer"
+          },
+          "lateStartMin": {
+            "title": "Latestartmin",
+            "type": "integer"
+          },
+          "outOfAdherenceMin": {
+            "title": "Outofadherencemin",
+            "type": "integer"
+          },
+          "planned": {
+            "items": {
+              "$ref": "#/components/schemas/AttendanceSpanOut"
+            },
+            "title": "Planned",
+            "type": "array"
+          },
+          "scheduledMin": {
+            "title": "Scheduledmin",
+            "type": "integer"
+          },
+          "shiftCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shiftcode"
+          }
+        },
+        "required": [
+          "hasData",
+          "scheduledMin",
+          "inAdherenceMin",
+          "outOfAdherenceMin",
+          "adherencePct",
+          "lateStartMin",
+          "earlyFinishMin",
+          "exceptions",
+          "day",
+          "hasShift",
+          "shiftCode",
+          "planned",
+          "actual"
+        ],
+        "title": "AttendanceMineOut",
+        "type": "object"
+      },
+      "AttendancePersonOut": {
+        "properties": {
+          "adherencePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adherencepct"
+          },
+          "earlyFinishMin": {
+            "title": "Earlyfinishmin",
+            "type": "integer"
+          },
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "exceptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exceptions",
+            "type": "array"
+          },
+          "hasData": {
+            "title": "Hasdata",
+            "type": "boolean"
+          },
+          "inAdherenceMin": {
+            "title": "Inadherencemin",
+            "type": "integer"
+          },
+          "lateStartMin": {
+            "title": "Latestartmin",
+            "type": "integer"
+          },
+          "outOfAdherenceMin": {
+            "title": "Outofadherencemin",
+            "type": "integer"
+          },
+          "scheduledMin": {
+            "title": "Scheduledmin",
+            "type": "integer"
+          },
+          "shiftCode": {
+            "title": "Shiftcode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hasData",
+          "scheduledMin",
+          "inAdherenceMin",
+          "outOfAdherenceMin",
+          "adherencePct",
+          "lateStartMin",
+          "earlyFinishMin",
+          "exceptions",
+          "employeeId",
+          "empNo",
+          "employee",
+          "shiftCode"
+        ],
+        "title": "AttendancePersonOut",
+        "type": "object"
+      },
+      "AttendanceQueueDayOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/AttendancePersonOut"
+            },
+            "title": "People",
+            "type": "array"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "teamAdherencePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Teamadherencepct"
+          },
+          "withData": {
+            "title": "Withdata",
+            "type": "integer"
+          },
+          "withoutData": {
+            "title": "Withoutdata",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queue",
+          "day",
+          "teamAdherencePct",
+          "withData",
+          "withoutData",
+          "people"
+        ],
+        "title": "AttendanceQueueDayOut",
+        "type": "object"
+      },
+      "AttendanceRowError": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "row": {
+            "title": "Row",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row",
+          "reason"
+        ],
+        "title": "AttendanceRowError",
+        "type": "object"
+      },
+      "AttendanceSpanOut": {
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "AttendanceSpanOut",
+        "type": "object"
+      },
+      "AttendanceStateOut": {
+        "properties": {
+          "end": {
+            "format": "date-time",
+            "title": "End",
+            "type": "string"
+          },
+          "start": {
+            "format": "date-time",
+            "title": "Start",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "state",
+          "start",
+          "end"
+        ],
+        "title": "AttendanceStateOut",
+        "type": "object"
+      },
       "AttentionOut": {
         "properties": {
           "count": {
@@ -6624,6 +6975,139 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/attendance/adherence": {
+      "get": {
+        "operationId": "wfm_attendance_api_get_adherence",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "day",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Day",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceQueueDayOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Adherence of every person rostered on a queue that day (a lead: their own team)",
+        "tags": [
+          "attendance"
+        ]
+      }
+    },
+    "/api/v1/attendance/imports": {
+      "post": {
+        "operationId": "wfm_attendance_api_import_states",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceImportOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Import an agent-state file (CSV: login, state, from, to)",
+        "tags": [
+          "attendance"
+        ]
+      }
+    },
+    "/api/v1/attendance/mine": {
+      "get": {
+        "operationId": "wfm_attendance_api_get_mine",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "day",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Day",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceMineOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "The signed-in person's own planned and actual day",
+        "tags": [
+          "attendance"
+        ]
+      }
+    },
     "/api/v1/auth/change-password": {
       "post": {
         "operationId": "wfm_accounts_api_change_password",

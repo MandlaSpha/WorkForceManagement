@@ -153,6 +153,8 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **People > Employees > Anonymise (admin).** For someone who has left, the admin can choose Anonymise next to their row. The screen first lists what would be deleted (logins, availability, notifications, pay record, overtime reasons) and what stays without a name (shifts, leave, overtime and standby), and only enables the button once you have typed the employee number. It refuses if the person still has future shifts or leave, has requests waiting, has not left yet, or is the account you are signed in with. It cannot be undone. Above the table a panel lists people who left more than 60 months ago (`WFM_RETENTION_MONTHS`) so you know whom to review; it never acts by itself.
 
+**People > Attendance.** As `planner` or `admin`, load an agent-state CSV (`login,state,from,to`, local times; the layout is a stand-in until the ACD vendor confirms the real feed) in the panel at the top: it says how many rows were stored, skipped as already held or rejected (with line numbers), and which logins are not linked to a person (never guessed). Pick a queue and a day to see each rostered person's adherence (time available, on a call or in wrap-up over scheduled time, breaks and lunch not counted), late starts, early finishes and out-of-adherence minutes. A person with no state data shows "no data", not 0%. A `lead` sees only their own team; as `agent` you see your own planned-versus-actual day under My schedule, and nobody else's.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD
