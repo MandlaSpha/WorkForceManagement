@@ -52,6 +52,8 @@ class Action(models.TextChoices):
     DEV_DATA_PURGED = "dev.data_purged", "Synthetic development data purged"
     FORECAST_RUN = "forecast.run", "Forecast run"
     FORECAST_PUBLISHED = "forecast.published", "Forecast published"
+    FORECAST_DISCARDED = "forecast.discarded", "Forecast draft discarded"
+    FORECAST_ARCHIVED = "forecast.archived", "Forecast withdrawn (archived)"
     FORECAST_REFUSED = "forecast.refused", "Forecast request refused"
     FORECAST_TUNING_CHANGED = "forecast_tuning.changed", "Forecast tuning changed"
     FORECAST_EVENT_CREATED = "forecast_event.created", "Forecast event created"

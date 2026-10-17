@@ -48,6 +48,47 @@ class ForecastIntervalOut(Schema):
     daysUsed: int  # noqa: N815 - how many past days this interval rests on
 
 
+class LifecycleIn(Schema):
+    """Why a draft is discarded or the live forecast withdrawn; kept in the audit trail."""
+
+    reason: str = Field(..., min_length=3, max_length=200)
+
+
+class RangeDayOut(Schema):
+    day: date
+    hasForecast: bool  # noqa: N815 - false: no forecast for this day (see `reason`), not zero calls
+    reason: Literal["outside_version", "no_history"] | None  # why there is none
+    calls: float | None
+    ahtS: float | None  # noqa: N815
+    peakRequired: int | None  # noqa: N815 - null when unknown (complete is false) or no forecast
+    hoursRequired: float | None  # noqa: N815
+    complete: bool  # false: some half-hour with calls has no requirement
+    busiestSlot: int | None  # noqa: N815 - 0 is 00:00, 47 is 23:30
+    requiredBySlot: list[int | None] | None  # noqa: N815 - 48 entries; only when asked for
+
+
+class RangeEventOut(Schema):
+    name: str
+    dateFrom: date  # noqa: N815
+    dateTo: date  # noqa: N815
+    upliftPct: float  # noqa: N815
+
+
+class RangeOut(Schema):
+    versionId: UUID  # noqa: N815
+    queue: str
+    status: str  # draft, published or archived: what the figures rest on
+    label: str
+    dateFrom: date  # noqa: N815 - the range asked for
+    dateTo: date  # noqa: N815
+    versionDateFrom: date  # noqa: N815 - the days the version covers
+    versionDateTo: date  # noqa: N815
+    days: list[RangeDayOut]
+    busiestDay: date | None  # noqa: N815
+    quietestDay: date | None  # noqa: N815
+    events: list[RangeEventOut]  # events that touch the range (there is no public-holiday data)
+
+
 class DayAccuracyOut(Schema):
     date: date
     accuracyPct: float | None  # noqa: N815 - per half-hour

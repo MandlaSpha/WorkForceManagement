@@ -52,6 +52,7 @@ import type {
 import type { Employee, Overview, Plan, Roster, Shift } from '@/entities/scheduling'
 
 import { emptySummary } from './call-data-fixtures'
+import { rangeOf } from './range-fixtures'
 
 /**
  * A tiny in-memory stand-in for the Django auth API, enough to exercise the real client, store
@@ -270,6 +271,8 @@ export const backend = {
   tuning: null as Tuning | null,
   backtest: null as Backtest | null,
   backtestQueries: [] as string[],
+  /** The week and month requests the forecast screen made (their query strings). */
+  rangeQueries: [] as string[],
   /** What the scenario endpoint answers. */
   scenario: null as ScenarioResult | null,
   /** Capacity: what the capacity endpoint answers, and the queries it was asked. */
@@ -315,6 +318,7 @@ export const backend = {
     this.tuning = null
     this.backtest = null
     this.backtestQueries = []
+    this.rangeQueries = []
     this.overview = null
     this.demand = null
     this.leaveTypes = []
@@ -513,6 +517,39 @@ export const handlers = [
     return intervals
       ? HttpResponse.json(intervals)
       : problem(404, 'resource.not_found', 'Not found')
+  }),
+
+  http.get('*/api/v1/forecasting/versions/:id/range', ({ request, params }) => {
+    const url = new URL(request.url)
+    backend.rangeQueries.push(url.search)
+    const version = backend.versions.find((v) => v.id === params.id)
+    const intervals = backend.intervals[String(params.id)]
+    if (!version || !intervals) return problem(404, 'resource.not_found', 'Not found')
+    return HttpResponse.json(
+      rangeOf(
+        version,
+        intervals,
+        url.searchParams.get('date_from') ?? '',
+        url.searchParams.get('date_to') ?? '',
+        url.searchParams.get('detail') === 'true',
+        backend.events,
+      ),
+    )
+  }),
+
+  http.post('*/api/v1/forecasting/versions/:id/discard', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (response.ok) backend.versions = backend.versions.filter((v) => v.id !== info.params.id)
+    return response
+  }),
+
+  http.post('*/api/v1/forecasting/versions/:id/archive', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    backend.versions = backend.versions.map((v) =>
+      v.id === info.params.id ? { ...v, status: 'archived' } : v,
+    )
+    return HttpResponse.json(backend.versions.find((v) => v.id === info.params.id))
   }),
 
   http.get('*/api/v1/forecasting/accuracy', () =>

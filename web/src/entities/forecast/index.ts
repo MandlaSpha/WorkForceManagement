@@ -1,6 +1,8 @@
 export {
   createEvent,
   deleteEvent,
+  archiveVersion,
+  discardVersion,
   publishVersion,
   fetchVersions,
   startForecast,
@@ -12,6 +14,18 @@ export { changeLabel } from './model/events'
 export { biasLabel, pctLabel, verdict } from './model/tuning'
 export { deltaLabel, totalsOf } from './model/scenario'
 export type { ScenarioTotals } from './model/scenario'
+export {
+  addDays,
+  heat,
+  mondayOf,
+  monthOf,
+  rangeFor,
+  shiftMonth,
+  slotLabel,
+  step,
+  weekOf,
+} from './model/range'
+export type { ForecastView, MonthGrid } from './model/range'
 export { dayPoints, forecastDays, historyAgeDays, summarise } from './model/chart'
 export type { DaySummary, Point } from './model/chart'
 export {
@@ -20,6 +34,7 @@ export {
   useBacktest,
   useEvents,
   useIntervals,
+  useRange,
   useTuning,
   useVersions,
 } from './model/queries'
@@ -30,7 +45,10 @@ export type {
   ForecastEvent,
   ForecastInterval,
   ForecastJob,
+  ForecastRange,
   ForecastVersion,
+  LifecycleRequest,
+  RangeDay,
   RunForecastRequest,
   ScenarioDay,
   ScenarioRequest,

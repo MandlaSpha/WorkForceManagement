@@ -4212,6 +4212,22 @@
         "title": "LeaveTypeOut",
         "type": "object"
       },
+      "LifecycleIn": {
+        "description": "Why a draft is discarded or the live forecast withdrawn; kept in the audit trail.",
+        "properties": {
+          "reason": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "LifecycleIn",
+        "type": "object"
+      },
       "LimitIn": {
         "properties": {
           "maxConcurrent": {
@@ -6344,6 +6360,253 @@
           "shrinkagePct"
         ],
         "title": "QueueSettingsIn",
+        "type": "object"
+      },
+      "RangeDayOut": {
+        "properties": {
+          "ahtS": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ahts"
+          },
+          "busiestSlot": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Busiestslot"
+          },
+          "calls": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calls"
+          },
+          "complete": {
+            "title": "Complete",
+            "type": "boolean"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "hasForecast": {
+            "title": "Hasforecast",
+            "type": "boolean"
+          },
+          "hoursRequired": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hoursrequired"
+          },
+          "peakRequired": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Peakrequired"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "outside_version",
+                  "no_history"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "requiredBySlot": {
+            "anyOf": [
+              {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredbyslot"
+          }
+        },
+        "required": [
+          "day",
+          "hasForecast",
+          "reason",
+          "calls",
+          "ahtS",
+          "peakRequired",
+          "hoursRequired",
+          "complete",
+          "busiestSlot",
+          "requiredBySlot"
+        ],
+        "title": "RangeDayOut",
+        "type": "object"
+      },
+      "RangeEventOut": {
+        "properties": {
+          "dateFrom": {
+            "format": "date",
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "format": "date",
+            "title": "Dateto",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "upliftPct": {
+            "title": "Upliftpct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "dateFrom",
+          "dateTo",
+          "upliftPct"
+        ],
+        "title": "RangeEventOut",
+        "type": "object"
+      },
+      "RangeOut": {
+        "properties": {
+          "busiestDay": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Busiestday"
+          },
+          "dateFrom": {
+            "format": "date",
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "format": "date",
+            "title": "Dateto",
+            "type": "string"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/RangeDayOut"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/RangeEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "quietestDay": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quietestday"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "versionDateFrom": {
+            "format": "date",
+            "title": "Versiondatefrom",
+            "type": "string"
+          },
+          "versionDateTo": {
+            "format": "date",
+            "title": "Versiondateto",
+            "type": "string"
+          },
+          "versionId": {
+            "format": "uuid",
+            "title": "Versionid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "versionId",
+          "queue",
+          "status",
+          "label",
+          "dateFrom",
+          "dateTo",
+          "versionDateFrom",
+          "versionDateTo",
+          "days",
+          "busiestDay",
+          "quietestDay",
+          "events"
+        ],
+        "title": "RangeOut",
         "type": "object"
       },
       "RatesIn": {
@@ -11417,6 +11680,106 @@
         ]
       }
     },
+    "/api/v1/forecasting/versions/{version_id}/archive": {
+      "post": {
+        "operationId": "wfm_forecasting_api_archive_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifecycleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastVersionOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Withdraw the live forecast so the queue has none (with the reason)",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
+    "/api/v1/forecasting/versions/{version_id}/discard": {
+      "post": {
+        "operationId": "wfm_forecasting_api_discard_version",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LifecycleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Delete a draft that was never published (with the reason)",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
     "/api/v1/forecasting/versions/{version_id}/intervals": {
       "get": {
         "operationId": "wfm_forecasting_api_version_intervals",
@@ -11492,6 +11855,75 @@
           }
         ],
         "summary": "Make a draft the live forecast of its queue",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
+    "/api/v1/forecasting/versions/{version_id}/range": {
+      "get": {
+        "description": "`detail` adds the 48 half-hour requirements of each day (for the week heat-grid); the\nmonth view leaves it out to keep the payload small.",
+        "operationId": "wfm_forecasting_api_version_range",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "detail",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Detail",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RangeOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "A version's forecast added up per day over a week or a month",
         "tags": [
           "forecasting"
         ]

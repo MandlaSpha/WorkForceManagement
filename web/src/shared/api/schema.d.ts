@@ -613,6 +613,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/forecasting/versions/{version_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Withdraw the live forecast so the queue has none (with the reason) */
+        post: operations["wfm_forecasting_api_archive_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forecasting/versions/{version_id}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete a draft that was never published (with the reason) */
+        post: operations["wfm_forecasting_api_discard_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/forecasting/versions/{version_id}/intervals": {
         parameters: {
             query?: never;
@@ -641,6 +675,27 @@ export interface paths {
         put?: never;
         /** Make a draft the live forecast of its queue */
         post: operations["wfm_forecasting_api_publish_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/forecasting/versions/{version_id}/range": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A version's forecast added up per day over a week or a month
+         * @description `detail` adds the 48 half-hour requirements of each day (for the week heat-grid); the
+         *     month view leaves it out to keep the payload small.
+         */
+        get: operations["wfm_forecasting_api_version_range"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4054,6 +4109,14 @@ export interface components {
             /** Restricted */
             restricted: boolean;
         };
+        /**
+         * LifecycleIn
+         * @description Why a draft is discarded or the live forecast withdrawn; kept in the audit trail.
+         */
+        LifecycleIn: {
+            /** Reason */
+            reason: string;
+        };
         /** LimitIn */
         LimitIn: {
             /** Maxconcurrent */
@@ -4844,6 +4907,91 @@ export interface components {
             slTargetPct: number | string;
             /** Slthresholds */
             slThresholdS: number;
+        };
+        /** RangeDayOut */
+        RangeDayOut: {
+            /** Ahts */
+            ahtS: number | null;
+            /** Busiestslot */
+            busiestSlot: number | null;
+            /** Calls */
+            calls: number | null;
+            /** Complete */
+            complete: boolean;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Hasforecast */
+            hasForecast: boolean;
+            /** Hoursrequired */
+            hoursRequired: number | null;
+            /** Peakrequired */
+            peakRequired: number | null;
+            /** Reason */
+            reason: ("outside_version" | "no_history") | null;
+            /** Requiredbyslot */
+            requiredBySlot: (number | null)[] | null;
+        };
+        /** RangeEventOut */
+        RangeEventOut: {
+            /**
+             * Datefrom
+             * Format: date
+             */
+            dateFrom: string;
+            /**
+             * Dateto
+             * Format: date
+             */
+            dateTo: string;
+            /** Name */
+            name: string;
+            /** Upliftpct */
+            upliftPct: number;
+        };
+        /** RangeOut */
+        RangeOut: {
+            /** Busiestday */
+            busiestDay: string | null;
+            /**
+             * Datefrom
+             * Format: date
+             */
+            dateFrom: string;
+            /**
+             * Dateto
+             * Format: date
+             */
+            dateTo: string;
+            /** Days */
+            days: components["schemas"]["RangeDayOut"][];
+            /** Events */
+            events: components["schemas"]["RangeEventOut"][];
+            /** Label */
+            label: string;
+            /** Queue */
+            queue: string;
+            /** Quietestday */
+            quietestDay: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Versiondatefrom
+             * Format: date
+             */
+            versionDateFrom: string;
+            /**
+             * Versiondateto
+             * Format: date
+             */
+            versionDateTo: string;
+            /**
+             * Versionid
+             * Format: uuid
+             */
+            versionId: string;
         };
         /** RatesIn */
         RatesIn: {
@@ -7012,6 +7160,60 @@ export interface operations {
             };
         };
     };
+    wfm_forecasting_api_archive_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LifecycleIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastVersionOut"];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_discard_version: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LifecycleIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+        };
+    };
     wfm_forecasting_api_version_intervals: {
         parameters: {
             query?: never;
@@ -7052,6 +7254,32 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ForecastVersionOut"];
+                };
+            };
+        };
+    };
+    wfm_forecasting_api_version_range: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_to: string;
+                detail?: boolean;
+            };
+            header?: never;
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RangeOut"];
                 };
             };
         };

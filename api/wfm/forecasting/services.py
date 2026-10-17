@@ -196,6 +196,81 @@ def publish_forecast(*, user: User, version_id: Any) -> ForecastVersion:
         ) from None
 
 
+def discard_forecast(*, user: User, version_id: Any, reason: str) -> None:
+    """Delete a DRAFT version that was never live. Anything else is refused (409): a published
+    forecast is withdrawn (archived), an archived one is history and stays."""
+    with transaction.atomic():
+        version = _lock(user, version_id)
+        if version.status != ForecastStatus.DRAFT:
+            raise ApiError(
+                409,
+                "forecast.not_draft",
+                "Forecast is not a draft",
+                "Only a draft can be discarded. Withdraw a published forecast instead.",
+            )
+        vid, queue_name, span = str(version.id), version.queue.name, _span(version)
+        version.delete()  # its half-hours go with it
+        audit.record(  # last write of the transaction
+            actor=user,
+            action=Action.FORECAST_DISCARDED,
+            entity_type="forecast_version",
+            entity_id=vid,
+            reason=reason.strip(),
+            changes=[
+                audit.FieldChange("forecast_version", vid, "status", "draft", "discarded"),
+                audit.FieldChange("forecast_version", vid, "queue", queue_name, None),
+                audit.FieldChange("forecast_version", vid, "range", span, None),
+            ],
+        )
+
+
+def archive_forecast(*, user: User, version_id: Any, reason: str) -> ForecastVersion:
+    """Withdraw the live forecast: it becomes history and the queue has no published forecast, so
+    the roster, capacity and dashboard show none for it rather than old numbers. Only a PUBLISHED
+    version can be withdrawn (409 otherwise)."""
+    with transaction.atomic():
+        version = _lock(user, version_id)
+        if version.status != ForecastStatus.PUBLISHED:
+            raise ApiError(
+                409,
+                "forecast.not_published",
+                "Forecast is not published",
+                "Only the live forecast can be withdrawn.",
+            )
+        version.status = ForecastStatus.ARCHIVED
+        version.save(update_fields=["status"])
+        audit.record(  # last write of the transaction
+            actor=user,
+            action=Action.FORECAST_ARCHIVED,
+            entity_type="forecast_version",
+            entity_id=str(version.id),
+            reason=reason.strip(),
+            changes=[
+                audit.FieldChange(
+                    "forecast_version", str(version.id), "status", "published", "archived"
+                )
+            ],
+        )
+        return version
+
+
+def _lock(user: User, version_id: Any) -> ForecastVersion:
+    version: ForecastVersion | None = (
+        ForecastVersion.objects.for_user(user)
+        .select_for_update(no_key=True, of=("self",))
+        .select_related("queue")
+        .filter(pk=version_id)
+        .first()
+    )
+    if version is None:
+        raise not_found("No such forecast version.")
+    return version
+
+
+def _span(version: ForecastVersion) -> str:
+    return f"{version.date_from}..{version.date_to}"
+
+
 def set_tuning(*, user: User, queue_id: int, tuning: modeling.Tuning) -> ForecastTuning:
     """Save how a queue's forecast is tuned. Forecasts already run are not changed."""
     modeling.check_tuning(tuning)

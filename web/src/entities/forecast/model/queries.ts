@@ -6,6 +6,7 @@ import {
   fetchBacktest,
   fetchEvents,
   fetchIntervals,
+  fetchRange,
   fetchTuning,
   fetchVersions,
   type TuningTrial,
@@ -16,6 +17,8 @@ export const forecastKeys = {
   all: ['forecast'] as const,
   versions: (queueId: number | null) => ['forecast', 'versions', queueId] as const,
   intervals: (versionId: string) => ['forecast', 'intervals', versionId] as const,
+  range: (versionId: string, from: string, to: string, detail: boolean) =>
+    ['forecast', 'range', versionId, from, to, detail] as const,
   events: (queueId: number | null) => ['forecast', 'events', queueId] as const,
   tuning: (queueId: number) => ['forecast', 'tuning', queueId] as const,
   backtest: (queueId: number, trial: TuningTrial) =>
@@ -34,6 +37,24 @@ export function useIntervals(versionId: MaybeRef<string | null>) {
   return useQuery({
     queryKey: computed(() => forecastKeys.intervals(toValue(versionId) ?? '')),
     queryFn: () => fetchIntervals(toValue(versionId) as string),
+    enabled: computed(() => toValue(versionId) !== null),
+  })
+}
+
+/** A version added up per day over a week or month, from one request. `detail` adds the 48
+ * half-hour requirements of each day, which the week's heat-grid needs and the month does not. */
+export function useRange(
+  versionId: MaybeRef<string | null>,
+  from: MaybeRef<string>,
+  to: MaybeRef<string>,
+  detail: MaybeRef<boolean>,
+) {
+  return useQuery({
+    queryKey: computed(() =>
+      forecastKeys.range(toValue(versionId) ?? '', toValue(from), toValue(to), toValue(detail)),
+    ),
+    queryFn: () =>
+      fetchRange(toValue(versionId) as string, toValue(from), toValue(to), toValue(detail)),
     enabled: computed(() => toValue(versionId) !== null),
   })
 }

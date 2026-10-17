@@ -37,6 +37,17 @@ build a **roster** against that, shows where it is **short or over-staffed**, an
    outage that should lift or lower volume).
 3. The system uses the Prophet model only when it beats the simple baseline in a back-test,
    otherwise it falls back. The screen says which one it used.
+4. **Day / Week / Month.** The switch above the chart shows the forecast one day, a Monday-to-Sunday
+   week (a daily-totals chart, a table of calls, handling time, people at the peak and agent-hours,
+   and a day-by-half-hour grid where a darker cell needs more people) or a calendar month (calls and
+   people at the peak per day, the busiest and quietest days marked, and any events that cover a
+   day). Click a day anywhere to open it in the Day view. Every view says which version it rests on
+   and whether that is live or only a draft, and a day with no forecast says "No forecast" with the
+   reason; it is never shown as zero. Public holidays are not recorded yet, so none are marked.
+5. **Discard and Archive** (planner or admin, in the Versions table). *Discard* deletes a draft;
+   *Archive* withdraws the live forecast so the queue has none (the roster, capacity and dashboard
+   then show no forecast for it rather than old numbers) and keeps it as history you can still open.
+   Both ask for a reason, which goes into the audit trail.
 
 Why it matters: the forecast is the demand that every staffing number rests on.
 

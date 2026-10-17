@@ -7,6 +7,7 @@ import type {
   ForecastEvent,
   ForecastInterval,
   ForecastJob,
+  ForecastRange,
   ForecastVersion,
   RunForecastRequest,
   ScenarioRequest,
@@ -31,6 +32,22 @@ export async function fetchIntervals(versionId: string): Promise<ForecastInterva
   )
 }
 
+export async function fetchRange(
+  versionId: string,
+  from: string,
+  to: string,
+  detail: boolean,
+): Promise<ForecastRange> {
+  return unwrap(
+    await api.GET('/api/v1/forecasting/versions/{version_id}/range', {
+      params: {
+        path: { version_id: versionId },
+        query: { date_from: from, date_to: to, detail },
+      },
+    }),
+  )
+}
+
 export async function fetchAccuracy(queueId: number): Promise<ForecastAccuracy> {
   return unwrap(
     await api.GET('/api/v1/forecasting/accuracy', { params: { query: { queue_id: queueId } } }),
@@ -46,6 +63,26 @@ export async function publishVersion(versionId: string): Promise<ForecastVersion
   return unwrap(
     await api.POST('/api/v1/forecasting/versions/{version_id}/publish', {
       params: { path: { version_id: versionId } },
+    }),
+  )
+}
+
+/** Delete a draft that was never published. The reason goes to the audit trail. */
+export async function discardVersion(versionId: string, reason: string): Promise<void> {
+  unwrap(
+    await api.POST('/api/v1/forecasting/versions/{version_id}/discard', {
+      params: { path: { version_id: versionId } },
+      body: { reason },
+    }),
+  )
+}
+
+/** Withdraw the live forecast: the queue then has none. */
+export async function archiveVersion(versionId: string, reason: string): Promise<ForecastVersion> {
+  return unwrap(
+    await api.POST('/api/v1/forecasting/versions/{version_id}/archive', {
+      params: { path: { version_id: versionId } },
+      body: { reason },
     }),
   )
 }

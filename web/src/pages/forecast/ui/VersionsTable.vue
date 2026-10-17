@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ForecastVersion } from '@/entities/forecast'
 import { PublishButton } from '@/features/publish-forecast'
+import { RetireButton } from '@/features/retire-forecast'
 import { formatDateTime, formatDayLabel } from '@/shared/lib/datetime'
 
 defineProps<{
@@ -70,6 +71,7 @@ const BADGE: Record<string, string> = {
                 View
               </button>
               <PublishButton v-if="canPublish && v.status === 'draft'" :version="v" />
+              <RetireButton v-if="canPublish && v.status !== 'archived'" :version="v" />
             </div>
           </td>
         </tr>

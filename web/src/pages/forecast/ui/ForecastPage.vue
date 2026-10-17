@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useQueues } from '@/entities/call-data'
-import { useVersions } from '@/entities/forecast'
+import { useVersions, type ForecastView } from '@/entities/forecast'
 import { useSessionStore } from '@/entities/session'
 import { EventsPanel } from '@/features/manage-events'
 import { RunForecastForm } from '@/features/run-forecast'
@@ -62,6 +62,22 @@ const tab = computed({
   },
 })
 
+// Day, week or month, and the day it is about, live in the address too (?view=week&day=2026-05-27).
+const VIEWS: ForecastView[] = ['day', 'week', 'month']
+const view = computed<ForecastView>(() => {
+  const asked = String(route.query.view ?? '')
+  return VIEWS.find((v) => v === asked) ?? 'day'
+})
+const anchor = computed(() => {
+  const asked = String(route.query.day ?? '')
+  return /^\d{4}-\d{2}-\d{2}$/.test(asked) ? asked : ''
+})
+function changeView(next: ForecastView, day: string): void {
+  void router.replace({
+    query: { ...route.query, view: next === 'day' ? undefined : next, day: day || undefined },
+  })
+}
+
 function show(id: string): void {
   chosenVersion.value = id
 }
@@ -97,7 +113,14 @@ function show(id: string): void {
       <NoticeBox v-else-if="list.length === 0">
         No forecast has been run for this queue yet.
       </NoticeBox>
-      <VersionDetail v-else-if="selected" :key="selected.id" :version="selected" />
+      <VersionDetail
+        v-else-if="selected"
+        :key="selected.id"
+        :version="selected"
+        :view="view"
+        :anchor="anchor"
+        @change="changeView"
+      />
 
       <TabBar v-model="tab" :tabs="TABS" label="Forecast sections" id-prefix="forecast" />
 
