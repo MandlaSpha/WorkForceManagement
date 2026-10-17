@@ -54,6 +54,11 @@ class ImportBatchQuerySet(ScopedQuerySet):
     def for_user(self, user: Any) -> Self:
         return self if user.role in IMPORT_ROLES else self.none()
 
+    def aggregate_for(self, user: Any, roles: frozenset[Any]) -> Self:
+        """For a screen that only needs to know WHICH sheets an import held (never who uploaded
+        it or what was rejected): the caller names the roles it allows."""
+        return self if user.role in roles else self.none()
+
 
 class ImportBatch(models.Model):
     """One accepted import. Refused imports are not stored; they are audited instead."""
@@ -100,6 +105,13 @@ class CallRecordQuerySet(ScopedQuerySet):
         # Call-level rows are never served to anyone: the API only returns aggregates.
         return self.none()
 
+    def aggregate_for(self, user: Any, roles: frozenset[Any]) -> Self:
+        """For a module that only SUMS calls: the caller names the roles it allows, and only the
+        queues the role may see are read. Everyone else gets nothing."""
+        if user.role not in roles:
+            return self.none()
+        return self.filter(queue__in=Queue.objects.for_user(user))
+
 
 class CallRecord(models.Model):
     call_id = models.BigIntegerField(unique=True)
@@ -132,6 +144,13 @@ class CallDetailQuerySet(ScopedQuerySet):
     def for_user(self, user: Any) -> Self:
         # Per-call detail rows are never served to anyone: only aggregates leave the module.
         return self.none()
+
+    def aggregate_for(self, user: Any, roles: frozenset[Any]) -> Self:
+        """For a module that only SUMS detail rows: the caller names the roles it allows, and only
+        rows of calls in queues the role may see are read."""
+        if user.role not in roles:
+            return self.none()
+        return self.filter(call__queue__in=Queue.objects.for_user(user))
 
 
 class CallDisposition(models.Model):

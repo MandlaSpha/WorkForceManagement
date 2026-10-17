@@ -9,3 +9,12 @@ export {
 } from './model/format'
 export { callDataKeys, useImports, useKpis, useMonths, useQueues } from './model/queries'
 export type { ImportReport, KpiSummary, Metric, Months, QueueInfo, QueueKpis } from './model/types'
+export { fetchCallDetail } from './api/call-detail'
+export { useCallDetail } from './model/detail-queries'
+export type {
+  CallDetail,
+  CallDetailAgent,
+  CallDetailEvent,
+  CallDetailIncidentQueue,
+  CallDetailIvrQueue,
+} from './model/detail-types'
