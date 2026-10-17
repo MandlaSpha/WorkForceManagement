@@ -17,6 +17,7 @@ from typing import Any
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
+from django.db.models import PROTECT, ForeignObjectRel
 
 from wfm.audit import services as audit
 from wfm.audit.models import Action
@@ -61,6 +62,16 @@ class Command(BaseCommand):
                 IntervalActual.objects.filter(queue=queue).delete()
                 CallRecord.objects.filter(queue=queue).delete()
             ImportBatch.objects.filter(pk__in=batch_ids).delete()
+            # Skills, rosters, swaps and the like point at the queue with PROTECT, so the queue
+            # cannot go while they exist. They belong to the test queue, so they go first.
+            for relation in Queue._meta.get_fields(include_hidden=True):
+                if not isinstance(relation, ForeignObjectRel) or relation.on_delete is not PROTECT:
+                    continue
+                if relation.related_model is None:  # a reverse relation always names its model
+                    continue
+                relation.related_model._base_manager.filter(
+                    **{f"{relation.field.name}__in": queues}
+                ).delete()
             Queue.objects.filter(pk__in=[q.pk for q in queues]).delete()
             audit.record(  # last write of the transaction
                 actor=None,

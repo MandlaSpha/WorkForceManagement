@@ -142,3 +142,24 @@ def test_refuses_a_prefix_short_enough_to_catch_real_queues(prefix: str) -> None
     with pytest.raises(CommandError, match="too short"):
         call_command("purge_e2e_data", prefix=prefix)
     assert Queue.objects.count() == 1
+
+
+@pytest.mark.usefixtures("development")
+def test_removes_the_skills_and_rosters_of_a_test_queue_and_keeps_a_real_one() -> None:
+    # Failure caught: the purge stopping on "protected" skills and roster weeks of a test queue
+    # (the dev database filled with hundreds of test queues), or deleting a real queue's.
+    from wfm.scheduling.models import Employee, EmployeeSkill, RosterWeek
+
+    test_queue = Queue.objects.create(name="E2E Queue skills")
+    real_queue = Queue.objects.create(name="Billing")
+    person = Employee.objects.create(emp_no="E-1", name="Test Person")
+    for queue in (test_queue, real_queue):
+        EmployeeSkill.objects.create(employee=person, queue=queue)
+        RosterWeek.objects.create(queue=queue, week_start=date(2026, 10, 19))
+
+    call_command("purge_e2e_data")
+
+    assert list(Queue.objects.values_list("name", flat=True)) == ["Billing"]
+    assert EmployeeSkill.objects.filter(queue=real_queue).count() == 1
+    assert RosterWeek.objects.filter(queue=real_queue).count() == 1
+    assert not EmployeeSkill.objects.filter(queue__name__startswith="E2E").exists()
