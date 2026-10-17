@@ -303,3 +303,21 @@ class TestRoles:
             client.put(f"{C}/{contract_id}", body(), content_type="application/json").status_code
             == 403
         )
+
+
+def test_an_agent_is_given_no_customers_contracts_or_links_at_the_data_layer() -> None:
+    # Failure caught: the read gate on the models removed, so any new view built on `for_user`
+    # (a report, an export) would hand an agent the commercial terms.
+    from wfm.accounts.models import Role, User
+    from wfm.contracts.models import Contract, ContractQueue, Customer
+
+    agent = User.objects.create(username="u-agent-scope", role=Role.AGENT)
+    planner = User.objects.create(username="u-planner-scope", role=Role.PLANNER)
+    customer = Customer.objects.create(name="Scope Co")
+    contract = Contract.objects.create(
+        customer=customer, name="Scope contract", sl_target_pct=80, sl_threshold_s=20
+    )
+    for model in (Customer, Contract, ContractQueue):
+        assert model.objects.for_user(agent).count() == 0
+    assert Customer.objects.for_user(planner).filter(pk=customer.pk).exists()
+    assert Contract.objects.for_user(planner).filter(pk=contract.pk).exists()

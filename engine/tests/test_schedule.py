@@ -74,3 +74,11 @@ def test_the_period_each_frequency_covers() -> None:
     assert period("weekly", wed) == (date(2031, 3, 5), date(2031, 3, 11))
     assert period("monthly", wed) == (date(2031, 2, 1), date(2031, 2, 28))
     assert period("monthly", date(2031, 1, 5)) == (date(2030, 12, 1), date(2030, 12, 31))
+
+
+def test_a_slot_exactly_at_the_creation_or_the_last_send_is_not_due_again() -> None:
+    # Failure caught: `>=` instead of `>`, mailing a report twice at the very second it was made
+    # or last sent.
+    slot = datetime(2031, 3, 12, 7, 0)
+    assert not is_due("daily", 7, 0, 1, now=NOW, created_at=slot, last_sent=None)
+    assert not is_due("daily", 7, 0, 1, now=NOW, created_at=datetime(2031, 3, 1), last_sent=slot)

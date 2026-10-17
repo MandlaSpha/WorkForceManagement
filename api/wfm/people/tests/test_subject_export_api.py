@@ -179,3 +179,18 @@ class TestTheExportIsAudited:
         export(e1.pk)
         export(e1.pk)
         assert AuditEvent.objects.filter(action=Action.SUBJECT_EXPORTED).count() == 2
+
+
+def test_the_service_itself_refuses_anyone_but_the_admin() -> None:
+    # Failure caught: the admin check living only in the endpoint, so a new caller of the
+    # service (a job, another view) could pull a full file on a person.
+    from wfm.core.errors import ApiError
+    from wfm.people import subject_export
+
+    e1 = person("E001")
+    for role in (Role.PLANNER, Role.LEAD, Role.AGENT, Role.EXECUTIVE, Role.CUSTOMER_OPS):
+        who = User.objects.create(username=f"u-svc-{role.value}", role=role)
+        with pytest.raises(ApiError) as refused:
+            subject_export.export(who, e1.pk)
+        assert refused.value.status == 404
+    assert not AuditEvent.objects.filter(action=Action.SUBJECT_EXPORTED).exists()
