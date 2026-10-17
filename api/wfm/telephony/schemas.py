@@ -19,6 +19,7 @@ class QueueOut(Schema):
     occupancyCeilingPct: float  # noqa: N815
     shrinkagePct: float  # noqa: N815
     settingsConfirmed: bool  # noqa: N815
+    outboundOnly: bool  # noqa: N815 - not forecast: it has no inbound calls
 
 
 class QueueSettingsIn(Schema):
@@ -26,6 +27,7 @@ class QueueSettingsIn(Schema):
     slThresholdS: int  # noqa: N815
     occupancyCeilingPct: Decimal  # noqa: N815
     shrinkagePct: Decimal  # noqa: N815
+    outboundOnly: bool | None = None  # noqa: N815 - none keeps what it is
 
 
 class ImportOut(Schema):

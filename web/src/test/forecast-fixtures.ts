@@ -18,6 +18,7 @@ export function queueInfo(overrides: Partial<QueueInfo> = {}): QueueInfo {
     occupancyCeilingPct: 85,
     shrinkagePct: 30,
     settingsConfirmed: false,
+    outboundOnly: false,
     ...overrides,
   }
 }

@@ -37,6 +37,9 @@ class Queue(models.Model):
     occupancy_ceiling_pct = models.DecimalField(max_digits=5, decimal_places=2, default=85)
     shrinkage_pct = models.DecimalField(max_digits=5, decimal_places=2, default=30)
     settings_confirmed = models.BooleanField(default=False)
+    # A queue that only makes calls (the service desk's outbound line) has no inbound demand to
+    # forecast: running a forecast for it would invent staffing for nobody (FC-08).
+    outbound_only = models.BooleanField(default=False)
     created_at = models.DateTimeField(
         db_default=models.Func(function="now", output_field=models.DateTimeField())
     )

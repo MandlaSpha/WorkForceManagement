@@ -118,3 +118,56 @@ def test_a_forecast_run_afterwards_records_the_confirmed_values(q: Queue) -> Non
 
     assert (before["assumptionsConfirmed"], before["params"]["slTargetPct"]) == (False, 80)
     assert (after["assumptionsConfirmed"], after["params"]["slTargetPct"]) == (True, 85)
+
+
+class TestOutboundOnlyQueues:
+    def test_the_admin_marks_a_queue_outbound_only_and_it_is_audited(self, q: Queue) -> None:
+        response = put(Role.ADMIN, q.pk, {**GOOD, "outboundOnly": True})
+        assert response.json()["outboundOnly"] is True
+        q.refresh_from_db()
+        assert q.outbound_only is True
+        event = AuditEvent.objects.filter(action=Action.QUEUE_SETTINGS_CHANGED).latest("chain_seq")
+        fields = {
+            c.field: (c.old_value, c.new_value) for c in AuditChange.objects.filter(event=event)
+        }
+        assert fields["outbound_only"] == ("False", "True")
+
+    def test_leaving_it_out_keeps_what_it_is(self, q: Queue) -> None:
+        # Failure caught: saving the staffing numbers silently turning the flag back off.
+        put(Role.ADMIN, q.pk, {**GOOD, "outboundOnly": True})
+        put(Role.ADMIN, q.pk, GOOD)
+        q.refresh_from_db()
+        assert q.outbound_only is True
+
+    def test_no_forecast_is_made_for_it_inline_or_in_the_background(self, q: Queue) -> None:
+        # Failure caught: staffing invented for a queue that takes no inbound calls.
+        from wfm.forecasting.tests.helpers import MON_4, MON_11, MON_25, import_mondays
+
+        import_mondays({MON_4: 10, MON_11: 10}, queue="QueueA")
+        q = Queue.objects.get(name="QueueA")
+        put(Role.ADMIN, q.pk, {**GOOD, "outboundOnly": True})
+        run = {"queueId": q.pk, "dateFrom": str(MON_25), "dateTo": str(MON_25)}
+        refused = client(Role.PLANNER).post(
+            "/api/v1/forecasting/versions", run, content_type="application/json"
+        )
+        assert (refused.status_code, refused.json()["code"]) == (422, "forecast.outbound_only")
+        job = client(Role.PLANNER).post(
+            "/api/v1/forecasting/versions/jobs", run, content_type="application/json"
+        )
+        assert job.status_code == 202  # accepted; the worker will refuse it with the same code
+        from wfm.forecasting.models import ForecastVersion
+
+        assert not ForecastVersion.objects.filter(queue=q).exists()
+
+    def test_turning_it_off_lets_the_queue_be_forecast_again(self, q: Queue) -> None:
+        from wfm.forecasting.tests.helpers import MON_4, MON_11, MON_25, import_mondays
+
+        import_mondays({MON_4: 10, MON_11: 10}, queue="QueueA")
+        q = Queue.objects.get(name="QueueA")
+        put(Role.ADMIN, q.pk, {**GOOD, "outboundOnly": True})
+        put(Role.ADMIN, q.pk, {**GOOD, "outboundOnly": False})
+        run = {"queueId": q.pk, "dateFrom": str(MON_25), "dateTo": str(MON_25)}
+        ok = client(Role.PLANNER).post(
+            "/api/v1/forecasting/versions", run, content_type="application/json"
+        )
+        assert ok.status_code == 201

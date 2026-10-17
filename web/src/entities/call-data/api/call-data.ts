@@ -15,6 +15,8 @@ export interface QueueSettings {
   slThresholdS: number
   occupancyCeilingPct: number
   shrinkagePct: number
+  /** Leave out to keep what it is. */
+  outboundOnly?: boolean
 }
 
 /** Set a queue's staffing assumptions and confirm them (admin). */

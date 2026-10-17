@@ -273,6 +273,7 @@ def update_queue_settings(
     sl_threshold_s: int,
     occupancy_ceiling_pct: Decimal,
     shrinkage_pct: Decimal,
+    outbound_only: bool | None = None,
 ) -> Queue:
     """Set a queue's staffing assumptions and mark them confirmed (ENG-01, ENG-02, ENG-05).
 
@@ -306,6 +307,17 @@ def update_queue_settings(
             for name, value in wanted.items()
             if Decimal(str(getattr(queue, name))) != Decimal(str(value))
         ]
+        if outbound_only is not None and outbound_only != queue.outbound_only:
+            changes.append(
+                audit.FieldChange(
+                    "queue",
+                    str(queue.pk),
+                    "outbound_only",
+                    str(queue.outbound_only),
+                    str(outbound_only),
+                )
+            )
+            queue.outbound_only = outbound_only
         if not queue.settings_confirmed:
             changes.append(
                 audit.FieldChange("queue", str(queue.pk), "settings_confirmed", "False", "True")

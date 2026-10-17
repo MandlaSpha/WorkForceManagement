@@ -390,6 +390,9 @@ Requirements INT-01 to INT-03, and the pointers of INT-04. `GET /api/v1/intraday
 - **Taking it is audited** (`employee.data_exported`: who, whose, how many records; never the contents).
 - Not built: an erasure or anonymisation request flow, and the retention clock for old data.
 
+### 4.15 Outbound-only queues (FC-08)
+A queue flagged `outbound_only` (Configure > Queues, admin, audited as a queue settings change) has no inbound demand: running a forecast for it, inline or in the background, is refused with `forecast.outbound_only` and nothing is stored, so no staffing is invented for it. Saving the staffing numbers without the flag keeps what it was. Not built: flagging automatically from a queue that only ever shows outbound calls in an import.
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 

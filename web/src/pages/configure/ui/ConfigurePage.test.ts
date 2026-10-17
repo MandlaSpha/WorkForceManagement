@@ -97,13 +97,31 @@ describe('queue staffing settings', () => {
     expect(backend.writes[0]).toEqual({
       method: 'PUT',
       path: '/api/v1/telephony/queues/1/settings',
-      body: { slTargetPct: 80, slThresholdS: 20, occupancyCeilingPct: 85, shrinkagePct: 30 },
+      body: {
+        slTargetPct: 80,
+        slThresholdS: 20,
+        occupancyCeilingPct: 85,
+        shrinkagePct: 30,
+        outboundOnly: false,
+      },
       csrf: 'test-csrf-token',
     })
     await waitFor(() =>
       expect(screen.getByTestId('settings-state-1')).toHaveTextContent('Confirmed'),
     )
     expect(screen.getByRole('button', { name: 'Save settings' })).toBeVisible()
+  })
+
+  it('marks a queue as outbound only so no forecast is made for it', async () => {
+    // Failure caught: the flag shown but not sent, so staffing keeps being invented for the queue.
+    seedScheduling()
+    const user = userEvent.setup()
+    await openScheduling('/configure', 'admin')
+    await user.click(await screen.findByRole('tab', { name: 'Queues' }))
+    await user.click(await screen.findByLabelText(/Outbound calls only/))
+    await user.click(screen.getByRole('button', { name: 'Confirm settings' }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]?.body).toMatchObject({ outboundOnly: true })
   })
 
   it('sends changed values as numbers', async () => {

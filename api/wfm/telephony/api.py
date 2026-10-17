@@ -89,6 +89,7 @@ def set_queue_settings(request: HttpRequest, queue_id: int, body: QueueSettingsI
         sl_threshold_s=body.slThresholdS,
         occupancy_ceiling_pct=body.occupancyCeilingPct,
         shrinkage_pct=body.shrinkagePct,
+        outbound_only=body.outboundOnly,
     )
     return _queue_out(queue)
 
@@ -187,4 +188,5 @@ def _queue_out(q: Queue) -> QueueOut:
         occupancyCeilingPct=float(q.occupancy_ceiling_pct),
         shrinkagePct=float(q.shrinkage_pct),
         settingsConfirmed=q.settings_confirmed,
+        outboundOnly=q.outbound_only,
     )

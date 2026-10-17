@@ -3344,6 +3344,8 @@ export interface components {
             name: string;
             /** Occupancyceilingpct */
             occupancyCeilingPct: number;
+            /** Outboundonly */
+            outboundOnly: boolean;
             /** Settingsconfirmed */
             settingsConfirmed: boolean;
             /** Shrinkagepct */
@@ -3364,6 +3366,8 @@ export interface components {
         QueueSettingsIn: {
             /** Occupancyceilingpct */
             occupancyCeilingPct: number | string;
+            /** Outboundonly */
+            outboundOnly?: boolean | null;
             /** Shrinkagepct */
             shrinkagePct: number | string;
             /** Sltargetpct */

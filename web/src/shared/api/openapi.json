@@ -3988,6 +3988,10 @@
             "title": "Occupancyceilingpct",
             "type": "number"
           },
+          "outboundOnly": {
+            "title": "Outboundonly",
+            "type": "boolean"
+          },
           "settingsConfirmed": {
             "title": "Settingsconfirmed",
             "type": "boolean"
@@ -4013,7 +4017,8 @@
           "slThresholdS",
           "occupancyCeilingPct",
           "shrinkagePct",
-          "settingsConfirmed"
+          "settingsConfirmed",
+          "outboundOnly"
         ],
         "title": "QueueOut",
         "type": "object"
@@ -4048,6 +4053,17 @@
               }
             ],
             "title": "Occupancyceilingpct"
+          },
+          "outboundOnly": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outboundonly"
           },
           "shrinkagePct": {
             "anyOf": [

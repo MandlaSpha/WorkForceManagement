@@ -44,6 +44,14 @@ def run_forecast(
     queue = Queue.objects.for_user(user).filter(pk=queue_id).first()
     if queue is None:
         raise not_found("No such queue.")
+    if queue.outbound_only:
+        raise _refused(
+            user,
+            queue,
+            422,
+            "forecast.outbound_only",
+            "This queue only makes outbound calls, so there is no inbound demand to forecast.",
+        )
     if date_to < date_from:
         raise _refused(user, queue, 422, "forecast.range_invalid", "date_to is before date_from.")
     if (date_to - date_from).days + 1 > MAX_DAYS:

@@ -15,6 +15,7 @@ const target = ref(String(props.queue.slTargetPct))
 const threshold = ref(String(props.queue.slThresholdS))
 const occupancy = ref(String(props.queue.occupancyCeilingPct))
 const shrinkage = ref(String(props.queue.shrinkagePct))
+const outbound = ref(props.queue.outboundOnly)
 
 const save = useSaveQueueSettings(props.queue.id)
 
@@ -24,6 +25,7 @@ function submit(): void {
     slThresholdS: Number(threshold.value),
     occupancyCeilingPct: Number(occupancy.value),
     shrinkagePct: Number(shrinkage.value),
+    outboundOnly: outbound.value,
   })
 }
 </script>
@@ -68,6 +70,15 @@ function submit(): void {
       />
       <TextField v-model="shrinkage" type="number" label="Shrinkage (%)" :min="0" :max="99" />
     </div>
+    <label class="flex items-start gap-2 text-sm text-ink">
+      <input v-model="outbound" type="checkbox" class="mt-1" />
+      <span>
+        Outbound calls only
+        <span class="block text-xs text-ink-muted">
+          No forecast is made for this queue: it has no inbound demand to staff.
+        </span>
+      </span>
+    </label>
     <AppButton type="submit" :loading="save.isPending.value">
       {{ queue.settingsConfirmed ? 'Save settings' : 'Confirm settings' }}
     </AppButton>
