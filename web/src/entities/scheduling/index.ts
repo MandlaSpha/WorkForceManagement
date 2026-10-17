@@ -1,6 +1,7 @@
 export { ATTENTION_ROUTE, attentionRoute, barShare } from './model/overview'
 export {
   addActivity,
+  moveActivity,
   removeActivity,
   startAutoSchedule,
   applyRecommendation,

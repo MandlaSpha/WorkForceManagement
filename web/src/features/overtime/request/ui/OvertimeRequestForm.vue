@@ -10,13 +10,17 @@ import TextField from '@/shared/ui/TextField.vue'
 
 import { useAskForOvertime } from '../model/useAskForOvertime'
 
-const props = defineProps<{ employees: ReadonlyArray<Employee> }>()
+const props = defineProps<{
+  employees: ReadonlyArray<Employee>
+  /** Values to start the form with, e.g. from an intraday alert. The person still decides. */
+  prefill?: { employeeId?: string; day?: string; from?: string; to?: string }
+}>()
 
 const ask = useAskForOvertime()
-const employeeId = ref('')
-const day = ref('')
-const start = ref('18:00')
-const end = ref('20:00')
+const employeeId = ref(props.prefill?.employeeId ?? '')
+const day = ref(props.prefill?.day ?? '')
+const start = ref(props.prefill?.from ?? '18:00')
+const end = ref(props.prefill?.to ?? '20:00')
 const reason = ref('')
 
 const options = computed(() => props.employees.map((e) => ({ value: String(e.id), label: e.name })))

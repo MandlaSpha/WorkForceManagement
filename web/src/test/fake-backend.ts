@@ -15,8 +15,8 @@ import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
 import type { HiringPlan, HiringPlanSummary } from '@/entities/workforce/hiring-plan'
-import type { Intraday } from '@/entities/intraday'
 import type { AttendanceDay, MyAttendance } from '@/entities/workforce/attendance'
+import type { Intraday, IntradaySuggestions } from '@/entities/intraday'
 import type { ShiftActivity } from '@/entities/scheduling'
 import type { Peaks } from '@/entities/peaks'
 import type { ReportSchedule } from '@/entities/report-schedule'
@@ -192,6 +192,9 @@ export const backend = {
    * list). The state-file upload is mocked in the tests, as the call-data upload is. */
   adherence: null as AttendanceDay | null,
   myAttendance: null as MyAttendance | null,
+  /** What could be done about a short half-hour, and the half-hours asked about. */
+  suggestions: null as IntradaySuggestions | null,
+  suggestionQueries: [] as Array<Record<string, string>>,
   /** Report schedules, and the email domains reports may go to. */
   schedules: [] as ReportSchedule[],
   reportDomains: [] as string[],
@@ -300,6 +303,8 @@ export const backend = {
     this.intraday = null
     this.adherence = null
     this.myAttendance = null
+    this.suggestions = null
+    this.suggestionQueries = []
     this.schedules = []
     this.reportDomains = []
     this.scorecard = null
@@ -883,6 +888,13 @@ export const handlers = [
     return HttpResponse.json(sent)
   }),
 
+  http.get('*/api/v1/intraday/suggestions', ({ request }) => {
+    backend.suggestionQueries.push(Object.fromEntries(new URL(request.url).searchParams))
+    return backend.suggestions
+      ? HttpResponse.json(backend.suggestions)
+      : problem(403, 'auth.forbidden', 'Forbidden')
+  }),
+
   http.get('*/api/v1/intraday', () => HttpResponse.json(backend.intraday)),
 
   http.get('*/api/v1/attendance/adherence', () =>
@@ -896,6 +908,18 @@ export const handlers = [
       ? HttpResponse.json(backend.myAttendance)
       : problem(422, 'attendance.no_employee_record', 'Not on the employee list'),
   ),
+  http.post('*/api/v1/scheduling/roster/activities/:id/move', async (info) => {
+    const sent = (await info.request.clone().json()) as { startTime: string }
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.activities = backend.activities.map((a) =>
+      a.id === id ? { ...a, startTime: sent.startTime } : a,
+    )
+    // The break has moved, so it is no longer in the short half-hour.
+    if (backend.suggestions) backend.suggestions = { ...backend.suggestions, breaks: [] }
+    return HttpResponse.json(backend.activities.find((a) => a.id === id))
+  }),
 
   http.get('*/api/v1/capacity/hiring-plans', () =>
     HttpResponse.json(

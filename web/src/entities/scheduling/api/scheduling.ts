@@ -187,6 +187,15 @@ export async function addActivity(body: ShiftActivityBody): Promise<ShiftActivit
   return unwrap(await api.POST('/api/v1/scheduling/roster/activities', { body }))
 }
 
+export async function moveActivity(activityId: number, startTime: string): Promise<ShiftActivity> {
+  return unwrap(
+    await api.POST('/api/v1/scheduling/roster/activities/{activity_id}/move', {
+      params: { path: { activity_id: activityId } },
+      body: { startTime },
+    }),
+  )
+}
+
 export async function removeActivity(activityId: number): Promise<void> {
   unwrap(
     await api.DELETE('/api/v1/scheduling/roster/activities/{activity_id}', {

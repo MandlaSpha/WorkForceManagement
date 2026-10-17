@@ -155,6 +155,10 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **People > Attendance.** As `planner` or `admin`, load an agent-state CSV (`login,state,from,to`, local times; the layout is a stand-in until the ACD vendor confirms the real feed) in the panel at the top: it says how many rows were stored, skipped as already held or rejected (with line numbers), and which logins are not linked to a person (never guessed). Pick a queue and a day to see each rostered person's adherence (time available, on a call or in wrap-up over scheduled time, breaks and lunch not counted), late starts, early finishes and out-of-adherence minutes. A person with no state data shows "no data", not 0%. A `lead` sees only their own team; as `agent` you see your own planned-versus-actual day under My schedule, and nobody else's.
 
+**Operate > Intraday > What can I do?** (planner and admin). Next to each short half-hour: up to five people who could be asked for overtime (skilled on the queue, not working that day, not on leave, within the rest and hours rules, lightest week first), each with an Ask for overtime link that opens the Overtime page with the form already filled in (person, day, the whole short stretch), and, where the person in the short half-hour is in a break or lunch, a one-click Move to a time that keeps the phones covered. A lead sees the alerts but no button.
+
+**Insight > Reports > Investment-board KPI pack.** Schedule it as `executive`, `planner` or `admin` (or customer operations): an emailed workbook with Headline (scorecard figures and where each comes from), By queue, Capacity (the latest hiring plan; absent for customer operations) and Notes. It never holds a rand figure.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD

@@ -18,6 +18,7 @@ from wfm.core.scoping import ScopedQuerySet
 class ReportKind(models.TextChoices):
     SCORECARD = "scorecard", "Analytics scorecard"
     PEAKS = "peaks", "Peaks and troughs"
+    BOARD = "board", "Investment-board KPI pack"
 
 
 class Frequency(models.TextChoices):

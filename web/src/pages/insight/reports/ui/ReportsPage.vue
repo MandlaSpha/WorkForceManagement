@@ -22,7 +22,9 @@ const session = useSessionStore()
 const role = computed(() => session.user?.role ?? '')
 const isAdmin = computed(() => role.value === 'admin')
 // Cosmetic: the API refuses a role the report it may not see.
-const reports = computed(() => (role.value === 'lead' ? ['peaks'] : ['scorecard', 'peaks']))
+const reports = computed(() =>
+  role.value === 'lead' ? ['peaks'] : ['scorecard', 'peaks', 'board'],
+)
 
 const schedules = useSchedules()
 const domains = useAllowedDomains()

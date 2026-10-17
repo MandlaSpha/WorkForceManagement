@@ -7,6 +7,7 @@ export type ReportSchedulePatch = components['schemas']['SchedulePatch']
 export const REPORT_LABEL: Record<string, string> = {
   scorecard: 'Analytics scorecard',
   peaks: 'Peaks and troughs',
+  board: 'Investment-board KPI pack',
 }
 export const FREQUENCY_LABEL: Record<string, string> = {
   daily: 'Every day',

@@ -7,8 +7,10 @@ Pure: no Django, no clock, no I/O. The caller says how many half-hours of the da
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Hashable, Mapping, Sequence
 from dataclasses import dataclass
+
+from .roster import check_activity
 
 # How many calls of agreement with the forecast the estimate starts from, so a handful of early
 # calls cannot swing the rest of the day. 30 means 30 calls of evidence weigh as much as the prior.
@@ -81,3 +83,49 @@ def alerts(scheduled: Sequence[int], required: Sequence[int | None], elapsed: in
             Alert(slot, scheduled[slot], need, short, "critical" if critical else "warning")
         )
     return found
+
+
+def break_targets[K: Hashable](
+    keys: Sequence[K],
+    activity: tuple[int, int],
+    others: Collection[tuple[int, int]],
+    scheduled: Mapping[K, int],
+    required: Mapping[K, int | None],
+) -> list[int]:
+    """Where inside a shift an activity could move so the phones stay covered (INT-04).
+
+    `keys` names each half-hour of the shift in order; `activity` is (offset, length) in those
+    half-hours and `others` the shift's other activities. `scheduled` is people on the phones in
+    each half-hour NOW, with this person already counted out of their activity's half-hours.
+    A new place is offered when it stays inside the shift, overlaps no other activity, and in
+    every half-hour it takes the person off the phones the cover afterwards still reaches the
+    requirement. A half-hour whose requirement is unknown is never offered (cover cannot be
+    shown). Returns offsets, the nearest to the current place first (earlier first on a tie);
+    the current place is not offered.
+    """
+    offset, length = activity
+    here = {keys[i] for i in range(offset, offset + length)}
+    found: list[int] = []
+    for new in range(0, len(keys) - length + 1):
+        if new == offset:
+            continue
+        if check_activity_overlap(len(keys), (new, length), others):
+            continue
+        ok = True
+        for i in range(new, new + length):
+            key = keys[i]
+            need = required.get(key)
+            after = scheduled.get(key, 0) - (0 if key in here else 1)
+            if need is None or after < need:
+                ok = False
+                break
+        if ok:
+            found.append(new)
+    return sorted(found, key=lambda n: (abs(n - offset), n))
+
+
+def check_activity_overlap(
+    shift_length: int, activity: tuple[int, int], others: Collection[tuple[int, int]]
+) -> bool:
+    """True when the activity does not fit: outside the shift or on top of another one."""
+    return check_activity(shift_length, activity, others) is not None

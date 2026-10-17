@@ -249,3 +249,59 @@ def test_the_list_shows_when_in_clock_time(shifts: dict[str, Any]) -> None:
         URL, {"queue_id": str(queue().pk), "week_start": str(MON + timedelta(days=7))}
     )
     assert later.json() == []
+
+
+def post_move(c: Any, activity_id: int, start: str) -> Any:
+    return c.post(
+        f"{URL}/{activity_id}/move", {"startTime": start}, content_type="application/json"
+    )
+
+
+class TestMovingOne:
+    """INT-04: move a break in one audited step."""
+
+    def test_a_move_replaces_the_old_place_and_is_audited_last(
+        self, shifts: dict[str, Any]
+    ) -> None:
+        # Failure caught: a move that leaves both places (double absence) or neither, or audits
+        # before the write.
+        a = on_shift(shifts)  # 09:00 to 17:30
+        made = add(login(), a, offset=2, slots=2).json()  # 10:00 to 11:00
+        r = post_move(login(), made["id"], "12:00")
+        assert r.status_code == 200, r.content
+        (only,) = ShiftActivity.objects.all()
+        assert (only.offset_slots, only.slots, only.kind) == (6, 2, "break")
+        newest = AuditEvent.objects.order_by("-pk")[:2]
+        assert {e.action for e in newest} == {
+            Action.ROSTER_ACTIVITY_ADDED,
+            Action.ROSTER_ACTIVITY_REMOVED,
+        }
+        assert newest[0].action == Action.ROSTER_ACTIVITY_ADDED  # the last write
+
+    def test_a_refused_move_changes_nothing(self, shifts: dict[str, Any]) -> None:
+        # Failure caught: the old break deleted and the new one refused, leaving nothing.
+        a = on_shift(shifts)
+        first = add(login(), a, offset=2).json()
+        add(login(), a, offset=6)
+        events = AuditEvent.objects.count()
+        for start, code in (
+            ("12:00", "activity.overlap"),
+            ("18:00", "activity.outside_shift"),
+            ("12:15", "activity.not_on_grid"),
+        ):
+            r = post_move(login(), first["id"], start)
+            assert (r.status_code, r.json()["code"]) == (422, code)
+        assert sorted(ShiftActivity.objects.values_list("offset_slots", flat=True)) == [2, 6]
+        assert AuditEvent.objects.count() == events
+
+    @pytest.mark.parametrize("role", [Role.LEAD, Role.AGENT, Role.EXECUTIVE, Role.CUSTOMER_OPS])
+    def test_only_planner_and_admin_can_move(self, role: Role, shifts: dict[str, Any]) -> None:
+        # Failure caught: a lead moving people off the phones.
+        made = add(login(), on_shift(shifts), offset=2).json()
+        assert post_move(login(role), made["id"], "12:00").status_code == 403
+        assert ShiftActivity.objects.get().offset_slots == 2
+
+    def test_admin_can_move_and_an_unknown_one_is_not_found(self, shifts: dict[str, Any]) -> None:
+        made = add(login(), on_shift(shifts), offset=2).json()
+        assert post_move(login(Role.ADMIN), made["id"], "12:00").status_code == 200
+        assert post_move(login(), 99999, "12:00").status_code == 404

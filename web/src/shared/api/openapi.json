@@ -126,6 +126,20 @@
         "title": "ActivityIn",
         "type": "object"
       },
+      "ActivityMoveIn": {
+        "properties": {
+          "startTime": {
+            "format": "time",
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "startTime"
+        ],
+        "title": "ActivityMoveIn",
+        "type": "object"
+      },
       "ActivityOut": {
         "properties": {
           "assignmentId": {
@@ -2898,6 +2912,49 @@
         "title": "IntradayAlertOut",
         "type": "object"
       },
+      "IntradayBreakOut": {
+        "properties": {
+          "activityId": {
+            "title": "Activityid",
+            "type": "integer"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "end": {
+            "title": "End",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "moveTo": {
+            "title": "Moveto",
+            "type": "string"
+          },
+          "slots": {
+            "title": "Slots",
+            "type": "integer"
+          },
+          "start": {
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "activityId",
+          "employee",
+          "kind",
+          "start",
+          "end",
+          "moveTo",
+          "slots"
+        ],
+        "title": "IntradayBreakOut",
+        "type": "object"
+      },
       "IntradayOut": {
         "properties": {
           "alerts": {
@@ -2979,6 +3036,29 @@
         "title": "IntradayOut",
         "type": "object"
       },
+      "IntradayPersonOut": {
+        "properties": {
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "weekMinutes": {
+            "title": "Weekminutes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "employeeId",
+          "name",
+          "weekMinutes"
+        ],
+        "title": "IntradayPersonOut",
+        "type": "object"
+      },
       "IntradaySlotOut": {
         "properties": {
           "actual": {
@@ -3055,6 +3135,40 @@
           "expectedRequired"
         ],
         "title": "IntradaySlotOut",
+        "type": "object"
+      },
+      "IntradaySuggestionsOut": {
+        "properties": {
+          "breaks": {
+            "items": {
+              "$ref": "#/components/schemas/IntradayBreakOut"
+            },
+            "title": "Breaks",
+            "type": "array"
+          },
+          "overtimeEnd": {
+            "title": "Overtimeend",
+            "type": "string"
+          },
+          "overtimeStart": {
+            "title": "Overtimestart",
+            "type": "string"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/IntradayPersonOut"
+            },
+            "title": "People",
+            "type": "array"
+          }
+        },
+        "required": [
+          "overtimeStart",
+          "overtimeEnd",
+          "people",
+          "breaks"
+        ],
+        "title": "IntradaySuggestionsOut",
         "type": "object"
       },
       "ItemOut": {
@@ -8507,6 +8621,62 @@
         ]
       }
     },
+    "/api/v1/intraday/suggestions": {
+      "get": {
+        "operationId": "wfm_intraday_api_get_suggestions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "day",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Day",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "slot",
+            "required": true,
+            "schema": {
+              "title": "Slot",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntradaySuggestionsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Who could be asked for overtime, and which breaks could move, for a short half-hour",
+        "tags": [
+          "intraday"
+        ]
+      }
+    },
     "/api/v1/jobs/{job_id}": {
       "get": {
         "operationId": "wfm_jobs_api_get_job",
@@ -11544,6 +11714,53 @@
           }
         ],
         "summary": "Remove a break or activity",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster/activities/{activity_id}/move": {
+      "post": {
+        "operationId": "wfm_scheduling_activity_api_move_activity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityMoveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Move a break or activity to another start inside its shift",
         "tags": [
           "scheduling"
         ]
