@@ -3,16 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db.models import Count, Q
+from wfm_engine import forecast_range
 from wfm_engine.forecast import Backtest, DayAccuracy
 
 from wfm.accounts.models import User
-from wfm.core.errors import not_found
+from wfm.core.errors import ApiError, not_found
 from wfm.telephony.models import Queue
 
 from . import modeling, scenario
@@ -166,3 +167,56 @@ def scenario_source(user: User, version_id: Any) -> tuple[ForecastVersion, list[
         for i in ForecastInterval.objects.for_user(user).filter(version=version)
     ]
     return version, rows
+
+
+MAX_RANGE_DAYS = 42  # six calendar weeks: the longest month view
+
+
+@dataclass(frozen=True, slots=True)
+class VersionRange:
+    version: ForecastVersion
+    summary: forecast_range.RangeSummary
+    events: list[ForecastEvent]
+
+
+def version_range(user: User, version_id: Any, date_from: date, date_to: date) -> VersionRange:
+    """A version's forecast added up per day over a range, in one query. Days outside the version,
+    or that it could not forecast, come back as "no forecast", never as zero."""
+    if date_to < date_from or (date_to - date_from).days + 1 > MAX_RANGE_DAYS:
+        raise ApiError(
+            422,
+            "forecast.range_invalid",
+            "Invalid range",
+            f"Ask for between 1 and {MAX_RANGE_DAYS} days, the end not before the start.",
+        )
+    version: ForecastVersion | None = (
+        ForecastVersion.objects.for_user(user).select_related("queue").filter(pk=version_id).first()
+    )
+    if version is None:
+        raise not_found("No such forecast version.")
+    zone = ZoneInfo(settings.TIME_ZONE)
+    first = max(date_from, version.date_from)
+    last = min(date_to, version.date_to)
+    slots: list[forecast_range.Slot] = []
+    if first <= last:
+        rows = ForecastInterval.objects.for_user(user).filter(
+            version=version,
+            interval_start__gte=datetime.combine(first, time.min, tzinfo=zone),
+            interval_start__lt=datetime.combine(last + timedelta(days=1), time.min, tzinfo=zone),
+        )
+        for start, volume, aht_s, required in rows.values_list(
+            "interval_start", "volume", "aht_s", "required"
+        ):
+            local = start.astimezone(zone)
+            slots.append(
+                forecast_range.Slot(
+                    local.date(), local.hour * 2 + local.minute // 30, volume, aht_s, required
+                )
+            )
+    days = [date_from + timedelta(days=n) for n in range((date_to - date_from).days + 1)]
+    events = list(
+        ForecastEvent.objects.for_user(user)
+        .filter(Q(queue_id=version.queue_id) | Q(queue__isnull=True))
+        .filter(date_from__lte=date_to, date_to__gte=date_from)
+    )
+    return VersionRange(version, forecast_range.summarise(slots, days), events)

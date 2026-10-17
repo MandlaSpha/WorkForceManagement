@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, toRef } from 'vue'
+import { computed, toRef } from 'vue'
 
 import {
   changeLabel,
@@ -9,30 +9,44 @@ import {
   summarise,
   useIntervals,
   type ForecastVersion,
+  type ForecastView,
 } from '@/entities/forecast'
 import { problemMessage } from '@/shared/api'
 import { formatDayLabel } from '@/shared/lib/datetime'
+import { ForecastRangeView } from '@/widgets/forecast-range'
 import IntervalChart from '@/shared/ui/IntervalChart.vue'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import SelectField from '@/shared/ui/SelectField.vue'
 
-const props = defineProps<{ version: ForecastVersion }>()
+const props = defineProps<{ version: ForecastVersion; view: ForecastView; anchor: string }>()
+// One event for both: the page keeps the view and the day together in the address.
+const emit = defineEmits<{ change: [view: ForecastView, anchor: string] }>()
+
+const VIEWS: Array<{ key: ForecastView; label: string }> = [
+  { key: 'day', label: 'Day' },
+  { key: 'week', label: 'Week' },
+  { key: 'month', label: 'Month' },
+]
 
 // A forecast built on data this much older than its first day is a rough guide, not a plan.
 const STALE_AFTER_DAYS = 28
 
-const intervals = useIntervals(computed(() => props.version.id))
+// The half-hours are only needed for the day view; the week and month ask for their own totals.
+const intervals = useIntervals(computed(() => (props.view === 'day' ? props.version.id : null)))
 const days = computed(() => forecastDays(props.version))
 const dayOptions = computed(() => days.value.map((d) => ({ value: d, label: formatDayLabel(d) })))
 
-const chosen = ref('')
 const day = computed(() =>
-  days.value.includes(chosen.value) ? chosen.value : (days.value[0] ?? ''),
+  days.value.includes(props.anchor) ? props.anchor : (days.value[0] ?? ''),
 )
 const selectedDay = computed({
   get: () => day.value,
-  set: (value: string) => (chosen.value = value),
+  set: (value: string) => emit('change', 'day', value),
 })
+// The week and month may be looked at for any date, also outside the days this version covers.
+const rangeAnchor = computed(() => props.anchor || day.value || props.version.dateFrom)
+const setView = (view: ForecastView): void =>
+  emit('change', view, view === 'day' ? day.value : rangeAnchor.value)
 
 const points = computed(() => dayPoints(intervals.data.value ?? [], day.value))
 const summary = computed(() => summarise(points.value))
@@ -83,8 +97,27 @@ const chartSummary = computed(
       <h2 id="detail-title" class="text-base font-semibold text-ink">
         {{ version.queue }}: {{ version.label || 'forecast' }}
       </h2>
-      <div v-if="days.length > 0" class="w-44">
-        <SelectField v-model="selectedDay" label="Day" :options="dayOptions" />
+      <div class="flex flex-wrap items-end gap-3">
+        <div role="group" aria-label="Show" class="inline-flex rounded-lg border border-line">
+          <button
+            v-for="v in VIEWS"
+            :key="v.key"
+            type="button"
+            class="min-h-10 px-3 text-sm font-medium first:rounded-l-lg last:rounded-r-lg"
+            :class="
+              view === v.key
+                ? 'bg-brand text-brand-contrast'
+                : 'bg-surface text-ink hover:bg-surface-muted'
+            "
+            :aria-pressed="view === v.key"
+            @click="setView(v.key)"
+          >
+            {{ v.label }}
+          </button>
+        </div>
+        <div v-if="view === 'day' && days.length > 0" class="w-44">
+          <SelectField v-model="selectedDay" label="Day" :options="dayOptions" />
+        </div>
       </div>
     </div>
 
@@ -116,7 +149,15 @@ const chartSummary = computed(
       }}).
     </NoticeBox>
 
-    <p v-if="intervals.isPending.value" class="text-sm text-ink-muted">Loading…</p>
+    <ForecastRangeView
+      v-if="view !== 'day'"
+      :version="version"
+      :view="view"
+      :anchor="rangeAnchor"
+      @update:anchor="emit('change', view, $event)"
+      @open="emit('change', 'day', $event)"
+    />
+    <p v-else-if="intervals.isPending.value" class="text-sm text-ink-muted">Loading…</p>
     <NoticeBox v-else-if="intervals.isError.value" tone="danger">
       Could not load this forecast. {{ problemMessage(intervals.error.value) }}
     </NoticeBox>

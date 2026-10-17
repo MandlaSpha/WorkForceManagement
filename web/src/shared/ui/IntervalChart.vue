@@ -3,17 +3,24 @@ import { computed } from 'vue'
 
 export interface ChartPoint {
   label: string // x-axis label, "10:00"
-  bars: number // the shaded bar: for example expected calls
+  bars: number | null // the shaded bar: for example expected calls; null = no value, no bar
   line: number | null // the line on the right axis: for example agents required; null = no value
 }
 
-const props = defineProps<{
-  points: ReadonlyArray<ChartPoint>
-  /** Names the chart for people who cannot see it. */
-  summary: string
-  barLabel: string
-  lineLabel: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    points: ReadonlyArray<ChartPoint>
+    /** Names the chart for people who cannot see it. */
+    summary: string
+    barLabel: string
+    lineLabel: string
+    /** Label every n-th point on the x axis (every 4th half-hour by default). */
+    labelEvery?: number
+    /** Heading of the first column of the numbers table. */
+    categoryLabel?: string
+  }>(),
+  { labelEvery: 4, categoryLabel: 'Time' },
+)
 
 const W = 960
 const H = 280
@@ -25,12 +32,13 @@ const innerW = W - LEFT - RIGHT
 const innerH = H - TOP - BOTTOM
 
 const ceil = (v: number) => Math.max(1, Math.ceil(v))
-const maxBar = computed(() => ceil(Math.max(0, ...props.points.map((p) => p.bars))))
+const maxBar = computed(() => ceil(Math.max(0, ...props.points.map((p) => p.bars ?? 0))))
 const maxLine = computed(() => ceil(Math.max(0, ...props.points.map((p) => p.line ?? 0))))
 const step = computed(() => innerW / Math.max(1, props.points.length))
 
 const bars = computed(() =>
-  props.points.map((p, i) => {
+  props.points.flatMap((p, i) => {
+    if (p.bars === null) return [] // no value is no bar, never a bar of zero height
     const height = (p.bars / maxBar.value) * innerH
     return {
       key: p.label,
@@ -62,7 +70,7 @@ const linePath = computed(() => {
 const xLabels = computed(() =>
   props.points
     .map((p, i) => ({ label: p.label, x: LEFT + i * step.value + step.value / 2, i }))
-    .filter((p) => p.i % 4 === 0),
+    .filter((p) => p.i % props.labelEvery === 0),
 )
 </script>
 
@@ -127,7 +135,7 @@ const xLabels = computed(() =>
         <table class="w-full text-left text-sm">
           <thead class="sticky top-0 bg-surface-muted text-xs text-ink-muted">
             <tr>
-              <th scope="col" class="px-3 py-1.5 font-medium">Time</th>
+              <th scope="col" class="px-3 py-1.5 font-medium">{{ categoryLabel }}</th>
               <th scope="col" class="px-3 py-1.5 text-right font-medium">{{ barLabel }}</th>
               <th scope="col" class="px-3 py-1.5 text-right font-medium">{{ lineLabel }}</th>
             </tr>
@@ -135,7 +143,9 @@ const xLabels = computed(() =>
           <tbody>
             <tr v-for="p in points" :key="p.label" class="border-t border-line">
               <th scope="row" class="px-3 py-1 font-normal tabular-nums">{{ p.label }}</th>
-              <td class="px-3 py-1 text-right tabular-nums">{{ p.bars.toFixed(1) }}</td>
+              <td class="px-3 py-1 text-right tabular-nums">
+                {{ p.bars === null ? '—' : p.bars.toFixed(1) }}
+              </td>
               <td class="px-3 py-1 text-right tabular-nums">{{ p.line ?? '—' }}</td>
             </tr>
           </tbody>

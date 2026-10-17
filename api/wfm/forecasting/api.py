@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Literal
 from uuid import UUID
 
@@ -26,6 +27,10 @@ from .schemas import (
     EventOut,
     ForecastIntervalOut,
     ForecastVersionOut,
+    LifecycleIn,
+    RangeDayOut,
+    RangeEventOut,
+    RangeOut,
     RunForecastIn,
     ScenarioAssumptionsOut,
     ScenarioDayOut,
@@ -107,6 +112,90 @@ def list_versions(request: HttpRequest, queue_id: int | None = None) -> list[For
 def publish_version(request: HttpRequest, version_id: UUID) -> ForecastVersionOut:
     version = services.publish_forecast(user=current_user(request), version_id=version_id)
     return _version_out(version, interval_count=version.intervals.count())
+
+
+@router.post(
+    "/versions/{version_id}/discard",
+    auth=WRITE,
+    response=dict[str, bool],
+    summary="Delete a draft that was never published (with the reason)",
+)
+def discard_version(request: HttpRequest, version_id: UUID, body: LifecycleIn) -> dict[str, bool]:
+    services.discard_forecast(user=current_user(request), version_id=version_id, reason=body.reason)
+    return {"ok": True}
+
+
+@router.post(
+    "/versions/{version_id}/archive",
+    auth=WRITE,
+    response=ForecastVersionOut,
+    summary="Withdraw the live forecast so the queue has none (with the reason)",
+)
+def archive_version(
+    request: HttpRequest, version_id: UUID, body: LifecycleIn
+) -> ForecastVersionOut:
+    version = services.archive_forecast(
+        user=current_user(request), version_id=version_id, reason=body.reason
+    )
+    return _version_out(version, interval_count=version.intervals.count())
+
+
+@router.get(
+    "/versions/{version_id}/range",
+    auth=READ,
+    response=RangeOut,
+    summary="A version's forecast added up per day over a week or a month",
+)
+def version_range(
+    request: HttpRequest,
+    version_id: UUID,
+    date_from: date,
+    date_to: date,
+    detail: bool = False,
+) -> RangeOut:
+    """`detail` adds the 48 half-hour requirements of each day (for the week heat-grid); the
+    month view leaves it out to keep the payload small."""
+    result = selectors.version_range(current_user(request), version_id, date_from, date_to)
+    version = result.version
+    days = []
+    for d in result.summary.days:
+        reason: Literal["outside_version", "no_history"] | None = None
+        if not d.has_forecast:
+            inside = version.date_from <= d.day <= version.date_to
+            reason = "no_history" if inside else "outside_version"
+        days.append(
+            RangeDayOut(
+                day=d.day,
+                hasForecast=d.has_forecast,
+                reason=reason,
+                calls=d.calls if d.has_forecast else None,
+                ahtS=d.aht_s,
+                peakRequired=d.peak_required,
+                hoursRequired=d.hours_required,
+                complete=d.complete,
+                busiestSlot=d.busiest_slot,
+                requiredBySlot=list(d.required_by_slot) if detail and d.has_forecast else None,
+            )
+        )
+    return RangeOut(
+        versionId=version.id,
+        queue=version.queue.name,
+        status=version.status,
+        label=version.label,
+        dateFrom=date_from,
+        dateTo=date_to,
+        versionDateFrom=version.date_from,
+        versionDateTo=version.date_to,
+        days=days,
+        busiestDay=result.summary.busiest_day,
+        quietestDay=result.summary.quietest_day,
+        events=[
+            RangeEventOut(
+                name=e.name, dateFrom=e.date_from, dateTo=e.date_to, upliftPct=float(e.uplift_pct)
+            )
+            for e in result.events
+        ],
+    )
 
 
 @router.get(

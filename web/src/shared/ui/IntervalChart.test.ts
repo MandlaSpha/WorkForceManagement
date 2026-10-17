@@ -59,6 +59,37 @@ describe('IntervalChart', () => {
     expect(table.getByRole('rowheader', { name: '10:00' }).parentElement).toHaveTextContent('6')
   })
 
+  it('draws no bar, and a dash in the table, where there is no value', () => {
+    // Failure caught: a day with no forecast drawn as a bar of zero height, which reads as
+    // "no calls expected".
+    const { container } = render(IntervalChart, {
+      props: props([
+        { label: 'Mon', bars: 5, line: 2 },
+        { label: 'Tue', bars: null, line: null },
+      ]),
+    })
+    expect(container.querySelectorAll('[data-testid="chart-bar"]')).toHaveLength(1)
+    const row = within(screen.getByRole('table')).getByRole('rowheader', { name: 'Tue' })
+    expect(row.parentElement).toHaveTextContent('—')
+  })
+
+  it('labels every point on request and names the first column', () => {
+    const { container } = render(IntervalChart, {
+      props: {
+        ...props([
+          { label: 'Mon', bars: 1, line: 1 },
+          { label: 'Tue', bars: 1, line: 1 },
+          { label: 'Wed', bars: 1, line: 1 },
+        ]),
+        labelEvery: 1,
+        categoryLabel: 'Day',
+      },
+    })
+    const axis = [...container.querySelectorAll('svg text')].map((t) => t.textContent?.trim())
+    expect(axis).toEqual(expect.arrayContaining(['Mon', 'Tue', 'Wed']))
+    expect(screen.getByRole('columnheader', { name: 'Day' })).toBeInTheDocument()
+  })
+
   it('copes with an empty day', () => {
     const { container } = render(IntervalChart, { props: props([]) })
     expect(container.querySelectorAll('[data-testid="chart-bar"]')).toHaveLength(0)
