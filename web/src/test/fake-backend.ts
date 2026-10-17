@@ -15,6 +15,7 @@ import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
 import type { Peaks } from '@/entities/peaks'
+import type { ReportSchedule } from '@/entities/report-schedule'
 import type { Scorecard } from '@/entities/scorecard'
 import type { Shrinkage } from '@/entities/shrinkage'
 import type { AdminUser } from '@/entities/user-admin'
@@ -177,6 +178,9 @@ export const backend = {
   /** The peaks report, and the queue/range of each request. */
   peaks: null as Peaks | null,
   peaksQueries: [] as string[],
+  /** Report schedules, and the email domains reports may go to. */
+  schedules: [] as ReportSchedule[],
+  reportDomains: [] as string[],
   /** The analytics scorecard. */
   scorecard: null as Scorecard | null,
   overtimeQueries: [] as string[],
@@ -271,6 +275,8 @@ export const backend = {
     this.shrinkageQueries = []
     this.peaks = null
     this.peaksQueries = []
+    this.schedules = []
+    this.reportDomains = []
     this.scorecard = null
     this.overtimeQueries = []
     this.standby = []
@@ -726,6 +732,63 @@ export const handlers = [
     const response = await schedulingWrite(info, 'PUT')
     if (!response.ok) return response
     return HttpResponse.json({ saved: sent, warnings: backend.rulesWarnings })
+  }),
+
+  http.get('*/api/v1/reports/schedules', () => HttpResponse.json(backend.schedules)),
+
+  http.post('*/api/v1/reports/schedules', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, unknown>
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created = {
+      id: 900 + backend.schedules.length,
+      report: String(sent.report),
+      queueId: (sent.queueId as number | null) ?? null,
+      queue: sent.queueId ? 'QueueA' : '',
+      recipients: sent.recipients as string[],
+      frequency: String(sent.frequency),
+      hour: Number(sent.hour),
+      weekday: Number(sent.weekday),
+      dayOfMonth: Number(sent.dayOfMonth),
+      paused: false,
+      lastSentAt: null,
+      lastOutcome: '',
+      mine: true,
+      owner: '',
+    } as ReportSchedule
+    backend.schedules = [...backend.schedules, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.patch('*/api/v1/reports/schedules/:id', async (info) => {
+    const sent = (await info.request.clone().json()) as { paused?: boolean }
+    const response = await schedulingWrite(info, 'PATCH')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.schedules = backend.schedules.map((s) =>
+      s.id === id ? { ...s, paused: sent.paused ?? s.paused } : s,
+    )
+    return HttpResponse.json(backend.schedules.find((s) => s.id === id))
+  }),
+
+  http.delete('*/api/v1/reports/schedules/:id', async (info) => {
+    const response = await schedulingWrite(info, 'DELETE', 204)
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.schedules = backend.schedules.filter((s) => s.id !== id)
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.get('*/api/v1/reports/settings', () =>
+    HttpResponse.json({ allowedDomains: backend.reportDomains }),
+  ),
+
+  http.put('*/api/v1/reports/settings', async (info) => {
+    const sent = (await info.request.clone().json()) as { allowedDomains: string[] }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    backend.reportDomains = sent.allowedDomains
+    return HttpResponse.json(sent)
   }),
 
   http.get('*/api/v1/insight/scorecard', () => HttpResponse.json(backend.scorecard)),

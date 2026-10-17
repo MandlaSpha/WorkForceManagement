@@ -34,6 +34,7 @@ const BUILT_SCREENS: Partial<Record<NavKey, RouteRecordRaw['component']>> = {
   contracts: () => import('@/pages/contracts'),
   peaks: () => import('@/pages/insight/peaks'),
   analytics: () => import('@/pages/insight/analytics'),
+  reports: () => import('@/pages/insight/reports'),
   overtime: () => import('@/pages/overtime'),
   shrinkage: () => import('@/pages/shrinkage'),
   'my-schedule': () => import('@/pages/my/schedule'),

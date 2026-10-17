@@ -18,6 +18,7 @@ from wfm.jobs.api import router as jobs_router
 from wfm.notifications.api import router as notifications_router
 from wfm.overtime.api import router as overtime_router
 from wfm.people.api import router as people_router
+from wfm.reports.api import router as reports_router
 from wfm.scheduling.api import router as scheduling_router
 from wfm.scheduling.autoschedule_api import router as autoschedule_router
 from wfm.scheduling.compliance_api import router as compliance_router
@@ -53,6 +54,7 @@ api.add_router("/contracts", contracts_router)
 api.add_router("/people", people_router)
 api.add_router("/jobs", jobs_router)
 api.add_router("/insight", insight_router)
+api.add_router("/reports", reports_router)
 api.add_router("/notifications", notifications_router)
 api.add_router("/overtime", overtime_router)
 api.add_router("/service-desk", servicedesk_router)

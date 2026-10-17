@@ -363,6 +363,17 @@ Requirements RPT-02 and RPT-05. `GET /api/v1/insight/scorecard?date_from&date_to
 - **Cost per contact** is `needs_data`: it needs payroll cost, which is kept out of this view.
 - A daily trend (calls offered and service level) feeds the chart. Not built: per-contract views here, scheduled packs (RPT-04, RPT-10), payroll CSV (RPT-08).
 
+### 4.12 Emailed report schedules (Phase 5, built)
+Requirements RPT-04 and RPT-10. App `wfm.reports`, feature `insight`; Insight > Reports. A person makes their own schedule: which report (the analytics scorecard, or peaks and troughs for a queue), up to ten recipient addresses, daily, weekly (a weekday) or monthly (day 1 to 28) at an hour of South African time; they can pause, resume, change or delete it.
+
+- **Content is the owner's.** The workbook (xlsx: figures and days, or days and half-hours) is built as the schedule's owner, through the same selectors and `for_user` scoping as the screen, so an executive's pack never holds planner-only figures. A role that cannot open a report cannot schedule it (a lead has peaks, not the scorecard); a queue the owner cannot see is a 404.
+- **Recipients are held to the admin's domains.** Nothing can be scheduled until the admin has allowed a domain (`PUT /reports/settings`, plain domains only: no address, no wildcard, no sub-domain by implication). Addresses are validated, lower-cased, de-duplicated and checked when the schedule is made **and again when it sends** (a domain removed since stops receiving it). One message per recipient, so nobody sees who else gets it. The body names the period and carries no figures.
+- **When it sends** is `wfm_engine.schedule` (pure): the latest slot not in the future, due only if after both the last send and the schedule's creation, so a new schedule does not mail the slot that has just passed, a missed run is sent once, and a slot is sent once however often the check runs (every 15 minutes, a row lock that skips if another worker has it).
+- **It stops** if the owner is deactivated (paused, outcome "stopped", audited). A failure (no allowed recipient, or the mail server) marks that schedule failed and audits it with a generic reason; it never stops the others.
+- **Audit:** `report.schedule_created/changed/deleted`, `report.sent`, `report.failed`, `report.stopped`, `report.domains_changed`. They hold counts and the domain list, never an address or a figure.
+- Only the owner changes what a schedule sends or to whom; the admin can list all schedules (told whose), pause and delete, but not redirect or read one.
+- Outgoing mail uses `WFM_EMAIL_*` settings (console in development; the SMTP password is named by environment variable). Not built: PDF packs, an investment-board pack (RPT-09), a send-now button.
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 

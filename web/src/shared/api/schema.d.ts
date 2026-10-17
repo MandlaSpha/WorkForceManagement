@@ -1126,6 +1126,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report schedules */
+        get: operations["wfm_reports_api_list_schedules"];
+        put?: never;
+        /** Schedule a report */
+        post: operations["wfm_reports_api_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/schedules/{schedule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete one */
+        delete: operations["wfm_reports_api_remove"];
+        options?: never;
+        head?: never;
+        /** Change or pause a schedule */
+        patch: operations["wfm_reports_api_change"];
+        trace?: never;
+    };
+    "/api/v1/reports/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Email domains reports may use */
+        get: operations["wfm_reports_api_get_settings"];
+        /** Set the allowed email domains */
+        put: operations["wfm_reports_api_put_settings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/agent-logins/unmapped": {
         parameters: {
             query?: never;
@@ -3487,6 +3541,75 @@ export interface components {
              */
             versionId: string;
         };
+        /** ScheduleIn */
+        ScheduleIn: {
+            /**
+             * Dayofmonth
+             * @default 1
+             */
+            dayOfMonth: number;
+            /** Frequency */
+            frequency: string;
+            /** Hour */
+            hour: number;
+            /** Queueid */
+            queueId?: number | null;
+            /** Recipients */
+            recipients: string[];
+            /** Report */
+            report: string;
+            /**
+             * Weekday
+             * @default 0
+             */
+            weekday: number;
+        };
+        /** ScheduleOut */
+        ScheduleOut: {
+            /** Dayofmonth */
+            dayOfMonth: number;
+            /** Frequency */
+            frequency: string;
+            /** Hour */
+            hour: number;
+            /** Id */
+            id: number;
+            /** Lastoutcome */
+            lastOutcome: string;
+            /** Lastsentat */
+            lastSentAt: string | null;
+            /** Mine */
+            mine: boolean;
+            /** Owner */
+            owner: string;
+            /** Paused */
+            paused: boolean;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number | null;
+            /** Recipients */
+            recipients: string[];
+            /** Report */
+            report: string;
+            /** Weekday */
+            weekday: number;
+        };
+        /** SchedulePatch */
+        SchedulePatch: {
+            /** Dayofmonth */
+            dayOfMonth?: number | null;
+            /** Frequency */
+            frequency?: string | null;
+            /** Hour */
+            hour?: number | null;
+            /** Paused */
+            paused?: boolean | null;
+            /** Recipients */
+            recipients?: string[] | null;
+            /** Weekday */
+            weekday?: number | null;
+        };
         /** ScoreOut */
         ScoreOut: {
             /** Biaspct */
@@ -3526,6 +3649,16 @@ export interface components {
             days: components["schemas"]["ScorecardDayOut"][];
             /** Items */
             items: components["schemas"]["ItemOut"][];
+        };
+        /** SettingsIn */
+        SettingsIn: {
+            /** Alloweddomains */
+            allowedDomains: string[];
+        };
+        /** SettingsOut */
+        SettingsOut: {
+            /** Alloweddomains */
+            allowedDomains: string[];
         };
         /** ShiftIn */
         ShiftIn: {
@@ -5685,6 +5818,140 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SwapOut"];
+                };
+            };
+        };
+    };
+    wfm_reports_api_list_schedules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOut"][];
+                };
+            };
+        };
+    };
+    wfm_reports_api_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOut"];
+                };
+            };
+        };
+    };
+    wfm_reports_api_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    wfm_reports_api_change: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchedulePatch"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOut"];
+                };
+            };
+        };
+    };
+    wfm_reports_api_get_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+        };
+    };
+    wfm_reports_api_put_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
                 };
             };
         };

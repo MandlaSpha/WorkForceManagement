@@ -4529,6 +4529,229 @@
         "title": "ScenarioOut",
         "type": "object"
       },
+      "ScheduleIn": {
+        "properties": {
+          "dayOfMonth": {
+            "default": 1,
+            "title": "Dayofmonth",
+            "type": "integer"
+          },
+          "frequency": {
+            "title": "Frequency",
+            "type": "string"
+          },
+          "hour": {
+            "title": "Hour",
+            "type": "integer"
+          },
+          "queueId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Queueid"
+          },
+          "recipients": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recipients",
+            "type": "array"
+          },
+          "report": {
+            "title": "Report",
+            "type": "string"
+          },
+          "weekday": {
+            "default": 0,
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "report",
+          "recipients",
+          "frequency",
+          "hour"
+        ],
+        "title": "ScheduleIn",
+        "type": "object"
+      },
+      "ScheduleOut": {
+        "properties": {
+          "dayOfMonth": {
+            "title": "Dayofmonth",
+            "type": "integer"
+          },
+          "frequency": {
+            "title": "Frequency",
+            "type": "string"
+          },
+          "hour": {
+            "title": "Hour",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "lastOutcome": {
+            "title": "Lastoutcome",
+            "type": "string"
+          },
+          "lastSentAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastsentat"
+          },
+          "mine": {
+            "title": "Mine",
+            "type": "boolean"
+          },
+          "owner": {
+            "title": "Owner",
+            "type": "string"
+          },
+          "paused": {
+            "title": "Paused",
+            "type": "boolean"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Queueid"
+          },
+          "recipients": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recipients",
+            "type": "array"
+          },
+          "report": {
+            "title": "Report",
+            "type": "string"
+          },
+          "weekday": {
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "report",
+          "queueId",
+          "queue",
+          "recipients",
+          "frequency",
+          "hour",
+          "weekday",
+          "dayOfMonth",
+          "paused",
+          "lastSentAt",
+          "lastOutcome",
+          "mine",
+          "owner"
+        ],
+        "title": "ScheduleOut",
+        "type": "object"
+      },
+      "SchedulePatch": {
+        "properties": {
+          "dayOfMonth": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dayofmonth"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency"
+          },
+          "hour": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hour"
+          },
+          "paused": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paused"
+          },
+          "recipients": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipients"
+          },
+          "weekday": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weekday"
+          }
+        },
+        "title": "SchedulePatch",
+        "type": "object"
+      },
       "ScoreOut": {
         "properties": {
           "biasPct": {
@@ -4643,6 +4866,38 @@
           "days"
         ],
         "title": "ScorecardOut",
+        "type": "object"
+      },
+      "SettingsIn": {
+        "properties": {
+          "allowedDomains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Alloweddomains",
+            "type": "array"
+          }
+        },
+        "required": [
+          "allowedDomains"
+        ],
+        "title": "SettingsIn",
+        "type": "object"
+      },
+      "SettingsOut": {
+        "properties": {
+          "allowedDomains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Alloweddomains",
+            "type": "array"
+          }
+        },
+        "required": [
+          "allowedDomains"
+        ],
+        "title": "SettingsOut",
         "type": "object"
       },
       "ShiftIn": {
@@ -8783,6 +9038,209 @@
         "tags": [
           "people",
           "people"
+        ]
+      }
+    },
+    "/api/v1/reports/schedules": {
+      "get": {
+        "operationId": "wfm_reports_api_list_schedules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Report schedules",
+        "tags": [
+          "reports"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_reports_api_create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Schedule a report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/reports/schedules/{schedule_id}": {
+      "delete": {
+        "operationId": "wfm_reports_api_remove",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "title": "Schedule Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Delete one",
+        "tags": [
+          "reports"
+        ]
+      },
+      "patch": {
+        "operationId": "wfm_reports_api_change",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "schedule_id",
+            "required": true,
+            "schema": {
+              "title": "Schedule Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SchedulePatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Change or pause a schedule",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/reports/settings": {
+      "get": {
+        "operationId": "wfm_reports_api_get_settings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Email domains reports may use",
+        "tags": [
+          "reports"
+        ]
+      },
+      "put": {
+        "operationId": "wfm_reports_api_put_settings",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set the allowed email domains",
+        "tags": [
+          "reports"
         ]
       }
     },

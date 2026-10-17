@@ -271,8 +271,8 @@ export const NAV_ITEMS = [
     group: 'Insight',
     icon: 'download',
     feature: 'insight',
-    phase: 5,
-    subtitle: 'Daily, weekly and monthly packs, peaks and troughs, payroll export.',
+    phase: 0,
+    subtitle: 'Report packs emailed on a schedule you choose, to people on allowed domains.',
   },
 
   {

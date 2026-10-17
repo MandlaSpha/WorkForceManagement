@@ -2,20 +2,18 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, time, timedelta
+from datetime import date
 from decimal import Decimal
-from zoneinfo import ZoneInfo
 
-from django.conf import settings
 from django.http import HttpRequest
 from ninja import Router, Schema
 from wfm_engine import peaks
 
-from wfm.core.errors import ApiError, not_found
+from wfm.core.errors import ApiError
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
-from .models import IntervalActual, Queue
+from . import peaks_selectors as selectors
 from .policy import VIEW_ROLES
 from .selectors import MAX_RANGE_DAYS
 
@@ -79,25 +77,13 @@ def peaks_and_troughs(
             "Range too long",
             f"Ask for at most {MAX_RANGE_DAYS} days at a time.",
         )
-    user = current_user(request)
-    queue = Queue.objects.for_user(user).filter(pk=queue_id).first()
-    if queue is None:
-        raise not_found("No such queue.")
-    zone = ZoneInfo(settings.TIME_ZONE)
-    start = datetime.combine(date_from, time.min, tzinfo=zone)
-    end = datetime.combine(date_to + timedelta(days=1), time.min, tzinfo=zone)
-    rows = [
-        (s.astimezone(zone).replace(tzinfo=None), offered)
-        for s, offered in IntervalActual.objects.for_user(user)
-        .filter(queue=queue, interval_start__gte=start, interval_start__lt=end)
-        .values_list("interval_start", "offered")
-    ]
-    report = peaks.analyse(rows)
+    found = selectors.peaks_report(current_user(request), queue_id, date_from, date_to)
+    report = found.report
     return PeaksOut(
-        queueId=queue.pk,
+        queueId=queue_id,
         dateFrom=date_from,
         dateTo=date_to,
-        daysMeasured=len({s.date() for s, _ in rows}),
+        daysMeasured=found.days_measured,
         busiestDays=_days(report.busiest_days),
         quietestDays=_days(report.quietest_days),
         busiestIntervals=[

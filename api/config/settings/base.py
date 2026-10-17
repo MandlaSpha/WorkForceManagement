@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "wfm.notifications",
     "wfm.jobs",
     "wfm.insight",
+    "wfm.reports",
     "wfm.overtime",
 ]
 
@@ -133,6 +134,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "wfm.audit.verify_chain",
         "schedule": crontab(hour=3, minute=0),
     },
+    # Emailed report schedules that have come due (RPT-10).
+    "reports-send-due": {
+        "task": "wfm.reports.send_due",
+        "schedule": crontab(minute="*/15"),
+    },
     # Finished background jobs are kept a week.
     "jobs-delete-old": {
         "task": "wfm.jobs.delete_old",
@@ -165,3 +171,15 @@ LOGGING = {
     },
     "root": {"handlers": ["console"], "level": env("LOG_LEVEL", "INFO")},
 }
+
+# Outgoing email (scheduled reports). Development writes messages to the console; a real SMTP
+# server is set with these variables, and its password is named by variable, never written here.
+EMAIL_BACKEND = os.environ.get(
+    "WFM_EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+)
+EMAIL_HOST = os.environ.get("WFM_EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("WFM_EMAIL_PORT", "25"))
+EMAIL_HOST_USER = os.environ.get("WFM_EMAIL_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("WFM_EMAIL_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("WFM_EMAIL_TLS", "") == "1"
+DEFAULT_FROM_EMAIL = os.environ.get("WFM_EMAIL_FROM", "wfm@localhost")

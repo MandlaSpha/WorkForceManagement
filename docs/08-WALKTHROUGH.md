@@ -143,6 +143,8 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **People > Overtime: worked time, standby and the month.** As `planner`, on an approved request whose day has passed, type the minutes really worked (try more than was approved: the extra is shown and not paid). On the **Standby** tab put someone on standby and, once the day has come, record a call-out. The **Month** tab adds overtime, standby allowances and call-outs and shows what is left of the budget; as `admin` set the standby allowance and the month's budget there. As `lead` you see the standby rota and the worked minutes, never a rand figure.
 
+**Insight > Analytics and Reports.** Analytics shows service, workload and planning figures for a range, each labelled Measured, Modelled or Needs data. Reports lets you schedule an emailed pack (scorecard, or peaks for a queue) daily, weekly or monthly. As `admin` first allow an email domain under Reports; recipients must be on it. In development the emails are written to the API console.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD
