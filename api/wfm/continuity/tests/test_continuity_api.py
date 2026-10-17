@@ -311,3 +311,22 @@ def test_audit_never_holds_a_name(world: World) -> None:
     )
     assert "Person B8" not in dumped
     assert Employee.objects.filter(emp_no="B8").exists()
+
+
+def test_removing_a_member_is_audited_against_that_person(world: World) -> None:
+    # Failure caught: the removal audit event loses the person it is about (subject), so the
+    # trail cannot answer "whose cover was taken off the team"
+    spare = person("B9", work_mode="remote")
+    team = f"{TEAMS}/{world.team.pk}"
+    assert (
+        send(Role.PLANNER, "post", f"{team}/members", {"employeeId": spare.pk}).status_code == 201
+    )
+    assert send(Role.PLANNER, "delete", f"{team}/members/{spare.pk}").status_code == 200
+    removed = AuditEvent.objects.get(action=Action.BACKUP_MEMBER_REMOVED)
+    assert removed.subject_employee_id == spare.pk
+
+
+def test_the_default_outbreak_share_is_thirty_percent(world: World) -> None:
+    # Failure caught: the default outbreak share changed, so a mobilise query without lost_pct
+    # plans for the wrong loss
+    assert mob(Role.PLANNER, world).json()["lostPct"] == 30

@@ -37,6 +37,7 @@ from wfm.scheduling.tests.helpers import (
     standard_shifts,
 )
 from wfm.servicedesk.models import ServicePool, WorkItem
+from wfm.utilisation import selectors as util_selectors
 
 pytestmark = pytest.mark.django_db
 
@@ -356,3 +357,33 @@ def test_balance_day_is_a_date(world: World) -> None:
     assert isinstance(
         date.fromisoformat(get(Role.ADMIN, BALANCE, day=str(MON)).json()["day"]), date
     )
+
+
+# --- Service-level checks: the API guard is not the only one ------------------------------------
+
+
+def test_the_terms_audit_names_the_fields_and_records_the_revenue_as_on_file(world: World) -> None:
+    # Failure caught: the terms audit event written with no field changes, so the trail cannot
+    # say which terms moved
+    assert put_terms(Role.ADMIN, world.contract, target=60, revenue=20000).status_code == 200
+    event = AuditEvent.objects.get(action=Action.UTILISATION_TERMS_CHANGED)
+    changes = {c.field: (c.old_value, c.new_value) for c in event.changes.all()}
+    assert set(changes) == {"utilisation_target_pct", "monthly_revenue"}
+    assert changes["monthly_revenue"] == ("none", "on file")
+
+
+def test_a_target_of_exactly_100_is_accepted(world: World) -> None:
+    # Failure caught: the target's upper bound made exclusive, so a 100% target is refused
+    assert put_terms(Role.ADMIN, world.contract, target=100).status_code == 200
+
+
+@pytest.mark.parametrize("role", [Role.LEAD, Role.EXECUTIVE, Role.CUSTOMER_OPS])
+def test_the_cost_service_itself_refuses_roles_that_do_not_see_pay(
+    world: World, role: Role
+) -> None:
+    # Failure caught: the service's own pay check widened to the group roles. The API guard
+    # would still stop the request, so only a direct call to the service shows the gap.
+    login(role)
+    user = User.objects.get(username=f"u-{role.value}")
+    with pytest.raises(PermissionError):
+        util_selectors.costs(user, date(2026, 5, 1))

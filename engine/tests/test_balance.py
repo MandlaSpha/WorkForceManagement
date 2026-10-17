@@ -30,3 +30,16 @@ def test_balanced_queues_give_no_suggestions_and_nobody_twice():
     loads = [load(1, 200, 100), load(2, 200, 100), load(3, 10, 200)]
     movers = [b.Mover(5, 3, frozenset({1, 2}), 40)]
     assert len(b.suggest_moves(loads, movers)) == 1
+
+
+def test_exactly_110_percent_is_balanced_not_stretched():
+    # Failure caught: OVER_RATIO compared with >= so a queue at exactly 110% reads as stretched
+    assert b.classify(load(1, 110, 100)) == b.BALANCED
+
+
+def test_a_move_that_leaves_the_source_exactly_covered_is_allowed():
+    # Failure caught: the source-short guard flipped to >= 0, refusing a move that leaves the
+    # source exactly at its requirement (source spare 30, mover puts 30 half-hours on the phones)
+    loads = [load(1, 120, 100), load(2, 70, 100)]
+    movers = [b.Mover(3, 2, frozenset({1}), 30)]
+    assert b.suggest_moves(loads, movers) == [b.Suggestion(3, 2, 1, 30)]

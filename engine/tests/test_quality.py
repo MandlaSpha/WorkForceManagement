@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -80,3 +80,18 @@ def test_nothing_scored_claims_nothing():
         None,
         None,
     )
+
+
+def test_a_perfect_score_of_100_is_accepted():
+    # Failure caught: the score upper bound made exclusive, so a perfect 100 is refused
+    row = q.read_row(fields(score="100"), TODAY)
+    assert isinstance(row, q.Evaluation)
+    assert row.score_pct == 100.0
+
+
+def test_an_evaluation_exactly_at_the_age_limit_is_kept():
+    # Failure caught: MAX_AGE_DAYS boundary flipped, so the oldest allowed day is refused
+    day = TODAY - timedelta(days=q.MAX_AGE_DAYS)
+    row = q.read_row(fields(date=day.isoformat()), TODAY)
+    assert isinstance(row, q.Evaluation)
+    assert row.evaluated_on == day
