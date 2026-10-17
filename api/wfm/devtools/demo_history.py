@@ -38,9 +38,9 @@ class QueueShape:
 
 
 SHAPES = (
-    QueueShape("Demo Support", 650, 360.0, tuple(range(14, 38)), (0, 1, 2, 3, 4, 5, 6)),
+    QueueShape("Service Desk", 650, 360.0, tuple(range(14, 38)), (0, 1, 2, 3, 4, 5, 6)),
     QueueShape(
-        "Demo Billing",
+        "Billing Support",
         380,
         480.0,
         tuple(range(16, 34)),
@@ -49,7 +49,7 @@ SHAPES = (
         peaks=((21.0, 2.5, 0.6), (28.0, 2.5, 0.4)),
     ),
     QueueShape(
-        "Demo Night Desk",
+        "Night Desk",
         120,
         420.0,
         tuple(range(36, 48)) + tuple(range(0, 12)),

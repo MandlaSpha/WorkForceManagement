@@ -48,17 +48,26 @@ const showPlanning = computed(
 </script>
 
 <template>
-  <PageHeader eyebrow="Overview" title="Dashboard" :subtitle="dashboard?.subtitle">
-    <template v-if="months.length > 0" #actions>
-      <div class="w-44">
-        <SelectField v-model="selected" label="Month" :options="options" />
-      </div>
-    </template>
-  </PageHeader>
+  <PageHeader eyebrow="Overview" title="Dashboard" :subtitle="dashboard?.subtitle" />
 
   <div v-if="showPlanning" class="mb-8"><PlanningOverview /></div>
 
   <section class="space-y-4" aria-live="polite">
+    <div v-if="months.length > 0" class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h2 class="text-base font-semibold text-ink" data-testid="service-title">
+          Service figures{{ month ? ` · ${formatMonth(month)}` : '' }}
+        </h2>
+        <p class="text-xs text-ink-muted">
+          Calls that were actually handled in the month you choose here. This is not the planning
+          week above.
+        </p>
+      </div>
+      <div class="w-44">
+        <SelectField v-model="selected" label="Month" :options="options" />
+      </div>
+    </div>
+
     <NoticeBox v-if="!hasCallData">
       Call data is not part of your plan, so there are no service figures to show here.
     </NoticeBox>

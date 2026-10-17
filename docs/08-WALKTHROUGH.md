@@ -97,7 +97,7 @@ the Roster for that week and see the shifts gone; sign in as agent and cancel.
 Privacy first: an agent never sees another agent's name or schedule. A swap is a *request on a board*.
 
 1. **Post** (`agent`): *Shift swaps > Post a swap request*. Pick one of your coming shifts and post it. Nobody is named.
-2. **Take** (`lead` is the demo colleague): *Open requests* shows "A colleague on Demo Support wants to swap away D1, Mon 25 May 09:00-17:30", with no name, and only requests where at least one of your own shifts would work (rest, hours, leave, availability, one shift a day). *Take it...* lists exactly those shifts of yours; pick the one you offer in return.
+2. **Take** (`lead` is the demo colleague): *Open requests* shows "A colleague on Service Desk wants to swap away D1, Mon 25 May 09:00-17:30", with no name, and only requests where at least one of your own shifts would work (rest, hours, leave, availability, one shift a day). *Take it...* lists exactly those shifts of yours; pick the one you offer in return.
 3. **Approve** (`planner`, `admin` or the lead of the team): *Approvals*. Approving exchanges the two shifts on the roster (check the Roster page). Nobody approves a swap they are part of, so the demo lead's swap goes to a planner.
 
 The two people see each other's names once it is matched. With the demo data there are two open requests the demo agent can take, one matched and waiting for approval, and one approved.
@@ -206,9 +206,9 @@ invented contact centre (no real data anywhere). In order:
 
 | Data | Real-life situation it shows |
 |---|---|
-| **Demo Support**: 12 weeks of calls, 40 staff | The everyday queue. Morning and afternoon peaks, a busy Monday and a quiet Friday, thin weekends. |
-| **Demo Billing**: 16 staff, weekdays 08:00-17:00 | Month-end pressure. It is **short all week**: the case for seasonal help (see Capacity). |
-| **Demo Night Desk**: 8 staff, 18:00-06:00 | Overnight shifts that run past midnight, with the rest rules between them. |
+| **Service Desk**: 12 weeks of calls, 40 staff | The everyday queue. Morning and afternoon peaks, a busy Monday and a quiet Friday, thin weekends. |
+| **Billing Support**: 16 staff, weekdays 08:00-17:00 | Month-end pressure. It is **short all week**: the case for seasonal help (see Capacity). |
+| **Night Desk**: 8 staff, 18:00-06:00 | Overnight shifts that run past midnight, with the rest rules between them. |
 | Public holidays in the history | Volume dips on holidays; the forecast does not treat them as normal days. |
 | One **outage day** (about double the calls, many dropped) | A bad day inside the history. Look at Accuracy: the forecast cannot predict it. |
 | One day with **no rows** (the recorder was down) | "No data" is not the same as "no calls". The forecast skips it rather than learning zero. |

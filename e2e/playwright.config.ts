@@ -8,6 +8,7 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   testDir: './tests',
   globalSetup: './global-setup.ts',
+  globalTeardown: './global-teardown.ts',
   outputDir: './test-results',
   // Spec files run side by side; the tests inside one file stay in order. Each spec works on its
   // own queue and on dates no other spec uses, so they do not meet. Set E2E_WORKERS=1 to run

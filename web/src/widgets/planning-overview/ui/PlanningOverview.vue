@@ -54,6 +54,9 @@ function describe(item: Attention): string {
     <h2 id="planning-title" class="text-base font-semibold text-ink">
       Planning, week of {{ formatDayLabel(context.weekStart) }}
     </h2>
+    <p class="-mt-3 text-xs text-ink-muted" data-testid="planning-hint">
+      Looking ahead at one week, Monday to Sunday. Change the week with the arrows in the top bar.
+    </p>
 
     <p v-if="overview.isPending.value" class="text-sm text-ink-muted">Loading…</p>
     <NoticeBox v-else-if="overview.isError.value" tone="danger">

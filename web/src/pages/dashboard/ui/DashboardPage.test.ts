@@ -48,6 +48,23 @@ describe('the dashboard shows measured service figures', () => {
     expect(screen.getByLabelText('Month')).toHaveValue('2026-07')
   })
 
+  it('says which part is the planning week and which is the chosen month', async () => {
+    // Failure caught: the Month picker in the page header reading as if it also moved the planning
+    // week, so a planner changes the month and wonders why the week did not follow.
+    withData()
+    asRole('planner')
+    const user = userEvent.setup()
+    await renderApp('/')
+
+    expect(await screen.findByTestId('service-title')).toHaveTextContent(
+      /Service figures · July 2026/,
+    )
+    expect(screen.getByTestId('planning-hint')).toHaveTextContent('top bar')
+    await user.selectOptions(screen.getByLabelText('Month'), '2026-05')
+    expect(await screen.findByText(/Service figures · May 2026/)).toBeVisible()
+    expect(screen.getByText(/^Planning, week of/)).toBeVisible()
+  })
+
   it('shows May exactly as the deck prints it: 8.28%, 81.1%, 18.5 s, 3:35', async () => {
     withData()
     asRole('planner')

@@ -60,7 +60,7 @@ def test_a_second_run_is_refused_rather_than_doubling_everything(seeded: None) -
 
 def test_history_has_the_real_life_shapes_a_planner_expects(seeded: None) -> None:
     today = timezone.localdate()
-    support = Queue.objects.get(name="Demo Support")
+    support = Queue.objects.get(name="Service Desk")
     assert Queue.objects.count() == 3
     # A recorder outage is a day with NO rows (not observed), unlike a quiet day with few calls.
     gap = recorder_gap_day(today)
@@ -83,7 +83,7 @@ def test_forecasts_are_live_and_rosters_are_in_the_planned_states(seeded: None) 
         (week.week_start, week.queue.name): week.status for week in RosterWeek.objects.all()
     }
     week0 = planning_monday(timezone.localdate())
-    for name in ("Demo Support", "Demo Billing", "Demo Night Desk"):
+    for name in ("Service Desk", "Billing Support", "Night Desk"):
         assert statuses[(week0, name)] == RosterStatus.PUBLISHED
         assert statuses[(week0 + timedelta(days=7), name)] == RosterStatus.PUBLISHED
         assert statuses[(week0 + timedelta(days=14), name)] == RosterStatus.DRAFT
@@ -179,7 +179,7 @@ def test_contracts_hold_the_queues_to_their_promises_and_billing_is_the_one_at_r
     rows = {r.contract.name: r for r in contract_selectors.contract_rows(planner, week)}
     assert set(rows) == {"Member support", "Claims line"}
     # The promise is written onto the queues the contract holds.
-    billing = Queue.objects.get(name="Demo Billing")
+    billing = Queue.objects.get(name="Billing Support")
     assert (float(billing.sl_target_pct), billing.sl_threshold_s) == (90.0, 30)
     # Billing is short of people all week by design, so its contract is at risk.
     assert rows["Claims line"].at_risk

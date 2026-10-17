@@ -66,12 +66,12 @@ SHIFTS = (  # code, start, end, paid minutes (a break is unpaid)
     ("N2", time(21, 0), time(6, 0), 480),
 )
 SHIFTS_OF_QUEUE = {
-    "Demo Support": ("D1", "D2", "D3"),
-    "Demo Billing": ("D1", "D2"),
-    "Demo Night Desk": ("N1", "N2"),
+    "Service Desk": ("D1", "D2", "D3"),
+    "Billing Support": ("D1", "D2"),
+    "Night Desk": ("N1", "N2"),
 }
 # Staff per queue: (full-time, part-time, seasonal). Billing's last four also work Support.
-HEADCOUNT = {"Demo Support": (30, 4, 6), "Demo Billing": (12, 2, 0), "Demo Night Desk": (8, 0, 0)}
+HEADCOUNT = {"Service Desk": (30, 4, 6), "Billing Support": (12, 2, 0), "Night Desk": (8, 0, 0)}
 FORECAST_DAYS = 28
 FIRST = [
     "Thandi",
@@ -168,7 +168,7 @@ class Command(BaseCommand):
         self.stdout.write("Forecasts published.")
         self._rosters(cast, queues, staff, today)
         self.stdout.write("Rosters built.")
-        floor = {p.emp_no: p for p in staff["Demo Support"] if p.user_id is not None}
+        floor = {p.emp_no: p for p in staff["Service Desk"] if p.user_id is not None}
         order = [
             "DEMO-AGENT6",
             "DEMO-AGENT3",
@@ -178,13 +178,13 @@ class Command(BaseCommand):
             "DEMO-AGENT4",
         ]
         first = [floor[e] for e in order if e in floor]
-        rest = [p for p in staff["Demo Support"] if p not in first]
+        rest = [p for p in staff["Service Desk"] if p not in first]
         # Each lead has waiting requests from their own team; the rest come from the bulk staff.
         self._leave(cast, [*first, *rest], today)
         self.stdout.write("Leave in every state.")
         self._contracts(cast, queues)
         self.stdout.write("Customers and contracts.")
-        self._swaps(cast, queues["Demo Support"], today)
+        self._swaps(cast, queues["Service Desk"], today)
         self.stdout.write("Shift swaps in every state.")
         self._service_desk(today, zone)
         audit.record(
@@ -212,7 +212,7 @@ class Command(BaseCommand):
     def _queues_and_history(self, today: date, zone: ZoneInfo) -> dict[str, Queue]:
         queues: dict[str, Queue] = {}
         for shape in SHAPES:
-            support = shape.name == "Demo Support"
+            support = shape.name == "Service Desk"
             queues[shape.name] = Queue.objects.create(
                 name=shape.name,
                 confirmed=True,
@@ -251,7 +251,9 @@ class Command(BaseCommand):
         )
         for queue_name, (full, part, seasonal) in HEADCOUNT.items():
             queue = queues[queue_name]
-            extra = SkillInput(queues["Demo Support"].pk) if queue_name == "Demo Billing" else None
+            extra = (
+                SkillInput(queues["Service Desk"].pk) if queue_name == "Billing Support" else None
+            )
             made: list[Employee] = []
             for index in range(full + part + seasonal):
                 number += 1
@@ -279,8 +281,8 @@ class Command(BaseCommand):
                 for weekday in (3, 4):
                     self._declare(cast, part_timer, weekday, "cannot", time(0, 0), time(0, 0))
         for floor_person in demo_floor:  # the demo leads and agents work the Support queue
-            EmployeeSkill.objects.get_or_create(employee=floor_person, queue=queues["Demo Support"])
-            staff["Demo Support"].append(floor_person)
+            EmployeeSkill.objects.get_or_create(employee=floor_person, queue=queues["Service Desk"])
+            staff["Service Desk"].append(floor_person)
         if (
             demo_floor
         ):  # the demo agent never works Sundays and would rather finish early on Fridays
@@ -311,7 +313,7 @@ class Command(BaseCommand):
         event_services.create_event(
             user=cast.planner,
             name="Month-end billing run",
-            queue_id=queues["Demo Billing"].pk,
+            queue_id=queues["Billing Support"].pk,
             date_from=pay_day,
             date_to=pay_day + timedelta(days=5),
             uplift_pct=Decimal("30"),
@@ -319,7 +321,7 @@ class Command(BaseCommand):
         event_services.create_event(
             user=cast.planner,
             name="SMS campaign",
-            queue_id=queues["Demo Support"].pk,
+            queue_id=queues["Service Desk"].pk,
             date_from=today + timedelta(days=8),
             date_to=today + timedelta(days=9),
             uplift_pct=Decimal("20"),
@@ -508,7 +510,7 @@ class Command(BaseCommand):
             name="Member support",
             sl_target_pct=Decimal("80"),
             sl_threshold_s=20,
-            queue_ids=[queues["Demo Support"].pk, queues["Demo Night Desk"].pk],
+            queue_ids=[queues["Service Desk"].pk, queues["Night Desk"].pk],
         )
         contract_services.create_contract(
             user=cast.admin,
@@ -516,7 +518,7 @@ class Command(BaseCommand):
             name="Claims line",
             sl_target_pct=Decimal("90"),
             sl_threshold_s=30,
-            queue_ids=[queues["Demo Billing"].pk],
+            queue_ids=[queues["Billing Support"].pk],
         )
 
     # --- shift swaps ---------------------------------------------------------------------------

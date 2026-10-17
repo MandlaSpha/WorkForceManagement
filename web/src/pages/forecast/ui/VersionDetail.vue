@@ -200,17 +200,28 @@ const chartSummary = computed(
         bar-label="Expected calls"
         line-label="Agents to roster"
       />
-      <p v-if="usedProphet && backtest" class="text-xs text-ink-muted" data-testid="model">
-        Model: Prophet. On {{ backtest.days }} past days it predicted the day's total
-        {{ backtest.prophet.toFixed(1) }}% right, against {{ backtest.baseline.toFixed(1) }}% for
-        the baseline, which is why it was used. It forecasts each day's total; the total is then
-        spread over the half-hours in the shape of recent days.
+      <p class="text-sm text-ink-muted" data-testid="basis">
+        Forecast from past call history.
+        <template v-if="usedProphet && backtest">
+          On the last {{ backtest.days }} days it got the day's total about
+          {{ Math.round(backtest.prophet) }}% right.
+        </template>
+        Staffing includes {{ number('shrinkagePct') }}% shrinkage.
       </p>
-      <p class="text-xs text-ink-muted" data-testid="evidence">
-        Daily shape from the {{ evidence }} most recent earlier
-        {{ evidence === 1 ? 'day' : 'days' }} with the same weekday that have call data. Agents to
-        roster include {{ number('shrinkagePct') }}% shrinkage.
-      </p>
+      <details class="text-xs text-ink-muted" data-testid="how-made">
+        <summary class="cursor-pointer text-ink">How this was made</summary>
+        <p v-if="usedProphet && backtest" class="mt-1" data-testid="model">
+          Model: Prophet. On {{ backtest.days }} past days it predicted the day's total
+          {{ backtest.prophet.toFixed(1) }}% right, against {{ backtest.baseline.toFixed(1) }}% for
+          the baseline, which is why it was used. It forecasts each day's total; the total is then
+          spread over the half-hours in the shape of recent days.
+        </p>
+        <p class="mt-1" data-testid="evidence">
+          Daily shape from the {{ evidence }} most recent earlier
+          {{ evidence === 1 ? 'day' : 'days' }} with the same weekday that have call data. Agents to
+          roster include {{ number('shrinkagePct') }}% shrinkage.
+        </p>
+      </details>
     </template>
   </section>
 </template>

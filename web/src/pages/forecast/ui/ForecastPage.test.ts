@@ -398,6 +398,12 @@ describe('which model made the forecast', () => {
     const model = await screen.findByTestId('model')
     expect(model).toHaveTextContent('21 past days')
     expect(model).toHaveTextContent('93.5% right, against 88.1%')
+    // The plain line a planner reads first, with the detail behind "How this was made".
+    // Failure caught: model jargon (Prophet, baseline) as the first thing a planner sees.
+    const basis = screen.getByTestId('basis')
+    expect(basis).toHaveTextContent('about 93% right')
+    expect(basis).not.toHaveTextContent('Prophet')
+    expect(screen.getByTestId('how-made')).not.toHaveAttribute('open')
     // 31.9 calls: 0.8 x 31.9 = 25.5 and 1.25 x 31.9 = 39.9, as whole numbers.
     expect(screen.getByTestId('total-range')).toHaveTextContent('80% range 26 to 40')
   })
