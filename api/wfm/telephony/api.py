@@ -14,6 +14,7 @@ from wfm.core.permissions import RoleSessionAuth, current_user
 
 from . import selectors, services
 from .models import ImportBatch, Queue
+from .peaks_api import router as peaks_router
 from .policy import IMPORT_ROLES, VIEW_ROLES
 from .schemas import (
     Coverage,
@@ -27,6 +28,7 @@ from .schemas import (
 )
 
 router = Router(tags=["telephony"])
+router.add_router("", peaks_router)
 
 
 @router.post(

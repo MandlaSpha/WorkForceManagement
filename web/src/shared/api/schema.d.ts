@@ -1406,6 +1406,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/telephony/peaks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Busiest and quietest days and half-hours of a queue, from measured calls */
+        get: operations["wfm_telephony_peaks_api_peaks_and_troughs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/telephony/queues": {
         parameters: {
             query?: never;
@@ -1948,6 +1965,16 @@ export interface components {
             /** Daysused */
             daysUsed: number;
         };
+        /** DayOut */
+        DayOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Offered */
+            offered: number;
+        };
         /** DecisionOut */
         DecisionOut: {
             request: components["schemas"]["LeaveRequestOut"];
@@ -2267,6 +2294,13 @@ export interface components {
             items: components["schemas"]["NotificationOut"][];
             /** Unread */
             unread: number;
+        };
+        /** IntervalOut */
+        IntervalOut: {
+            /** Offered */
+            offered: number;
+            /** Start */
+            start: string;
         };
         /** KpiOut */
         KpiOut: {
@@ -2690,6 +2724,33 @@ export interface components {
         PasswordIn: {
             /** Password */
             password: string;
+        };
+        /** PeaksOut */
+        PeaksOut: {
+            /** Busiestdays */
+            busiestDays: components["schemas"]["DayOut"][];
+            /** Busiestintervals */
+            busiestIntervals: components["schemas"]["IntervalOut"][];
+            /** Busiestslots */
+            busiestSlots: components["schemas"]["SlotOut"][];
+            /**
+             * Datefrom
+             * Format: date
+             */
+            dateFrom: string;
+            /**
+             * Dateto
+             * Format: date
+             */
+            dateTo: string;
+            /** Daysmeasured */
+            daysMeasured: number;
+            /** Queueid */
+            queueId: number;
+            /** Quietestdays */
+            quietestDays: components["schemas"]["DayOut"][];
+            /** Quietestslots */
+            quietestSlots: components["schemas"]["SlotOut"][];
         };
         /** PlacementOut */
         PlacementOut: {
@@ -3213,6 +3274,15 @@ export interface components {
             queue: string;
             /** Queueid */
             queueId: number;
+        };
+        /** SlotOut */
+        SlotOut: {
+            /** Averageoffered */
+            averageOffered: string;
+            /** Days */
+            days: number;
+            /** Slot */
+            slot: string;
         };
         /** SwapIn */
         SwapIn: {
@@ -5702,6 +5772,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MonthsOut"];
+                };
+            };
+        };
+    };
+    wfm_telephony_peaks_api_peaks_and_troughs: {
+        parameters: {
+            query: {
+                queue_id: number;
+                date_from: string;
+                date_to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PeaksOut"];
                 };
             };
         };

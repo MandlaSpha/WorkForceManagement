@@ -331,6 +331,9 @@ Requirement SHR-01. Feature `people`, endpoint `GET /api/v1/people/shrinkage?mon
 - Planner and admin see every team; a lead only their own team; nobody else may read it. Training and meetings are not recorded anywhere yet, so they are not in the figure.
 - Not built: unplanned shrinkage, training and meetings, a target per team, a trend over months, feeding the measured share back into the requirement.
 
+### 4.8 Peaks and troughs (Phase 5, built)
+Requirement RPT-03. `GET /api/v1/telephony/peaks?queue_id&date_from&date_to` (telephony feature; admin, planner, lead, executive, customer ops within their contract queues); Insight > Peaks & troughs. Pure `wfm_engine.peaks` over measured half-hour totals in local time: the busiest and quietest days, the busiest single half-hours, and the busiest and quietest half-hours of the day averaged over the days each was measured. A slot that never saw a call is closed, not a trough; a day with no rows is not counted as quiet. Ties go to the earlier time. Only totals, never calls or people. Not built: the emailed scheduled report (RPT-04, RPT-10) and forecast-based peaks.
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 

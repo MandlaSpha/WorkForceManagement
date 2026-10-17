@@ -137,6 +137,8 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **People > Shrinkage.** As `planner`: pick a month. Each team shows the share of its contracted hours spent on approved leave, next to the shrinkage the queues are planned with. Unplanned absence is not measured (there is no attendance feed yet) and the screen says so. As `lead`: only your own team. Agents have no such screen.
 
+**Insight > Peaks & troughs.** Pick a queue and a date range (the last 28 days by default). It lists the busiest and quietest days, the busiest half-hours of the day, and the quietest half-hours while the queue is open, from measured calls.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, standby and overtime reconciliation, scheduled reports, intraday, adherence, ITSM and Azure AD

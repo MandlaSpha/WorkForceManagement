@@ -14,6 +14,7 @@ import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, PayStatus } from '@/entities/overtime'
+import type { Peaks } from '@/entities/peaks'
 import type { Shrinkage } from '@/entities/shrinkage'
 import type { AdminUser } from '@/entities/user-admin'
 import type {
@@ -172,6 +173,9 @@ export const backend = {
   /** Planned shrinkage by team, and the months asked for. */
   shrinkage: { month: '2026-10-01', teams: [], unplannedMeasured: false } as Shrinkage,
   shrinkageQueries: [] as string[],
+  /** The peaks report, and the queue/range of each request. */
+  peaks: null as Peaks | null,
+  peaksQueries: [] as string[],
   overtimeQueries: [] as string[],
   pay: [] as PayStatus[],
   /** Customers and contracts, with how each is doing. */
@@ -259,6 +263,8 @@ export const backend = {
     this.overtime = []
     this.shrinkage = { month: '2026-10-01', teams: [], unplannedMeasured: false }
     this.shrinkageQueries = []
+    this.peaks = null
+    this.peaksQueries = []
     this.overtimeQueries = []
     this.pay = []
     this.rules = {
@@ -687,6 +693,12 @@ export const handlers = [
     const response = await schedulingWrite(info, 'PUT')
     if (!response.ok) return response
     return HttpResponse.json({ saved: sent, warnings: backend.rulesWarnings })
+  }),
+
+  http.get('*/api/v1/telephony/peaks', ({ request }) => {
+    const q = new URL(request.url).searchParams
+    backend.peaksQueries.push(`${q.get('queue_id')} ${q.get('date_from')} ${q.get('date_to')}`)
+    return HttpResponse.json(backend.peaks)
   }),
 
   http.get('*/api/v1/people/shrinkage', ({ request }) => {

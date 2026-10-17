@@ -183,6 +183,7 @@ class TestNoCallLevelSurface:
             "/api/v1/telephony/imports",
             "/api/v1/telephony/kpis",
             "/api/v1/telephony/months",
+            "/api/v1/telephony/peaks",  # day and half-hour totals only
             "/api/v1/telephony/queues",
             "/api/v1/telephony/queues/{queue_id}/settings",
         ]

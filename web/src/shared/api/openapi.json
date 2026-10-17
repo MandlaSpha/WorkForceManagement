@@ -1106,6 +1106,25 @@
         "title": "DayAccuracyOut",
         "type": "object"
       },
+      "DayOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "offered": {
+            "title": "Offered",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "offered"
+        ],
+        "title": "DayOut",
+        "type": "object"
+      },
       "DecisionOut": {
         "properties": {
           "request": {
@@ -1992,6 +2011,24 @@
           "items"
         ],
         "title": "InboxOut",
+        "type": "object"
+      },
+      "IntervalOut": {
+        "properties": {
+          "offered": {
+            "title": "Offered",
+            "type": "integer"
+          },
+          "start": {
+            "title": "Start",
+            "type": "string"
+          }
+        },
+        "required": [
+          "start",
+          "offered"
+        ],
+        "title": "IntervalOut",
         "type": "object"
       },
       "KpiOut": {
@@ -2989,6 +3026,76 @@
           "password"
         ],
         "title": "PasswordIn",
+        "type": "object"
+      },
+      "PeaksOut": {
+        "properties": {
+          "busiestDays": {
+            "items": {
+              "$ref": "#/components/schemas/DayOut"
+            },
+            "title": "Busiestdays",
+            "type": "array"
+          },
+          "busiestIntervals": {
+            "items": {
+              "$ref": "#/components/schemas/IntervalOut"
+            },
+            "title": "Busiestintervals",
+            "type": "array"
+          },
+          "busiestSlots": {
+            "items": {
+              "$ref": "#/components/schemas/SlotOut"
+            },
+            "title": "Busiestslots",
+            "type": "array"
+          },
+          "dateFrom": {
+            "format": "date",
+            "title": "Datefrom",
+            "type": "string"
+          },
+          "dateTo": {
+            "format": "date",
+            "title": "Dateto",
+            "type": "string"
+          },
+          "daysMeasured": {
+            "title": "Daysmeasured",
+            "type": "integer"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "quietestDays": {
+            "items": {
+              "$ref": "#/components/schemas/DayOut"
+            },
+            "title": "Quietestdays",
+            "type": "array"
+          },
+          "quietestSlots": {
+            "items": {
+              "$ref": "#/components/schemas/SlotOut"
+            },
+            "title": "Quietestslots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "queueId",
+          "dateFrom",
+          "dateTo",
+          "daysMeasured",
+          "busiestDays",
+          "quietestDays",
+          "busiestIntervals",
+          "busiestSlots",
+          "quietestSlots"
+        ],
+        "title": "PeaksOut",
         "type": "object"
       },
       "PlacementOut": {
@@ -4383,6 +4490,29 @@
           "level"
         ],
         "title": "SkillOut",
+        "type": "object"
+      },
+      "SlotOut": {
+        "properties": {
+          "averageOffered": {
+            "title": "Averageoffered",
+            "type": "string"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slot",
+          "averageOffered",
+          "days"
+        ],
+        "title": "SlotOut",
         "type": "object"
       },
       "SwapIn": {
@@ -8966,6 +9096,64 @@
         ],
         "summary": "The months that have call data",
         "tags": [
+          "telephony"
+        ]
+      }
+    },
+    "/api/v1/telephony/peaks": {
+      "get": {
+        "operationId": "wfm_telephony_peaks_api_peaks_and_troughs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PeaksOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Busiest and quietest days and half-hours of a queue, from measured calls",
+        "tags": [
+          "telephony",
           "telephony"
         ]
       }

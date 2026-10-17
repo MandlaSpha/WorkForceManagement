@@ -245,6 +245,16 @@ export const NAV_ITEMS = [
       'Tune how forecasts look back, and back-test the result against what really happened.',
   },
   {
+    key: 'peaks',
+    path: '/peaks',
+    label: 'Peaks & troughs',
+    group: 'Insight',
+    icon: 'bar-chart-3',
+    feature: 'telephony',
+    phase: 5,
+    subtitle: 'The busiest and quietest days and half-hours of a queue, from measured calls.',
+  },
+  {
     key: 'reports',
     path: '/reports',
     label: 'Reports',
