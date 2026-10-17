@@ -7,6 +7,7 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './tests',
+  globalSetup: './global-setup.ts',
   outputDir: './test-results',
   // Spec files run side by side; the tests inside one file stay in order. Each spec works on its
   // own queue and on dates no other spec uses, so they do not meet. Set E2E_WORKERS=1 to run
@@ -22,6 +23,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
     reducedMotion: 'reduce', // also proves the app honours prefers-reduced-motion
     screenshot: 'only-on-failure',
+    storageState: './.state/open-menu.json', // see global-setup.ts
   },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] }, grepInvert: /@mobile|@tour/ },

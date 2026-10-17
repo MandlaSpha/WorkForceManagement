@@ -135,3 +135,14 @@ body {
     text-align: left;
   }
 }
+
+/* A slim scrollbar that stays out of sight until the pointer is over the menu, for lists that only
+   scroll on a short screen. */
+.quiet-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.quiet-scroll:hover,
+.quiet-scroll:focus-within {
+  scrollbar-color: var(--color-line, #cbd5e1) transparent;
+}

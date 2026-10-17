@@ -53,3 +53,4 @@ celerybeat-schedule*
 
 # Playwright MCP session output (snapshots, console logs)
 /.playwright-mcp/
+e2e/.state/
