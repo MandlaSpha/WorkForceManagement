@@ -5358,6 +5358,395 @@
         "title": "ProviderOut",
         "type": "object"
       },
+      "QualityEvaluationOut": {
+        "properties": {
+          "coachingDue": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coachingdue"
+          },
+          "csat": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csat"
+          },
+          "evaluatedOn": {
+            "format": "date",
+            "title": "Evaluatedon",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "ref": {
+            "title": "Ref",
+            "type": "string"
+          },
+          "scorePct": {
+            "title": "Scorepct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "evaluatedOn",
+          "kind",
+          "ref",
+          "scorePct",
+          "csat",
+          "coachingDue"
+        ],
+        "title": "QualityEvaluationOut",
+        "type": "object"
+      },
+      "QualityImportOut": {
+        "properties": {
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/QualityRowError"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "fileName": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "ignoredColumns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ignoredcolumns",
+            "type": "array"
+          },
+          "rowsCreated": {
+            "title": "Rowscreated",
+            "type": "integer"
+          },
+          "rowsRead": {
+            "title": "Rowsread",
+            "type": "integer"
+          },
+          "rowsRejected": {
+            "title": "Rowsrejected",
+            "type": "integer"
+          },
+          "rowsUnchanged": {
+            "title": "Rowsunchanged",
+            "type": "integer"
+          },
+          "rowsUnmapped": {
+            "title": "Rowsunmapped",
+            "type": "integer"
+          },
+          "rowsUpdated": {
+            "title": "Rowsupdated",
+            "type": "integer"
+          },
+          "unmappedLoginCount": {
+            "title": "Unmappedlogincount",
+            "type": "integer"
+          },
+          "unmappedLogins": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unmappedlogins",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "fileName",
+          "rowsRead",
+          "rowsCreated",
+          "rowsUpdated",
+          "rowsUnchanged",
+          "rowsRejected",
+          "rowsUnmapped",
+          "errors",
+          "ignoredColumns",
+          "unmappedLogins",
+          "unmappedLoginCount"
+        ],
+        "title": "QualityImportOut",
+        "type": "object"
+      },
+      "QualityPersonOut": {
+        "properties": {
+          "averageScorePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Averagescorepct"
+          },
+          "coachingDue": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coachingdue"
+          },
+          "coachingIsDue": {
+            "title": "Coachingisdue",
+            "type": "boolean"
+          },
+          "csatAverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csataverage"
+          },
+          "csatCount": {
+            "title": "Csatcount",
+            "type": "integer"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "evaluations": {
+            "title": "Evaluations",
+            "type": "integer"
+          },
+          "latestOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lateston"
+          },
+          "latestScorePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latestscorepct"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/QualityEvaluationOut"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "evaluations",
+          "averageScorePct",
+          "latestScorePct",
+          "latestOn",
+          "csatCount",
+          "csatAverage",
+          "coachingDue",
+          "coachingIsDue",
+          "employeeId",
+          "empNo",
+          "employee",
+          "days",
+          "results"
+        ],
+        "title": "QualityPersonOut",
+        "type": "object"
+      },
+      "QualityPersonSummaryOut": {
+        "properties": {
+          "averageScorePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Averagescorepct"
+          },
+          "coachingDue": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coachingdue"
+          },
+          "coachingIsDue": {
+            "title": "Coachingisdue",
+            "type": "boolean"
+          },
+          "csatAverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csataverage"
+          },
+          "csatCount": {
+            "title": "Csatcount",
+            "type": "integer"
+          },
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "evaluations": {
+            "title": "Evaluations",
+            "type": "integer"
+          },
+          "latestOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lateston"
+          },
+          "latestScorePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latestscorepct"
+          }
+        },
+        "required": [
+          "evaluations",
+          "averageScorePct",
+          "latestScorePct",
+          "latestOn",
+          "csatCount",
+          "csatAverage",
+          "coachingDue",
+          "coachingIsDue",
+          "employeeId",
+          "empNo",
+          "employee"
+        ],
+        "title": "QualityPersonSummaryOut",
+        "type": "object"
+      },
+      "QualityRowError": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "row": {
+            "title": "Row",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "row",
+          "reason"
+        ],
+        "title": "QualityRowError",
+        "type": "object"
+      },
+      "QualityTeamOut": {
+        "properties": {
+          "asOf": {
+            "format": "date",
+            "title": "Asof",
+            "type": "string"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/QualityPersonSummaryOut"
+            },
+            "title": "People",
+            "type": "array"
+          }
+        },
+        "required": [
+          "days",
+          "asOf",
+          "people"
+        ],
+        "title": "QualityTeamOut",
+        "type": "object"
+      },
       "QueueKpisOut": {
         "properties": {
           "abandonPct": {
@@ -6646,6 +7035,379 @@
           "days"
         ],
         "title": "ScorecardOut",
+        "type": "object"
+      },
+      "ServiceKpiFigures": {
+        "properties": {
+          "backlogAvgAgeDays": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backlogavgagedays"
+          },
+          "backlogCount": {
+            "title": "Backlogcount",
+            "type": "integer"
+          },
+          "backlogMedianAgeDays": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backlogmedianagedays"
+          },
+          "backlogOldestAgeDays": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backlogoldestagedays"
+          },
+          "closed": {
+            "title": "Closed",
+            "type": "integer"
+          },
+          "costPerTicketRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costperticketrands"
+          },
+          "csatAverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csataverage"
+          },
+          "csatCount": {
+            "title": "Csatcount",
+            "type": "integer"
+          },
+          "csatSatisfiedPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csatsatisfiedpct"
+          },
+          "fcrKnown": {
+            "title": "Fcrknown",
+            "type": "integer"
+          },
+          "fcrPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fcrpct"
+          },
+          "mttrH": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mttrh"
+          },
+          "nps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nps"
+          },
+          "npsCount": {
+            "title": "Npscount",
+            "type": "integer"
+          },
+          "requiredFte": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredfte"
+          },
+          "ticketsPriced": {
+            "title": "Ticketspriced",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "closed",
+          "mttrH",
+          "fcrKnown",
+          "fcrPct",
+          "csatCount",
+          "csatAverage",
+          "csatSatisfiedPct",
+          "npsCount",
+          "nps",
+          "backlogCount",
+          "backlogAvgAgeDays",
+          "backlogMedianAgeDays",
+          "backlogOldestAgeDays",
+          "costPerTicketRands",
+          "ticketsPriced",
+          "requiredFte"
+        ],
+        "title": "ServiceKpiFigures",
+        "type": "object"
+      },
+      "ServiceKpiPoolOut": {
+        "properties": {
+          "backlogAvgAgeDays": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backlogavgagedays"
+          },
+          "backlogCount": {
+            "title": "Backlogcount",
+            "type": "integer"
+          },
+          "backlogMedianAgeDays": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backlogmedianagedays"
+          },
+          "backlogOldestAgeDays": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backlogoldestagedays"
+          },
+          "closed": {
+            "title": "Closed",
+            "type": "integer"
+          },
+          "costPerTicketRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costperticketrands"
+          },
+          "csatAverage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csataverage"
+          },
+          "csatCount": {
+            "title": "Csatcount",
+            "type": "integer"
+          },
+          "csatSatisfiedPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Csatsatisfiedpct"
+          },
+          "fcrKnown": {
+            "title": "Fcrknown",
+            "type": "integer"
+          },
+          "fcrPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fcrpct"
+          },
+          "mttrH": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mttrh"
+          },
+          "nps": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nps"
+          },
+          "npsCount": {
+            "title": "Npscount",
+            "type": "integer"
+          },
+          "pool": {
+            "title": "Pool",
+            "type": "string"
+          },
+          "poolId": {
+            "title": "Poolid",
+            "type": "integer"
+          },
+          "requiredFte": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requiredfte"
+          },
+          "staffingComplete": {
+            "title": "Staffingcomplete",
+            "type": "boolean"
+          },
+          "ticketsPriced": {
+            "title": "Ticketspriced",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "closed",
+          "mttrH",
+          "fcrKnown",
+          "fcrPct",
+          "csatCount",
+          "csatAverage",
+          "csatSatisfiedPct",
+          "npsCount",
+          "nps",
+          "backlogCount",
+          "backlogAvgAgeDays",
+          "backlogMedianAgeDays",
+          "backlogOldestAgeDays",
+          "costPerTicketRands",
+          "ticketsPriced",
+          "requiredFte",
+          "poolId",
+          "pool",
+          "staffingComplete"
+        ],
+        "title": "ServiceKpiPoolOut",
+        "type": "object"
+      },
+      "ServiceKpiReportOut": {
+        "properties": {
+          "asOf": {
+            "format": "date",
+            "title": "Asof",
+            "type": "string"
+          },
+          "basis": {
+            "title": "Basis",
+            "type": "string"
+          },
+          "costVisible": {
+            "title": "Costvisible",
+            "type": "boolean"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "pools": {
+            "items": {
+              "$ref": "#/components/schemas/ServiceKpiPoolOut"
+            },
+            "title": "Pools",
+            "type": "array"
+          },
+          "total": {
+            "$ref": "#/components/schemas/ServiceKpiFigures"
+          }
+        },
+        "required": [
+          "month",
+          "asOf",
+          "basis",
+          "costVisible",
+          "total",
+          "pools"
+        ],
+        "title": "ServiceKpiReportOut",
         "type": "object"
       },
       "SettingsIn": {
@@ -12317,6 +13079,177 @@
         ]
       }
     },
+    "/api/v1/quality/imports": {
+      "post": {
+        "operationId": "wfm_quality_api_import_results",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "title": "File",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "FileParams",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityImportOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Import quality results (CSV or Excel: login, date, score, and optional columns)",
+        "tags": [
+          "quality"
+        ]
+      }
+    },
+    "/api/v1/quality/mine": {
+      "get": {
+        "operationId": "wfm_quality_api_get_mine",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 90,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityPersonOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "The signed-in person's own quality results",
+        "tags": [
+          "quality"
+        ]
+      }
+    },
+    "/api/v1/quality/people/{employee_id}": {
+      "get": {
+        "operationId": "wfm_quality_api_get_person",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employee_id",
+            "required": true,
+            "schema": {
+              "title": "Employee Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 90,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityPersonOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "One person's results (out of the caller's scope is a 404)",
+        "tags": [
+          "quality"
+        ]
+      }
+    },
+    "/api/v1/quality/team": {
+      "get": {
+        "operationId": "wfm_quality_api_get_team",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 90,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QualityTeamOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "One summary per person in the caller's scope (a lead: their own team)",
+        "tags": [
+          "quality"
+        ]
+      }
+    },
     "/api/v1/reports/schedules": {
       "get": {
         "operationId": "wfm_reports_api_list_schedules",
@@ -13873,6 +14806,44 @@
         "summary": "Set how many minutes of a day an engineer in this pool spends on tickets",
         "tags": [
           "service-desk"
+        ]
+      }
+    },
+    "/api/v1/service-kpis/report": {
+      "get": {
+        "operationId": "wfm_utilisation_kpi_api_get_report",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceKpiReportOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "MTTR, FCR, CSAT, NPS, backlog age and cost per ticket by pool, beside staffing",
+        "tags": [
+          "service-kpis"
         ]
       }
     },

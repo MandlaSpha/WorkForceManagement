@@ -1402,6 +1402,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import quality results (CSV or Excel: login, date, score, and optional columns) */
+        post: operations["wfm_quality_api_import_results"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The signed-in person's own quality results */
+        get: operations["wfm_quality_api_get_mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/people/{employee_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One person's results (out of the caller's scope is a 404) */
+        get: operations["wfm_quality_api_get_person"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One summary per person in the caller's scope (a lead: their own team) */
+        get: operations["wfm_quality_api_get_team"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/schedules": {
         parameters: {
             query?: never;
@@ -1920,6 +1988,23 @@ export interface paths {
         get?: never;
         /** Set how many minutes of a day an engineer in this pool spends on tickets */
         put: operations["wfm_servicedesk_api_set_pool"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/service-kpis/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** MTTR, FCR, CSAT, NPS, backlog age and cost per ticket by pool, beside staffing */
+        get: operations["wfm_utilisation_kpi_api_get_report"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -4353,6 +4438,124 @@ export interface components {
             /** Starturl */
             startUrl?: string | null;
         };
+        /** QualityEvaluationOut */
+        QualityEvaluationOut: {
+            /** Coachingdue */
+            coachingDue: string | null;
+            /** Csat */
+            csat: number | null;
+            /**
+             * Evaluatedon
+             * Format: date
+             */
+            evaluatedOn: string;
+            /** Kind */
+            kind: string;
+            /** Ref */
+            ref: string;
+            /** Scorepct */
+            scorePct: number;
+        };
+        /** QualityImportOut */
+        QualityImportOut: {
+            /** Errors */
+            errors: components["schemas"]["QualityRowError"][];
+            /** Filename */
+            fileName: string;
+            /** Id */
+            id: number;
+            /** Ignoredcolumns */
+            ignoredColumns: string[];
+            /** Rowscreated */
+            rowsCreated: number;
+            /** Rowsread */
+            rowsRead: number;
+            /** Rowsrejected */
+            rowsRejected: number;
+            /** Rowsunchanged */
+            rowsUnchanged: number;
+            /** Rowsunmapped */
+            rowsUnmapped: number;
+            /** Rowsupdated */
+            rowsUpdated: number;
+            /** Unmappedlogincount */
+            unmappedLoginCount: number;
+            /** Unmappedlogins */
+            unmappedLogins: string[];
+        };
+        /** QualityPersonOut */
+        QualityPersonOut: {
+            /** Averagescorepct */
+            averageScorePct: number | null;
+            /** Coachingdue */
+            coachingDue: string | null;
+            /** Coachingisdue */
+            coachingIsDue: boolean;
+            /** Csataverage */
+            csatAverage: number | null;
+            /** Csatcount */
+            csatCount: number;
+            /** Days */
+            days: number;
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Evaluations */
+            evaluations: number;
+            /** Lateston */
+            latestOn: string | null;
+            /** Latestscorepct */
+            latestScorePct: number | null;
+            /** Results */
+            results: components["schemas"]["QualityEvaluationOut"][];
+        };
+        /** QualityPersonSummaryOut */
+        QualityPersonSummaryOut: {
+            /** Averagescorepct */
+            averageScorePct: number | null;
+            /** Coachingdue */
+            coachingDue: string | null;
+            /** Coachingisdue */
+            coachingIsDue: boolean;
+            /** Csataverage */
+            csatAverage: number | null;
+            /** Csatcount */
+            csatCount: number;
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Evaluations */
+            evaluations: number;
+            /** Lateston */
+            latestOn: string | null;
+            /** Latestscorepct */
+            latestScorePct: number | null;
+        };
+        /** QualityRowError */
+        QualityRowError: {
+            /** Reason */
+            reason: string;
+            /** Row */
+            row: number;
+        };
+        /** QualityTeamOut */
+        QualityTeamOut: {
+            /**
+             * Asof
+             * Format: date
+             */
+            asOf: string;
+            /** Days */
+            days: number;
+            /** People */
+            people: components["schemas"]["QualityPersonSummaryOut"][];
+        };
         /** QueueKpisOut */
         QueueKpisOut: {
             abandonPct: components["schemas"]["Metric"];
@@ -4833,6 +5036,102 @@ export interface components {
             days: components["schemas"]["ScorecardDayOut"][];
             /** Items */
             items: components["schemas"]["ItemOut"][];
+        };
+        /** ServiceKpiFigures */
+        ServiceKpiFigures: {
+            /** Backlogavgagedays */
+            backlogAvgAgeDays: number | null;
+            /** Backlogcount */
+            backlogCount: number;
+            /** Backlogmedianagedays */
+            backlogMedianAgeDays: number | null;
+            /** Backlogoldestagedays */
+            backlogOldestAgeDays: number | null;
+            /** Closed */
+            closed: number;
+            /** Costperticketrands */
+            costPerTicketRands: number | null;
+            /** Csataverage */
+            csatAverage: number | null;
+            /** Csatcount */
+            csatCount: number;
+            /** Csatsatisfiedpct */
+            csatSatisfiedPct: number | null;
+            /** Fcrknown */
+            fcrKnown: number;
+            /** Fcrpct */
+            fcrPct: number | null;
+            /** Mttrh */
+            mttrH: number | null;
+            /** Nps */
+            nps: number | null;
+            /** Npscount */
+            npsCount: number;
+            /** Requiredfte */
+            requiredFte: number | null;
+            /** Ticketspriced */
+            ticketsPriced: number;
+        };
+        /** ServiceKpiPoolOut */
+        ServiceKpiPoolOut: {
+            /** Backlogavgagedays */
+            backlogAvgAgeDays: number | null;
+            /** Backlogcount */
+            backlogCount: number;
+            /** Backlogmedianagedays */
+            backlogMedianAgeDays: number | null;
+            /** Backlogoldestagedays */
+            backlogOldestAgeDays: number | null;
+            /** Closed */
+            closed: number;
+            /** Costperticketrands */
+            costPerTicketRands: number | null;
+            /** Csataverage */
+            csatAverage: number | null;
+            /** Csatcount */
+            csatCount: number;
+            /** Csatsatisfiedpct */
+            csatSatisfiedPct: number | null;
+            /** Fcrknown */
+            fcrKnown: number;
+            /** Fcrpct */
+            fcrPct: number | null;
+            /** Mttrh */
+            mttrH: number | null;
+            /** Nps */
+            nps: number | null;
+            /** Npscount */
+            npsCount: number;
+            /** Pool */
+            pool: string;
+            /** Poolid */
+            poolId: number;
+            /** Requiredfte */
+            requiredFte: number | null;
+            /** Staffingcomplete */
+            staffingComplete: boolean;
+            /** Ticketspriced */
+            ticketsPriced: number;
+        };
+        /** ServiceKpiReportOut */
+        ServiceKpiReportOut: {
+            /**
+             * Asof
+             * Format: date
+             */
+            asOf: string;
+            /** Basis */
+            basis: string;
+            /** Costvisible */
+            costVisible: boolean;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Pools */
+            pools: components["schemas"]["ServiceKpiPoolOut"][];
+            total: components["schemas"]["ServiceKpiFigures"];
         };
         /** SettingsIn */
         SettingsIn: {
@@ -7682,6 +7981,104 @@ export interface operations {
             };
         };
     };
+    wfm_quality_api_import_results: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * File
+                     * Format: binary
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityImportOut"];
+                };
+            };
+        };
+    };
+    wfm_quality_api_get_mine: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityPersonOut"];
+                };
+            };
+        };
+    };
+    wfm_quality_api_get_person: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                employee_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityPersonOut"];
+                };
+            };
+        };
+    };
+    wfm_quality_api_get_team: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QualityTeamOut"];
+                };
+            };
+        };
+    };
     wfm_reports_api_list_schedules: {
         parameters: {
             query?: never;
@@ -8583,6 +8980,28 @@ export interface operations {
                     "application/json": {
                         [key: string]: number;
                     };
+                };
+            };
+        };
+    };
+    wfm_utilisation_kpi_api_get_report: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceKpiReportOut"];
                 };
             };
         };

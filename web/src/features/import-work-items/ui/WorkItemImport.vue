@@ -26,9 +26,10 @@ function submit(): void {
     <p class="text-sm text-ink-muted">
       A CSV exported from the ticketing tool, with the columns <code>ref</code>, <code>pool</code>,
       <code>opened</code> and, if you have them, <code>priority</code>, <code>due</code>,
-      <code>effort_minutes</code> and <code>closed</code>. Items already known are updated, so the
-      same export can be brought in again as tickets are closed. Any other column (names, emails,
-      descriptions) is ignored and never stored.
+      <code>effort_minutes</code>, <code>closed</code> and, for the service metrics,
+      <code>fcr</code> (yes or no), <code>csat</code> (1 to 5) and <code>nps</code> (0 to 10). Items
+      already known are updated, so the same export can be brought in again as tickets are closed.
+      Any other column (names, emails, descriptions) is ignored and never stored.
     </p>
     <form class="space-y-3" aria-label="Import work items" @submit.prevent="submit">
       <div>

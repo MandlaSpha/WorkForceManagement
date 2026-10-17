@@ -20,7 +20,17 @@ from . import importer
 from .models import ServicePool, WorkItem
 
 LOOKUP_CHUNK = 5000
-FIELDS = ("pool_id", "priority", "opened_at", "due_at", "effort_minutes", "closed_at")
+FIELDS = (
+    "pool_id",
+    "priority",
+    "opened_at",
+    "due_at",
+    "effort_minutes",
+    "closed_at",
+    "first_contact_resolved",
+    "csat",
+    "nps",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +73,9 @@ def import_items(*, user: User, content: bytes) -> ImportResult:
                 "due_at": row.due_at,
                 "effort_minutes": row.effort_minutes,
                 "closed_at": row.closed_at,
+                "first_contact_resolved": row.first_contact_resolved,
+                "csat": row.csat,
+                "nps": row.nps,
             }
             item = known.get(row.ref)
             if item is None:

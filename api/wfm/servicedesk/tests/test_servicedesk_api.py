@@ -170,6 +170,38 @@ class TestTheImport:
         item = WorkItem.objects.get(ref="INC4")
         assert (item.effort_minutes, item.closed_at is not None) == (90, True)
 
+    def test_survey_answers_and_the_first_contact_flag_are_stored(self) -> None:
+        header = HEADER + ",fcr,csat,nps"
+        rows = [
+            "S1,Service Desk,P3,2026-05-04 09:00,,60,2026-05-05 09:00,Yes,5,10",
+            "S2,Service Desk,P3,2026-05-04 09:00,,60,2026-05-05 09:00,no,2,3",
+            "S3,Service Desk,P3,2026-05-04 09:00,,60,2026-05-05 09:00,,,",
+        ]
+        body = upload(login(), csv_of(rows, header)).json()
+        assert (body["created"], body["rejected"]) == (3, {})
+        got = {i.ref: (i.first_contact_resolved, i.csat, i.nps) for i in WorkItem.objects.all()}
+        assert got == {"S1": (True, 5, 10), "S2": (False, 2, 3), "S3": (None, None, None)}
+
+    @pytest.mark.parametrize(
+        ("tail", "reason"),
+        [
+            (",maybe,,", "bad_fcr"),
+            (",,6,", "bad_csat"),
+            (",,0,", "bad_csat"),
+            (",,,11", "bad_nps"),
+            (",,,x", "bad_nps"),
+        ],
+    )
+    def test_a_bad_survey_answer_rejects_the_row_by_reason(self, tail: str, reason: str) -> None:
+        row = "S1,Service Desk,P3,2026-05-04 09:00,,60,2026-05-05 09:00" + tail
+        body = upload(login(), csv_of([row], HEADER + ",fcr,csat,nps")).json()
+        assert body["rejected"] == {reason: 1}
+        assert not WorkItem.objects.exists()
+
+    def test_a_ticket_closed_before_it_was_opened_is_rejected(self) -> None:
+        row = "S1,Service Desk,P3,2026-05-04 09:00,,60,2026-05-03 09:00"
+        assert upload(login(), csv_of([row])).json()["rejected"] == {"closed_before_opened": 1}
+
     def test_a_time_with_no_zone_is_south_african_time(self) -> None:
         upload(login(), csv_of(["INC1,Service Desk,P2,2026-04-01 09:00,2026-05-26 12:00,480,"]))
         assert WorkItem.objects.get(ref="INC1").due_at == datetime(2026, 5, 26, 10, 0, tzinfo=UTC)

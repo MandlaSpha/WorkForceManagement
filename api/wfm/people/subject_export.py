@@ -19,6 +19,7 @@ from wfm.audit.models import Action, AuditEvent
 from wfm.core.errors import not_found
 from wfm.notifications.models import Notification
 from wfm.overtime.models import EmployeePay, OvertimeRequest, StandbyShift
+from wfm.quality.models import QualityResult
 from wfm.scheduling.models import Employee, ShiftAssignment
 
 from .models import Availability, LeaveRequest, SwapRequest
@@ -133,6 +134,18 @@ def build(admin: User, employee_id: int) -> tuple[dict[str, Any], int]:
         }
         for s in StandbyShift.objects.for_user(admin).filter(employee=found)
     ]
+    quality = [
+        {
+            "date": r.evaluated_on.isoformat(),
+            "kind": r.kind,
+            "scorePct": float(r.score_pct),
+            "csat": r.csat,
+            "coachingDue": _iso(r.coaching_due),
+        }
+        for r in QualityResult.objects.for_user(admin)
+        .filter(employee=found)
+        .order_by("evaluated_on", "id")
+    ]
     notifications = (
         [
             {"kind": n.kind, "message": n.message, "at": _iso(n.created_at)}
@@ -169,6 +182,7 @@ def build(admin: User, employee_id: int) -> tuple[dict[str, Any], int]:
         "swaps": swaps,
         "overtime": overtime,
         "standby": standby,
+        "qualityResults": quality,
         "notifications": notifications,
         "auditTrail": trail,
     }

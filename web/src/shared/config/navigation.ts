@@ -284,6 +284,16 @@ export const NAV_ITEMS = [
     phase: 8,
     subtitle: 'Prompts for a conversation about workload. Never a score.',
   },
+  {
+    key: 'quality',
+    path: '/quality',
+    label: 'Quality',
+    group: 'People',
+    icon: 'badge-check',
+    feature: 'people',
+    phase: 8,
+    subtitle: 'Quality results from the quality tool: score, CSAT and coaching due. No ranking.',
+  },
 
   {
     key: 'analytics',

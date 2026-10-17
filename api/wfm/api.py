@@ -21,6 +21,7 @@ from wfm.jobs.api import router as jobs_router
 from wfm.notifications.api import router as notifications_router
 from wfm.overtime.api import router as overtime_router
 from wfm.people.api import router as people_router
+from wfm.quality.api import router as quality_router
 from wfm.reports.api import router as reports_router
 from wfm.scheduling.activity_api import router as activity_router
 from wfm.scheduling.api import router as scheduling_router
@@ -32,6 +33,7 @@ from wfm.skills.api import router as skills_router
 from wfm.skills.api import wellbeing_router
 from wfm.telephony.api import router as telephony_router
 from wfm.utilisation.api import router as utilisation_router
+from wfm.utilisation.kpi_api import router as service_kpi_router
 
 api = NinjaAPI(
     title="Gijima WFM API",
@@ -65,6 +67,8 @@ api.add_router("/insight", insight_router)
 api.add_router("/intraday", intraday_router)
 api.add_router("/attendance", attendance_router)
 api.add_router("/skills", skills_router)
+api.add_router("/quality", quality_router)
+api.add_router("/service-kpis", service_kpi_router)
 api.add_router("/wellbeing", wellbeing_router)
 api.add_router("/continuity", continuity_router)
 api.add_router("/reports", reports_router)

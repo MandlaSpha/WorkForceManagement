@@ -1,6 +1,8 @@
 """Reading a work-item CSV (an export from an ITSM tool).
 
-Required columns: ref, pool, opened. Optional: priority, due, effort_minutes, closed. Any other
+Required columns: ref, pool, opened. Optional: priority, due, effort_minutes, closed, and the
+survey answers fcr (yes/no: resolved at first contact), csat (1 to 5) and nps (0 to 10), which
+KPI-01 reports. Any other
 column is ignored and never stored, so a personal column (requester, assignee, email...) cannot
 reach the database by being in the file. Times are ISO 8601; one with no zone is South African
 time. A row that cannot be read is counted and the reason is kept, never its content.
@@ -15,7 +17,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 REQUIRED = ("ref", "pool", "opened")
-OPTIONAL = ("priority", "due", "effort_minutes", "closed")
+OPTIONAL = ("priority", "due", "effort_minutes", "closed", "fcr", "csat", "nps")
 KNOWN = (*REQUIRED, *OPTIONAL)
 MAX_ROWS = 50_000
 
@@ -29,6 +31,9 @@ class Row:
     due_at: datetime | None
     effort_minutes: int | None
     closed_at: datetime | None
+    first_contact_resolved: bool | None = None
+    csat: int | None = None
+    nps: int | None = None
 
 
 @dataclass(slots=True)
@@ -100,6 +105,16 @@ def _row(record: dict[str, str], zone: ZoneInfo, parsed: Parsed) -> Row | None:
             parsed.reject("bad_effort")
             return None
         minutes = int(effort)
+    if closed is not None and closed < opened:
+        parsed.reject("closed_before_opened")
+        return None
+    try:
+        fcr = _flag(record.get("fcr", ""))
+        csat = _score(record.get("csat", ""), 1, 5)
+        nps = _score(record.get("nps", ""), 0, 10)
+    except ValueError as bad:
+        parsed.reject(f"bad_{bad}")
+        return None
     return Row(
         ref=ref,
         pool=pool,
@@ -108,7 +123,32 @@ def _row(record: dict[str, str], zone: ZoneInfo, parsed: Parsed) -> Row | None:
         due_at=due,
         effort_minutes=minutes,
         closed_at=closed,
+        first_contact_resolved=fcr,
+        csat=csat,
+        nps=nps,
     )
+
+
+def _flag(value: str) -> bool | None:
+    """True or False for a yes/no answer, None for a blank; ValueError("fcr") for anything else."""
+    text = value.strip().lower()
+    if not text:
+        return None
+    if text in ("yes", "y", "true", "1"):
+        return True
+    if text in ("no", "n", "false", "0"):
+        return False
+    raise ValueError("fcr")
+
+
+def _score(value: str, low: int, high: int) -> int | None:
+    """The whole number in range, None for a blank; ValueError("csat" or "nps") is raised by the
+    caller's name for it, so the reason code says which column was wrong."""
+    if not value:
+        return None
+    if not value.isdigit() or not low <= int(value) <= high:
+        raise ValueError("csat" if high == 5 else "nps")
+    return int(value)
 
 
 def _moment(value: str, zone: ZoneInfo) -> datetime | None:

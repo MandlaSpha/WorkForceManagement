@@ -2,6 +2,7 @@ import {
   Activity,
   ArrowLeftRight,
   Award,
+  BadgeCheck,
   BarChart3,
   Calendar,
   CalendarDays,
@@ -52,4 +53,5 @@ export const NAV_ICONS: Record<string, Component> = {
   'shield-check': ShieldCheck,
   award: Award,
   'heart-pulse': HeartPulse,
+  'badge-check': BadgeCheck,
 }
