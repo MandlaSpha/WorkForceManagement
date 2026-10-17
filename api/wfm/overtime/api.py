@@ -5,13 +5,13 @@ from __future__ import annotations
 from datetime import date, time
 from decimal import Decimal
 
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from ninja import Router, Schema, Status
 
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
-from . import reconcile_services, selectors, services
+from . import payroll_export, reconcile_services, selectors, services
 from .models import OvertimeStatus
 from .policy import DECIDE_ROLES, PAY_ROLES, READ_ROLES, REQUEST_ROLES
 from .standby_api import router as standby_router
@@ -295,3 +295,17 @@ def put_budget(request: HttpRequest, month: date, body: BudgetIn) -> BudgetOut:
     return BudgetOut(
         month=month.replace(day=1), amount=float(saved.amount) if saved is not None else None
     )
+
+
+@router.get(
+    "/payroll.csv",
+    auth=DECIDE,
+    response={200: None},
+    summary="The payroll file for a month (hours, leave, overtime, standby, call-outs)",
+)
+def payroll_file(request: HttpRequest, month: date) -> HttpResponse:
+    text = payroll_export.export(current_user(request), month)
+    response = HttpResponse(text, content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="payroll-{month:%Y-%m}.csv"'
+    response["Cache-Control"] = "no-store"
+    return response

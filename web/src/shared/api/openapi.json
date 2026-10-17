@@ -7076,6 +7076,37 @@
         ]
       }
     },
+    "/api/v1/overtime/payroll.csv": {
+      "get": {
+        "operationId": "wfm_overtime_api_payroll_file",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "The payroll file for a month (hours, leave, overtime, standby, call-outs)",
+        "tags": [
+          "overtime"
+        ]
+      }
+    },
     "/api/v1/overtime/rates": {
       "put": {
         "operationId": "wfm_overtime_api_put_rates",

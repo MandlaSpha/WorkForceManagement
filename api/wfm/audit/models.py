@@ -69,6 +69,7 @@ class Action(models.TextChoices):
     OVERTIME_WORKED_RECORDED = "overtime.worked_recorded", "Overtime worked was recorded"
     OVERTIME_RATES_CHANGED = "overtime.rates_changed", "Overtime rates changed"
     OVERTIME_BUDGET_CHANGED = "overtime.budget_changed", "Overtime budget changed"
+    PAYROLL_EXPORTED = "payroll.exported", "Payroll file exported"
     STANDBY_BOOKED = "standby.booked", "Standby booked"
     STANDBY_CANCELLED = "standby.cancelled", "Standby cancelled"
     STANDBY_CALL_OUT_RECORDED = "standby.call_out_recorded", "Standby call-out recorded"

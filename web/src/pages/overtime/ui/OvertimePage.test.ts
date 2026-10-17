@@ -511,6 +511,16 @@ describe('the month, against the budget', () => {
     expect(backend.writes[1]?.body).toEqual({ amount: 5000 })
   })
 
+  it('links to the payroll file for the month shown', async () => {
+    await openMonth('planner', summaryOf())
+    const link = await screen.findByTestId('payroll-link')
+    expect(link).toHaveAttribute(
+      'href',
+      expect.stringMatching(/\/api\/v1\/overtime\/payroll\.csv\?month=\d{4}-\d{2}-01$/),
+    )
+    expect(link).toHaveAttribute('download')
+  })
+
   it('has no Month tab for a lead', async () => {
     await open('lead')
     await screen.findByTestId('overtime-1')

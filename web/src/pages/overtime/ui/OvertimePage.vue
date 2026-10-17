@@ -333,6 +333,20 @@ const STATUS_LABEL: Record<string, string> = {
           {{ summary.data.value.missingPrices === 1 ? 'request has' : 'requests have' }} no salary
           on file and {{ summary.data.value.missingPrices === 1 ? 'is' : 'are' }} not in the total.
         </NoticeBox>
+        <p class="text-sm">
+          <a
+            :href="`/api/v1/overtime/payroll.csv?month=${monthFirst}`"
+            class="font-medium text-brand-ink underline"
+            download
+            data-testid="payroll-link"
+          >
+            Download the payroll file for this month (CSV)
+          </a>
+          <span class="block text-xs text-ink-muted">
+            Names, hours, leave days, overtime, standby and call-outs. It holds pay, so keep it with
+            payroll. Each download is recorded.
+          </span>
+        </p>
         <RatesBudgetForm v-if="isAdmin" :month="monthFirst" />
       </template>
     </section>
