@@ -6,18 +6,19 @@ in progress and April is over.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Any
 
 import pytest
 from django.test import Client
 
-from wfm.accounts.models import Role
+from wfm.accounts.models import Role, User
 from wfm.overtime.models import EmployeePay
 from wfm.scheduling.models import RosterStatus, RosterWeek
 from wfm.scheduling.tests.helpers import MON, assign, login, person, queue, standard_shifts
 from wfm.servicedesk.models import ServicePool, WorkItem
+from wfm.utilisation import kpi_selectors
 
 pytestmark = pytest.mark.django_db
 
@@ -158,3 +159,16 @@ class TestCostPerTicket:
         assert all(p["costPerTicketRands"] is None for p in body["pools"])
         assert body["total"]["costPerTicketRands"] is None
         assert "98765" not in response.content.decode()
+
+
+@pytest.mark.parametrize("role", [Role.LEAD, Role.AGENT, Role.EXECUTIVE])
+def test_the_selector_itself_serves_no_pool_outside_the_read_roles(
+    desk: ServicePool, role: Role
+) -> None:
+    # Failure caught: the pool and ticket querysets left unscoped, so a caller outside the service
+    # desk roles would read every pool's figures if the endpoint guard were ever bypassed
+    login(role)
+    user = User.objects.get(username=f"u-{role.value}")
+    report = kpi_selectors.service_kpis(user, date(2026, 5, 1), NOW)
+    assert report.pools == []
+    assert report.total.closed == 0

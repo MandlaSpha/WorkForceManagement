@@ -63,3 +63,15 @@ def test_backlog_age_at_as_of():
 def test_nothing_in_the_period_claims_nothing():
     r = run([])
     assert (r.closed, r.mttr_h, r.backlog_count, r.backlog_avg_age_days) == (0, None, 0, None)
+
+
+def test_a_ticket_closed_at_the_instant_the_period_ends_belongs_to_next_month():
+    # Failure caught: the period end made inclusive, so a ticket closed at 00:00 on 1 November
+    # is counted in October
+    r = k.kpis(
+        [k.Ticket(datetime(2026, 10, 1, tzinfo=UTC), END, None, None, None)],
+        period_start=START,
+        period_end=END,
+        as_of=NOW,
+    )
+    assert r.closed == 0

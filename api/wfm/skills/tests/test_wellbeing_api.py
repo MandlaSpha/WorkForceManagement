@@ -86,6 +86,15 @@ class TestWhoSees:
     def test_a_lead_sees_their_own_team_only_and_not_themselves(self) -> None:
         assert set(codes_for(Role.LEAD)) == {"E001"}
 
+    def test_a_lead_whose_own_record_points_at_themselves_is_still_not_served(
+        self, world: World
+    ) -> None:
+        # Failure caught: the lead's own record is kept when it is its own manager (the exclusion
+        # of the lead themselves is removed), so a lead would see a prompt about themselves
+        world.lead.manager = world.lead
+        world.lead.save(update_fields=["manager"])
+        assert set(codes_for(Role.LEAD)) == {"E001"}
+
     @pytest.mark.parametrize("role", [Role.AGENT, Role.EXECUTIVE, Role.CUSTOMER_OPS])
     def test_nobody_else_is_served(self, role: Role) -> None:
         assert login(role).get(FLAGS).status_code == 403
