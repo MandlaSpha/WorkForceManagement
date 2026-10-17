@@ -374,6 +374,14 @@ Requirements RPT-04 and RPT-10. App `wfm.reports`, feature `insight`; Insight > 
 - Only the owner changes what a schedule sends or to whom; the admin can list all schedules (told whose), pause and delete, but not redirect or read one.
 - Outgoing mail uses `WFM_EMAIL_*` settings (console in development; the SMTP password is named by environment variable). Not built: PDF packs, an investment-board pack (RPT-09), a send-now button.
 
+### 4.13 Intraday (Phase 5, built in part)
+Requirements INT-01 to INT-03, and the pointers of INT-04. `GET /api/v1/intraday?queue_id&day` (feature `intraday`; admin, planner, lead; a day from 60 days back to 14 ahead); Operate > Intraday, refreshed every minute.
+
+- **The day** is 48 half-hours: calls forecast (the published forecast), calls that came (imported call data), people scheduled (the roster plan, gross), and the requirement. **The data is what has been imported, not a live ACD feed**: the screen says how far it reaches (`dataThrough`), and a half-hour that is over with no data is unknown, never zero.
+- **Re-forecast (`wfm_engine.intraday.reforecast`, pure).** The rest of the day is the forecast scaled by (actual + 30) / (forecast + 30) over the finished half-hours that have data, kept between 0.5 and 2: the prior of 30 calls stops a handful of early calls swinging the day. The requirement for each half-hour still to come is worked out again from the re-forecast volume with the same staffing function as the forecast, using the queue's own assumptions.
+- **Alerts (`alerts`).** Half-hours still to come where the people scheduled are fewer than the people needed; critical when two or more people short or a quarter of the requirement, else a warning. A requirement that is not known raises nothing.
+- **Acting (INT-04)** is pointers for now: the screen links to overtime and the week's recommendations. Not built: moving a break or a person between queues from this screen (breaks and activities, SCH-03, are not built), and a live ACD feed.
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 

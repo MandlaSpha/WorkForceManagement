@@ -2087,6 +2087,198 @@
         "title": "IntervalOut",
         "type": "object"
       },
+      "IntradayAlertOut": {
+        "properties": {
+          "required": {
+            "title": "Required",
+            "type": "integer"
+          },
+          "scheduled": {
+            "title": "Scheduled",
+            "type": "integer"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "short": {
+            "title": "Short",
+            "type": "integer"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slot",
+          "scheduled",
+          "required",
+          "short",
+          "severity"
+        ],
+        "title": "IntradayAlertOut",
+        "type": "object"
+      },
+      "IntradayOut": {
+        "properties": {
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/IntradayAlertOut"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "dataThrough": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datathrough"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "elapsed": {
+            "title": "Elapsed",
+            "type": "integer"
+          },
+          "hasForecast": {
+            "title": "Hasforecast",
+            "type": "boolean"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ratio"
+          },
+          "serviceLevelPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servicelevelpct"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/IntradaySlotOut"
+            },
+            "title": "Slots",
+            "type": "array"
+          }
+        },
+        "required": [
+          "queue",
+          "day",
+          "elapsed",
+          "hasForecast",
+          "ratio",
+          "dataThrough",
+          "serviceLevelPct",
+          "slots",
+          "alerts"
+        ],
+        "title": "IntradayOut",
+        "type": "object"
+      },
+      "IntradaySlotOut": {
+        "properties": {
+          "actual": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual"
+          },
+          "expectedRequired": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expectedrequired"
+          },
+          "forecast": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast"
+          },
+          "reforecast": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reforecast"
+          },
+          "required": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required"
+          },
+          "scheduled": {
+            "title": "Scheduled",
+            "type": "integer"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slot",
+          "forecast",
+          "actual",
+          "reforecast",
+          "scheduled",
+          "required",
+          "expectedRequired"
+        ],
+        "title": "IntradaySlotOut",
+        "type": "object"
+      },
       "ItemOut": {
         "properties": {
           "basis": {
@@ -7070,6 +7262,53 @@
         "summary": "Service, workload and planning figures for a range, each labelled by its source",
         "tags": [
           "insight"
+        ]
+      }
+    },
+    "/api/v1/intraday": {
+      "get": {
+        "operationId": "wfm_intraday_api_get_intraday",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "day",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Day",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntradayOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "A queue day: forecast, calls so far, cover, re-forecast and shortfalls",
+        "tags": [
+          "intraday"
         ]
       }
     },

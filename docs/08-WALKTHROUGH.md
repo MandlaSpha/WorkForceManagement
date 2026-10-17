@@ -145,6 +145,8 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Insight > Analytics and Reports.** Analytics shows service, workload and planning figures for a range, each labelled Measured, Modelled or Needs data. Reports lets you schedule an emailed pack (scorecard, or peaks for a queue) daily, weekly or monthly. As `admin` first allow an email domain under Reports; recipients must be on it. In development the emails are written to the API console.
 
+**Operate > Intraday.** Pick a queue and a day. It shows calls and people half-hour by half-hour, how the day is running against the forecast (the rest of the day is re-forecast from the calls so far), the service level so far, and the half-hours still to come where cover falls short, with links to overtime and recommendations. Calls are what has been imported, and the screen says up to when.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD

@@ -82,7 +82,8 @@ export const NAV_ITEMS = [
     group: 'Operate',
     icon: 'activity',
     feature: 'intraday',
-    phase: 5,
+    context: ['queue'],
+    phase: 0,
     subtitle: "Today's volumes, coverage and alerts as the day unfolds.",
   },
   {

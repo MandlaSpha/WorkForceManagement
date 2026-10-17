@@ -14,6 +14,7 @@ import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
+import type { Intraday } from '@/entities/intraday'
 import type { Peaks } from '@/entities/peaks'
 import type { ReportSchedule } from '@/entities/report-schedule'
 import type { Scorecard } from '@/entities/scorecard'
@@ -178,6 +179,8 @@ export const backend = {
   /** The peaks report, and the queue/range of each request. */
   peaks: null as Peaks | null,
   peaksQueries: [] as string[],
+  /** The intraday view of a day. */
+  intraday: null as Intraday | null,
   /** Report schedules, and the email domains reports may go to. */
   schedules: [] as ReportSchedule[],
   reportDomains: [] as string[],
@@ -275,6 +278,7 @@ export const backend = {
     this.shrinkageQueries = []
     this.peaks = null
     this.peaksQueries = []
+    this.intraday = null
     this.schedules = []
     this.reportDomains = []
     this.scorecard = null
@@ -790,6 +794,8 @@ export const handlers = [
     backend.reportDomains = sent.allowedDomains
     return HttpResponse.json(sent)
   }),
+
+  http.get('*/api/v1/intraday', () => HttpResponse.json(backend.intraday)),
 
   http.get('*/api/v1/insight/scorecard', () => HttpResponse.json(backend.scorecard)),
 

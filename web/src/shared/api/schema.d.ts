@@ -422,6 +422,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/intraday": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A queue day: forecast, calls so far, cover, re-forecast and shortfalls */
+        get: operations["wfm_intraday_api_get_intraday"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/jobs/{job_id}": {
         parameters: {
             query?: never;
@@ -2589,6 +2606,60 @@ export interface components {
             /** Start */
             start: string;
         };
+        /** IntradayAlertOut */
+        IntradayAlertOut: {
+            /** Required */
+            required: number;
+            /** Scheduled */
+            scheduled: number;
+            /** Severity */
+            severity: string;
+            /** Short */
+            short: number;
+            /** Slot */
+            slot: number;
+        };
+        /** IntradayOut */
+        IntradayOut: {
+            /** Alerts */
+            alerts: components["schemas"]["IntradayAlertOut"][];
+            /** Datathrough */
+            dataThrough: number | null;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Elapsed */
+            elapsed: number;
+            /** Hasforecast */
+            hasForecast: boolean;
+            /** Queue */
+            queue: string;
+            /** Ratio */
+            ratio: number | null;
+            /** Servicelevelpct */
+            serviceLevelPct: number | null;
+            /** Slots */
+            slots: components["schemas"]["IntradaySlotOut"][];
+        };
+        /** IntradaySlotOut */
+        IntradaySlotOut: {
+            /** Actual */
+            actual: number | null;
+            /** Expectedrequired */
+            expectedRequired: number | null;
+            /** Forecast */
+            forecast: number | null;
+            /** Reforecast */
+            reforecast: number | null;
+            /** Required */
+            required: number | null;
+            /** Scheduled */
+            scheduled: number;
+            /** Slot */
+            slot: number;
+        };
         /** ItemOut */
         ItemOut: {
             /** Basis */
@@ -4728,6 +4799,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScorecardOut"];
+                };
+            };
+        };
+    };
+    wfm_intraday_api_get_intraday: {
+        parameters: {
+            query: {
+                queue_id: number;
+                day: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntradayOut"];
                 };
             };
         };
