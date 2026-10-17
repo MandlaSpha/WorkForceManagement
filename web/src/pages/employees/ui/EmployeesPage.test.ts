@@ -381,3 +381,24 @@ describe('who may change employees', () => {
     ).toBeVisible()
   })
 })
+
+describe('subject-access export', () => {
+  it('offers the admin a download of what is held about each person, and nobody else', async () => {
+    // Failure caught: the export link shown to roles the API refuses, or missing for the admin.
+    seedScheduling()
+    await openScheduling('/employees', 'admin')
+    const link = await screen.findAllByRole('link', { name: /^Export the data held about/ })
+    expect(link[0]).toHaveAttribute(
+      'href',
+      expect.stringMatching(/\/people\/employees\/\d+\/data-export$/),
+    )
+    expect(link[0]).toHaveAttribute('download')
+  })
+
+  it.each(['planner', 'lead'])('does not offer it to a %s', async (role) => {
+    seedScheduling()
+    await openScheduling('/employees', role)
+    await screen.findAllByRole('row')
+    expect(screen.queryByRole('link', { name: /^Export the data held about/ })).toBeNull()
+  })
+})

@@ -382,6 +382,14 @@ Requirements INT-01 to INT-03, and the pointers of INT-04. `GET /api/v1/intraday
 - **Alerts (`alerts`).** Half-hours still to come where the people scheduled are fewer than the people needed; critical when two or more people short or a quarter of the requirement, else a warning. A requirement that is not known raises nothing.
 - **Acting (INT-04)** is pointers for now: the screen links to overtime and the week's recommendations. Not built: moving a break or a person between queues from this screen (breaks and activities, SCH-03, are not built), and a live ACD feed.
 
+### 4.14 Subject-access export (POPIA, NFR-03)
+`GET /api/v1/people/employees/{id}/data-export` (admin only; feature `people`; the Employees list has an Export data link for the admin). A JSON download, `no-store`, of everything held about one employee: their record (contract, hours, team lead, sign-in username and role, ACD logins, skills), availability, leave, shifts, swaps (their own side only), overtime and standby (minutes and status), notifications addressed to them, and the audit trail about them or by them (what, when, outcome, role; never the chain hashes).
+
+- **Nothing about anyone else** is in it: a swap names no counterpart, a notification is only the person's own.
+- **Pay is not read back out.** The file says whether pay is on file and nothing of its amount; overtime and standby carry minutes, not rands, and payroll answers for pay figures. This keeps the rule that a salary is never returned by the API.
+- **Taking it is audited** (`employee.data_exported`: who, whose, how many records; never the contents).
+- Not built: an erasure or anonymisation request flow, and the retention clock for old data.
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 

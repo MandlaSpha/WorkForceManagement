@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from django.http import HttpRequest
+import json
+
+from django.http import HttpRequest, HttpResponse
 from ninja import Router, Status
 
 from wfm.accounts.models import User
@@ -9,7 +11,7 @@ from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 from wfm.scheduling.models import Employee
 
-from . import selectors, services
+from . import selectors, services, subject_export
 from .ess_api import router as ess_router
 from .models import LeaveRequest, LeaveType
 from .policy import APPROVE_ROLES, CONFIG_ROLES, SELF_ROLES
@@ -224,3 +226,19 @@ def _decision_out(user: User, decision: services.Decision) -> DecisionOut:
         shiftsRestored=decision.restored,
         shiftsNotRestored=decision.not_restored,
     )
+
+
+@router.get(
+    "/employees/{employee_id}/data-export",
+    auth=CONFIG,
+    response={200: None},
+    summary="Everything held about one employee, for a subject-access request",
+)
+def employee_data_export(request: HttpRequest, employee_id: int) -> HttpResponse:
+    data = subject_export.export(current_user(request), employee_id)
+    response = HttpResponse(
+        json.dumps(data, indent=2, ensure_ascii=False), content_type="application/json"
+    )
+    response["Content-Disposition"] = f'attachment; filename="subject-access-{employee_id}.json"'
+    response["Cache-Control"] = "no-store"
+    return response

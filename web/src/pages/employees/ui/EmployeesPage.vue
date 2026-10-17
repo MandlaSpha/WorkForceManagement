@@ -17,6 +17,7 @@ const session = useSessionStore()
 const screen = NAV_ITEMS.find((item) => item.key === 'employees')
 // Cosmetic: the API refuses changes from any other role.
 const canChange = computed(() => ['planner', 'admin'].includes(session.user?.role ?? ''))
+const isAdmin = computed(() => session.user?.role === 'admin')
 
 const employees = useEmployees()
 const queues = useQueues()
@@ -111,6 +112,15 @@ const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybri
               >
                 Change
               </button>
+              <a
+                v-if="isAdmin"
+                :href="`/api/v1/people/employees/${e.id}/data-export`"
+                download
+                class="ml-3 text-sm font-medium text-brand-ink underline"
+                :aria-label="`Export the data held about ${e.name}`"
+              >
+                Export data
+              </a>
             </td>
           </tr>
         </tbody>

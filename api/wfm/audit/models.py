@@ -76,6 +76,7 @@ class Action(models.TextChoices):
     REPORT_FAILED = "report.failed", "Report could not be sent"
     REPORT_STOPPED = "report.stopped", "Report schedule stopped"
     REPORT_DOMAINS_CHANGED = "report.domains_changed", "Report email domains changed"
+    SUBJECT_EXPORTED = "employee.data_exported", "An employee's data was exported (subject access)"
     PAYROLL_EXPORTED = "payroll.exported", "Payroll file exported"
     STANDBY_BOOKED = "standby.booked", "Standby booked"
     STANDBY_CANCELLED = "standby.cancelled", "Standby cancelled"

@@ -8266,6 +8266,36 @@
         ]
       }
     },
+    "/api/v1/people/employees/{employee_id}/data-export": {
+      "get": {
+        "operationId": "wfm_people_api_employee_data_export",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employee_id",
+            "required": true,
+            "schema": {
+              "title": "Employee Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Everything held about one employee, for a subject-access request",
+        "tags": [
+          "people"
+        ]
+      }
+    },
     "/api/v1/people/leave/balances": {
       "get": {
         "operationId": "wfm_people_api_get_balances",
