@@ -17,6 +17,7 @@ from .models import ImportBatch, Queue
 from .peaks_api import router as peaks_router
 from .policy import IMPORT_ROLES, VIEW_ROLES
 from .schemas import (
+    CdrSheetReportOut,
     Coverage,
     ImportOut,
     KpiOut,
@@ -38,8 +39,8 @@ router.add_router("", peaks_router)
     summary="Import an ACD Call Detail Report (.xlsx)",
 )
 def import_report(request: HttpRequest, file: File[UploadedFile]) -> Status[ImportOut]:
-    """Reads the Call Record Report sheet, skips calls already imported, builds the 30-minute
-    intervals and returns the import report with its reconciliation."""
+    """Reads all seven sheets (the Call Record Report is required), skips calls already imported,
+    builds the 30-minute intervals and returns the import report with its reconciliation."""
     limit = settings.WFM_CDR_MAX_UPLOAD_MB * 1024 * 1024
     if file.size is not None and file.size > limit:
         raise ApiError(
@@ -173,6 +174,16 @@ def _import_out(batch: ImportBatch) -> ImportOut:
         rejectedSummary=batch.rejected_summary,
         warnings=batch.warnings_summary,
         sheetsIgnored=batch.sheets_ignored,
+        sheets=[
+            CdrSheetReportOut(
+                sheet=r["sheet"],
+                read=r["read"],
+                rowsRead=r["rows_read"],
+                rowsKept=r["rows_kept"],
+                warnings=r["warnings"],
+            )
+            for r in batch.sheets_report
+        ],
         reconciles=bool(batch.reconciliation.get("matches")),
         reconciliation=batch.reconciliation,
     )

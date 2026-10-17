@@ -63,9 +63,37 @@ const warnings = computed(() => Object.entries(props.report.warnings))
       </ul>
     </NoticeBox>
 
-    <p v-if="report.sheetsIgnored.length > 0" class="text-xs text-ink-muted">
-      Not read yet: {{ report.sheetsIgnored.join(', ') }}. Only the Call Record Report sheet is
-      imported in this version.
-    </p>
+    <div v-if="report.sheets.length > 0" data-testid="sheet-report">
+      <h3 class="text-sm font-semibold text-ink">Sheets in the file</h3>
+      <table class="mt-1 w-full text-left text-sm">
+        <thead class="text-xs text-ink-muted">
+          <tr>
+            <th scope="col" class="py-1 pr-3 font-medium">Sheet</th>
+            <th scope="col" class="py-1 pr-3 font-medium">Read</th>
+            <th scope="col" class="py-1 pr-3 text-right font-medium">Rows read</th>
+            <th scope="col" class="py-1 pr-3 text-right font-medium">Rows kept</th>
+            <th scope="col" class="py-1 font-medium">Warnings</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="sheet in report.sheets" :key="sheet.sheet" class="border-t border-line">
+            <th scope="row" class="py-1 pr-3 font-normal text-ink">{{ sheet.sheet }}</th>
+            <td class="py-1 pr-3">{{ sheet.read ? 'Yes' : 'No' }}</td>
+            <td class="py-1 pr-3 text-right tabular-nums">{{ formatCount(sheet.rowsRead) }}</td>
+            <td class="py-1 pr-3 text-right tabular-nums">{{ formatCount(sheet.rowsKept) }}</td>
+            <td class="py-1 text-xs text-ink-muted">
+              <span v-if="Object.keys(sheet.warnings).length === 0">None</span>
+              <span
+                v-for="[code, count] in Object.entries(sheet.warnings)"
+                :key="code"
+                class="block"
+              >
+                {{ formatCount(count) }} {{ describeReason(code) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 </template>

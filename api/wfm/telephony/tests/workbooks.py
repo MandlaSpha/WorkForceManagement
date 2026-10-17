@@ -26,6 +26,11 @@ HEADERS = [
 CANARY_PHONE = "27829990001"
 CANARY_CALLER = "27829990002"
 CANARY_NAME = "Canary Person"
+CANARY_REMARK = "Customer rang about printer"
+CANARY_DIGITS = "0829990004"  # digits a caller typed into the IVR
+CANARY_OTHER_AGENT = "Other Canary (Agent008)"
+INCIDENT = "INC000064329272"
+ORPHAN_CALL_ID = 999999  # on the detail sheets but not in the call sheet
 EXTRA_SHEETS = [
     "Call Disposition Details",
     "Call IVR Details",
@@ -34,6 +39,24 @@ EXTRA_SHEETS = [
     "Call Mute Details",
     "Call Hold Details",
 ]
+DETAIL_HEADERS = {
+    "Call Disposition Details": [
+        "Call ID", "Disposition", "Disposition Remark", "Disposition Time", "Disposition Duration",
+        "Callback Time",
+    ],
+    "Call IVR Details": ["Call ID", "IVR Digit", "IVR Call Activity", "Action", "IVR Time"],
+    "Agent Offered Call": [
+        "Call ID", "Agent  Name", "Call Offered Date", "Call Offered Time", "Call Hangup Time",
+        "Call Hangup Reason",
+    ],
+    "Transfer Call Details": [
+        "Call ID", "Transfer Call ID", "Transfer By", "Transfer Call Start Time",
+        "Transfer Call Answer Time", "Transfer Call Queue Time", "Transfer Call Agent Time",
+        "Transfer Call Hangup Time",
+    ],
+    "Call Mute Details": ["Call ID", "Type", "Start Time", "End Time", "Duration"],
+    "Call Hold Details": ["Call ID", "Type", "Start Time", "End Time", "Duration"],
+}  # fmt: skip
 
 
 def hms(seconds: int | None) -> str | None:
@@ -93,6 +116,8 @@ def workbook_bytes(
     sheet: str = "Call Record Report",
     other_sheets: bool = True,
     canary_phone: str = CANARY_PHONE,
+    detail_rows: dict[str, list[list[object]]] | None = None,
+    skip_sheets: tuple[str, ...] = (),
 ) -> bytes:
     book = openpyxl.Workbook()
     ws = book.active
@@ -106,11 +131,84 @@ def workbook_bytes(
             cells = {**cells, "Phone Number": canary_phone}
         ws.append([cells.get(name) for name in names])
     if other_sheets:
+        rows_by_sheet = detail_sheets(calls) if detail_rows is None else detail_rows
         for name in EXTRA_SHEETS:
-            book.create_sheet(name).append(["Call ID", "Anything"])
+            if name in skip_sheets:
+                continue
+            sheet_ws = book.create_sheet(name)
+            sheet_ws.append(DETAIL_HEADERS[name])
+            for detail in rows_by_sheet.get(name, []):
+                sheet_ws.append(detail)
     out = BytesIO()
     book.save(out)
     return _frozen(out.getvalue())
+
+
+def detail_sheets(calls: list[Call]) -> dict[str, list[list[object]]]:
+    """Rows for the six detail sheets, built from the calls. Every free-text cell holds a canary.
+    One orphan row per sheet names a call that is not in the call sheet."""
+
+    def stamp(call: Call, seconds: int) -> str:
+        moment = datetime.strptime(call.start, "%Y-%m-%d %H:%M:%S") + timedelta(seconds=seconds)
+        return moment.strftime("%Y-%m-%d %H:%M:%S")
+
+    rows: dict[str, list[list[object]]] = {name: [] for name in EXTRA_SHEETS}
+    for call in calls:
+        if call.status != "Agent" or call.call_type != "INBOUND":
+            continue
+        remark = (
+            f"Rang {CANARY_NAME} on {CANARY_PHONE} about {INCIDENT} please"
+            if call.call_id == 1
+            else CANARY_REMARK
+        )
+        rows["Call Disposition Details"].append(
+            [call.call_id, "Resolved", remark, stamp(call, 60), hms(call.wrap), None]
+        )
+        rows["Call IVR Details"] += [
+            [call.call_id, "1", "Main Menu", "Selected", stamp(call, 1)],
+            [call.call_id, CANARY_DIGITS, "Account Entry", "Typed", stamp(call, 2)],
+        ]
+        offered = datetime.strptime(call.start, "%Y-%m-%d %H:%M:%S") + timedelta(seconds=2)
+        rows["Agent Offered Call"].append(
+            [
+                call.call_id, call.agent, offered.strftime("%Y-%m-%d"),
+                offered.strftime("%H:%M:%S"),
+                (offered + timedelta(seconds=7)).strftime("%H:%M:%S"), "Answered",
+            ]
+        )  # fmt: skip
+        if call.call_id == 1:
+            rows["Agent Offered Call"].append(
+                [
+                    1, CANARY_OTHER_AGENT, offered.strftime("%Y-%m-%d"),
+                    offered.strftime("%H:%M:%S"),
+                    (offered + timedelta(seconds=4)).strftime("%H:%M:%S"), "No answer",
+                ]
+            )  # fmt: skip
+            rows["Call Mute Details"].append(
+                [1, "Agent mute", stamp(call, 10), stamp(call, 25), hms(15)]
+            )
+        if call.call_id == 2:
+            rows["Call Hold Details"].append(
+                [2, "Customer hold", stamp(call, 20), stamp(call, 80), hms(60)]
+            )
+    transfer = next((c for c in calls if c.call_type == "AGENT TRANSFER"), None)
+    if transfer is not None:
+        rows["Transfer Call Details"].append(
+            [
+                transfer.call_id, 70001, transfer.agent, stamp(transfer, 0), stamp(transfer, 6),
+                None, None, stamp(transfer, 126),
+            ]
+        )  # fmt: skip
+    orphan = ORPHAN_CALL_ID
+    rows["Call Disposition Details"].append([orphan, "Resolved", CANARY_REMARK, None, hms(5), None])
+    rows["Call IVR Details"].append([orphan, "1", "Main Menu", "Selected", None])
+    rows["Agent Offered Call"].append(
+        [orphan, "Ghost Canary (Agent099)", "2026-05-04", "08:00:00", "08:00:05", "x"]
+    )
+    rows["Transfer Call Details"].append([orphan, 70002, None, None, None, None, None, None])
+    rows["Call Mute Details"].append([orphan, "Agent mute", None, None, hms(3)])
+    rows["Call Hold Details"].append([orphan, "Customer hold", None, None, hms(3)])
+    return rows
 
 
 def _frozen(xlsx: bytes) -> bytes:

@@ -1888,6 +1888,43 @@
         "title": "CapacityWeekOut",
         "type": "object"
       },
+      "CdrSheetReportOut": {
+        "description": "What happened to one sheet of the workbook (DAT-01): counts and reason codes only.",
+        "properties": {
+          "read": {
+            "title": "Read",
+            "type": "boolean"
+          },
+          "rowsKept": {
+            "title": "Rowskept",
+            "type": "integer"
+          },
+          "rowsRead": {
+            "title": "Rowsread",
+            "type": "integer"
+          },
+          "sheet": {
+            "title": "Sheet",
+            "type": "string"
+          },
+          "warnings": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Warnings",
+            "type": "object"
+          }
+        },
+        "required": [
+          "sheet",
+          "read",
+          "rowsRead",
+          "rowsKept",
+          "warnings"
+        ],
+        "title": "CdrSheetReportOut",
+        "type": "object"
+      },
       "ContractChangeIn": {
         "properties": {
           "active": {
@@ -3472,6 +3509,13 @@
             "title": "Rowsrejected",
             "type": "integer"
           },
+          "sheets": {
+            "items": {
+              "$ref": "#/components/schemas/CdrSheetReportOut"
+            },
+            "title": "Sheets",
+            "type": "array"
+          },
           "sheetsIgnored": {
             "items": {
               "type": "string"
@@ -3510,6 +3554,7 @@
           "rejectedSummary",
           "warnings",
           "sheetsIgnored",
+          "sheets",
           "reconciles",
           "reconciliation"
         ],
@@ -15820,7 +15865,7 @@
         ]
       },
       "post": {
-        "description": "Reads the Call Record Report sheet, skips calls already imported, builds the 30-minute\nintervals and returns the import report with its reconciliation.",
+        "description": "Reads all seven sheets (the Call Record Report is required), skips calls already imported,\nbuilds the 30-minute intervals and returns the import report with its reconciliation.",
         "operationId": "wfm_telephony_api_import_report",
         "parameters": [],
         "requestBody": {

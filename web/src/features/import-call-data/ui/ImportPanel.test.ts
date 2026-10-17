@@ -79,7 +79,13 @@ describe('importing a report', () => {
 
     expect(await screen.findByTestId('reconciles')).toHaveTextContent(/Reconciles/)
     expect(screen.getByText('Calls added').nextElementSibling).toHaveTextContent(/5\s971/)
-    expect(screen.getByText(/Not read yet: Call IVR Details/)).toBeVisible()
+    const sheets = within(screen.getByTestId('sheet-report'))
+    expect(
+      sheets.getByRole('row', { name: /Call Record Report Yes 5\s971 5\s971 None/ }),
+    ).toBeVisible()
+    expect(
+      sheets.getByRole('row', { name: /Call IVR Details No 0 0 .*not in the file/ }),
+    ).toBeVisible()
   })
 
   it('refreshes the list of previous imports without a page reload', async () => {

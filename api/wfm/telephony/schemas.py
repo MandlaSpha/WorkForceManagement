@@ -30,6 +30,16 @@ class QueueSettingsIn(Schema):
     outboundOnly: bool | None = None  # noqa: N815 - none keeps what it is
 
 
+class CdrSheetReportOut(Schema):
+    """What happened to one sheet of the workbook (DAT-01): counts and reason codes only."""
+
+    sheet: str
+    read: bool
+    rowsRead: int  # noqa: N815
+    rowsKept: int  # noqa: N815
+    warnings: dict[str, int]  # reason code to count (a missing optional sheet is a warning)
+
+
 class ImportOut(Schema):
     id: UUID
     fileName: str  # noqa: N815 - camelCase on the wire
@@ -44,7 +54,8 @@ class ImportOut(Schema):
     rowsRejected: int  # noqa: N815
     rejectedSummary: dict[str, int]  # noqa: N815 - reason code to count, never cell values
     warnings: dict[str, int]  # calls kept with one unusable cell cleared, by reason code
-    sheetsIgnored: list[str]  # noqa: N815
+    sheetsIgnored: list[str]  # noqa: N815 - optional sheets that were missing or unusable
+    sheets: list[CdrSheetReportOut]  # one entry per sheet, in workbook order; empty on old imports
     reconciles: bool
     reconciliation: dict[str, Any]
 

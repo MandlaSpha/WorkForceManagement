@@ -10,11 +10,12 @@ from wfm.telephony.workbook import WorkbookError, read_call_records
 from .workbooks import HEADERS, Call, scenario, workbook_bytes
 
 
-def test_reads_the_call_record_sheet_and_lists_the_rest_as_ignored() -> None:
+def test_reads_the_call_record_sheet_and_every_detail_sheet() -> None:
     parsed = read_call_records(workbook_bytes(scenario()))
     assert [row.call_id for _, row in parsed.rows] == list(range(1, 13))
     assert parsed.rows_read == 12
-    assert len(parsed.sheets_ignored) == 6
+    assert parsed.sheets_ignored == []
+    assert len(parsed.sheet_reports) == 7
 
 
 def test_row_numbers_point_at_the_sheet_row_so_a_person_can_find_it() -> None:

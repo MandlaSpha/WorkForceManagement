@@ -15,6 +15,14 @@ const REASONS: Record<string, string> = {
   'queue.missing': 'no queue (the row was skipped)',
   'status.missing': 'no call status (the row was skipped)',
   'start_time.missing': 'no start time (the row was skipped)',
+  'sheet.missing': 'sheet not in the file (optional, nothing was stored from it)',
+  'sheet.columns_missing': 'sheet without the columns it needs (optional, nothing was stored)',
+  'sheet.header_missing': 'sheet with no header row (optional, nothing was stored)',
+  'row.call_not_in_batch': 'rows for a call that is not in this import (not stored)',
+  'row.call_id.missing': 'rows with no call ID (not stored)',
+  'row.call_id.unreadable': 'rows with a call ID that is not a number (not stored)',
+  'row.agent.missing': 'rows with no agent login (not stored)',
+  'row.offered_time.unreadable': 'rows with an unreadable offer time (not stored)',
   'timestamp.unreadable': 'a start time that cannot be read (the row was skipped)',
 }
 

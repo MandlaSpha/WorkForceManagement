@@ -66,6 +66,16 @@ export function importReport(overrides: Partial<ImportReport> = {}): ImportRepor
     rejectedSummary: {},
     warnings: {},
     sheetsIgnored: ['Call IVR Details'],
+    sheets: [
+      { sheet: 'Call Record Report', read: true, rowsRead: 5971, rowsKept: 5971, warnings: {} },
+      {
+        sheet: 'Call IVR Details',
+        read: false,
+        rowsRead: 0,
+        rowsKept: 0,
+        warnings: { 'sheet.missing': 1 },
+      },
+    ],
     reconciles: true,
     reconciliation: {},
     ...overrides,

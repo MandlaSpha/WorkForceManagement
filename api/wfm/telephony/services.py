@@ -15,11 +15,20 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from wfm_engine.cdr import CallRow
+from wfm_engine.cdr_details import (
+    SHEET_MUTE,
+    DispositionRow,
+    IvrRow,
+    OfferRow,
+    PauseRow,
+    TransferRow,
+)
 from wfm_engine.kpi import INTERVAL_MINUTES, interval_start
 
 from wfm.accounts.models import User
@@ -28,7 +37,16 @@ from wfm.audit.models import Action, Outcome
 from wfm.core.errors import ApiError, not_found
 
 from . import intervals, reconciliation
-from .models import CallRecord, ImportBatch, Queue
+from .models import (
+    AgentOffer,
+    CallDisposition,
+    CallIvrStep,
+    CallPause,
+    CallRecord,
+    CallTransfer,
+    ImportBatch,
+    Queue,
+)
 from .workbook import ParsedWorkbook, WorkbookError, read_call_records
 
 INSERT_CHUNK = 2000
@@ -166,6 +184,9 @@ def _store(user: User, file_name: str, digest: str, plan: _Plan) -> ImportBatch:
             sheets_ignored=parsed.sheets_ignored,
         )
         _insert_calls(batch, fresh, queues, zone)
+        _insert_details(batch, parsed, fresh, zone)
+        batch.sheets_report = [r.as_json() for r in parsed.sheet_reports.values()]
+        batch.save(update_fields=["sheets_report"])
         intervals.rebuild([q.pk for q in queues.values()], first, end)
         batch.reconciliation = reconciliation.reconcile(batch, fresh, first, end)
         batch.save(update_fields=["reconciliation"])
@@ -185,6 +206,12 @@ def _store(user: User, file_name: str, digest: str, plan: _Plan) -> ImportBatch:
                     ("rows_rejected", batch.rows_rejected),
                     ("reconciles", batch.reconciliation["matches"]),
                 )
+            ]
+            + [  # counts per detail sheet, never values
+                audit.FieldChange(
+                    "import_batch", str(batch.id), f"kept:{r['sheet']}", None, str(r["rows_kept"])
+                )
+                for r in batch.sheets_report
             ],
         )
     return batch
@@ -263,6 +290,91 @@ def _insert_calls(
                 for c in calls[at : at + INSERT_CHUNK]
             ]
         )
+
+
+def _offset_s(at: datetime | None, start: datetime) -> int | None:
+    return int((at - start).total_seconds()) if at is not None and at >= start else None
+
+
+def _insert_details(
+    batch: ImportBatch, parsed: ParsedWorkbook, fresh: Sequence[CallRow], zone: ZoneInfo
+) -> None:
+    """Store the rows of the six detail sheets that belong to a call in this batch. A row whose
+    call is not in the batch (not in the file's call sheet, or already imported earlier) is
+    counted as a warning and dropped."""
+    pk_of: dict[int, int] = {}
+    ids = [c.call_id for c in fresh]
+    for at in range(0, len(ids), LOOKUP_CHUNK):
+        pk_of.update(
+            CallRecord.objects.filter(call_id__in=ids[at : at + LOOKUP_CHUNK]).values_list(
+                "call_id", "pk"
+            )
+        )
+    agent_of = {c.call_id: c.agent_login or "" for c in fresh}
+    start_of = {c.call_id: c.start_at for c in fresh}
+    seen_steps: dict[int, int] = {}
+    pending: dict[type, list[Any]] = {}
+
+    def add(row: Any) -> None:
+        pending.setdefault(type(row), []).append(row)
+
+    for sheet, rows in parsed.details.items():
+        report = parsed.sheet_reports[sheet]
+        for row in rows:
+            call_id = row.call_id  # type: ignore[attr-defined]
+            pk = pk_of.get(call_id)
+            if pk is None:
+                report.warnings["row.call_not_in_batch"] += 1
+                continue
+            report.rows_kept += 1
+            if isinstance(row, DispositionRow):
+                add(
+                    CallDisposition(
+                        call_id=pk,
+                        disposition=row.disposition,
+                        incident_ref=row.incident_ref,
+                        after_call_s=row.after_call_s,
+                    )
+                )
+            elif isinstance(row, IvrRow):
+                step = seen_steps.get(pk, 0) + 1
+                seen_steps[pk] = step
+                add(
+                    CallIvrStep(
+                        call_id=pk,
+                        step=step,
+                        digit=row.digit,
+                        activity=row.activity,
+                        action=row.action,
+                        offset_s=_offset_s(row.at, start_of[call_id]),
+                    )
+                )
+            elif isinstance(row, OfferRow):
+                add(
+                    AgentOffer(
+                        call_id=pk,
+                        agent_login=row.agent_login,
+                        offered_at=row.offered_at.replace(tzinfo=zone),
+                        ring_s=row.ring_s,
+                        answered=row.agent_login == agent_of[call_id],
+                    )
+                )
+            elif isinstance(row, TransferRow):
+                add(
+                    CallTransfer(
+                        call_id=pk,
+                        transfer_call_id=row.transfer_call_id,
+                        by_login=row.by_login,
+                        answer_s=row.answer_s,
+                        duration_s=row.duration_s,
+                    )
+                )
+            elif isinstance(row, PauseRow):
+                kind = CallPause.MUTE if sheet == SHEET_MUTE else CallPause.HOLD
+                add(CallPause(call_id=pk, kind=kind, label=row.kind, duration_s=row.duration_s))
+    for model_rows in pending.values():
+        for at in range(0, len(model_rows), INSERT_CHUNK):
+            type(model_rows[0]).objects.bulk_create(model_rows[at : at + INSERT_CHUNK])
 
 
 def update_queue_settings(

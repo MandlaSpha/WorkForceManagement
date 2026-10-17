@@ -2215,8 +2215,8 @@ export interface paths {
         put?: never;
         /**
          * Import an ACD Call Detail Report (.xlsx)
-         * @description Reads the Call Record Report sheet, skips calls already imported, builds the 30-minute
-         *     intervals and returns the import report with its reconciliation.
+         * @description Reads all seven sheets (the Call Record Report is required), skips calls already imported,
+         *     builds the 30-minute intervals and returns the import report with its reconciliation.
          */
         post: operations["wfm_telephony_api_import_report"];
         delete?: never;
@@ -3209,6 +3209,24 @@ export interface components {
              */
             weekStart: string;
         };
+        /**
+         * CdrSheetReportOut
+         * @description What happened to one sheet of the workbook (DAT-01): counts and reason codes only.
+         */
+        CdrSheetReportOut: {
+            /** Read */
+            read: boolean;
+            /** Rowskept */
+            rowsKept: number;
+            /** Rowsread */
+            rowsRead: number;
+            /** Sheet */
+            sheet: string;
+            /** Warnings */
+            warnings: {
+                [key: string]: number;
+            };
+        };
         /** ContractChangeIn */
         ContractChangeIn: {
             /**
@@ -3793,6 +3811,8 @@ export interface components {
             rowsRead: number;
             /** Rowsrejected */
             rowsRejected: number;
+            /** Sheets */
+            sheets: components["schemas"]["CdrSheetReportOut"][];
             /** Sheetsignored */
             sheetsIgnored: string[];
             /** Sourcetimezone */

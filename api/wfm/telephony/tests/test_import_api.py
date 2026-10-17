@@ -59,12 +59,13 @@ class TestAHappyImport:
         assert report["fileName"] == "report.xlsx"
         assert report["sourceTimezone"] == "Africa/Johannesburg"
 
-    def test_says_which_sheets_it_did_not_read(
+    def test_reads_every_sheet_so_none_is_left_ignored(
         self, imported: tuple[Client, dict[str, Any]]
     ) -> None:
         _, report = imported
-        assert "Call IVR Details" in report["sheetsIgnored"]
-        assert len(report["sheetsIgnored"]) == 6
+        assert report["sheetsIgnored"] == []
+        assert len(report["sheets"]) == 7
+        assert all(sheet["read"] for sheet in report["sheets"])
 
     def test_creates_queues_unconfirmed_for_an_admin_to_confirm(
         self, imported: tuple[Client, dict[str, Any]]
@@ -222,6 +223,14 @@ class TestAuditOfASuccess:
             "rows_duplicate": "0",
             "rows_rejected": "0",
             "reconciles": "True",
+            # rows kept per sheet: counts only
+            "kept:Call Record Report": "12",
+            "kept:Call Disposition Details": "8",
+            "kept:Call IVR Details": "16",
+            "kept:Agent Offered Call": "9",
+            "kept:Transfer Call Details": "1",
+            "kept:Call Mute Details": "1",
+            "kept:Call Hold Details": "1",
         }
 
 

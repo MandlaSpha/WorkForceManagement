@@ -75,7 +75,9 @@ class ImportBatch(models.Model):
     rejected_summary = models.JSONField(default=dict)  # reason code -> count, never cell values
     rejected_samples = models.JSONField(default=list)  # up to 50 of {row, code}
     warnings_summary = models.JSONField(default=dict)  # code -> calls kept with one cell cleared
-    sheets_ignored = models.JSONField(default=list)  # sheets this version does not read yet
+    sheets_ignored = models.JSONField(default=list)  # optional sheets missing or unusable
+    # Per sheet: {sheet, read, rows_read, rows_kept, warnings{code: count}}. Codes and counts only.
+    sheets_report = models.JSONField(default=list)
     reconciliation = models.JSONField(default=dict)
 
     objects = ImportBatchQuerySet.as_manager()
@@ -124,6 +126,92 @@ class CallRecord(models.Model):
 
     def __str__(self) -> str:
         return f"call {self.call_id}"
+
+
+class CallDetailQuerySet(ScopedQuerySet):
+    def for_user(self, user: Any) -> Self:
+        # Per-call detail rows are never served to anyone: only aggregates leave the module.
+        return self.none()
+
+
+class CallDisposition(models.Model):
+    """How an agent closed a call (Call Disposition Details). The free-text remark is NOT kept,
+    only the ITSM incident number found in it."""
+
+    call = models.ForeignKey(CallRecord, on_delete=models.CASCADE, related_name="dispositions")
+    disposition = models.CharField(max_length=60, blank=True)
+    incident_ref = models.CharField(max_length=30, blank=True)
+    after_call_s = models.PositiveIntegerField(null=True)
+
+    objects = CallDetailQuerySet.as_manager()
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__} of call {self.call_id}"
+
+
+class CallIvrStep(models.Model):
+    """One step of a caller's path through the IVR menu. No digits the caller typed are kept."""
+
+    call = models.ForeignKey(CallRecord, on_delete=models.CASCADE, related_name="ivr_steps")
+    step = models.PositiveSmallIntegerField()
+    digit = models.CharField(max_length=1, blank=True)
+    activity = models.CharField(max_length=60, blank=True)
+    action = models.CharField(max_length=60, blank=True)
+    offset_s = models.PositiveIntegerField(null=True)  # seconds after the call started
+
+    objects = CallDetailQuerySet.as_manager()
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__} of call {self.call_id}"
+
+
+class AgentOffer(models.Model):
+    """A call offered to an agent's phone (Agent Offered Call). `answered` is true when that agent
+    is the one who took the call, so the rest are ring-no-answer."""
+
+    call = models.ForeignKey(CallRecord, on_delete=models.CASCADE, related_name="offers")
+    agent_login = models.CharField(max_length=100)
+    offered_at = models.DateTimeField()
+    ring_s = models.PositiveIntegerField(null=True)
+    answered = models.BooleanField()
+
+    objects = CallDetailQuerySet.as_manager()
+
+    class Meta:
+        indexes = [models.Index(fields=["agent_login", "offered_at"], name="telephony_offer_agent")]
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__} of call {self.call_id}"
+
+
+class CallTransfer(models.Model):
+    call = models.ForeignKey(CallRecord, on_delete=models.CASCADE, related_name="transfers")
+    transfer_call_id = models.BigIntegerField(null=True)
+    by_login = models.CharField(max_length=100, blank=True)
+    answer_s = models.PositiveIntegerField(null=True)
+    duration_s = models.PositiveIntegerField(null=True)
+
+    objects = CallDetailQuerySet.as_manager()
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__} of call {self.call_id}"
+
+
+class CallPause(models.Model):
+    """A mute or a hold during a call (Call Mute Details, Call Hold Details)."""
+
+    MUTE = "mute"
+    HOLD = "hold"
+
+    call = models.ForeignKey(CallRecord, on_delete=models.CASCADE, related_name="pauses")
+    kind = models.CharField(max_length=4, choices=[(MUTE, "Mute"), (HOLD, "Hold")])
+    label = models.CharField(max_length=60, blank=True)
+    duration_s = models.PositiveIntegerField(null=True)
+
+    objects = CallDetailQuerySet.as_manager()
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__} of call {self.call_id}"
 
 
 class IntervalActualQuerySet(ScopedQuerySet):

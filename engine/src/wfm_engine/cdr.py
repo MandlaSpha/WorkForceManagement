@@ -96,6 +96,19 @@ def agent_login(value: object) -> str | None:
     return match.group(1) if match else text
 
 
+def parse_call_id(raw_id: object) -> int:
+    """A positive whole-number call ID, or `CallRowError` (`call_id.missing` / `.unreadable`)."""
+    if isinstance(raw_id, bool) or raw_id is None:
+        raise CallRowError("call_id.missing")
+    try:
+        call_id = int(str(raw_id).strip())
+    except ValueError:
+        raise CallRowError("call_id.unreadable") from None
+    if call_id <= 0:
+        raise CallRowError("call_id.unreadable")
+    return call_id
+
+
 def _soft[T](
     read: Callable[[object], T | None],
     row: Mapping[str, object],
@@ -121,15 +134,7 @@ def _text(row: Mapping[str, object], key: str) -> str:
 
 def parse_call_row(row: Mapping[str, object]) -> CallRow:
     """Turn one spreadsheet row (header name to cell) into a `CallRow`, or raise `CallRowError`."""
-    raw_id = row.get("Call ID")
-    if isinstance(raw_id, bool) or raw_id is None:
-        raise CallRowError("call_id.missing")
-    try:
-        call_id = int(str(raw_id).strip())
-    except ValueError:
-        raise CallRowError("call_id.unreadable") from None
-    if call_id <= 0:
-        raise CallRowError("call_id.unreadable")
+    call_id = parse_call_id(row.get("Call ID"))
 
     call_type = _text(row, "Call Type").upper()
     if not call_type:

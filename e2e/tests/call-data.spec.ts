@@ -77,6 +77,14 @@ test('a planner imports a report and sees the measured figures on the dashboard'
   await expect(page.getByText('Calls added').locator('xpath=following-sibling::dd')).toHaveText('6')
   await expect(page.getByRole('table').getByText('e2e-report.xlsx').first()).toBeVisible()
 
+  // The report says per sheet what was read; the made-up file has only the call sheet, so the six
+  // optional sheets are warnings, not errors.
+  const sheets = page.getByTestId('sheet-report')
+  await expect(sheets.getByRole('row', { name: /Call Record Report Yes 6 6 None/ })).toBeVisible()
+  await expect(
+    sheets.getByRole('row', { name: /Call IVR Details No 0 0 .*not in the file/ }),
+  ).toBeVisible()
+
   // The same file again is refused, plainly, and nothing is added.
   await chooseReport(page, buffer)
   await page.getByRole('button', { name: 'Import report' }).click()
