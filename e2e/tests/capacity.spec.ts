@@ -70,6 +70,9 @@ test('publishing a forecast adds its people to the day, split permanent first', 
   await goToTargetWeek(page)
   const before = await readDay(page, target)
   const base = before.peak ?? 0
+  // Another day, read now, to show this test's publish leaves it alone. Whoever else has a forecast
+  // there (a real queue's month, say) is part of the baseline, not an error.
+  const otherDayBefore = await readDay(page, addDays(target, 3))
 
   // Run and publish this queue's forecast for the target Monday.
   await page.getByRole('link', { name: 'Forecast' }).click()
@@ -97,13 +100,8 @@ test('publishing a forecast adds its people to the day, split permanent first', 
   expect(after.overflow).toBe(Math.max(peak - 350, 0))
   expect((after.permanent ?? 0) + (after.seasonal ?? 0) + (after.overflow ?? 0)).toBe(peak)
 
-  // A day nobody forecast stays a dash, not a zero.
-  expect(await readDay(page, addDays(target, 3))).toEqual({
-    peak: null,
-    permanent: null,
-    seasonal: null,
-    overflow: null,
-  })
+  // A day this forecast does not cover is unchanged: a dash stays a dash, not a zero.
+  expect(await readDay(page, addDays(target, 3))).toEqual(otherDayBefore)
 
   await expectNoAccessibilityViolations(page)
   await page.getByRole('button', { name: 'Switch to dark mode' }).click()
