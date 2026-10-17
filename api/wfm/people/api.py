@@ -5,13 +5,13 @@ import json
 from django.http import HttpRequest, HttpResponse
 from ninja import Router, Status
 
-from wfm.accounts.models import User
+from wfm.accounts.models import Role, User
 from wfm.core.errors import ApiError, not_found
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 from wfm.scheduling.models import Employee
 
-from . import selectors, services, subject_export
+from . import erasure, selectors, services, subject_export
 from .ess_api import router as ess_router
 from .models import LeaveRequest, LeaveType
 from .policy import APPROVE_ROLES, CONFIG_ROLES, SELF_ROLES
@@ -21,10 +21,14 @@ from .schemas import (
     BalancesOut,
     DecisionOut,
     EntitlementIn,
+    ErasureConfirmIn,
+    ErasureDoneOut,
+    ErasurePreviewOut,
     ImpactOut,
     LeaveRequestIn,
     LeaveRequestOut,
     LeaveTypeOut,
+    RetentionOut,
 )
 from .shrinkage_api import router as shrinkage_router
 from .swap_api import router as swap_router
@@ -38,6 +42,7 @@ router.add_router("", shrinkage_router)
 SELF = RoleSessionAuth(*sorted(SELF_ROLES), feature=Feature.PEOPLE)
 APPROVE = RoleSessionAuth(*sorted(APPROVE_ROLES), feature=Feature.PEOPLE)
 CONFIG = RoleSessionAuth(*sorted(CONFIG_ROLES), feature=Feature.PEOPLE)
+ADMIN_ONLY = RoleSessionAuth(Role.ADMIN, feature=Feature.PEOPLE)
 
 
 @router.get("/leave/types", auth=SELF, response=list[LeaveTypeOut], summary="Kinds of leave")
@@ -242,3 +247,35 @@ def employee_data_export(request: HttpRequest, employee_id: int) -> HttpResponse
     response["Content-Disposition"] = f'attachment; filename="subject-access-{employee_id}.json"'
     response["Cache-Control"] = "no-store"
     return response
+
+
+@router.post(
+    "/employees/{employee_id}/erasure-request",
+    auth=ADMIN_ONLY,
+    response=ErasurePreviewOut,
+    summary="Whether a leaver may be anonymised, and what would be removed (changes nothing)",
+)
+def erasure_request(request: HttpRequest, employee_id: int) -> dict[str, object]:
+    return erasure.preview(current_user(request), employee_id)
+
+
+@router.post(
+    "/employees/{employee_id}/anonymise",
+    auth=ADMIN_ONLY,
+    response=ErasureDoneOut,
+    summary="Anonymise a leaver (cannot be undone); the employee number must be typed again",
+)
+def employee_anonymise(
+    request: HttpRequest, employee_id: int, body: ErasureConfirmIn
+) -> dict[str, object]:
+    return erasure.anonymise(current_user(request), employee_id, body.employeeNumber)
+
+
+@router.get(
+    "/retention",
+    auth=ADMIN_ONLY,
+    response=RetentionOut,
+    summary="Leavers gone longer than the retention period, for the admin to review",
+)
+def retention(request: HttpRequest) -> dict[str, object]:
+    return erasure.past_retention(current_user(request))

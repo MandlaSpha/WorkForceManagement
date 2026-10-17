@@ -5,6 +5,7 @@ import { useQueues } from '@/entities/call-data'
 import { useSessionStore } from '@/entities/session'
 import { formatHours, useEmployees, type Employee } from '@/entities/scheduling'
 import { EmployeeForm } from '@/features/people/employee'
+import { AnonymisePanel, RetentionPanel } from '@/features/people/erasure'
 import { ImportEmployeesPanel } from '@/features/people/import-employees'
 import { MapLoginsPanel } from '@/features/people/map-logins'
 import { problemMessage } from '@/shared/api'
@@ -25,6 +26,11 @@ const queues = useQueues()
 // "new" shows the add form; an employee shows the change form for them; null shows neither.
 const editing = ref<Employee | 'new' | null>(null)
 const importing = ref(false)
+const anonymising = ref<Employee | null>(null)
+const ERASED = 'ERASED-'
+function review(employeeId: number): void {
+  anonymising.value = (employees.data.value ?? []).find((e) => e.id === employeeId) ?? null
+}
 const CONTRACT: Record<string, string> = { permanent: 'Permanent', seasonal: 'Seasonal' }
 const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybrid: 'Hybrid' }
 </script>
@@ -42,6 +48,15 @@ const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybri
   <section class="space-y-6" aria-live="polite">
     <ImportEmployeesPanel v-if="importing && canChange" />
     <MapLoginsPanel v-if="canChange" :employees="employees.data.value ?? []" />
+    <RetentionPanel v-if="isAdmin" @review="review" />
+    <AnonymisePanel
+      v-if="isAdmin && anonymising"
+      :key="anonymising.id"
+      :employee-id="anonymising.id"
+      :employee-label="anonymising.name"
+      @done="anonymising = null"
+      @cancel="anonymising = null"
+    />
 
     <EmployeeForm
       v-if="editing !== null && canChange"
@@ -121,6 +136,15 @@ const MODE: Record<string, string> = { office: 'Office', remote: 'Remote', hybri
               >
                 Export data
               </a>
+              <button
+                v-if="isAdmin && !e.empNo.startsWith(ERASED)"
+                type="button"
+                class="ml-3 text-sm font-medium text-danger underline"
+                :aria-label="`Anonymise ${e.name}`"
+                @click="anonymising = e"
+              >
+                Anonymise
+              </button>
             </td>
           </tr>
         </tbody>

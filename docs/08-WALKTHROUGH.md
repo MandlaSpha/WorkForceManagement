@@ -151,6 +151,8 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Operate > Hiring plan.** As `planner`, make a plan: people employed now, how many leave each month, how fast a new hire gets productive, and the people needed for each of 12 to 18 months. It shows how many to hire and when (a hire is made as many months ahead as the ramp is long), the months that are short, and the months where no hire could have helped in time. As `executive` you read the same plan without any rand figure.
 
+**People > Employees > Anonymise (admin).** For someone who has left, the admin can choose Anonymise next to their row. The screen first lists what would be deleted (logins, availability, notifications, pay record, overtime reasons) and what stays without a name (shifts, leave, overtime and standby), and only enables the button once you have typed the employee number. It refuses if the person still has future shifts or leave, has requests waiting, has not left yet, or is the account you are signed in with. It cannot be undone. Above the table a panel lists people who left more than 60 months ago (`WFM_RETENTION_MONTHS`) so you know whom to review; it never acts by itself.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD

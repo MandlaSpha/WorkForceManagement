@@ -77,3 +77,32 @@ class ImpactOut(Schema):
     newlyUnder: int  # noqa: N815 - half-hours that were covered and would no longer be
     alreadyUnder: int  # noqa: N815 - half-hours already short, made shorter
     unknown: int  # half-hours with no known requirement
+
+
+class ErasurePreviewOut(Schema):
+    employeeId: int  # noqa: N815
+    employeeNumber: str  # noqa: N815
+    removes: dict[str, int]
+    keeps: dict[str, int]
+
+
+class ErasureConfirmIn(Schema):
+    employeeNumber: str  # noqa: N815
+
+
+class ErasureDoneOut(Schema):
+    employeeId: int  # noqa: N815
+    removes: dict[str, int]
+    keeps: dict[str, int]
+
+
+class RetentionPersonOut(Schema):
+    employeeId: int  # noqa: N815
+    employeeNumber: str  # noqa: N815
+    endDate: date  # noqa: N815
+
+
+class RetentionOut(Schema):
+    months: int
+    before: date
+    employees: list[RetentionPersonOut]

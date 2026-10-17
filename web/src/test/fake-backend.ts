@@ -237,6 +237,12 @@ export const backend = {
   employees: [] as Employee[],
   roster: null as Roster | null,
   plan: null as Plan | null,
+  /** Right to erasure: what the request step reports, and the leavers past retention. */
+  erasure: {
+    removes: {} as Record<string, number>,
+    keeps: {} as Record<string, number>,
+    retention: [] as Array<{ employeeId: number; employeeNumber: string; endDate: string }>,
+  },
   /** Every write the app sent to scheduling or queue settings, with the CSRF header it carried. */
   writes: [] as Array<{ method: string; path: string; body: unknown; csrf: string | null }>,
   /** When set, the next scheduling write is refused with this problem (and then cleared). */
@@ -337,6 +343,7 @@ export const backend = {
     this.employees = []
     this.roster = null
     this.plan = null
+    this.erasure = { removes: {}, keeps: {}, retention: [] }
     this.writes = []
     this.nextProblem = null
     this.onAssign = null
@@ -641,6 +648,41 @@ export const handlers = [
     backend.awayLimit = { maxConcurrent: sent.maxConcurrent }
     return HttpResponse.json(backend.awayLimit)
   }),
+
+  http.post('*/api/v1/people/employees/:id/erasure-request', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const employee = backend.employees.find((e) => e.id === Number(info.params.id))
+    return HttpResponse.json({
+      employeeId: Number(info.params.id),
+      employeeNumber: employee?.empNo ?? '',
+      removes: backend.erasure.removes,
+      keeps: backend.erasure.keeps,
+    })
+  }),
+
+  http.post('*/api/v1/people/employees/:id/anonymise', async (info) => {
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.employees = backend.employees.map((e) =>
+      e.id === id ? { ...e, empNo: 'ERASED-AB12CD34EF', name: 'Former employee AB12CD34EF' } : e,
+    )
+    backend.erasure.retention = backend.erasure.retention.filter((p) => p.employeeId !== id)
+    return HttpResponse.json({
+      employeeId: id,
+      removes: backend.erasure.removes,
+      keeps: backend.erasure.keeps,
+    })
+  }),
+
+  http.get('*/api/v1/people/retention', () =>
+    HttpResponse.json({
+      months: 60,
+      before: '2021-10-17',
+      employees: backend.erasure.retention,
+    }),
+  ),
 
   http.get('*/api/v1/people/leave/types', () => HttpResponse.json(backend.leaveTypes)),
 
