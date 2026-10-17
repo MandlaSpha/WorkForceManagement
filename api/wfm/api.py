@@ -8,6 +8,7 @@ from ninja import NinjaAPI
 from wfm.accounts.api import router as auth_router
 from wfm.accounts.user_api import router as users_router
 from wfm.attendance.api import router as attendance_router
+from wfm.audit.api import router as audit_router
 from wfm.capacity.api import router as capacity_router
 from wfm.continuity.api import router as continuity_router
 from wfm.contracts.api import router as contracts_router
@@ -50,6 +51,7 @@ def handle_api_error(request: HttpRequest, exc: ApiError) -> HttpResponse:
 
 api.add_router("/auth", auth_router)
 api.add_router("/users", users_router)
+api.add_router("/audit", audit_router)
 api.add_router("/auth", identity_router)
 api.add_router("/system", system_router)
 api.add_router("/telephony", telephony_router)

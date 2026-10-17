@@ -150,16 +150,6 @@ export const NAV_ITEMS = [
     subtitle: 'Establishment, attrition and hiring over the planning horizon.',
   },
   {
-    key: 'scheduling',
-    path: '/scheduling',
-    label: 'Scheduling',
-    group: 'Operate',
-    icon: 'repeat',
-    feature: 'scheduling',
-    phase: 4,
-    subtitle: 'Availability, cross-queue flexing, standby rota and rotations.',
-  },
-  {
     key: 'continuity',
     path: '/continuity',
     label: 'Continuity',
