@@ -14,7 +14,7 @@ from wfm_engine.roster import (
     SLOTS_PER_DAY,
     WeekSummary,
     classify,
-    coverage,
+    coverage_on_phone,
     summarise,
     variance,
 )
@@ -145,6 +145,7 @@ class PlanCell:
     required: int | None  # None: the forecast does not say
     variance: int | None
     state: str | None  # under, met, over; None when unknown
+    off_phone: int = 0  # scheduled but in a break or activity: not counted in `scheduled`
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,7 +168,7 @@ def week_plan(user: User, queue_id: int, week_start: date) -> Plan:
 
     The requirement comes from the queue's published forecast. Where there is none, or it does not
     reach a day, the requirement is unknown and nothing is claimed about that half-hour. Coverage
-    is gross: breaks and activities are not taken off yet."""
+    is people on the phones: breaks and activities inside shifts are taken off (ENG-03)."""
     _check_monday(week_start)
     queue = _queue(user, queue_id)
     zone = ZoneInfo(settings.TIME_ZONE)
@@ -179,8 +180,17 @@ def week_plan(user: User, queue_id: int, week_start: date) -> Plan:
         ShiftAssignment.objects.for_user(user)
         .filter(roster_week__queue=queue, day__gte=first - timedelta(days=1), day__lte=last)
         .select_related("template")
+        .prefetch_related("activities")
     )
-    counted = coverage((a.day, a.template.start_time, a.template.end_time) for a in rostered)
+    counted, away = coverage_on_phone(
+        (
+            a.day,
+            a.template.start_time,
+            a.template.end_time,
+            [(x.offset_slots, x.slots) for x in a.activities.all()],
+        )
+        for a in rostered
+    )
     scheduled = {key: n for key, n in counted.items() if first <= key[0] <= last}
 
     version: ForecastVersion | None = (
@@ -207,6 +217,7 @@ def week_plan(user: User, queue_id: int, week_start: date) -> Plan:
                 required=required.get((day, slot)),
                 variance=variance(scheduled.get((day, slot), 0), required.get((day, slot))),
                 state=classify(scheduled.get((day, slot), 0), required.get((day, slot))),
+                off_phone=away.get((day, slot), 0),
             )
             for slot in range(SLOTS_PER_DAY)
         ]

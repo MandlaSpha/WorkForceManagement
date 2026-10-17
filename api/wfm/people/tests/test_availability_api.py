@@ -274,6 +274,31 @@ class TestMySchedule:
         # A colleague's shift on the same day is not in my schedule.
         assert body["employee"] == "Person E001"
 
+    def test_my_breaks_and_activities_show_on_my_shift_and_nobody_elses(
+        self, rota: dict[str, Any]
+    ) -> None:
+        # Failure caught: a colleague's training showing on my schedule, or mine not showing.
+        from wfm.scheduling.models import ShiftActivity, ShiftAssignment
+
+        mine = ShiftAssignment.objects.get(employee__user__username="u-agent", day=MON)
+        theirs = ShiftAssignment.objects.get(employee__user__username="u-colleague", day=MON)
+        planner = User.objects.get_or_create(username="u-planner", defaults={"role": Role.PLANNER})[
+            0
+        ]
+        ShiftActivity.objects.create(
+            assignment=mine, kind="lunch", offset_slots=6, slots=2, created_by=planner
+        )
+        ShiftActivity.objects.create(
+            assignment=theirs, kind="training", offset_slots=2, slots=4, created_by=planner
+        )
+        body = login(Role.AGENT).get(SCHEDULE, {"from_date": "2026-05-25"}).json()
+        first = body["shifts"][0]["activities"]
+        assert first == [{"kind": "lunch", "startTime": "12:00", "endTime": "13:00"}]
+        other = colleague_client().get(SCHEDULE, {"from_date": "2026-05-25"}).json()
+        assert other["shifts"][0]["activities"] == [
+            {"kind": "training", "startTime": "10:00", "endTime": "12:00"}
+        ]
+
     def test_the_colleague_sees_only_their_own_shift(self, rota: dict[str, Any]) -> None:
         body = colleague_client().get(SCHEDULE, {"from_date": "2026-05-25"}).json()
         assert [(s["day"], s["shift"]) for s in body["shifts"]] == [("2026-05-25", "D1")]

@@ -5,7 +5,8 @@ decides which zone they are in.
 
 A shift is a start and an end time on the 30-minute grid, worked from a given day. When the end is
 not after the start the shift runs overnight into the next day. Coverage counts, per half-hour, how
-many people are rostered; it is gross, because breaks and activities (SCH-03) are not modelled yet.
+many people are rostered (`coverage`), and how many of those are really on the phones once the
+breaks and activities inside their shifts (SCH-03) are taken off (`coverage_on_phone`, ENG-03).
 """
 
 from __future__ import annotations
@@ -86,6 +87,45 @@ def coverage(shifts: Iterable[tuple[date, time, time]]) -> Counter[SlotKey]:
     for day, start, end in shifts:
         counted.update(shift_slots(day, start, end))
     return counted
+
+
+Activity = tuple[int, int]  # (half-hours from the start of the shift, how many half-hours)
+
+
+def shift_length_slots(start: time, end: time) -> int:
+    """How many half-hours a shift covers."""
+    return len(shift_slots(date(2000, 1, 3), start, end))
+
+
+def check_activity(
+    length: int, activity: Activity, others: Collection[Activity] = ()
+) -> str | None:
+    """Why an activity cannot go in a shift of `length` half-hours, or None when it can: it must
+    have a length, sit wholly inside the shift, and not overlap another activity."""
+    offset, slots = activity
+    if slots < 1:
+        return "length"
+    if offset < 0 or offset + slots > length:
+        return "outside"
+    for other_offset, other_slots in others:
+        if offset < other_offset + other_slots and other_offset < offset + slots:
+            return "overlap"
+    return None
+
+
+def coverage_on_phone(
+    shifts: Iterable[tuple[date, time, time, Iterable[Activity]]],
+) -> tuple[Counter[SlotKey], Counter[SlotKey]]:
+    """People on the phones in each half-hour, and people in an activity in each, from
+    (day, start, end, activities) shifts. A half-hour in an activity is not on the phones."""
+    on_phone: Counter[SlotKey] = Counter()
+    off_phone: Counter[SlotKey] = Counter()
+    for day, start, end, activities in shifts:
+        slots = shift_slots(day, start, end)
+        away = {i for offset, count in activities for i in range(offset, offset + count)}
+        for index, key in enumerate(slots):
+            (off_phone if index in away else on_phone)[key] += 1
+    return on_phone, off_phone
 
 
 # --- rules -------------------------------------------------------------------------------------

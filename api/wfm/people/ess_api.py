@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from typing import Any
 
 from django.http import HttpRequest
 from django.utils import timezone
@@ -19,6 +20,7 @@ from . import selectors as people_selectors
 from .ess_schemas import (
     AvailabilityIn,
     AvailabilityOut,
+    MyActivityOut,
     MyLeaveOut,
     MyScheduleOut,
     MyShiftOut,
@@ -28,6 +30,18 @@ from .policy import SELF_ROLES
 
 router = Router(tags=["people"])
 SELF = RoleSessionAuth(*sorted(SELF_ROLES), feature=Feature.PEOPLE)
+
+
+def _activities(shift: Any) -> list[MyActivityOut]:
+    """The breaks and activities in a published shift, as clock times (an agent sees their own)."""
+    began = datetime.combine(shift.day, shift.template.start_time)
+    out = []
+    for x in shift.activities.all():
+        start = began + timedelta(minutes=30 * x.offset_slots)
+        end = start + timedelta(minutes=30 * x.slots)
+        out.append(MyActivityOut(kind=x.kind, startTime=f"{start:%H:%M}", endTime=f"{end:%H:%M}"))
+    return out
+
 
 DEFAULT_DAYS = 28
 MAX_DAYS = 62
@@ -122,6 +136,7 @@ def my_schedule(
                 startTime=a.template.start_time,
                 endTime=a.template.end_time,
                 queue=a.roster_week.queue.name,
+                activities=_activities(a),
             )
             for a in found.shifts
         ],

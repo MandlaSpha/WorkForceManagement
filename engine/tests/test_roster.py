@@ -234,3 +234,59 @@ class TestShiftKind:
     )
     def test_groups_a_shift_for_the_legend(self, start: time, end: time, kind: str) -> None:
         assert shift_kind(start, end) == kind
+
+
+class TestActivities:
+    def test_a_break_takes_one_person_off_the_phones_for_those_half_hours_only(self) -> None:
+        from datetime import date, time
+
+        from wfm_engine.roster import coverage_on_phone
+
+        day = date(2031, 3, 3)
+        # Two people 09:00 to 11:00 (4 half-hours); the first has the second half-hour off.
+        on, off = coverage_on_phone(
+            [(day, time(9, 0), time(11, 0), [(1, 1)]), (day, time(9, 0), time(11, 0), [])]
+        )
+        assert [on[(day, k)] for k in range(18, 22)] == [2, 1, 2, 2]
+        assert [off[(day, k)] for k in range(18, 22)] == [0, 1, 0, 0]
+
+    def test_an_overnight_shift_keeps_its_activity_on_the_right_day(self) -> None:
+        from datetime import date, time
+
+        from wfm_engine.roster import coverage_on_phone
+
+        day = date(2031, 3, 3)
+        # 22:00 to 06:00; a break four half-hours in is 00:00 the next day.
+        on, off = coverage_on_phone([(day, time(22, 0), time(6, 0), [(4, 1)])])
+        assert off[(date(2031, 3, 4), 0)] == 1
+        assert on[(day, 44)] == 1
+        assert (date(2031, 3, 4), 0) not in on
+
+    def test_no_activities_is_the_same_as_gross_coverage(self) -> None:
+        from datetime import date, time
+
+        from wfm_engine.roster import coverage, coverage_on_phone
+
+        shifts = [(date(2031, 3, 3), time(9, 0), time(17, 30))]
+        on, off = coverage_on_phone([(d, s, e, []) for d, s, e in shifts])
+        assert on == coverage(shifts)
+        assert sum(off.values()) == 0
+
+    def test_what_may_go_in_a_shift(self) -> None:
+        from wfm_engine.roster import check_activity
+
+        assert check_activity(16, (4, 1)) is None
+        assert check_activity(16, (0, 0)) == "length"
+        assert check_activity(16, (-1, 1)) == "outside"
+        assert check_activity(16, (15, 2)) == "outside"  # runs past the end
+        assert check_activity(16, (15, 1)) is None  # the last half-hour is inside
+        assert check_activity(16, (4, 2), [(5, 1)]) == "overlap"
+        assert check_activity(16, (4, 1), [(5, 1)]) is None  # touching is fine
+
+    def test_the_length_of_a_shift_in_half_hours(self) -> None:
+        from datetime import time
+
+        from wfm_engine.roster import shift_length_slots
+
+        assert shift_length_slots(time(9, 0), time(17, 30)) == 17
+        assert shift_length_slots(time(22, 0), time(6, 0)) == 16

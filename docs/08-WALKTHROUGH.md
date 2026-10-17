@@ -147,6 +147,8 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Operate > Intraday.** Pick a queue and a day. It shows calls and people half-hour by half-hour, how the day is running against the forecast (the rest of the day is re-forecast from the calls so far), the service level so far, and the half-hours still to come where cover falls short, with links to overtime and recommendations. Calls are what has been imported, and the screen says up to when.
 
+**Operate > Roster > Breaks and activities.** Under the roster grid, pick a person, a day they work, what (break, lunch, training...), the time and how long. Coverage on the Planner then counts only the people on the phones, so a training session opens a gap you can see. Planner and admin change them (even in a published week); a lead reads them; the agent sees their own on My schedule.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD

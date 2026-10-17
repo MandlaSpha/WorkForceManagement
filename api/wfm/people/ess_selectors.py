@@ -32,6 +32,7 @@ def my_schedule(employee: Employee, first: date, last: date) -> MySchedule:
     published = (
         mine.filter(roster_week__status=RosterStatus.PUBLISHED)
         .select_related("template", "roster_week__queue")
+        .prefetch_related("activities")
         .order_by("day")
     )
     leave = (

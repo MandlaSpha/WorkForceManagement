@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/vue-query'
 import { computed, toValue, type MaybeRef } from 'vue'
 
 import {
+  fetchActivities,
   fetchComplianceRules,
   fetchEmployees,
   fetchOverview,
@@ -22,6 +23,8 @@ export const schedulingKeys = {
     ['scheduling', 'recommendations', queueId, week] as const,
   unmappedLogins: ['scheduling', 'unmapped-logins'] as const,
   employees: (queueId: number | null) => ['scheduling', 'employees', queueId] as const,
+  activities: (queueId: number, week: string) =>
+    ['scheduling', 'activities', queueId, week] as const,
   roster: (queueId: number, week: string) => ['scheduling', 'roster', queueId, week] as const,
   overview: (week: string) => ['scheduling', 'overview', week] as const,
   plan: (queueId: number, week: string) => ['scheduling', 'plan', queueId, week] as const,
@@ -78,6 +81,14 @@ export function useRecommendations(queueId: MaybeRef<number | null>, week: Maybe
   return useQuery({
     queryKey: computed(() => schedulingKeys.recommendations(toValue(queueId) ?? 0, toValue(week))),
     queryFn: () => fetchRecommendations(toValue(queueId) as number, toValue(week)),
+    enabled: computed(() => toValue(queueId) !== null),
+  })
+}
+
+export function useActivities(queueId: MaybeRef<number | null>, week: MaybeRef<string>) {
+  return useQuery({
+    queryKey: computed(() => schedulingKeys.activities(toValue(queueId) as number, toValue(week))),
+    queryFn: () => fetchActivities(toValue(queueId) as number, toValue(week)),
     enabled: computed(() => toValue(queueId) !== null),
   })
 }

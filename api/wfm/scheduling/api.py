@@ -409,6 +409,7 @@ def plan(request: HttpRequest, queue_id: int, week_start: date) -> PlanOut:
                     required=c.required,
                     variance=c.variance,
                     state=c.state,
+                    offPhone=c.off_phone,
                 )
                 for c in cells
             ]

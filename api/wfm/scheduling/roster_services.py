@@ -176,6 +176,8 @@ def _assign(
 
     old_code = existing.template.code if existing else None
     if existing is not None:
+        if existing.template_id != template.pk:
+            existing.activities.all().delete()  # their places were measured from the old shift
         existing.template = template
         existing.save(update_fields=["template"])
         assignment = existing

@@ -18,7 +18,14 @@ const schedule = (over: Partial<MySchedule> = {}): MySchedule => ({
   fromDate: day(1),
   toDate: day(28),
   shifts: [
-    { day: day(15), shift: 'D1', startTime: '09:00:00', endTime: '17:30:00', queue: 'QueueA' },
+    {
+      day: day(15),
+      shift: 'D1',
+      startTime: '09:00:00',
+      endTime: '17:30:00',
+      queue: 'QueueA',
+      activities: [],
+    },
   ],
   leave: [],
   unpublishedShifts: 0,
@@ -147,5 +154,25 @@ describe('notices', () => {
     backend.noScheduleRecord = true
     await openScheduling('/my-schedule', 'agent')
     expect(await screen.findByTestId('no-record')).toHaveTextContent(/not on the employee list/)
+  })
+})
+
+describe('breaks inside a shift', () => {
+  it('shows the agent their own breaks in the month and in the list', async () => {
+    // Failure caught: a lunch planned for 12:00 that the agent never sees.
+    await open({
+      shifts: [
+        {
+          day: day(15),
+          shift: 'D1',
+          startTime: '09:00:00',
+          endTime: '17:30:00',
+          queue: 'QueueA',
+          activities: [{ kind: 'lunch', startTime: '12:00', endTime: '13:00' }],
+        },
+      ],
+    })
+    const cell = await screen.findByTestId(`day-${day(15)}`)
+    expect(within(cell).getByTestId('activity')).toHaveTextContent('Lunch 12:00')
   })
 })

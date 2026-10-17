@@ -86,6 +86,110 @@
         "title": "ActiveIn",
         "type": "object"
       },
+      "ActivityIn": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "minutes": {
+            "title": "Minutes",
+            "type": "integer"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "startTime": {
+            "format": "time",
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueId",
+          "employeeId",
+          "day",
+          "kind",
+          "startTime",
+          "minutes"
+        ],
+        "title": "ActivityIn",
+        "type": "object"
+      },
+      "ActivityOut": {
+        "properties": {
+          "assignmentId": {
+            "title": "Assignmentid",
+            "type": "integer"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "endTime": {
+            "title": "Endtime",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "offsetSlots": {
+            "title": "Offsetslots",
+            "type": "integer"
+          },
+          "shift": {
+            "title": "Shift",
+            "type": "string"
+          },
+          "slots": {
+            "title": "Slots",
+            "type": "integer"
+          },
+          "startTime": {
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "assignmentId",
+          "employeeId",
+          "employee",
+          "day",
+          "shift",
+          "kind",
+          "startTime",
+          "endTime",
+          "slots",
+          "offsetSlots"
+        ],
+        "title": "ActivityOut",
+        "type": "object"
+      },
       "AgentLoginsIn": {
         "properties": {
           "logins": {
@@ -2787,6 +2891,29 @@
         "title": "MonthsOut",
         "type": "object"
       },
+      "MyActivityOut": {
+        "properties": {
+          "endTime": {
+            "title": "Endtime",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "startTime": {
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "startTime",
+          "endTime"
+        ],
+        "title": "MyActivityOut",
+        "type": "object"
+      },
       "MyLeaveOut": {
         "properties": {
           "endDate": {
@@ -2870,6 +2997,13 @@
       },
       "MyShiftOut": {
         "properties": {
+          "activities": {
+            "items": {
+              "$ref": "#/components/schemas/MyActivityOut"
+            },
+            "title": "Activities",
+            "type": "array"
+          },
           "day": {
             "format": "date",
             "title": "Day",
@@ -2899,7 +3033,8 @@
           "shift",
           "startTime",
           "endTime",
-          "queue"
+          "queue",
+          "activities"
         ],
         "title": "MyShiftOut",
         "type": "object"
@@ -3528,6 +3663,10 @@
       },
       "PlanCellOut": {
         "properties": {
+          "offPhone": {
+            "title": "Offphone",
+            "type": "integer"
+          },
           "required": {
             "anyOf": [
               {
@@ -3575,7 +3714,8 @@
           "scheduled",
           "required",
           "variance",
-          "state"
+          "state",
+          "offPhone"
         ],
         "title": "PlanCellOut",
         "type": "object"
@@ -10138,6 +10278,122 @@
           }
         ],
         "summary": "One queue's roster for a week",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster/activities": {
+      "get": {
+        "operationId": "wfm_scheduling_activity_api_list_activities",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Week Start",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ActivityOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "The breaks and activities in one queue's shifts for a week",
+        "tags": [
+          "scheduling"
+        ]
+      },
+      "post": {
+        "operationId": "wfm_scheduling_activity_api_add_activity",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActivityIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityOut"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Add a break or activity",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster/activities/{activity_id}": {
+      "delete": {
+        "operationId": "wfm_scheduling_activity_api_remove_activity",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "activity_id",
+            "required": true,
+            "schema": {
+              "title": "Activity Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Remove a break or activity",
         "tags": [
           "scheduling"
         ]

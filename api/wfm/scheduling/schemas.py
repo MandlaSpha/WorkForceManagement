@@ -152,6 +152,7 @@ class PlanCellOut(Schema):
     required: int | None
     variance: int | None
     state: str | None  # under, met or over; null when the requirement is unknown
+    offPhone: int  # noqa: N815 - scheduled, but in a break or activity (not in `scheduled`)
 
 
 class WorstOut(Schema):

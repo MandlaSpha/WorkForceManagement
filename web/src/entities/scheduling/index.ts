@@ -1,5 +1,7 @@
 export { ATTENTION_ROUTE, attentionRoute, barShare } from './model/overview'
 export {
+  addActivity,
+  removeActivity,
   startAutoSchedule,
   applyRecommendation,
   assignShift,
@@ -34,6 +36,7 @@ export {
   useRecommendations,
   useOverview,
   usePlan,
+  useActivities,
   useRoster,
   useShifts,
   useUnmappedLogins,
@@ -45,6 +48,8 @@ export type {
   AutoScheduleProposal,
   AutoScheduleRequest,
   AutoScheduleJob,
+  ShiftActivity,
+  ShiftActivityBody,
   AutoScheduleResult,
   Attention,
   Overview,

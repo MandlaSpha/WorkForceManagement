@@ -195,6 +195,40 @@ class ShiftAssignment(models.Model):
         return f"{self.employee_id} {self.day} {self.template_id}"
 
 
+class ActivityKind(models.TextChoices):
+    BREAK = "break", "Break"
+    LUNCH = "lunch", "Lunch"
+    TRAINING = "training", "Training"
+    MEETING = "meeting", "Meeting"
+    COACHING = "coaching", "Coaching"
+    OTHER = "other", "Other"
+
+
+class ShiftActivity(models.Model):
+    """Time inside a shift when a person is not on the phones (SCH-03). It is placed by half-hours
+    from the start of the shift, so an overnight shift needs no special case, and it takes the
+    person out of the coverage of those half-hours (ENG-03). It dies with its shift."""
+
+    assignment = models.ForeignKey(
+        ShiftAssignment, on_delete=models.CASCADE, related_name="activities"
+    )
+    kind = models.CharField(max_length=10, choices=ActivityKind.choices)
+    offset_slots = models.PositiveSmallIntegerField()  # half-hours from the start of the shift
+    slots = models.PositiveSmallIntegerField()  # how many half-hours
+    created_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="+")
+
+    class Meta:
+        ordering = ["offset_slots", "id"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(slots__gte=1), name="scheduling_activity_has_length"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.kind} in {self.assignment_id}"
+
+
 class ComplianceRuleVersion(models.Model):
     """One version of the compliance rules (CFG-06), taking effect on `effective_from`. Versions are
     only ever added, so what applied on a given day can always be answered. The rules in force on a

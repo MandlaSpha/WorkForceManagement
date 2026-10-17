@@ -127,6 +127,7 @@ export function planOf(
           required: null,
           variance: null,
           state: null,
+          offPhone: 0,
           ...cells[`${day}:${slot}`],
         })),
       ]),

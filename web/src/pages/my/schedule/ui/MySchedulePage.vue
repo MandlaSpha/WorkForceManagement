@@ -23,6 +23,15 @@ import PageHeader from '@/shared/ui/PageHeader.vue'
 const screen = NAV_ITEMS.find((item) => item.key === 'my-schedule')
 const today = todayInJohannesburg()
 
+const ACTIVITY: Record<string, string> = {
+  break: 'Break',
+  lunch: 'Lunch',
+  training: 'Training',
+  meeting: 'Meeting',
+  coaching: 'Coaching',
+  other: 'Activity',
+}
+
 const month = ref(monthOf(today))
 const view = ref<'month' | 'list'>('month')
 const grid = computed(() => monthGrid(month.value))
@@ -181,6 +190,14 @@ const dayNumber = (iso: string) => String(Number(iso.slice(8)))
                     <span class="block tabular-nums">
                       {{ clock(s.startTime) }} to {{ clock(s.endTime) }}
                     </span>
+                    <span
+                      v-for="x in s.activities"
+                      :key="x.startTime + x.kind"
+                      class="block tabular-nums text-ink-muted"
+                      data-testid="activity"
+                    >
+                      {{ ACTIVITY[x.kind] ?? x.kind }} {{ x.startTime }}
+                    </span>
                   </p>
                   <p
                     v-for="l in byDay.get(iso)?.leave ?? []"
@@ -211,6 +228,14 @@ const dayNumber = (iso: string) => String(Number(iso.slice(8)))
                 <span class="font-medium">{{ s.shift }}</span>
                 <span class="tabular-nums"> {{ clock(s.startTime) }}-{{ clock(s.endTime) }}</span>
                 <span class="text-ink-muted"> ({{ s.queue }})</span>
+                <span
+                  v-for="x in s.activities"
+                  :key="x.startTime + x.kind"
+                  class="mt-0.5 block pl-3 text-xs text-ink-muted"
+                  data-testid="activity"
+                >
+                  {{ ACTIVITY[x.kind] ?? x.kind }}, {{ x.startTime }} to {{ x.endTime }}
+                </span>
               </p>
               <p
                 v-for="l in d.leave"

@@ -20,6 +20,7 @@ from wfm.notifications.api import router as notifications_router
 from wfm.overtime.api import router as overtime_router
 from wfm.people.api import router as people_router
 from wfm.reports.api import router as reports_router
+from wfm.scheduling.activity_api import router as activity_router
 from wfm.scheduling.api import router as scheduling_router
 from wfm.scheduling.autoschedule_api import router as autoschedule_router
 from wfm.scheduling.compliance_api import router as compliance_router
@@ -47,6 +48,7 @@ api.add_router("/system", system_router)
 api.add_router("/telephony", telephony_router)
 api.add_router("/forecasting", forecasting_router)
 api.add_router("/scheduling/compliance-rules", compliance_router)
+api.add_router("/scheduling/roster/activities", activity_router)
 api.add_router("/scheduling/roster/auto-schedule", autoschedule_router)
 api.add_router("/scheduling/recommendations", recommendation_router)
 api.add_router("/scheduling", scheduling_router)

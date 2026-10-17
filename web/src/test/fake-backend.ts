@@ -15,6 +15,7 @@ import type { Inbox } from '@/entities/notification'
 import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
 import type { Intraday } from '@/entities/intraday'
+import type { ShiftActivity } from '@/entities/scheduling'
 import type { Peaks } from '@/entities/peaks'
 import type { ReportSchedule } from '@/entities/report-schedule'
 import type { Scorecard } from '@/entities/scorecard'
@@ -179,6 +180,8 @@ export const backend = {
   /** The peaks report, and the queue/range of each request. */
   peaks: null as Peaks | null,
   peaksQueries: [] as string[],
+  /** Breaks and activities in the roster's shifts. */
+  activities: [] as ShiftActivity[],
   /** The intraday view of a day. */
   intraday: null as Intraday | null,
   /** Report schedules, and the email domains reports may go to. */
@@ -278,6 +281,7 @@ export const backend = {
     this.shrinkageQueries = []
     this.peaks = null
     this.peaksQueries = []
+    this.activities = []
     this.intraday = null
     this.schedules = []
     this.reportDomains = []
@@ -563,6 +567,37 @@ export const handlers = [
   http.get('*/api/v1/scheduling/shifts', () => HttpResponse.json(backend.shifts)),
 
   http.get('*/api/v1/scheduling/employees', () => HttpResponse.json(backend.employees)),
+
+  http.get('*/api/v1/scheduling/roster/activities', () => HttpResponse.json(backend.activities)),
+
+  http.post('*/api/v1/scheduling/roster/activities', async (info) => {
+    const sent = (await info.request.clone().json()) as Record<string, unknown>
+    const response = await schedulingWrite(info, 'POST', 201)
+    if (!response.ok) return response
+    const created = {
+      id: 800 + backend.activities.length,
+      assignmentId: 1,
+      employeeId: Number(sent.employeeId),
+      employee: 'Alex Agent',
+      day: String(sent.day),
+      shift: 'D1',
+      kind: String(sent.kind),
+      startTime: String(sent.startTime),
+      endTime: '12:30',
+      slots: Number(sent.minutes) / 30,
+      offsetSlots: 6,
+    } as ShiftActivity
+    backend.activities = [...backend.activities, created]
+    return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.delete('*/api/v1/scheduling/roster/activities/:id', async (info) => {
+    const response = await schedulingWrite(info, 'DELETE', 204)
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    backend.activities = backend.activities.filter((a) => a.id !== id)
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   http.get('*/api/v1/scheduling/roster', () =>
     backend.roster

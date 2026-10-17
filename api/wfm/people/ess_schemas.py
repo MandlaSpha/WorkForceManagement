@@ -25,12 +25,19 @@ class AvailabilityOut(Schema):
     kind: str
 
 
+class MyActivityOut(Schema):
+    kind: str
+    startTime: str  # noqa: N815 - "HH:MM"
+    endTime: str  # noqa: N815
+
+
 class MyShiftOut(Schema):
     day: date
     shift: str
     startTime: time  # noqa: N815
     endTime: time  # noqa: N815
     queue: str
+    activities: list[MyActivityOut]  # breaks and activities inside this shift
 
 
 class MyLeaveOut(Schema):

@@ -393,6 +393,15 @@ Requirements INT-01 to INT-03, and the pointers of INT-04. `GET /api/v1/intraday
 ### 4.15 Outbound-only queues (FC-08)
 A queue flagged `outbound_only` (Configure > Queues, admin, audited as a queue settings change) has no inbound demand: running a forecast for it, inline or in the background, is refused with `forecast.outbound_only` and nothing is stored, so no staffing is invented for it. Saving the staffing numbers without the flag keeps what it was. Not built: flagging automatically from a queue that only ever shows outbound calls in an import.
 
+### 4.16 Breaks, activities and coverage on the phones (SCH-03, ENG-03)
+A `ShiftActivity` is time inside a shift when someone is not on the phones: break, lunch, training, meeting, coaching or other. It is placed by half-hours from the start of the shift (`offset_slots`, `slots`), so an overnight shift needs no special case, and it dies with its shift (changing a person's shift to a different template clears them, because they were measured from the old one; putting the same shift back keeps them).
+
+- **Rules (`wfm_engine.roster.check_activity`):** at least one half-hour, wholly inside the shift, not overlapping another in the same shift, at most twelve a shift; the start is on the hour or half-hour and the length a whole number of half-hours (`activity.not_on_grid`). The server turns a clock time into the place inside the shift (a time before the shift starts is "outside", not wrapped round the clock).
+- **Who:** planner and admin add and remove (`POST/DELETE /scheduling/roster/activities`), also in a published week, because a break is often moved on the day; admin, planner and lead read (`GET` for a queue and week). Audited (`roster.activity_added/removed`, against the person).
+- **Coverage (ENG-03) is now people on the phones.** `coverage_on_phone` counts a person out of every half-hour they are in an activity; `week_plan` uses it, so the planner heatmap, the dashboard gap, the intraday view, the scorecard's gap and a contract's gap all see the opening that a training session makes, and each cell reports `offPhone`. Auto-schedule and recommendations still reason about shifts and do not place activities.
+- **The agent sees their own** breaks on their schedule (month cell and list); a colleague's are never in it.
+- Not built: suggesting break times to level coverage, a break rule (a break after so many hours), paid and unpaid break distinction beyond the template's paid minutes.
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 

@@ -6,6 +6,8 @@ import type {
   RecommendationApply,
   AutoScheduleRequest,
   AutoScheduleJob,
+  ShiftActivity,
+  ShiftActivityBody,
   ComplianceRulesRequest,
   ComplianceRulesSaved,
   ComplianceRulesState,
@@ -168,4 +170,27 @@ export async function fetchRecommendations(
 
 export async function applyRecommendation(body: RecommendationApply): Promise<{ closes: number }> {
   return unwrap(await api.POST('/api/v1/scheduling/recommendations/apply', { body }))
+}
+
+export async function fetchActivities(
+  queueId: number,
+  weekStart: string,
+): Promise<ShiftActivity[]> {
+  return unwrap(
+    await api.GET('/api/v1/scheduling/roster/activities', {
+      params: { query: { queue_id: queueId, week_start: weekStart } },
+    }),
+  )
+}
+
+export async function addActivity(body: ShiftActivityBody): Promise<ShiftActivity> {
+  return unwrap(await api.POST('/api/v1/scheduling/roster/activities', { body }))
+}
+
+export async function removeActivity(activityId: number): Promise<void> {
+  unwrap(
+    await api.DELETE('/api/v1/scheduling/roster/activities/{activity_id}', {
+      params: { path: { activity_id: activityId } },
+    }),
+  )
 }

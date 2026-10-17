@@ -218,3 +218,100 @@ describe('export', () => {
     )
   })
 })
+
+describe('breaks and activities', () => {
+  const lunch = {
+    id: 5,
+    assignmentId: 1,
+    employeeId: 10,
+    employee: 'Alex Agent',
+    day: MON,
+    shift: 'D1',
+    kind: 'lunch',
+    startTime: '12:00',
+    endTime: '13:00',
+    slots: 2,
+    offsetSlots: 6,
+  }
+
+  it("lists the week's breaks in clock time", async () => {
+    seedScheduling()
+    backend.activities = [lunch]
+    await openScheduling('/roster')
+    expect(await screen.findByTestId('activity-5')).toHaveTextContent(
+      'Alex Agent, Mon 25 May: Lunch 12:00 to 13:00',
+    )
+  })
+
+  it('adds one for a chosen person, day and time with the CSRF token', async () => {
+    const user = userEvent.setup()
+    seedScheduling()
+    await openScheduling('/roster')
+    const form = await screen.findByRole('form', { name: 'Add a break or activity' })
+    await user.selectOptions(within(form).getByLabelText('Person'), 'Alex Agent')
+    await user.selectOptions(within(form).getByLabelText('Day'), MON)
+    await user.selectOptions(within(form).getByLabelText('What'), 'Training')
+    await user.selectOptions(within(form).getByLabelText('For'), '60')
+    await user.click(within(form).getByRole('button', { name: 'Add' }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]).toEqual({
+      method: 'POST',
+      path: '/api/v1/scheduling/roster/activities',
+      body: {
+        queueId: 1,
+        employeeId: 10,
+        day: MON,
+        kind: 'training',
+        startTime: '12:00',
+        minutes: 60,
+      },
+      csrf: 'test-csrf-token',
+    })
+  })
+
+  it('cannot add until a person and a day are chosen', async () => {
+    seedScheduling()
+    await openScheduling('/roster')
+    const form = await screen.findByRole('form', { name: 'Add a break or activity' })
+    expect(within(form).getByRole('button', { name: 'Add' })).toBeDisabled()
+  })
+
+  it('shows why one was refused', async () => {
+    const user = userEvent.setup()
+    seedScheduling()
+    await openScheduling('/roster')
+    backend.nextProblem = {
+      status: 422,
+      code: 'activity.outside_shift',
+      title: 'Activity refused',
+      detail: 'That falls outside the shift.',
+    }
+    const form = await screen.findByRole('form', { name: 'Add a break or activity' })
+    await user.selectOptions(within(form).getByLabelText('Person'), 'Alex Agent')
+    await user.selectOptions(within(form).getByLabelText('Day'), MON)
+    await user.click(within(form).getByRole('button', { name: 'Add' }))
+    expect(await screen.findByTestId('activity-error')).toHaveTextContent('outside the shift')
+  })
+
+  it('removes one', async () => {
+    const user = userEvent.setup()
+    seedScheduling()
+    backend.activities = [lunch]
+    await openScheduling('/roster')
+    await user.click(await screen.findByRole('button', { name: /^Remove Alex Agent/ }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]).toMatchObject({
+      method: 'DELETE',
+      path: '/api/v1/scheduling/roster/activities/5',
+    })
+  })
+
+  it('lets a lead read them but not change them', async () => {
+    seedScheduling()
+    backend.activities = [lunch]
+    await openScheduling('/roster', 'lead')
+    expect(await screen.findByTestId('activity-5')).toBeVisible()
+    expect(screen.queryByRole('form', { name: 'Add a break or activity' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Remove/ })).toBeNull()
+  })
+})

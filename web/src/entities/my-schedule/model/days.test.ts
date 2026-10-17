@@ -8,6 +8,7 @@ const shift = (day: string, code = 'D1') => ({
   startTime: '09:00:00',
   endTime: '17:30:00',
   queue: 'QueueA',
+  activities: [],
 })
 const leave = (startDate: string, endDate: string, status = 'approved') => ({
   startDate,

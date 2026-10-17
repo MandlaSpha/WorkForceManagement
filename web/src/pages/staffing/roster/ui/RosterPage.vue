@@ -11,6 +11,7 @@ import {
   useRoster,
 } from '@/entities/scheduling'
 import { ShiftCellSelect } from '@/features/assign-shift'
+import { ActivitiesPanel } from '@/features/manage-activities'
 import { AutoScheduleButton } from '@/features/optimise/auto-schedule'
 import { useContextStore } from '@/features/context-filters'
 import { PublishRosterButton } from '@/features/publish-roster'
@@ -170,6 +171,14 @@ const shiftIdOf = (row: { cells: ReadonlyArray<{ day: string; shiftId: number }>
           </tbody>
         </table>
       </div>
+
+      <ActivitiesPanel
+        v-if="context.queueNumber !== null && roster.data.value.rows.length > 0"
+        :queue-id="context.queueNumber"
+        :week-start="context.weekStart"
+        :rows="roster.data.value.rows"
+        :can-change="canChange"
+      />
     </template>
   </section>
 </template>

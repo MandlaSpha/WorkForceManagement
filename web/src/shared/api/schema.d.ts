@@ -1420,6 +1420,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/roster/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The breaks and activities in one queue's shifts for a week */
+        get: operations["wfm_scheduling_activity_api_list_activities"];
+        put?: never;
+        /** Add a break or activity */
+        post: operations["wfm_scheduling_activity_api_add_activity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/roster/activities/{activity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a break or activity */
+        delete: operations["wfm_scheduling_activity_api_remove_activity"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/roster/assignments": {
         parameters: {
             query?: never;
@@ -1871,6 +1906,55 @@ export interface components {
         ActiveIn: {
             /** Active */
             active: boolean;
+        };
+        /** ActivityIn */
+        ActivityIn: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Kind */
+            kind: string;
+            /** Minutes */
+            minutes: number;
+            /** Queueid */
+            queueId: number;
+            /**
+             * Starttime
+             * Format: time
+             */
+            startTime: string;
+        };
+        /** ActivityOut */
+        ActivityOut: {
+            /** Assignmentid */
+            assignmentId: number;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Endtime */
+            endTime: string;
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Offsetslots */
+            offsetSlots: number;
+            /** Shift */
+            shift: string;
+            /** Slots */
+            slots: number;
+            /** Starttime */
+            startTime: string;
         };
         /** AgentLoginsIn */
         AgentLoginsIn: {
@@ -2876,6 +2960,15 @@ export interface components {
             /** Months */
             months: string[];
         };
+        /** MyActivityOut */
+        MyActivityOut: {
+            /** Endtime */
+            endTime: string;
+            /** Kind */
+            kind: string;
+            /** Starttime */
+            startTime: string;
+        };
         /** MyLeaveOut */
         MyLeaveOut: {
             /**
@@ -2918,6 +3011,8 @@ export interface components {
         };
         /** MyShiftOut */
         MyShiftOut: {
+            /** Activities */
+            activities: components["schemas"]["MyActivityOut"][];
             /**
              * Day
              * Format: date
@@ -3190,6 +3285,8 @@ export interface components {
         };
         /** PlanCellOut */
         PlanCellOut: {
+            /** Offphone */
+            offPhone: number;
             /** Required */
             required: number | null;
             /** Scheduled */
@@ -6425,6 +6522,73 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RosterOut"];
                 };
+            };
+        };
+    };
+    wfm_scheduling_activity_api_list_activities: {
+        parameters: {
+            query: {
+                queue_id: number;
+                week_start: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"][];
+                };
+            };
+        };
+    };
+    wfm_scheduling_activity_api_add_activity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityIn"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_activity_api_remove_activity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activity_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
