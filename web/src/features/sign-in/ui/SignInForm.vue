@@ -58,10 +58,12 @@ const activeProvider = computed(() =>
 const showForm = computed(() => credentialProviders.value.length > 0 || emergencyOpen.value)
 const bannerError = computed(() => error.value || ssoErrorMessage(props.ssoError))
 
-/** Used by the dev-only demo panel; also keeps the form the single place that signs in. */
-function fill(demoUsername: string, demoPassword: string): void {
+/** Used by the dev-only demo panel: fills the form and signs in, so the form stays the single
+ * place that signs in. */
+async function fill(demoUsername: string, demoPassword: string): Promise<void> {
   username.value = demoUsername
   password.value = demoPassword
+  await submit()
 }
 defineExpose({ fill })
 

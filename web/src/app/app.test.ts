@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event'
 import { screen, waitFor, within } from '@testing-library/vue'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { backend } from '@/test/fake-backend'
 import { renderApp } from '@/test/render-app'
@@ -114,10 +114,30 @@ describe('signing in', () => {
     expect(button).toBeEnabled()
   })
 
+  it('signs in at one click from the demo panel, for either team', async () => {
+    // Failure caught: the panel only filling the form, so a demo needs a second click, or a
+    // team's accounts missing from the panel.
+    vi.stubEnv('VITE_DEMO_LOGINS', '1')
+    vi.stubEnv('VITE_DEMO_PASSWORD', 'correct-horse-battery')
+    const user = userEvent.setup()
+    const { router } = await renderApp('/login')
+    const panel = await screen.findByRole('region', { name: 'Demo logins' })
+    for (const name of ['lead2', 'agent6', 'agent10', 'agent5']) {
+      expect(within(panel).getByText(name)).toBeVisible()
+    }
+    await user.click(within(panel).getByText('planner'))
+    await waitFor(() => expect(router.currentRoute.value.name).not.toBe('login'))
+    expect(backend.signedIn?.username).toBe('planner')
+  })
+
   it('hides the demo-login shortcuts unless explicitly enabled', async () => {
     await renderApp('/login')
     expect(screen.queryByText(/Demo logins/)).not.toBeInTheDocument()
   })
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
 })
 
 describe('what each role sees in the sidebar', () => {
