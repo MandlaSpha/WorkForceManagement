@@ -217,3 +217,5 @@ generator is seeded, so two fresh databases look the same.
   demonstrate Capacity and What-if.
 - The Data import screen is empty: the history was written directly, not imported from a file.
   Import your own workbook there to show that screen.
+
+**Admin > Audit log.** Only `admin` sees it. The top shows whether the tamper-evident hash chain is intact (a red alert lists the problems if not). Below, filter by who (part of a username, or `system` for background jobs), what (the action), entity, outcome and a date range in South African time, then Search; the list is newest first, 50 a page, with the old and new value of each changed field. "Download these as CSV" takes the filtered list as a file that spreadsheets cannot run as a formula. Nothing on the screen can edit or delete an event. Searching and downloading are themselves recorded as "Audit log searched or viewed" and "Audit log exported", with the kind of filter used but never what you saw: search for those actions to see it. Sign in as `planner` to confirm the menu entry is gone and the address is refused.

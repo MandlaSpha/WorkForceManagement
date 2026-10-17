@@ -55,6 +55,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/audit/chain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Walk the hash chain and report whether it is intact (admin, read-only) */
+        get: operations["wfm_audit_api_chain_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search the audit trail, newest first (admin) */
+        get: operations["wfm_audit_api_list_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/events.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download the filtered audit trail as CSV (admin; the download is itself audited) */
+        get: operations["wfm_audit_api_export_events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Values the filters offer (admin) */
+        get: operations["wfm_audit_api_options"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/change-password": {
         parameters: {
             query?: never;
@@ -2723,6 +2791,107 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** AuditChainOut */
+        AuditChainOut: {
+            /**
+             * Checkedat
+             * Format: date-time
+             */
+            checkedAt: string;
+            /** Events */
+            events: number;
+            /** Intact */
+            intact: boolean;
+            /** Problemcount */
+            problemCount: number;
+            /** Problems */
+            problems: components["schemas"]["AuditChainProblemOut"][];
+        };
+        /** AuditChainProblemOut */
+        AuditChainProblemOut: {
+            /** Eventid */
+            eventId: number | null;
+            /** Problem */
+            problem: string;
+            /** Seq */
+            seq: number | null;
+        };
+        /** AuditChangeOut */
+        AuditChangeOut: {
+            /** Entityid */
+            entityId: string;
+            /** Entitytype */
+            entityType: string;
+            /** Field */
+            field: string;
+            /** New */
+            new: string | null;
+            /** Old */
+            old: string | null;
+        };
+        /** AuditEventOut */
+        AuditEventOut: {
+            /** Action */
+            action: string;
+            /** Actionlabel */
+            actionLabel: string;
+            /** Actor */
+            actor: string;
+            /** Actorrole */
+            actorRole: string;
+            /** Actortype */
+            actorType: string;
+            /** Changes */
+            changes: components["schemas"]["AuditChangeOut"][];
+            /** Entityid */
+            entityId: string;
+            /** Entitytype */
+            entityType: string;
+            /** Id */
+            id: number;
+            /** Ip */
+            ip: string | null;
+            /**
+             * Occurredat
+             * Format: date-time
+             */
+            occurredAt: string;
+            /** Outcome */
+            outcome: string;
+            /** Reason */
+            reason: string;
+            /** Requestid */
+            requestId: string;
+            /** Seq */
+            seq: number;
+        };
+        /** AuditEventPageOut */
+        AuditEventPageOut: {
+            /** Items */
+            items: components["schemas"]["AuditEventOut"][];
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Total */
+            total: number;
+        };
+        /** AuditOptionOut */
+        AuditOptionOut: {
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+        };
+        /** AuditOptionsOut */
+        AuditOptionsOut: {
+            /** Actions */
+            actions: components["schemas"]["AuditOptionOut"][];
+            /** Entitytypes */
+            entityTypes: components["schemas"]["AuditOptionOut"][];
+            /** Outcomes */
+            outcomes: components["schemas"]["AuditOptionOut"][];
+        };
         /** AutoIn */
         AutoIn: {
             /** Queueid */
@@ -3379,6 +3548,33 @@ export interface components {
          * @enum {string}
          */
         Feature: "telephony" | "forecasting" | "scheduling" | "people" | "optimisation" | "overtime" | "insight" | "capacity" | "intraday" | "service_desk";
+        /** FilterIn */
+        FilterIn: {
+            /**
+             * Action
+             * @default
+             */
+            action: string;
+            /**
+             * Actor
+             * @default
+             */
+            actor: string;
+            /**
+             * Entitytype
+             * @default
+             */
+            entityType: string;
+            /**
+             * Outcome
+             * @default
+             */
+            outcome: string;
+            /** Since */
+            since?: string | null;
+            /** Until */
+            until?: string | null;
+        };
         /** ForecastIntervalOut */
         ForecastIntervalOut: {
             /** Ahts */
@@ -4262,6 +4458,19 @@ export interface components {
             current: string;
             /** New */
             new: string;
+        };
+        /** PageIn */
+        PageIn: {
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Pagesize
+             * @default 50
+             */
+            pageSize: number;
         };
         /** PasswordIn */
         PasswordIn: {
@@ -5815,6 +6024,100 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AttendanceMineOut"];
+                };
+            };
+        };
+    };
+    wfm_audit_api_chain_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditChainOut"];
+                };
+            };
+        };
+    };
+    wfm_audit_api_list_events: {
+        parameters: {
+            query?: {
+                actor?: string;
+                action?: string;
+                entityType?: string;
+                outcome?: string;
+                since?: string | null;
+                until?: string | null;
+                page?: number;
+                pageSize?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditEventPageOut"];
+                };
+            };
+        };
+    };
+    wfm_audit_api_export_events: {
+        parameters: {
+            query?: {
+                actor?: string;
+                action?: string;
+                entityType?: string;
+                outcome?: string;
+                since?: string | null;
+                until?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    wfm_audit_api_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditOptionsOut"];
                 };
             };
         };

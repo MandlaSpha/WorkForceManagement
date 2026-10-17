@@ -29,6 +29,7 @@ import type { ReportSchedule } from '@/entities/report-schedule'
 import type { Scorecard } from '@/entities/scorecard'
 import type { Shrinkage } from '@/entities/shrinkage'
 import type { AdminUser } from '@/entities/user-admin'
+import type { AuditChain, AuditEvent } from '@/entities/audit-log'
 import type {
   AutoScheduleProposal,
   Recommendation,
@@ -242,6 +243,10 @@ export const backend = {
   customers: [] as Customer[],
   /** User administration: every account, as the admin sees them. */
   users: [] as AdminUser[],
+  /** The audit log as the admin reads it, the hash chain verdict, and each search's query string. */
+  auditEvents: [] as AuditEvent[],
+  auditChain: null as AuditChain | null,
+  auditQueries: [] as string[],
   /** Notifications: the signed-in person's inbox. */
   inbox: { unread: 0, items: [] } as Inbox,
   /** Self-service: declared availability and the signed-in person's own schedule. */
@@ -323,6 +328,9 @@ export const backend = {
     this.decision = { shiftsCleared: 0, shiftsRestored: 0, shiftsNotRestored: 0 }
     this.inbox = { unread: 0, items: [] }
     this.users = []
+    this.auditEvents = []
+    this.auditChain = null
+    this.auditQueries = []
     this.contracts = []
     this.customers = []
     this.overtime = []
@@ -1428,6 +1436,53 @@ export const handlers = [
     )
     return HttpResponse.json(backend.contracts.find((c) => c.id === id))
   }),
+
+  http.get('*/api/v1/audit/events', (info) => {
+    const url = new URL(info.request.url)
+    backend.auditQueries.push(url.search)
+    const q = url.searchParams
+    const page = Number(q.get('page') ?? 1)
+    const size = Number(q.get('pageSize') ?? 50)
+    const rows = backend.auditEvents.filter(
+      (e) =>
+        (!q.get('action') || e.action === q.get('action')) &&
+        (!q.get('outcome') || e.outcome === q.get('outcome')) &&
+        (!q.get('actor') || e.actor.includes(q.get('actor') ?? '')),
+    )
+    return HttpResponse.json({
+      items: rows.slice((page - 1) * size, page * size),
+      total: rows.length,
+      page,
+      pageSize: size,
+    })
+  }),
+
+  http.get('*/api/v1/audit/options', () =>
+    HttpResponse.json({
+      actions: [
+        { value: 'leave.approved', label: 'Leave approved' },
+        { value: 'roster.refused', label: 'Roster change refused' },
+      ],
+      entityTypes: [{ value: 'leave', label: 'leave' }],
+      outcomes: [
+        { value: 'success', label: 'Success' },
+        { value: 'denied', label: 'Denied' },
+        { value: 'failed', label: 'Failed' },
+      ],
+    }),
+  ),
+
+  http.get('*/api/v1/audit/chain', () =>
+    HttpResponse.json(
+      backend.auditChain ?? {
+        intact: true,
+        events: backend.auditEvents.length,
+        problemCount: 0,
+        problems: [],
+        checkedAt: '2026-10-17T08:00:00Z',
+      },
+    ),
+  ),
 
   http.get('*/api/v1/users', () => HttpResponse.json(backend.users)),
 

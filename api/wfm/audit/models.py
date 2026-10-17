@@ -6,7 +6,12 @@ anonymising a user must never cascade into, or be blocked by, the audit trail.
 
 from __future__ import annotations
 
+from typing import Any, Self
+
 from django.db import models
+
+from wfm.accounts.models import Role
+from wfm.core.scoping import ScopedQuerySet
 
 
 class Outcome(models.TextChoices):
@@ -125,7 +130,15 @@ class Action(models.TextChoices):
     CONTRACT_CREATED = "contract.created", "Contract added"
     CONTRACT_CHANGED = "contract.changed", "Contract changed"
     QUEUE_SETTINGS_CHANGED = "queue.settings_changed", "Queue staffing settings changed"
+    AUDIT_VIEWED = "audit.viewed", "Audit log searched or viewed"
+    AUDIT_EXPORTED = "audit.exported", "Audit log exported"
     CHAIN_BROKEN = "audit.chain_broken", "Audit chain integrity check failed"
+
+
+class AuditQuerySet(ScopedQuerySet):
+    def for_user(self, user: Any) -> Self:
+        """Only an admin reads the trail (AUD-11); every other role sees nothing."""
+        return self if getattr(user, "role", None) == Role.ADMIN else self.none()
 
 
 class AuditEvent(models.Model):
@@ -157,6 +170,8 @@ class AuditEvent(models.Model):
     prev_hash = models.CharField(max_length=64, editable=False)
     hash = models.CharField(max_length=64, editable=False)
     hash_version = models.PositiveSmallIntegerField(default=1, editable=False)
+
+    objects = AuditQuerySet.as_manager()
 
     class Meta:
         indexes = [models.Index(fields=["entity_type", "entity_id"], name="audit_entity_idx")]

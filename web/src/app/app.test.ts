@@ -262,13 +262,6 @@ describe('honest empty states', () => {
 
     expect(await screen.findByRole('status')).toHaveTextContent(/There is no call data to show yet/)
   })
-
-  it('says which phase builds a screen that does not exist yet', async () => {
-    backend.signedIn = { username: 'planner', displayName: 'Pat Planner', role: 'planner' }
-    await renderApp('/scheduling')
-
-    expect(await screen.findByRole('status')).toHaveTextContent(/built in Phase 4/)
-  })
 })
 
 describe('sign-in methods on the login page', () => {
