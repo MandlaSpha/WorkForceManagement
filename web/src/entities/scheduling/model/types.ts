@@ -22,6 +22,16 @@ export type ComplianceRulesRequest = components['schemas']['RulesIn']
 export type ComplianceRulesSaved = components['schemas']['RulesSaved']
 export type AutoScheduleRequest = components['schemas']['AutoIn']
 export type AutoScheduleProposal = components['schemas']['ProposalOut']
-export type AutoScheduleResult = components['schemas']['AppliedOut']
+export type AutoScheduleJob = components['schemas']['JobOut']
+/** What a finished auto-schedule job reports: counts only, never names. */
+export interface AutoScheduleResult {
+  status: string
+  placed: number
+  skipped: Record<string, number>
+  shortBefore: number
+  shortAfter: number
+  overAfter: number
+  kept: number
+}
 export type Recommendation = components['schemas']['RecommendationOut']
 export type RecommendationApply = components['schemas']['ApplyIn']

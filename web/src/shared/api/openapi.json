@@ -2031,6 +2031,71 @@
         "title": "IntervalOut",
         "type": "object"
       },
+      "JobOut": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "errorCode": {
+            "title": "Errorcode",
+            "type": "string"
+          },
+          "errorDetail": {
+            "title": "Errordetail",
+            "type": "string"
+          },
+          "finishedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finishedat"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "result",
+          "errorCode",
+          "errorDetail",
+          "createdAt",
+          "finishedAt"
+        ],
+        "title": "JobOut",
+        "type": "object"
+      },
       "KpiOut": {
         "properties": {
           "dateFrom": {
@@ -6144,6 +6209,44 @@
         ]
       }
     },
+    "/api/v1/forecasting/versions/jobs": {
+      "post": {
+        "description": "Answers at once with a job to ask about. The worker does what the call above does, as this\nperson, so their scope and the audit trail apply.",
+        "operationId": "wfm_forecasting_api_run_forecast_in_background",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunForecastIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            },
+            "description": "Accepted"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Run a forecast in the background (a draft when it finishes)",
+        "tags": [
+          "forecasting"
+        ]
+      }
+    },
     "/api/v1/forecasting/versions/{version_id}/intervals": {
       "get": {
         "operationId": "wfm_forecasting_api_version_intervals",
@@ -6221,6 +6324,43 @@
         "summary": "Make a draft the live forecast of its queue",
         "tags": [
           "forecasting"
+        ]
+      }
+    },
+    "/api/v1/jobs/{job_id}": {
+      "get": {
+        "operationId": "wfm_jobs_api_get_job",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "How a background job is getting on",
+        "tags": [
+          "jobs"
         ]
       }
     },
@@ -8448,6 +8588,44 @@
           }
         ],
         "summary": "Fill the week automatically",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/roster/auto-schedule/jobs": {
+      "post": {
+        "description": "Answers at once with a job to ask about. The worker does the same as the call below, as\nthis person, so their scope, the roster rules and the audit trail apply.",
+        "operationId": "wfm_scheduling_autoschedule_api_apply_in_background",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            },
+            "description": "Accepted"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Fill the week automatically in the background",
         "tags": [
           "scheduling"
         ]

@@ -1,6 +1,6 @@
 export { ATTENTION_ROUTE, attentionRoute, barShare } from './model/overview'
 export {
-  applyAutoSchedule,
+  startAutoSchedule,
   applyRecommendation,
   assignShift,
   createEmployee,
@@ -44,6 +44,7 @@ export type {
   RecommendationApply,
   AutoScheduleProposal,
   AutoScheduleRequest,
+  AutoScheduleJob,
   AutoScheduleResult,
   Attention,
   Overview,

@@ -334,6 +334,16 @@ Requirement SHR-01. Feature `people`, endpoint `GET /api/v1/people/shrinkage?mon
 ### 4.8 Peaks and troughs (Phase 5, built)
 Requirement RPT-03. `GET /api/v1/telephony/peaks?queue_id&date_from&date_to` (telephony feature; admin, planner, lead, executive, customer ops within their contract queues); Insight > Peaks & troughs. Pure `wfm_engine.peaks` over measured half-hour totals in local time: the busiest and quietest days, the busiest single half-hours, and the busiest and quietest half-hours of the day averaged over the days each was measured. A slot that never saw a call is closed, not a trough; a day with no rows is not counted as quiet. Ties go to the earlier time. Only totals, never calls or people. Not built: the emailed scheduled report (RPT-04, RPT-10) and forecast-based peaks.
 
+### 4.9 Background jobs (Phase 4, built)
+Slow work runs on the Celery worker, not in the web request. App `wfm.jobs`; `GET /api/v1/jobs/{id}`.
+
+- **Starting:** `POST /scheduling/roster/auto-schedule/jobs` and `POST /forecasting/versions/jobs` check the same roles, feature and queue scope as their inline versions, then queue a `Job` and answer 202 at once. Asking again for identical work while one is waiting or running returns that job (a double click does not fill a week twice).
+- **Running:** the worker takes the job (row locked, `queued` to `running`) and calls the same service a click would, **as its owner**, so scope, the roster rules and the audit trail apply and the audit event names the person, not "the system". A job whose owner has been deactivated fails with `job.owner_inactive`. A job stuck `running` for 20 minutes (dead worker) may be taken over; one that is running is never taken twice.
+- **Reporting:** `queued`, `running`, `done` or `failed`. A refusal (for example a published week) is a failed job with the same code and sentence the click would show; any other exception gives only `job.failed` and a generic sentence, the cause going to the log without parameters.
+- **No personal data:** parameters are ids and dates, results are counts and ids (no names). Only the owner can read a job, whatever their role (others get 404). Finished jobs are deleted after a week by a nightly task.
+- **Screens** start the job and ask every second until it finishes (the button stays busy as before), giving up with a plain message after ten minutes. The inline endpoints remain.
+- Not moved: the auto-schedule preview (read only), recommendations. Not built: progress percentages, cancelling a job, a list of a person's jobs.
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 

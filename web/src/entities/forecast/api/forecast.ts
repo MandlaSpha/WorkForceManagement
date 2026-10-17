@@ -6,6 +6,7 @@ import type {
   ForecastAccuracy,
   ForecastEvent,
   ForecastInterval,
+  ForecastJob,
   ForecastVersion,
   RunForecastRequest,
   ScenarioRequest,
@@ -36,8 +37,9 @@ export async function fetchAccuracy(queueId: number): Promise<ForecastAccuracy> 
   )
 }
 
-export async function runForecast(body: RunForecastRequest): Promise<ForecastVersion> {
-  return unwrap(await api.POST('/api/v1/forecasting/versions', { body }))
+/** Queue the forecast for the worker; the job says when the draft exists. */
+export async function startForecast(body: RunForecastRequest): Promise<ForecastJob> {
+  return unwrap(await api.POST('/api/v1/forecasting/versions/jobs', { body }))
 }
 
 export async function publishVersion(versionId: string): Promise<ForecastVersion> {

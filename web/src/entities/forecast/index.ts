@@ -2,7 +2,8 @@ export {
   createEvent,
   deleteEvent,
   publishVersion,
-  runForecast,
+  fetchVersions,
+  startForecast,
   runScenario,
   saveTuning,
 } from './api/forecast'
@@ -28,6 +29,7 @@ export type {
   ForecastAccuracy,
   ForecastEvent,
   ForecastInterval,
+  ForecastJob,
   ForecastVersion,
   RunForecastRequest,
   ScenarioDay,

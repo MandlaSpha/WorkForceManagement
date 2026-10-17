@@ -325,6 +325,24 @@ function problem(status: number, code: string, title: string) {
   )
 }
 
+/** A background job as the API reports it once the worker has finished. */
+function finishedJob(
+  kind: string,
+  result: Record<string, unknown> | null,
+  failure?: { code: string; detail: string },
+) {
+  return {
+    id: '00000000-0000-0000-0000-000000000001',
+    kind,
+    status: failure ? 'failed' : 'done',
+    result,
+    errorCode: failure?.code ?? '',
+    errorDetail: failure?.detail ?? '',
+    createdAt: '2031-03-01T08:00:00Z',
+    finishedAt: '2031-03-01T08:00:01Z',
+  }
+}
+
 export const handlers = [
   http.get('*/api/v1/auth/csrf', ({ request }) => {
     backend.requests.push({ method: 'GET', path: new URL(request.url).pathname, csrf: null })
@@ -400,7 +418,7 @@ export const handlers = [
       : problem(404, 'resource.not_found', 'Not found'),
   ),
 
-  http.post('*/api/v1/forecasting/versions', async ({ request }) => {
+  http.post('*/api/v1/forecasting/versions/jobs', async ({ request }) => {
     const csrf = request.headers.get('X-CSRFToken')
     if (csrf !== CSRF_TOKEN) return problem(403, 'auth.csrf', 'CSRF check failed')
     backend.runs.push({ body: (await request.json()) as Record<string, unknown>, csrf })
@@ -408,12 +426,12 @@ export const handlers = [
     if (outcome === null) return problem(500, 'test.no_outcome', 'Test set no outcome')
     if ('code' in outcome) {
       return HttpResponse.json(
-        { type: `https://wfm.local/problems/${outcome.code}`, ...outcome },
-        { status: outcome.status, headers: { 'Content-Type': 'application/problem+json' } },
+        finishedJob('forecast', null, { code: outcome.code, detail: outcome.detail ?? '' }),
+        { status: 202 },
       )
     }
     backend.versions = [outcome, ...backend.versions]
-    return HttpResponse.json(outcome, { status: 201 })
+    return HttpResponse.json(finishedJob('forecast', { versionId: outcome.id }), { status: 202 })
   }),
 
   http.post('*/api/v1/forecasting/versions/:id/publish', ({ request, params }) => {
@@ -657,15 +675,21 @@ export const handlers = [
     return HttpResponse.json(backend.autoProposal)
   }),
 
-  http.post('*/api/v1/scheduling/roster/auto-schedule', async (info) => {
-    const response = await schedulingWrite(info, 'POST')
+  // Background jobs finish instantly here: the fake answers the start with a job already done (or
+  // failed), so a screen under test does not wait a real second for its first poll.
+  http.post('*/api/v1/scheduling/roster/auto-schedule/jobs', async (info) => {
+    const response = await schedulingWrite(info, 'POST', 202)
     if (!response.ok) return response
     const refused = Object.values(backend.autoSkipped).reduce((a, b) => a + b, 0)
-    return HttpResponse.json({
-      ...backend.autoProposal,
-      placed: backend.autoProposal.placements.length - refused,
-      skipped: backend.autoSkipped,
-    })
+    const { placements, ...counts } = backend.autoProposal
+    return HttpResponse.json(
+      finishedJob('auto_schedule', {
+        ...counts,
+        placed: placements.length - refused,
+        skipped: backend.autoSkipped,
+      }),
+      { status: 202 },
+    )
   }),
 
   http.get('*/api/v1/scheduling/recommendations', () => HttpResponse.json(backend.recommendations)),

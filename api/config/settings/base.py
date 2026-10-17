@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "wfm.servicedesk",
     "wfm.people",
     "wfm.notifications",
+    "wfm.jobs",
     "wfm.overtime",
 ]
 
@@ -130,6 +131,11 @@ CELERY_BEAT_SCHEDULE = {
     "audit-verify-chain": {
         "task": "wfm.audit.verify_chain",
         "schedule": crontab(hour=3, minute=0),
+    },
+    # Finished background jobs are kept a week.
+    "jobs-delete-old": {
+        "task": "wfm.jobs.delete_old",
+        "schedule": crontab(hour=3, minute=30),
     },
 }
 

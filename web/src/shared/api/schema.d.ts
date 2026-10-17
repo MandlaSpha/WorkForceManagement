@@ -350,6 +350,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/forecasting/versions/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run a forecast in the background (a draft when it finishes)
+         * @description Answers at once with a job to ask about. The worker does what the call above does, as this
+         *     person, so their scope and the audit trail apply.
+         */
+        post: operations["wfm_forecasting_api_run_forecast_in_background"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/forecasting/versions/{version_id}/intervals": {
         parameters: {
             query?: never;
@@ -378,6 +399,23 @@ export interface paths {
         put?: never;
         /** Make a draft the live forecast of its queue */
         post: operations["wfm_forecasting_api_publish_version"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How a background job is getting on */
+        get: operations["wfm_jobs_api_get_job"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1168,6 +1206,27 @@ export interface paths {
         put?: never;
         /** Fill the week automatically */
         post: operations["wfm_scheduling_autoschedule_api_apply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/roster/auto-schedule/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fill the week automatically in the background
+         * @description Answers at once with a job to ask about. The worker does the same as the call below, as
+         *     this person, so their scope, the roster rules and the audit trail apply.
+         */
+        post: operations["wfm_scheduling_autoschedule_api_apply_in_background"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2301,6 +2360,30 @@ export interface components {
             offered: number;
             /** Start */
             start: string;
+        };
+        /** JobOut */
+        JobOut: {
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Errorcode */
+            errorCode: string;
+            /** Errordetail */
+            errorDetail: string;
+            /** Finishedat */
+            finishedAt: string | null;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Result */
+            result: {
+                [key: string]: unknown;
+            } | null;
+            /** Status */
+            status: string;
         };
         /** KpiOut */
         KpiOut: {
@@ -4110,6 +4193,30 @@ export interface operations {
             };
         };
     };
+    wfm_forecasting_api_run_forecast_in_background: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunForecastIn"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+        };
+    };
     wfm_forecasting_api_version_intervals: {
         parameters: {
             query?: never;
@@ -4150,6 +4257,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ForecastVersionOut"];
+                };
+            };
+        };
+    };
+    wfm_jobs_api_get_job: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
                 };
             };
         };
@@ -5390,6 +5519,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AppliedOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_autoschedule_api_apply_in_background: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoIn"];
+            };
+        };
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
                 };
             };
         };

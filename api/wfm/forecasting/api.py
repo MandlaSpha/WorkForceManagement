@@ -7,8 +7,13 @@ from django.http import HttpRequest
 from ninja import Router, Status
 from wfm_engine.forecast import Backtest
 
+from wfm.core.errors import not_found
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
+from wfm.jobs import services as jobs
+from wfm.jobs.api import JobOut, job_out
+from wfm.jobs.runners import FORECAST
+from wfm.telephony.models import Queue
 
 from . import event_services, modeling, scenario, selectors, services
 from .models import ForecastEvent, ForecastInterval, ForecastVersion
@@ -54,6 +59,32 @@ def run_forecast(request: HttpRequest, body: RunForecastIn) -> Status[ForecastVe
         method=body.method,
     )
     return Status(201, _version_out(version, interval_count=version.intervals.count()))
+
+
+@router.post(
+    "/versions/jobs",
+    auth=WRITE,
+    response={202: JobOut},
+    summary="Run a forecast in the background (a draft when it finishes)",
+)
+def run_forecast_in_background(request: HttpRequest, body: RunForecastIn) -> Status[JobOut]:
+    """Answers at once with a job to ask about. The worker does what the call above does, as this
+    person, so their scope and the audit trail apply."""
+    user = current_user(request)
+    if not Queue.objects.for_user(user).filter(pk=body.queueId).exists():
+        raise not_found("No such queue.")
+    job = jobs.start(
+        user=user,
+        kind=FORECAST,
+        params={
+            "queue_id": body.queueId,
+            "date_from": body.dateFrom.isoformat(),
+            "date_to": body.dateTo.isoformat(),
+            "label": body.label,
+            "method": body.method,
+        },
+    )
+    return Status(202, job_out(job))
 
 
 @router.get(

@@ -5,10 +5,15 @@ from __future__ import annotations
 from datetime import date
 
 from django.http import HttpRequest
-from ninja import Router, Schema
+from ninja import Router, Schema, Status
 
+from wfm.core.errors import not_found
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
+from wfm.jobs import services as jobs
+from wfm.jobs.api import JobOut, job_out
+from wfm.jobs.runners import AUTO_SCHEDULE
+from wfm.telephony.models import Queue
 
 from . import autoschedule_selectors as selectors
 from . import autoschedule_services as services
@@ -69,6 +74,26 @@ def _proposal(found: selectors.Proposal) -> ProposalOut:
 )
 def preview(request: HttpRequest, body: AutoIn) -> ProposalOut:
     return _proposal(selectors.propose(current_user(request), body.queueId, body.weekStart))
+
+
+@router.post(
+    "/jobs",
+    auth=ROSTER_WRITE,
+    response={202: JobOut},
+    summary="Fill the week automatically in the background",
+)
+def apply_in_background(request: HttpRequest, body: AutoIn) -> Status[JobOut]:
+    """Answers at once with a job to ask about. The worker does the same as the call below, as
+    this person, so their scope, the roster rules and the audit trail apply."""
+    user = current_user(request)
+    if not Queue.objects.for_user(user).filter(pk=body.queueId).exists():
+        raise not_found("No such queue.")
+    job = jobs.start(
+        user=user,
+        kind=AUTO_SCHEDULE,
+        params={"queue_id": body.queueId, "week_start": body.weekStart.isoformat()},
+    )
+    return Status(202, job_out(job))
 
 
 @router.post("", auth=ROSTER_WRITE, response=AppliedOut, summary="Fill the week automatically")

@@ -5,7 +5,7 @@ import type {
   Recommendation,
   RecommendationApply,
   AutoScheduleRequest,
-  AutoScheduleResult,
+  AutoScheduleJob,
   ComplianceRulesRequest,
   ComplianceRulesSaved,
   ComplianceRulesState,
@@ -150,8 +150,9 @@ export async function previewAutoSchedule(
   return unwrap(await api.POST('/api/v1/scheduling/roster/auto-schedule/preview', { body }))
 }
 
-export async function applyAutoSchedule(body: AutoScheduleRequest): Promise<AutoScheduleResult> {
-  return unwrap(await api.POST('/api/v1/scheduling/roster/auto-schedule', { body }))
+/** Queue the auto-schedule for the worker; the job says when it is done. */
+export async function startAutoSchedule(body: AutoScheduleRequest): Promise<AutoScheduleJob> {
+  return unwrap(await api.POST('/api/v1/scheduling/roster/auto-schedule/jobs', { body }))
 }
 
 export async function fetchRecommendations(

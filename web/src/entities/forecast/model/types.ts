@@ -1,5 +1,6 @@
 import type { components } from '@/shared/api'
 
+export type ForecastJob = components['schemas']['JobOut']
 export type ForecastVersion = components['schemas']['ForecastVersionOut']
 export type ForecastInterval = components['schemas']['ForecastIntervalOut']
 export type ForecastAccuracy = components['schemas']['AccuracyOut']

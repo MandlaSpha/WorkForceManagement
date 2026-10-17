@@ -54,7 +54,7 @@ describe('auto-schedule', () => {
     await waitFor(() => expect(backend.writes).toHaveLength(2))
     expect(backend.writes[1]).toMatchObject({
       method: 'POST',
-      path: '/api/v1/scheduling/roster/auto-schedule',
+      path: '/api/v1/scheduling/roster/auto-schedule/jobs',
       body: { queueId: 1, weekStart: '2026-05-25' },
       csrf: 'test-csrf-token',
     })
