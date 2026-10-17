@@ -28,6 +28,7 @@ from wfm.scheduling.compliance_api import router as compliance_router
 from wfm.scheduling.recommendation_api import router as recommendation_router
 from wfm.servicedesk.api import router as servicedesk_router
 from wfm.telephony.api import router as telephony_router
+from wfm.utilisation.api import router as utilisation_router
 
 api = NinjaAPI(
     title="Gijima WFM API",
@@ -64,3 +65,4 @@ api.add_router("/reports", reports_router)
 api.add_router("/notifications", notifications_router)
 api.add_router("/overtime", overtime_router)
 api.add_router("/service-desk", servicedesk_router)
+api.add_router("/utilisation", utilisation_router)

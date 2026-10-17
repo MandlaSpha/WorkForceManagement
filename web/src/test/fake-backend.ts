@@ -16,6 +16,8 @@ import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
 import type { HiringPlan, HiringPlanSummary } from '@/entities/workforce/hiring-plan'
 import type { AttendanceDay, MyAttendance } from '@/entities/workforce/attendance'
+import type { CostReport, UtilisationReport } from '@/entities/workforce/utilisation'
+import type { WorkloadBalance } from '@/entities/workforce/workload-balance'
 import type { Intraday, IntradaySuggestions } from '@/entities/intraday'
 import type { ShiftActivity } from '@/entities/scheduling'
 import type { Peaks } from '@/entities/peaks'
@@ -192,6 +194,12 @@ export const backend = {
    * list). The state-file upload is mocked in the tests, as the call-data upload is. */
   adherence: null as AttendanceDay | null,
   myAttendance: null as MyAttendance | null,
+  /** Utilisation, cost (pay roles) and workload balance. A null answers 404. */
+  utilisation: null as UtilisationReport | null,
+  costs: null as CostReport | null,
+  balance: null as WorkloadBalance | null,
+  /** The months and days asked about, in order. */
+  utilisationQueries: [] as string[],
   /** What could be done about a short half-hour, and the half-hours asked about. */
   suggestions: null as IntradaySuggestions | null,
   suggestionQueries: [] as Array<Record<string, string>>,
@@ -303,6 +311,10 @@ export const backend = {
     this.intraday = null
     this.adherence = null
     this.myAttendance = null
+    this.utilisation = null
+    this.costs = null
+    this.balance = null
+    this.utilisationQueries = []
     this.suggestions = null
     this.suggestionQueries = []
     this.schedules = []
@@ -900,6 +912,33 @@ export const handlers = [
   http.get('*/api/v1/attendance/adherence', () =>
     backend.adherence
       ? HttpResponse.json(backend.adherence)
+      : problem(404, 'resource.not_found', 'Not found'),
+  ),
+
+  http.get('*/api/v1/utilisation/report', ({ request }) => {
+    backend.utilisationQueries.push(new URL(request.url).searchParams.get('month') ?? '')
+    return backend.utilisation
+      ? HttpResponse.json(backend.utilisation)
+      : problem(404, 'resource.not_found', 'Not found')
+  }),
+  http.get('*/api/v1/utilisation/costs', () =>
+    backend.costs
+      ? HttpResponse.json(backend.costs)
+      : problem(403, 'auth.forbidden', 'Not allowed'),
+  ),
+  http.put('*/api/v1/utilisation/contracts/:id/terms', async (info) => {
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    const sent = backend.writes[backend.writes.length - 1]?.body as Record<string, unknown>
+    return HttpResponse.json({
+      contractId: Number(info.params.id),
+      utilisationTargetPct: sent.utilisationTargetPct,
+      hasRevenue: sent.monthlyRevenueRands != null,
+    })
+  }),
+  http.get('*/api/v1/utilisation/balance', () =>
+    backend.balance
+      ? HttpResponse.json(backend.balance)
       : problem(404, 'resource.not_found', 'Not found'),
   ),
 

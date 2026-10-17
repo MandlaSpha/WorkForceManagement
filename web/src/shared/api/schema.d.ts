@@ -2052,6 +2052,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/utilisation/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Over- and under-loaded queues for a day, with suggested moves (never applied) */
+        get: operations["wfm_utilisation_api_get_balance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/utilisation/contracts/{contract_id}/terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set a contract's utilisation target and monthly revenue */
+        put: operations["wfm_utilisation_api_put_terms"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/utilisation/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cost per engineer, per contract and per ticket for a month (pay roles only) */
+        get: operations["wfm_utilisation_api_get_costs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/utilisation/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Worked against billable hours by team, customer and contract for a month */
+        get: operations["wfm_utilisation_api_get_utilisation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2423,6 +2491,39 @@ export interface components {
             /** Suggestedvolumemultiplier */
             suggestedVolumeMultiplier: number | null;
         };
+        /** BalanceDayOut */
+        BalanceDayOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Note */
+            note: string;
+            /** Queues */
+            queues: components["schemas"]["BalanceQueueOut"][];
+            /** Suggestions */
+            suggestions: components["schemas"]["BalanceMoveOut"][];
+        };
+        /** BalanceMoveOut */
+        BalanceMoveOut: {
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Fromqueue */
+            fromQueue: string;
+            /** Fromqueueid */
+            fromQueueId: number;
+            /** Slots */
+            slots: number;
+            /** Toqueue */
+            toQueue: string;
+            /** Toqueueid */
+            toQueueId: number;
+        };
         /** BalanceOut */
         BalanceOut: {
             /** Available */
@@ -2439,6 +2540,21 @@ export interface components {
             taken: number;
             /** Typeid */
             typeId: number;
+        };
+        /** BalanceQueueOut */
+        BalanceQueueOut: {
+            /** Loadratio */
+            loadRatio: number | null;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+            /** Requiredslots */
+            requiredSlots: number;
+            /** Scheduledslots */
+            scheduledSlots: number;
+            /** State */
+            state: string;
         };
         /** BalancesOut */
         BalancesOut: {
@@ -4663,6 +4779,164 @@ export interface components {
             roleFromDirectory: boolean;
             /** Username */
             username: string;
+        };
+        /** UtilContractCostOut */
+        UtilContractCostOut: {
+            /** Contractid */
+            contractId: number | null;
+            /** Costpctofrevenue */
+            costPctOfRevenue: number | null;
+            /** Customer */
+            customer: string | null;
+            /** Incomplete */
+            incomplete: boolean;
+            /** Name */
+            name: string;
+            /** Ordinaryrands */
+            ordinaryRands: number;
+            /** Overtimepctofrevenue */
+            overtimePctOfRevenue: number | null;
+            /** Overtimerands */
+            overtimeRands: number;
+            /** Revenuerands */
+            revenueRands: number | null;
+            /** Totalrands */
+            totalRands: number;
+            /** Workedmin */
+            workedMin: number;
+        };
+        /** UtilCostReportOut */
+        UtilCostReportOut: {
+            /** Basis */
+            basis: string;
+            /** Blendedhourlyrands */
+            blendedHourlyRands: number | null;
+            /** Contracts */
+            contracts: components["schemas"]["UtilContractCostOut"][];
+            /** Engineers */
+            engineers: components["schemas"]["UtilEngineerCostOut"][];
+            /** Engineerswithoutsalary */
+            engineersWithoutSalary: number;
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** Pools */
+            pools: components["schemas"]["UtilPoolCostOut"][];
+        };
+        /** UtilEngineerCostOut */
+        UtilEngineerCostOut: {
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Ordinaryrands */
+            ordinaryRands: number | null;
+            /** Overtimemissing */
+            overtimeMissing: number;
+            /** Overtimerands */
+            overtimeRands: number;
+            /** Totalrands */
+            totalRands: number | null;
+            /** Workedmin */
+            workedMin: number;
+        };
+        /** UtilGroupOut */
+        UtilGroupOut: {
+            /** Billablemin */
+            billableMin: number;
+            /** Contractid */
+            contractId?: number | null;
+            /** Customer */
+            customer?: string | null;
+            /** Gappct */
+            gapPct: number | null;
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /**
+             * Targetisdefault
+             * @default false
+             */
+            targetIsDefault: boolean;
+            /** Targetpct */
+            targetPct: number | null;
+            /** Utilisationpct */
+            utilisationPct: number | null;
+            /** Workedmin */
+            workedMin: number;
+        };
+        /** UtilPersonOut */
+        UtilPersonOut: {
+            /** Billablemin */
+            billableMin: number;
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Gappct */
+            gapPct: number | null;
+            /** Targetpct */
+            targetPct: number | null;
+            /** Utilisationpct */
+            utilisationPct: number | null;
+            /** Workedmin */
+            workedMin: number;
+        };
+        /** UtilPoolCostOut */
+        UtilPoolCostOut: {
+            /** Closed */
+            closed: number;
+            /** Costrands */
+            costRands: number | null;
+            /** Effortmin */
+            effortMin: number;
+            /** Estimated */
+            estimated: number;
+            /** Perticketrands */
+            perTicketRands: number | null;
+            /** Pool */
+            pool: string;
+        };
+        /** UtilReportOut */
+        UtilReportOut: {
+            /** Basis */
+            basis: string;
+            /** Contracts */
+            contracts: components["schemas"]["UtilGroupOut"][];
+            /** Customers */
+            customers: components["schemas"]["UtilGroupOut"][];
+            /**
+             * Month
+             * Format: date
+             */
+            month: string;
+            /** People */
+            people: components["schemas"]["UtilPersonOut"][];
+            /** Teams */
+            teams: components["schemas"]["UtilGroupOut"][];
+        };
+        /** UtilTermsIn */
+        UtilTermsIn: {
+            /** Monthlyrevenuerands */
+            monthlyRevenueRands?: number | null;
+            /** Utilisationtargetpct */
+            utilisationTargetPct: number;
+        };
+        /** UtilTermsOut */
+        UtilTermsOut: {
+            /** Contractid */
+            contractId: number;
+            /** Hasrevenue */
+            hasRevenue: boolean;
+            /** Utilisationtargetpct */
+            utilisationTargetPct: number;
         };
         /** WeekIn */
         WeekIn: {
@@ -8057,6 +8331,98 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserOut"];
+                };
+            };
+        };
+    };
+    wfm_utilisation_api_get_balance: {
+        parameters: {
+            query: {
+                day: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalanceDayOut"];
+                };
+            };
+        };
+    };
+    wfm_utilisation_api_put_terms: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contract_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UtilTermsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UtilTermsOut"];
+                };
+            };
+        };
+    };
+    wfm_utilisation_api_get_costs: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UtilCostReportOut"];
+                };
+            };
+        };
+    };
+    wfm_utilisation_api_get_utilisation: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UtilReportOut"];
                 };
             };
         };

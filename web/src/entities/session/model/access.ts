@@ -48,6 +48,8 @@ export const ACCESS: Record<NavKey, readonly Role[]> = {
   attendance: ['lead', 'planner', 'admin'],
 
   peaks: ['planner', 'lead', 'admin', 'executive', 'customer_ops'],
+  balance: ['planner', 'lead', 'admin'],
+  utilisation: ['planner', 'lead', 'admin', 'executive', 'customer_ops'],
   analytics: ['planner', 'admin', 'executive', 'customer_ops'],
   calibration: ['planner', 'admin'],
   reports: ['planner', 'lead', 'admin', 'executive', 'customer_ops'],

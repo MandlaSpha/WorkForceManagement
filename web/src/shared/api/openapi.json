@@ -919,6 +919,89 @@
         "title": "BacktestOut",
         "type": "object"
       },
+      "BalanceDayOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "queues": {
+            "items": {
+              "$ref": "#/components/schemas/BalanceQueueOut"
+            },
+            "title": "Queues",
+            "type": "array"
+          },
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/BalanceMoveOut"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "day",
+          "note",
+          "queues",
+          "suggestions"
+        ],
+        "title": "BalanceDayOut",
+        "type": "object"
+      },
+      "BalanceMoveOut": {
+        "properties": {
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "fromQueue": {
+            "title": "Fromqueue",
+            "type": "string"
+          },
+          "fromQueueId": {
+            "title": "Fromqueueid",
+            "type": "integer"
+          },
+          "slots": {
+            "title": "Slots",
+            "type": "integer"
+          },
+          "toQueue": {
+            "title": "Toqueue",
+            "type": "string"
+          },
+          "toQueueId": {
+            "title": "Toqueueid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "employeeId",
+          "empNo",
+          "employee",
+          "fromQueueId",
+          "fromQueue",
+          "toQueueId",
+          "toQueue",
+          "slots"
+        ],
+        "title": "BalanceMoveOut",
+        "type": "object"
+      },
       "BalanceOut": {
         "properties": {
           "available": {
@@ -974,6 +1057,51 @@
           "available"
         ],
         "title": "BalanceOut",
+        "type": "object"
+      },
+      "BalanceQueueOut": {
+        "properties": {
+          "loadRatio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loadratio"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "requiredSlots": {
+            "title": "Requiredslots",
+            "type": "integer"
+          },
+          "scheduledSlots": {
+            "title": "Scheduledslots",
+            "type": "integer"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueId",
+          "queue",
+          "requiredSlots",
+          "scheduledSlots",
+          "loadRatio",
+          "state"
+        ],
+        "title": "BalanceQueueOut",
         "type": "object"
       },
       "BalancesOut": {
@@ -6916,6 +7044,536 @@
           "lastLogin"
         ],
         "title": "UserOut",
+        "type": "object"
+      },
+      "UtilContractCostOut": {
+        "properties": {
+          "contractId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contractid"
+          },
+          "costPctOfRevenue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costpctofrevenue"
+          },
+          "customer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer"
+          },
+          "incomplete": {
+            "title": "Incomplete",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ordinaryRands": {
+            "title": "Ordinaryrands",
+            "type": "number"
+          },
+          "overtimePctOfRevenue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overtimepctofrevenue"
+          },
+          "overtimeRands": {
+            "title": "Overtimerands",
+            "type": "number"
+          },
+          "revenueRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revenuerands"
+          },
+          "totalRands": {
+            "title": "Totalrands",
+            "type": "number"
+          },
+          "workedMin": {
+            "title": "Workedmin",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contractId",
+          "name",
+          "customer",
+          "workedMin",
+          "ordinaryRands",
+          "overtimeRands",
+          "totalRands",
+          "revenueRands",
+          "costPctOfRevenue",
+          "overtimePctOfRevenue",
+          "incomplete"
+        ],
+        "title": "UtilContractCostOut",
+        "type": "object"
+      },
+      "UtilCostReportOut": {
+        "properties": {
+          "basis": {
+            "title": "Basis",
+            "type": "string"
+          },
+          "blendedHourlyRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blendedhourlyrands"
+          },
+          "contracts": {
+            "items": {
+              "$ref": "#/components/schemas/UtilContractCostOut"
+            },
+            "title": "Contracts",
+            "type": "array"
+          },
+          "engineers": {
+            "items": {
+              "$ref": "#/components/schemas/UtilEngineerCostOut"
+            },
+            "title": "Engineers",
+            "type": "array"
+          },
+          "engineersWithoutSalary": {
+            "title": "Engineerswithoutsalary",
+            "type": "integer"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "pools": {
+            "items": {
+              "$ref": "#/components/schemas/UtilPoolCostOut"
+            },
+            "title": "Pools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "month",
+          "basis",
+          "blendedHourlyRands",
+          "engineersWithoutSalary",
+          "engineers",
+          "contracts",
+          "pools"
+        ],
+        "title": "UtilCostReportOut",
+        "type": "object"
+      },
+      "UtilEngineerCostOut": {
+        "properties": {
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "ordinaryRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordinaryrands"
+          },
+          "overtimeMissing": {
+            "title": "Overtimemissing",
+            "type": "integer"
+          },
+          "overtimeRands": {
+            "title": "Overtimerands",
+            "type": "number"
+          },
+          "totalRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totalrands"
+          },
+          "workedMin": {
+            "title": "Workedmin",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "employeeId",
+          "empNo",
+          "employee",
+          "workedMin",
+          "ordinaryRands",
+          "overtimeRands",
+          "totalRands",
+          "overtimeMissing"
+        ],
+        "title": "UtilEngineerCostOut",
+        "type": "object"
+      },
+      "UtilGroupOut": {
+        "properties": {
+          "billableMin": {
+            "title": "Billablemin",
+            "type": "integer"
+          },
+          "contractId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contractid"
+          },
+          "customer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer"
+          },
+          "gapPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gappct"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "targetIsDefault": {
+            "default": false,
+            "title": "Targetisdefault",
+            "type": "boolean"
+          },
+          "targetPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetpct"
+          },
+          "utilisationPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilisationpct"
+          },
+          "workedMin": {
+            "title": "Workedmin",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "workedMin",
+          "billableMin",
+          "utilisationPct",
+          "targetPct",
+          "gapPct",
+          "key",
+          "name"
+        ],
+        "title": "UtilGroupOut",
+        "type": "object"
+      },
+      "UtilPersonOut": {
+        "properties": {
+          "billableMin": {
+            "title": "Billablemin",
+            "type": "integer"
+          },
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "gapPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gappct"
+          },
+          "targetPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetpct"
+          },
+          "utilisationPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utilisationpct"
+          },
+          "workedMin": {
+            "title": "Workedmin",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "workedMin",
+          "billableMin",
+          "utilisationPct",
+          "targetPct",
+          "gapPct",
+          "employeeId",
+          "empNo",
+          "employee"
+        ],
+        "title": "UtilPersonOut",
+        "type": "object"
+      },
+      "UtilPoolCostOut": {
+        "properties": {
+          "closed": {
+            "title": "Closed",
+            "type": "integer"
+          },
+          "costRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Costrands"
+          },
+          "effortMin": {
+            "title": "Effortmin",
+            "type": "integer"
+          },
+          "estimated": {
+            "title": "Estimated",
+            "type": "integer"
+          },
+          "perTicketRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Perticketrands"
+          },
+          "pool": {
+            "title": "Pool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pool",
+          "closed",
+          "estimated",
+          "effortMin",
+          "costRands",
+          "perTicketRands"
+        ],
+        "title": "UtilPoolCostOut",
+        "type": "object"
+      },
+      "UtilReportOut": {
+        "properties": {
+          "basis": {
+            "title": "Basis",
+            "type": "string"
+          },
+          "contracts": {
+            "items": {
+              "$ref": "#/components/schemas/UtilGroupOut"
+            },
+            "title": "Contracts",
+            "type": "array"
+          },
+          "customers": {
+            "items": {
+              "$ref": "#/components/schemas/UtilGroupOut"
+            },
+            "title": "Customers",
+            "type": "array"
+          },
+          "month": {
+            "format": "date",
+            "title": "Month",
+            "type": "string"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/UtilPersonOut"
+            },
+            "title": "People",
+            "type": "array"
+          },
+          "teams": {
+            "items": {
+              "$ref": "#/components/schemas/UtilGroupOut"
+            },
+            "title": "Teams",
+            "type": "array"
+          }
+        },
+        "required": [
+          "month",
+          "basis",
+          "teams",
+          "customers",
+          "contracts",
+          "people"
+        ],
+        "title": "UtilReportOut",
+        "type": "object"
+      },
+      "UtilTermsIn": {
+        "properties": {
+          "monthlyRevenueRands": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Monthlyrevenuerands"
+          },
+          "utilisationTargetPct": {
+            "title": "Utilisationtargetpct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "utilisationTargetPct"
+        ],
+        "title": "UtilTermsIn",
+        "type": "object"
+      },
+      "UtilTermsOut": {
+        "properties": {
+          "contractId": {
+            "title": "Contractid",
+            "type": "integer"
+          },
+          "hasRevenue": {
+            "title": "Hasrevenue",
+            "type": "boolean"
+          },
+          "utilisationTargetPct": {
+            "title": "Utilisationtargetpct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "contractId",
+          "utilisationTargetPct",
+          "hasRevenue"
+        ],
+        "title": "UtilTermsOut",
         "type": "object"
       },
       "WeekIn": {
@@ -12902,6 +13560,167 @@
         "summary": "Unlock an account",
         "tags": [
           "users"
+        ]
+      }
+    },
+    "/api/v1/utilisation/balance": {
+      "get": {
+        "operationId": "wfm_utilisation_api_get_balance",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "day",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Day",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BalanceDayOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Over- and under-loaded queues for a day, with suggested moves (never applied)",
+        "tags": [
+          "utilisation"
+        ]
+      }
+    },
+    "/api/v1/utilisation/contracts/{contract_id}/terms": {
+      "put": {
+        "operationId": "wfm_utilisation_api_put_terms",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contract_id",
+            "required": true,
+            "schema": {
+              "title": "Contract Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UtilTermsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UtilTermsOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set a contract's utilisation target and monthly revenue",
+        "tags": [
+          "utilisation"
+        ]
+      }
+    },
+    "/api/v1/utilisation/costs": {
+      "get": {
+        "operationId": "wfm_utilisation_api_get_costs",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UtilCostReportOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Cost per engineer, per contract and per ticket for a month (pay roles only)",
+        "tags": [
+          "utilisation"
+        ]
+      }
+    },
+    "/api/v1/utilisation/report": {
+      "get": {
+        "operationId": "wfm_utilisation_api_get_utilisation",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UtilReportOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Worked against billable hours by team, customer and contract for a month",
+        "tags": [
+          "utilisation"
         ]
       }
     }

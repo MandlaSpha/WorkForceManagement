@@ -159,6 +159,10 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Insight > Reports > Investment-board KPI pack.** Schedule it as `executive`, `planner` or `admin` (or customer operations): an emailed workbook with Headline (scorecard figures and where each comes from), By queue, Capacity (the latest hiring plan; absent for customer operations) and Notes. It never holds a rand figure.
 
+**Insight > Utilisation & cost.** Pick a month. As `planner`, `admin` or `lead` you see worked against billable hours for each team, customer and contract, with the target and the gap (short of target is spelled out, not just coloured), and a People table in employee-number order with no ranking. Everything is modelled from the published roster, which the page says; a target marked "assumed" is the 75% default until an admin sets the contract's own (as `admin`, choose the contract below the table, enter a target and optionally a monthly revenue). As `planner` or `admin` a Cost section follows: ordinary and overtime cost for each contract against its revenue, cost per engineer (someone with no salary on file shows "No salary on file", never R0.00) and cost per ticket for each service-desk pool. As `executive` or `customer_ops` you see the three group tables and no named person or rand figure; `agent` has no link.
+
+**Operate > Workload balance.** As `planner`, `admin` or `lead`, pick a day to see each queue's load (what the forecast needs over what the roster puts on the phones): Stretched above 110%, Slack below 80%, "No forecast" where nothing is known. Below it, suggested moves name a person on a slack queue with the skill for a stretched one. They are suggestions only; there is no button that moves anyone, and a lead is offered only their own team.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD

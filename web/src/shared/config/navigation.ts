@@ -232,6 +232,17 @@ export const NAV_ITEMS = [
     subtitle: 'Time away from the phones by team, measured from approved leave.',
   },
   {
+    key: 'balance',
+    path: '/balance',
+    label: 'Workload balance',
+    group: 'Operate',
+    icon: 'sliders-horizontal',
+    feature: 'scheduling',
+    phase: 8,
+    subtitle:
+      'Which queues are stretched or slack on a day, with moves to suggest (never applied).',
+  },
+  {
     key: 'attendance',
     path: '/attendance',
     label: 'Attendance',
@@ -251,6 +262,17 @@ export const NAV_ITEMS = [
     feature: 'insight',
     phase: 0,
     subtitle: 'Executive KPIs and what-if planning, each labelled measured or modelled.',
+  },
+  {
+    key: 'utilisation',
+    path: '/utilisation',
+    label: 'Utilisation & cost',
+    group: 'Insight',
+    icon: 'bar-chart-3',
+    feature: 'insight',
+    phase: 8,
+    subtitle:
+      'Worked against billable hours by team, customer and contract, and what that time costs.',
   },
   {
     key: 'calibration',
