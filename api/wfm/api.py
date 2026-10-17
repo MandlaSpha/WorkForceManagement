@@ -27,6 +27,8 @@ from wfm.scheduling.autoschedule_api import router as autoschedule_router
 from wfm.scheduling.compliance_api import router as compliance_router
 from wfm.scheduling.recommendation_api import router as recommendation_router
 from wfm.servicedesk.api import router as servicedesk_router
+from wfm.skills.api import router as skills_router
+from wfm.skills.api import wellbeing_router
 from wfm.telephony.api import router as telephony_router
 
 api = NinjaAPI(
@@ -60,6 +62,8 @@ api.add_router("/jobs", jobs_router)
 api.add_router("/insight", insight_router)
 api.add_router("/intraday", intraday_router)
 api.add_router("/attendance", attendance_router)
+api.add_router("/skills", skills_router)
+api.add_router("/wellbeing", wellbeing_router)
 api.add_router("/reports", reports_router)
 api.add_router("/notifications", notifications_router)
 api.add_router("/overtime", overtime_router)

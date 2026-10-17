@@ -16,6 +16,8 @@ import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
 import type { HiringPlan, HiringPlanSummary } from '@/entities/workforce/hiring-plan'
 import type { AttendanceDay, MyAttendance } from '@/entities/workforce/attendance'
+import type { Credential, Requirement, SkillGap } from '@/entities/workforce/skills'
+import type { Wellbeing } from '@/entities/workforce/wellbeing'
 import type { Intraday, IntradaySuggestions } from '@/entities/intraday'
 import type { ShiftActivity } from '@/entities/scheduling'
 import type { Peaks } from '@/entities/peaks'
@@ -192,6 +194,12 @@ export const backend = {
    * list). The state-file upload is mocked in the tests, as the call-data upload is. */
   adherence: null as AttendanceDay | null,
   myAttendance: null as MyAttendance | null,
+  /** Skills: credentials (everyone's; the handler scopes by the id asked for), what the queue
+   * requires, the gaps found, and the wellbeing prompts (null: the API refuses). */
+  credentials: [] as Credential[],
+  requirements: [] as Requirement[],
+  gaps: [] as SkillGap[],
+  wellbeing: null as Wellbeing | null,
   /** What could be done about a short half-hour, and the half-hours asked about. */
   suggestions: null as IntradaySuggestions | null,
   suggestionQueries: [] as Array<Record<string, string>>,
@@ -303,6 +311,10 @@ export const backend = {
     this.intraday = null
     this.adherence = null
     this.myAttendance = null
+    this.credentials = []
+    this.requirements = []
+    this.gaps = []
+    this.wellbeing = null
     this.suggestions = null
     this.suggestionQueries = []
     this.schedules = []
@@ -589,7 +601,73 @@ export const handlers = [
 
   http.get('*/api/v1/scheduling/shifts', () => HttpResponse.json(backend.shifts)),
 
-  http.get('*/api/v1/scheduling/employees', () => HttpResponse.json(backend.employees)),
+  http.get('*/api/v1/scheduling/employees', ({ request }) => {
+    const wanted = new URL(request.url).searchParams.get('credential')
+    if (wanted === null) return HttpResponse.json(backend.employees)
+    const holders = new Set(
+      backend.credentials
+        .filter((c) => `${c.kind}:${c.name}`.toLowerCase() === wanted.toLowerCase())
+        .map((c) => c.employeeId),
+    )
+    return HttpResponse.json(backend.employees.filter((e) => holders.has(e.id)))
+  }),
+
+  http.get('*/api/v1/skills/credentials', ({ request }) => {
+    const id = new URL(request.url).searchParams.get('employee_id')
+    return HttpResponse.json(
+      backend.credentials.filter((c) => id === null || c.employeeId === Number(id)),
+    )
+  }),
+
+  http.put('*/api/v1/skills/employees/:id/credentials', async (info) => {
+    const sent = (await info.request.clone().json()) as {
+      credentials: Array<{ kind: string; name: string; expiresOn?: string | null }>
+    }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    const who = backend.employees.find((e) => e.id === id)
+    backend.credentials = [
+      ...backend.credentials.filter((c) => c.employeeId !== id),
+      ...sent.credentials.map((c) => ({
+        employeeId: id,
+        empNo: who?.empNo ?? '',
+        employee: who?.name ?? '',
+        kind: c.kind,
+        name: c.name,
+        expiresOn: c.expiresOn ?? null,
+        expired: false,
+      })),
+    ]
+    return HttpResponse.json(backend.credentials.filter((c) => c.employeeId === id))
+  }),
+
+  http.get('*/api/v1/skills/requirements', () => HttpResponse.json(backend.requirements)),
+
+  http.put('*/api/v1/skills/queues/:id/requirements', async (info) => {
+    const sent = (await info.request.clone().json()) as {
+      requirements: Array<{ kind: string; name: string; minPeople: number }>
+    }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    const queueId = Number(info.params.id)
+    backend.requirements = sent.requirements.map((r) => ({
+      queueId,
+      queue: 'QueueA',
+      kind: r.kind,
+      name: r.name,
+      minPeople: r.minPeople,
+    }))
+    return HttpResponse.json(backend.requirements)
+  }),
+
+  http.get('*/api/v1/skills/gaps', () => HttpResponse.json(backend.gaps)),
+
+  http.get('*/api/v1/wellbeing/flags', () =>
+    backend.wellbeing
+      ? HttpResponse.json(backend.wellbeing)
+      : problem(403, 'auth.forbidden', 'Forbidden'),
+  ),
 
   http.get('*/api/v1/scheduling/roster/activities', () => HttpResponse.json(backend.activities)),
 

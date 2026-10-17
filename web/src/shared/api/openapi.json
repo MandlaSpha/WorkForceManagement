@@ -1557,6 +1557,103 @@
         "title": "Coverage",
         "type": "object"
       },
+      "CredentialIn": {
+        "properties": {
+          "expiresOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expireson"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ],
+        "title": "CredentialIn",
+        "type": "object"
+      },
+      "CredentialOut": {
+        "properties": {
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "expired": {
+            "title": "Expired",
+            "type": "boolean"
+          },
+          "expiresOn": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expireson"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "empNo",
+          "employee",
+          "kind",
+          "name",
+          "expiresOn",
+          "expired"
+        ],
+        "title": "CredentialOut",
+        "type": "object"
+      },
+      "CredentialsIn": {
+        "properties": {
+          "credentials": {
+            "items": {
+              "$ref": "#/components/schemas/CredentialIn"
+            },
+            "title": "Credentials",
+            "type": "array"
+          }
+        },
+        "required": [
+          "credentials"
+        ],
+        "title": "CredentialsIn",
+        "type": "object"
+      },
       "CustomerIn": {
         "properties": {
           "name": {
@@ -5139,6 +5236,78 @@
         "title": "RecommendationOut",
         "type": "object"
       },
+      "RequirementIn": {
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "minPeople": {
+            "default": 1,
+            "title": "Minpeople",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ],
+        "title": "RequirementIn",
+        "type": "object"
+      },
+      "RequirementOut": {
+        "properties": {
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "minPeople": {
+            "title": "Minpeople",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queueId",
+          "queue",
+          "kind",
+          "name",
+          "minPeople"
+        ],
+        "title": "RequirementOut",
+        "type": "object"
+      },
+      "RequirementsIn": {
+        "properties": {
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementIn"
+            },
+            "title": "Requirements",
+            "type": "array"
+          }
+        },
+        "required": [
+          "requirements"
+        ],
+        "title": "RequirementsIn",
+        "type": "object"
+      },
       "RetentionOut": {
         "properties": {
           "before": {
@@ -6193,6 +6362,55 @@
         "title": "ShrinkageOut",
         "type": "object"
       },
+      "SkillGapOut": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "present": {
+            "title": "Present",
+            "type": "integer"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "required": {
+            "title": "Required",
+            "type": "integer"
+          },
+          "shiftCode": {
+            "title": "Shiftcode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueId",
+          "queue",
+          "kind",
+          "name",
+          "day",
+          "shiftCode",
+          "required",
+          "present"
+        ],
+        "title": "SkillGapOut",
+        "type": "object"
+      },
       "SkillIn": {
         "properties": {
           "level": {
@@ -6972,6 +7190,77 @@
           "publishedAt"
         ],
         "title": "WeekOut",
+        "type": "object"
+      },
+      "WellbeingFlagOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "value"
+        ],
+        "title": "WellbeingFlagOut",
+        "type": "object"
+      },
+      "WellbeingOut": {
+        "properties": {
+          "asOf": {
+            "format": "date",
+            "title": "Asof",
+            "type": "string"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/WellbeingPersonOut"
+            },
+            "title": "People",
+            "type": "array"
+          }
+        },
+        "required": [
+          "asOf",
+          "people"
+        ],
+        "title": "WellbeingOut",
+        "type": "object"
+      },
+      "WellbeingPersonOut": {
+        "properties": {
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "flags": {
+            "items": {
+              "$ref": "#/components/schemas/WellbeingFlagOut"
+            },
+            "title": "Flags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "employeeId",
+          "empNo",
+          "employee",
+          "flags"
+        ],
+        "title": "WellbeingPersonOut",
         "type": "object"
       },
       "WorkImportOut": {
@@ -11102,6 +11391,7 @@
     },
     "/api/v1/scheduling/employees": {
       "get": {
+        "description": "`credential` is `kind:name` (for example `language:Afrikaans`): only people holding it.",
         "operationId": "wfm_scheduling_api_list_employees",
         "parameters": [
           {
@@ -11118,6 +11408,22 @@
                 }
               ],
               "title": "Queue Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "credential",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Credential"
             }
           }
         ],
@@ -12328,6 +12634,287 @@
         ]
       }
     },
+    "/api/v1/skills/credentials": {
+      "get": {
+        "operationId": "wfm_skills_api_list_credentials",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "employee_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Employee Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CredentialOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Credentials you may see (optionally one employee's)",
+        "tags": [
+          "skills"
+        ]
+      }
+    },
+    "/api/v1/skills/employees/{employee_id}/credentials": {
+      "put": {
+        "operationId": "wfm_skills_api_put_credentials",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employee_id",
+            "required": true,
+            "schema": {
+              "title": "Employee Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CredentialOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Replace one employee's credentials",
+        "tags": [
+          "skills"
+        ]
+      }
+    },
+    "/api/v1/skills/gaps": {
+      "get": {
+        "operationId": "wfm_skills_api_list_gaps",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Start",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SkillGapOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Shifts where a required skill has too few people",
+        "tags": [
+          "skills"
+        ]
+      }
+    },
+    "/api/v1/skills/kinds": {
+      "get": {
+        "operationId": "wfm_skills_api_list_kinds",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Kinds of credential",
+        "tags": [
+          "skills"
+        ]
+      }
+    },
+    "/api/v1/skills/queues/{queue_id}/requirements": {
+      "put": {
+        "operationId": "wfm_skills_api_put_requirements",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequirementsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RequirementOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Replace what one queue requires",
+        "tags": [
+          "skills"
+        ]
+      }
+    },
+    "/api/v1/skills/requirements": {
+      "get": {
+        "operationId": "wfm_skills_api_list_requirements",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Queue Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RequirementOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "What each queue requires",
+        "tags": [
+          "skills"
+        ]
+      }
+    },
     "/api/v1/system/ping-worker": {
       "post": {
         "description": "Is the worker alive, and does trace context survive the queue? Both trace ids should match\nwhen tracing is on.",
@@ -12902,6 +13489,33 @@
         "summary": "Unlock an account",
         "tags": [
           "users"
+        ]
+      }
+    },
+    "/api/v1/wellbeing/flags": {
+      "get": {
+        "operationId": "wfm_skills_api_wellbeing_flags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WellbeingOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Early-warning prompts for a conversation (no score)",
+        "tags": [
+          "wellbeing"
         ]
       }
     }
