@@ -59,6 +59,10 @@ def build(admin: User, employee_id: int) -> tuple[dict[str, Any], int]:
         "skills": [
             {"queue": s.queue.name, "level": s.level} for s in found.skills.select_related("queue")
         ],
+        "credentials": [
+            {"kind": c.kind, "name": c.name, "expiresOn": _iso(c.expires_on)}
+            for c in found.credentials.all()
+        ],
     }
     availability = [
         {

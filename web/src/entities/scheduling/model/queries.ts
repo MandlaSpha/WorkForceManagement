@@ -22,7 +22,8 @@ export const schedulingKeys = {
   recommendations: (queueId: number, week: string) =>
     ['scheduling', 'recommendations', queueId, week] as const,
   unmappedLogins: ['scheduling', 'unmapped-logins'] as const,
-  employees: (queueId: number | null) => ['scheduling', 'employees', queueId] as const,
+  employees: (queueId: number | null, credential: string | null = null) =>
+    ['scheduling', 'employees', queueId, credential] as const,
   activities: (queueId: number, week: string) =>
     ['scheduling', 'activities', queueId, week] as const,
   roster: (queueId: number, week: string) => ['scheduling', 'roster', queueId, week] as const,
@@ -37,10 +38,11 @@ export function useShifts() {
 export function useEmployees(
   queueId: MaybeRef<number | null> = null,
   enabled: MaybeRef<boolean> = true,
+  credential: MaybeRef<string | null> = null,
 ) {
   return useQuery({
-    queryKey: computed(() => schedulingKeys.employees(toValue(queueId))),
-    queryFn: () => fetchEmployees(toValue(queueId)),
+    queryKey: computed(() => schedulingKeys.employees(toValue(queueId), toValue(credential))),
+    queryFn: () => fetchEmployees(toValue(queueId), toValue(credential)),
     enabled,
   })
 }

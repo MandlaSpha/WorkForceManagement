@@ -32,6 +32,7 @@ from wfm.overtime.models import (
     StandbyStatus,
 )
 from wfm.scheduling.models import AgentLogin, Employee, ShiftAssignment
+from wfm.skills.models import EmployeeCredential
 
 from .models import (
     OPEN_SWAP_STATUSES,
@@ -74,6 +75,7 @@ def _counts(employee: Employee) -> dict[str, dict[str, int]]:
     removes = {
         "agentLogins": AgentLogin.objects.filter(employee=employee).count(),
         "availabilityWindows": Availability.objects.filter(employee=employee).count(),
+        "credentials": EmployeeCredential.objects.filter(employee=employee).count(),
         "notifications": Notification.objects.filter(recipient=user).count() if user else 0,
         "overtimeReasons": OvertimeRequest.objects.filter(employee=employee)
         .exclude(reason="")
@@ -184,6 +186,7 @@ def anonymise(admin: User, employee_id: int, typed_number: str) -> dict[str, Any
             user.save()
         AgentLogin.objects.filter(employee=employee).delete()
         Availability.objects.filter(employee=employee).delete()
+        EmployeeCredential.objects.filter(employee=employee).delete()
         EmployeePay.objects.filter(employee=employee).delete()
         OvertimeRequest.objects.filter(employee=employee).update(reason="")
         employee.emp_no = f"{PLACEHOLDER_PREFIX}{token}"

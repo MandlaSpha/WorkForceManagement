@@ -252,6 +252,27 @@ export const NAV_ITEMS = [
     phase: 6,
     subtitle: 'What happened against what was planned.',
   },
+  {
+    key: 'skills',
+    path: '/skills',
+    label: 'Skills',
+    group: 'People',
+    icon: 'award',
+    feature: 'people',
+    context: ['queue', 'week'],
+    phase: 8,
+    subtitle: 'Certifications, languages and clearances, and the shifts short of a required skill.',
+  },
+  {
+    key: 'wellbeing',
+    path: '/wellbeing',
+    label: 'Wellbeing',
+    group: 'People',
+    icon: 'heart-pulse',
+    feature: 'people',
+    phase: 8,
+    subtitle: 'Prompts for a conversation about workload. Never a score.',
+  },
 
   {
     key: 'analytics',

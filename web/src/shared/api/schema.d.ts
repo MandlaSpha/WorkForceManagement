@@ -1412,7 +1412,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Employees */
+        /**
+         * Employees
+         * @description `credential` is `kind:name` (for example `language:Afrikaans`): only people holding it.
+         */
         get: operations["wfm_scheduling_api_list_employees"];
         put?: never;
         /** Add an employee */
@@ -1838,6 +1841,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/skills/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Credentials you may see (optionally one employee's) */
+        get: operations["wfm_skills_api_list_credentials"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/employees/{employee_id}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace one employee's credentials */
+        put: operations["wfm_skills_api_put_credentials"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/gaps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Shifts where a required skill has too few people */
+        get: operations["wfm_skills_api_list_gaps"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/kinds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Kinds of credential */
+        get: operations["wfm_skills_api_list_kinds"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/queues/{queue_id}/requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace what one queue requires */
+        put: operations["wfm_skills_api_put_requirements"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What each queue requires */
+        get: operations["wfm_skills_api_list_requirements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/ping-worker": {
         parameters: {
             query?: never;
@@ -2112,6 +2217,23 @@ export interface paths {
         };
         /** Worked against billable hours by team, customer and contract for a month */
         get: operations["wfm_utilisation_api_get_utilisation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/wellbeing/flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Early-warning prompts for a conversation (no score) */
+        get: operations["wfm_skills_api_wellbeing_flags"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2775,6 +2897,37 @@ export interface components {
             intervalsTotal: number;
             /** Intervalsused */
             intervalsUsed: number;
+        };
+        /** CredentialIn */
+        CredentialIn: {
+            /** Expireson */
+            expiresOn?: string | null;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+        };
+        /** CredentialOut */
+        CredentialOut: {
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Expired */
+            expired: boolean;
+            /** Expireson */
+            expiresOn: string | null;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+        };
+        /** CredentialsIn */
+        CredentialsIn: {
+            /** Credentials */
+            credentials: components["schemas"]["CredentialIn"][];
         };
         /** CustomerIn */
         CustomerIn: {
@@ -4103,6 +4256,36 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** RequirementIn */
+        RequirementIn: {
+            /** Kind */
+            kind: string;
+            /**
+             * Minpeople
+             * @default 1
+             */
+            minPeople: number;
+            /** Name */
+            name: string;
+        };
+        /** RequirementOut */
+        RequirementOut: {
+            /** Kind */
+            kind: string;
+            /** Minpeople */
+            minPeople: number;
+            /** Name */
+            name: string;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+        };
+        /** RequirementsIn */
+        RequirementsIn: {
+            /** Requirements */
+            requirements: components["schemas"]["RequirementIn"][];
+        };
         /** RetentionOut */
         RetentionOut: {
             /**
@@ -4508,6 +4691,28 @@ export interface components {
             teams: components["schemas"]["TeamShrinkageOut"][];
             /** Unplannedmeasured */
             unplannedMeasured: boolean;
+        };
+        /** SkillGapOut */
+        SkillGapOut: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Present */
+            present: number;
+            /** Queue */
+            queue: string;
+            /** Queueid */
+            queueId: number;
+            /** Required */
+            required: number;
+            /** Shiftcode */
+            shiftCode: string;
         };
         /** SkillIn */
         SkillIn: {
@@ -4961,6 +5166,34 @@ export interface components {
              * Format: date
              */
             weekStart: string;
+        };
+        /** WellbeingFlagOut */
+        WellbeingFlagOut: {
+            /** Code */
+            code: string;
+            /** Value */
+            value: number;
+        };
+        /** WellbeingOut */
+        WellbeingOut: {
+            /**
+             * Asof
+             * Format: date
+             */
+            asOf: string;
+            /** People */
+            people: components["schemas"]["WellbeingPersonOut"][];
+        };
+        /** WellbeingPersonOut */
+        WellbeingPersonOut: {
+            /** Empno */
+            empNo: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Flags */
+            flags: components["schemas"]["WellbeingFlagOut"][];
         };
         /** WorkImportOut */
         WorkImportOut: {
@@ -7307,6 +7540,7 @@ export interface operations {
         parameters: {
             query?: {
                 queue_id?: number | null;
+                credential?: string | null;
             };
             header?: never;
             path?: never;
@@ -8007,6 +8241,145 @@ export interface operations {
             };
         };
     };
+    wfm_skills_api_list_credentials: {
+        parameters: {
+            query?: {
+                employee_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialOut"][];
+                };
+            };
+        };
+    };
+    wfm_skills_api_put_credentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                employee_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialOut"][];
+                };
+            };
+        };
+    };
+    wfm_skills_api_list_gaps: {
+        parameters: {
+            query: {
+                start: string;
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillGapOut"][];
+                };
+            };
+        };
+    };
+    wfm_skills_api_list_kinds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string[];
+                };
+            };
+        };
+    };
+    wfm_skills_api_put_requirements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                queue_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequirementsIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementOut"][];
+                };
+            };
+        };
+    };
+    wfm_skills_api_list_requirements: {
+        parameters: {
+            query?: {
+                queue_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequirementOut"][];
+                };
+            };
+        };
+    };
     wfm_core_api_ping_worker: {
         parameters: {
             query?: never;
@@ -8423,6 +8796,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UtilReportOut"];
+                };
+            };
+        };
+    };
+    wfm_skills_api_wellbeing_flags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WellbeingOut"];
                 };
             };
         };

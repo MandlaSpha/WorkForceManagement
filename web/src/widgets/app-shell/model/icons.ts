@@ -1,12 +1,14 @@
 import {
   Activity,
   ArrowLeftRight,
+  Award,
   BarChart3,
   Calendar,
   CalendarDays,
   ClipboardCheck,
   Clock,
   Download,
+  HeartPulse,
   Home,
   LayoutGrid,
   Layers,
@@ -48,4 +50,6 @@ export const NAV_ICONS: Record<string, Component> = {
   upload: Upload,
   settings: Settings,
   'shield-check': ShieldCheck,
+  award: Award,
+  'heart-pulse': HeartPulse,
 }

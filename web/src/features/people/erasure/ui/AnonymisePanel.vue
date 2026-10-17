@@ -18,6 +18,7 @@ const typed = ref('')
 const REMOVES: Record<string, string> = {
   agentLogins: 'ACD logins',
   availabilityWindows: 'availability windows',
+  credentials: 'certifications, languages and clearances',
   notifications: 'notifications',
   overtimeReasons: 'overtime reasons (free text)',
   payRecords: 'pay records',

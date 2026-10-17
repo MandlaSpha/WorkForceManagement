@@ -3,11 +3,13 @@ from __future__ import annotations
 from datetime import date
 
 from django.http import HttpRequest, HttpResponse
+from django.utils import timezone
 from ninja import File, Router, Status
 from ninja.files import UploadedFile
 from wfm_engine.roster import is_overnight, shift_kind, shift_minutes
 
 from wfm.accounts.models import Role
+from wfm.core.errors import ApiError
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
@@ -167,8 +169,22 @@ def get_overview(request: HttpRequest, week_start: date) -> OverviewOut:
 
 
 @router.get("/employees", auth=READ, response=list[EmployeeOut], summary="Employees")
-def list_employees(request: HttpRequest, queue_id: int | None = None) -> list[EmployeeOut]:
-    return [_employee_out(e) for e in selectors.employees(current_user(request), queue_id)]
+def list_employees(
+    request: HttpRequest, queue_id: int | None = None, credential: str | None = None
+) -> list[EmployeeOut]:
+    """`credential` is `kind:name` (for example `language:Afrikaans`): only people holding it."""
+    wanted: tuple[str, str] | None = None
+    if credential:
+        kind, _, name = credential.partition(":")
+        if not kind or not name.strip():
+            raise ApiError(
+                422, "employee.credential_filter_invalid", "Invalid request", "Use kind:name."
+            )
+        wanted = (kind, name.strip())
+    found = selectors.employees(
+        current_user(request), queue_id, credential=wanted, on=timezone.localdate()
+    )
+    return [_employee_out(e) for e in found]
 
 
 @router.post(

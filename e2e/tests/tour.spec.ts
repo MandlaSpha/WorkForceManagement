@@ -28,6 +28,8 @@ const ROLES: Array<{ username: string; role: string; screens: string[] }> = [
       '/employees',
       '/overtime',
       '/attendance',
+      '/skills',
+      '/wellbeing',
       '/analytics',
       '/calibration',
       '/reports',

@@ -59,7 +59,14 @@ def shifts(user: User) -> list[ShiftTemplate]:
     return list(ShiftTemplate.objects.for_user(user))
 
 
-def employees(user: User, queue_id: int | None = None) -> list[Employee]:
+def employees(
+    user: User,
+    queue_id: int | None = None,
+    *,
+    credential: tuple[str, str] | None = None,
+    on: date | None = None,
+) -> list[Employee]:
+    """`credential` is (kind, name): keep people who hold it on day `on` (SKL-01)."""
     found = (
         Employee.objects.for_user(user)
         .select_related("manager", "user")
@@ -67,6 +74,12 @@ def employees(user: User, queue_id: int | None = None) -> list[Employee]:
     )
     if queue_id is not None:
         found = found.filter(skills__queue_id=queue_id)
+    if credential is not None:
+        kind, name = credential
+        held = Q(credentials__kind=kind, credentials__name__iexact=name)
+        if on is not None:
+            held &= Q(credentials__expires_on__isnull=True) | Q(credentials__expires_on__gte=on)
+        found = found.filter(held).distinct()
     return list(found.order_by("emp_no"))
 
 

@@ -41,10 +41,19 @@ export async function deleteShift(shiftId: number): Promise<void> {
   )
 }
 
-export async function fetchEmployees(queueId: number | null): Promise<Employee[]> {
+/** `credential` is `kind:name`, for example `language:Afrikaans` (SKL-01): only people holding it. */
+export async function fetchEmployees(
+  queueId: number | null,
+  credential: string | null = null,
+): Promise<Employee[]> {
   return unwrap(
     await api.GET('/api/v1/scheduling/employees', {
-      params: { query: queueId === null ? {} : { queue_id: queueId } },
+      params: {
+        query: {
+          ...(queueId === null ? {} : { queue_id: queueId }),
+          ...(credential === null ? {} : { credential }),
+        },
+      },
     }),
   )
 }

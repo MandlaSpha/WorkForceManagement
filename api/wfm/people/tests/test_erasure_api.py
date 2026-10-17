@@ -165,6 +165,7 @@ class TestTheTwoSteps:
         assert body["removes"] == {
             "agentLogins": 1,
             "availabilityWindows": 1,
+            "credentials": 0,
             "notifications": 1,
             "overtimeReasons": 1,
             "payRecords": 1,

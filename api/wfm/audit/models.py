@@ -89,6 +89,8 @@ class Action(models.TextChoices):
     STANDBY_CALL_OUT_RECORDED = "standby.call_out_recorded", "Standby call-out recorded"
     UTILISATION_TERMS_CHANGED = "utilisation.terms_changed", "Contract utilisation terms changed"
     ATTENDANCE_IMPORTED = "attendance.imported", "Agent-state file imported"
+    CREDENTIALS_SET = "credentials.set", "Employee credentials set"
+    QUEUE_REQUIREMENTS_SET = "queue_requirements.set", "Queue skill requirements set"
     AVAILABILITY_ADDED = "availability.added", "Availability window added"
     AVAILABILITY_REMOVED = "availability.removed", "Availability window removed"
     SWAP_REQUESTED = "swap.requested", "Shift swap requested"
