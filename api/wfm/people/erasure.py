@@ -34,6 +34,7 @@ from wfm.overtime.models import (
 from wfm.quality.models import QualityResult
 from wfm.scheduling.models import AgentLogin, Employee, ShiftAssignment
 from wfm.skills.models import EmployeeCredential
+from wfm.telephony import subject as call_subject
 
 from .models import (
     OPEN_SWAP_STATUSES,
@@ -71,9 +72,14 @@ def _require_admin(admin: User) -> None:
         raise not_found("No such employee.")
 
 
+def _logins(employee: Employee) -> list[str]:
+    return list(AgentLogin.objects.filter(employee=employee).values_list("login", flat=True))
+
+
 def _counts(employee: Employee) -> dict[str, dict[str, int]]:
     user = employee.user
     removes = {
+        **call_subject.counts(_logins(employee)),
         "agentLogins": AgentLogin.objects.filter(employee=employee).count(),
         "availabilityWindows": Availability.objects.filter(employee=employee).count(),
         "credentials": EmployeeCredential.objects.filter(employee=employee).count(),
@@ -186,6 +192,7 @@ def anonymise(admin: User, employee_id: int, typed_number: str) -> dict[str, Any
             user.is_active = False
             user.set_unusable_password()
             user.save()
+        call_subject.pseudonymise(_logins(employee), token)
         AgentLogin.objects.filter(employee=employee).delete()
         Availability.objects.filter(employee=employee).delete()
         EmployeeCredential.objects.filter(employee=employee).delete()

@@ -13,6 +13,7 @@ from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
 from . import selectors, services
+from .detail_api import router as detail_router
 from .models import ImportBatch, Queue
 from .peaks_api import router as peaks_router
 from .policy import IMPORT_ROLES, VIEW_ROLES
@@ -30,6 +31,7 @@ from .schemas import (
 
 router = Router(tags=["telephony"])
 router.add_router("", peaks_router)
+router.add_router("", detail_router)
 
 
 @router.post(

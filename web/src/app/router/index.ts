@@ -35,6 +35,7 @@ const BUILT_SCREENS: Partial<Record<NavKey, RouteRecordRaw['component']>> = {
   audit: () => import('@/pages/admin/audit'),
   contracts: () => import('@/pages/contracts'),
   peaks: () => import('@/pages/insight/peaks'),
+  'call-detail': () => import('@/pages/insight/call-detail'),
   analytics: () => import('@/pages/insight/analytics'),
   intraday: () => import('@/pages/intraday'),
   reports: () => import('@/pages/insight/reports'),

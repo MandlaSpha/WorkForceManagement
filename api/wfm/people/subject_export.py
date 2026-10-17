@@ -21,6 +21,7 @@ from wfm.notifications.models import Notification
 from wfm.overtime.models import EmployeePay, OvertimeRequest, StandbyShift
 from wfm.quality.models import QualityResult
 from wfm.scheduling.models import Employee, ShiftAssignment
+from wfm.telephony import subject as call_subject
 
 from .models import Availability, LeaveRequest, SwapRequest
 
@@ -170,8 +171,14 @@ def build(admin: User, employee_id: int) -> tuple[dict[str, Any], int]:
         }
         for e in AuditEvent.objects.filter(mine).order_by("-occurred_at")[:MAX_AUDIT]
     ]
+    call_rows = call_subject.export_rows(person["agentLogins"])
     data = {
         "person": person,
+        # Call data under this person's ACD logins: counts, their own offers and the transfers
+        # they made. Never another agent's rows, a caller's number or a remark.
+        "callData": call_rows["summary"],
+        "callOffers": call_rows["offers"],
+        "callTransfers": call_rows["transfers"],
         "pay": {
             "onFile": EmployeePay.objects.for_user(admin).filter(employee=found).exists(),
             "note": "Amounts are not held for export; ask payroll for pay figures.",

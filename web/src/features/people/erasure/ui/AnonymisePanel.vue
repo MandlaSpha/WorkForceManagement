@@ -17,6 +17,9 @@ const typed = ref('')
 
 const REMOVES: Record<string, string> = {
   agentLogins: 'ACD logins',
+  callRecordLogins: 'calls handled (login replaced by a random token)',
+  offerLogins: 'call offers (login replaced by a random token)',
+  transferLogins: 'call transfers (login replaced by a random token)',
   availabilityWindows: 'availability windows',
   credentials: 'certifications, languages and clearances',
   notifications: 'notifications',

@@ -24,6 +24,7 @@ import type { Wellbeing } from '@/entities/workforce/wellbeing'
 import type { BackupTeam, Mobilise } from '@/entities/workforce/continuity'
 import type { Intraday, IntradaySuggestions } from '@/entities/intraday'
 import type { ShiftActivity } from '@/entities/scheduling'
+import type { CallDetail } from '@/entities/call-data'
 import type { Peaks } from '@/entities/peaks'
 import type { ReportSchedule } from '@/entities/report-schedule'
 import type { Scorecard } from '@/entities/scorecard'
@@ -190,6 +191,9 @@ export const backend = {
   /** The peaks report, and the queue/range of each request. */
   peaks: null as Peaks | null,
   peaksQueries: [] as string[],
+  /** The call-detail report (null: the API refuses with 403), and the months asked for. */
+  callDetail: null as CallDetail | null,
+  callDetailQueries: [] as string[],
   /** Hiring plans, worked out as the API would. */
   hiringPlans: [] as HiringPlan[],
   /** Breaks and activities in the roster's shifts. */
@@ -342,6 +346,8 @@ export const backend = {
     this.shrinkageQueries = []
     this.peaks = null
     this.peaksQueries = []
+    this.callDetail = null
+    this.callDetailQueries = []
     this.hiringPlans = []
     this.activities = []
     this.intraday = null
@@ -1257,6 +1263,12 @@ export const handlers = [
   }),
 
   http.get('*/api/v1/insight/scorecard', () => HttpResponse.json(backend.scorecard)),
+
+  http.get('*/api/v1/telephony/call-detail', ({ request }) => {
+    backend.callDetailQueries.push(new URL(request.url).searchParams.get('month') ?? '')
+    if (backend.callDetail === null) return problem(403, 'auth.forbidden', 'Not allowed')
+    return HttpResponse.json(backend.callDetail)
+  }),
 
   http.get('*/api/v1/telephony/peaks', ({ request }) => {
     const q = new URL(request.url).searchParams

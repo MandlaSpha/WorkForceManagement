@@ -243,9 +243,9 @@ def unmapped_logins() -> list[UnmappedLogin]:
     mapped = set(AgentLogin.objects.values_list("login", flat=True))
     counts: Counter[str] = Counter(
         login
-        for login in CallRecord.objects.exclude(agent_login="").values_list(
-            "agent_login", flat=True
-        )
+        for login in CallRecord.objects.exclude(agent_login="")
+        .exclude(agent_login__startswith="erased-")  # replaced when the person was erased
+        .values_list("agent_login", flat=True)
         if login not in mapped
     )
     return [UnmappedLogin(login, n) for login, n in counts.most_common()]

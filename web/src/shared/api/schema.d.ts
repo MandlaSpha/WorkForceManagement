@@ -2258,6 +2258,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/telephony/call-detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Ring-no-answer, IVR, transfers, holds, mutes and incident links for a month */
+        get: operations["wfm_telephony_detail_api_call_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/telephony/imports": {
         parameters: {
             query?: never;
@@ -3202,6 +3219,127 @@ export interface components {
              * Format: date
              */
             month: string;
+        };
+        /** CallDetailAgentOut */
+        CallDetailAgentOut: {
+            /** Answered */
+            answered: number;
+            /** Avgrings */
+            avgRingS: string | null;
+            /** Employeename */
+            employeeName: string | null;
+            /** Employeenumber */
+            employeeNumber: string | null;
+            /** Login */
+            login: string;
+            /** Offers */
+            offers: number;
+            /** Ringnoanswer */
+            ringNoAnswer: number;
+            /** Ringnoanswerpct */
+            ringNoAnswerPct: string | null;
+        };
+        /**
+         * CallDetailEventOut
+         * @description One queue, over the month (`day` is null) or on one day. A count or an average is null when
+         *     its sheet was not in the import.
+         */
+        CallDetailEventOut: {
+            /** Avgholds */
+            avgHoldS: string | null;
+            /** Avgmutes */
+            avgMuteS: string | null;
+            /** Avgtransferanswers */
+            avgTransferAnswerS: string | null;
+            /** Avgtransfers */
+            avgTransferS: string | null;
+            /** Day */
+            day: string | null;
+            /** Holds */
+            holds: number | null;
+            /** Mutes */
+            mutes: number | null;
+            /** Queue */
+            queue: string;
+            /** Transfers */
+            transfers: number | null;
+        };
+        /** CallDetailIncidentQueueOut */
+        CallDetailIncidentQueueOut: {
+            /** Callswithincident */
+            callsWithIncident: number;
+            /** Incidents */
+            incidents: string[];
+            /** Queue */
+            queue: string;
+        };
+        /** CallDetailIvrQueueOut */
+        CallDetailIvrQueueOut: {
+            /** Abandonedafterivr */
+            abandonedAfterIvr: number;
+            /** Calls */
+            calls: number;
+            /** Endedinivr */
+            endedInIvr: number;
+            /** Queue */
+            queue: string;
+            /** Reachedqueue */
+            reachedQueue: number;
+            /** Steps */
+            steps: components["schemas"]["CallDetailIvrStepOut"][];
+        };
+        /** CallDetailIvrStepOut */
+        CallDetailIvrStepOut: {
+            /** Activity */
+            activity: string;
+            /** Calls */
+            calls: number;
+            /** Digit */
+            digit: string;
+            /** Endedhere */
+            endedHere: number;
+            /** Step */
+            step: number;
+        };
+        /** CallDetailOut */
+        CallDetailOut: {
+            /** Agents */
+            agents: components["schemas"]["CallDetailAgentOut"][] | null;
+            /** Agentsallowed */
+            agentsAllowed: boolean;
+            /** Eventsbyday */
+            eventsByDay: components["schemas"]["CallDetailEventOut"][] | null;
+            /** Eventsbyqueue */
+            eventsByQueue: components["schemas"]["CallDetailEventOut"][] | null;
+            /** Incidents */
+            incidents: components["schemas"]["CallDetailIncidentQueueOut"][] | null;
+            /** Incidentsallowed */
+            incidentsAllowed: boolean;
+            /** Ivr */
+            ivr: components["schemas"]["CallDetailIvrQueueOut"][] | null;
+            /** Month */
+            month: string;
+            /** Scope */
+            scope: string;
+            sheets: components["schemas"]["CallDetailSheetsOut"];
+        };
+        /**
+         * CallDetailSheetsOut
+         * @description True when an import in the month held the sheet; false means NO DATA, not zero.
+         */
+        CallDetailSheetsOut: {
+            /** Holds */
+            holds: boolean;
+            /** Incidents */
+            incidents: boolean;
+            /** Ivr */
+            ivr: boolean;
+            /** Mutes */
+            mutes: boolean;
+            /** Ring */
+            ring: boolean;
+            /** Transfers */
+            transfers: boolean;
         };
         /** CallOutIn */
         CallOutIn: {
@@ -9712,6 +9850,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkerPingOut"];
+                };
+            };
+        };
+    };
+    wfm_telephony_detail_api_call_detail: {
+        parameters: {
+            query: {
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallDetailOut"];
                 };
             };
         };

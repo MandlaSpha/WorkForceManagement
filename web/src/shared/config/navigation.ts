@@ -330,6 +330,17 @@ export const NAV_ITEMS = [
     subtitle: 'The busiest and quietest days and half-hours of a queue, from measured calls.',
   },
   {
+    key: 'call-detail',
+    path: '/call-detail',
+    label: 'Call detail',
+    group: 'Insight',
+    icon: 'bar-chart-3',
+    feature: 'telephony',
+    phase: 5,
+    subtitle:
+      'Ring-no-answer, IVR drop-off, transfers, holds and mutes, and incident links, from the detail sheets of the call report.',
+  },
+  {
     key: 'reports',
     path: '/reports',
     label: 'Reports',

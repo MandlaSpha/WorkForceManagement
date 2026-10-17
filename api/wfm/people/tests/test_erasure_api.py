@@ -164,6 +164,9 @@ class TestTheTwoSteps:
         body = r.json()
         assert body["removes"] == {
             "agentLogins": 1,
+            "callRecordLogins": 0,
+            "offerLogins": 0,
+            "transferLogins": 0,
             "availabilityWindows": 1,
             "credentials": 0,
             "notifications": 1,

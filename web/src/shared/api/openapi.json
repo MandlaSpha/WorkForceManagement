@@ -1682,6 +1682,439 @@
         "title": "BudgetOut",
         "type": "object"
       },
+      "CallDetailAgentOut": {
+        "properties": {
+          "answered": {
+            "title": "Answered",
+            "type": "integer"
+          },
+          "avgRingS": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avgrings"
+          },
+          "employeeName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employeename"
+          },
+          "employeeNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employeenumber"
+          },
+          "login": {
+            "title": "Login",
+            "type": "string"
+          },
+          "offers": {
+            "title": "Offers",
+            "type": "integer"
+          },
+          "ringNoAnswer": {
+            "title": "Ringnoanswer",
+            "type": "integer"
+          },
+          "ringNoAnswerPct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ringnoanswerpct"
+          }
+        },
+        "required": [
+          "login",
+          "employeeNumber",
+          "employeeName",
+          "offers",
+          "answered",
+          "ringNoAnswer",
+          "ringNoAnswerPct",
+          "avgRingS"
+        ],
+        "title": "CallDetailAgentOut",
+        "type": "object"
+      },
+      "CallDetailEventOut": {
+        "description": "One queue, over the month (`day` is null) or on one day. A count or an average is null when\nits sheet was not in the import.",
+        "properties": {
+          "avgHoldS": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avgholds"
+          },
+          "avgMuteS": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avgmutes"
+          },
+          "avgTransferAnswerS": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avgtransferanswers"
+          },
+          "avgTransferS": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avgtransfers"
+          },
+          "day": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Day"
+          },
+          "holds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holds"
+          },
+          "mutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mutes"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "transfers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transfers"
+          }
+        },
+        "required": [
+          "queue",
+          "day",
+          "transfers",
+          "avgTransferS",
+          "avgTransferAnswerS",
+          "holds",
+          "avgHoldS",
+          "mutes",
+          "avgMuteS"
+        ],
+        "title": "CallDetailEventOut",
+        "type": "object"
+      },
+      "CallDetailIncidentQueueOut": {
+        "properties": {
+          "callsWithIncident": {
+            "title": "Callswithincident",
+            "type": "integer"
+          },
+          "incidents": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Incidents",
+            "type": "array"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queue",
+          "callsWithIncident",
+          "incidents"
+        ],
+        "title": "CallDetailIncidentQueueOut",
+        "type": "object"
+      },
+      "CallDetailIvrQueueOut": {
+        "properties": {
+          "abandonedAfterIvr": {
+            "title": "Abandonedafterivr",
+            "type": "integer"
+          },
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "endedInIvr": {
+            "title": "Endedinivr",
+            "type": "integer"
+          },
+          "queue": {
+            "title": "Queue",
+            "type": "string"
+          },
+          "reachedQueue": {
+            "title": "Reachedqueue",
+            "type": "integer"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/CallDetailIvrStepOut"
+            },
+            "title": "Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "queue",
+          "calls",
+          "reachedQueue",
+          "endedInIvr",
+          "abandonedAfterIvr",
+          "steps"
+        ],
+        "title": "CallDetailIvrQueueOut",
+        "type": "object"
+      },
+      "CallDetailIvrStepOut": {
+        "properties": {
+          "activity": {
+            "title": "Activity",
+            "type": "string"
+          },
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "digit": {
+            "title": "Digit",
+            "type": "string"
+          },
+          "endedHere": {
+            "title": "Endedhere",
+            "type": "integer"
+          },
+          "step": {
+            "title": "Step",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "step",
+          "digit",
+          "activity",
+          "calls",
+          "endedHere"
+        ],
+        "title": "CallDetailIvrStepOut",
+        "type": "object"
+      },
+      "CallDetailOut": {
+        "properties": {
+          "agents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CallDetailAgentOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agents"
+          },
+          "agentsAllowed": {
+            "title": "Agentsallowed",
+            "type": "boolean"
+          },
+          "eventsByDay": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CallDetailEventOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eventsbyday"
+          },
+          "eventsByQueue": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CallDetailEventOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eventsbyqueue"
+          },
+          "incidents": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CallDetailIncidentQueueOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incidents"
+          },
+          "incidentsAllowed": {
+            "title": "Incidentsallowed",
+            "type": "boolean"
+          },
+          "ivr": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CallDetailIvrQueueOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ivr"
+          },
+          "month": {
+            "title": "Month",
+            "type": "string"
+          },
+          "scope": {
+            "title": "Scope",
+            "type": "string"
+          },
+          "sheets": {
+            "$ref": "#/components/schemas/CallDetailSheetsOut"
+          }
+        },
+        "required": [
+          "month",
+          "sheets",
+          "scope",
+          "agentsAllowed",
+          "incidentsAllowed",
+          "agents",
+          "ivr",
+          "eventsByQueue",
+          "eventsByDay",
+          "incidents"
+        ],
+        "title": "CallDetailOut",
+        "type": "object"
+      },
+      "CallDetailSheetsOut": {
+        "description": "True when an import in the month held the sheet; false means NO DATA, not zero.",
+        "properties": {
+          "holds": {
+            "title": "Holds",
+            "type": "boolean"
+          },
+          "incidents": {
+            "title": "Incidents",
+            "type": "boolean"
+          },
+          "ivr": {
+            "title": "Ivr",
+            "type": "boolean"
+          },
+          "mutes": {
+            "title": "Mutes",
+            "type": "boolean"
+          },
+          "ring": {
+            "title": "Ring",
+            "type": "boolean"
+          },
+          "transfers": {
+            "title": "Transfers",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ring",
+          "ivr",
+          "transfers",
+          "holds",
+          "mutes",
+          "incidents"
+        ],
+        "title": "CallDetailSheetsOut",
+        "type": "object"
+      },
       "CallOutIn": {
         "properties": {
           "minutes": {
@@ -16263,6 +16696,44 @@
         "summary": "Round trip through the background worker",
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/api/v1/telephony/call-detail": {
+      "get": {
+        "operationId": "wfm_telephony_detail_api_call_detail",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "title": "Month",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallDetailOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Ring-no-answer, IVR, transfers, holds, mutes and incident links for a month",
+        "tags": [
+          "telephony",
+          "telephony"
         ]
       }
     },

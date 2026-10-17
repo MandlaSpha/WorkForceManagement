@@ -180,6 +180,8 @@ class TestNoCallLevelSurface:
         telephony = sorted(p for p in paths if "/telephony" in p)
         # Adding a route means deciding, on purpose, that it exposes only aggregates.
         assert telephony == [
+            # Sums per queue; per-login rows only for admin, planner and a lead's own team.
+            "/api/v1/telephony/call-detail",
             "/api/v1/telephony/imports",
             "/api/v1/telephony/kpis",
             "/api/v1/telephony/months",
