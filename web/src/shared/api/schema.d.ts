@@ -819,6 +819,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/people/employees/{employee_id}/anonymise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Anonymise a leaver (cannot be undone); the employee number must be typed again */
+        post: operations["wfm_people_api_employee_anonymise"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/people/employees/{employee_id}/data-export": {
         parameters: {
             query?: never;
@@ -830,6 +847,23 @@ export interface paths {
         get: operations["wfm_people_api_employee_data_export"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/employees/{employee_id}/erasure-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Whether a leaver may be anonymised, and what would be removed (changes nothing) */
+        post: operations["wfm_people_api_erasure_request"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1035,6 +1069,23 @@ export interface paths {
         };
         /** Your published shifts and leave for the coming weeks */
         get: operations["wfm_people_ess_api_my_schedule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/people/retention": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Leavers gone longer than the retention period, for the admin to review */
+        get: operations["wfm_people_api_retention"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2540,6 +2591,39 @@ export interface components {
             /** Daysperyear */
             daysPerYear: number | string | null;
         };
+        /** ErasureConfirmIn */
+        ErasureConfirmIn: {
+            /** Employeenumber */
+            employeeNumber: string;
+        };
+        /** ErasureDoneOut */
+        ErasureDoneOut: {
+            /** Employeeid */
+            employeeId: number;
+            /** Keeps */
+            keeps: {
+                [key: string]: number;
+            };
+            /** Removes */
+            removes: {
+                [key: string]: number;
+            };
+        };
+        /** ErasurePreviewOut */
+        ErasurePreviewOut: {
+            /** Employeeid */
+            employeeId: number;
+            /** Employeenumber */
+            employeeNumber: string;
+            /** Keeps */
+            keeps: {
+                [key: string]: number;
+            };
+            /** Removes */
+            removes: {
+                [key: string]: number;
+            };
+        };
         /** EventIn */
         EventIn: {
             /**
@@ -3637,6 +3721,30 @@ export interface components {
             templateId: number;
             /** Text */
             text: string;
+        };
+        /** RetentionOut */
+        RetentionOut: {
+            /**
+             * Before
+             * Format: date
+             */
+            before: string;
+            /** Employees */
+            employees: components["schemas"]["RetentionPersonOut"][];
+            /** Months */
+            months: number;
+        };
+        /** RetentionPersonOut */
+        RetentionPersonOut: {
+            /** Employeeid */
+            employeeId: number;
+            /** Employeenumber */
+            employeeNumber: string;
+            /**
+             * Enddate
+             * Format: date
+             */
+            endDate: string;
         };
         /** RoleIn */
         RoleIn: {
@@ -5708,6 +5816,32 @@ export interface operations {
             };
         };
     };
+    wfm_people_api_employee_anonymise: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                employee_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ErasureConfirmIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErasureDoneOut"];
+                };
+            };
+        };
+    };
     wfm_people_api_employee_data_export: {
         parameters: {
             query?: never;
@@ -5725,6 +5859,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    wfm_people_api_erasure_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                employee_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErasurePreviewOut"];
+                };
             };
         };
     };
@@ -6063,6 +6219,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyScheduleOut"];
+                };
+            };
+        };
+    };
+    wfm_people_api_retention: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionOut"];
                 };
             };
         };

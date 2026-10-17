@@ -129,6 +129,9 @@ WFM_CDR_MAX_UPLOAD_MB = int(os.environ.get("WFM_CDR_MAX_UPLOAD_MB", "25"))
 # (ENG-05) come with the configuration screens; changing this needs the intervals rebuilt.
 WFM_SL_THRESHOLD_S = int(os.environ.get("WFM_SL_THRESHOLD_S", "20"))
 
+# Months after leaving when the admin is prompted to review whether to anonymise (POPIA).
+WFM_RETENTION_MONTHS = int(os.environ.get("WFM_RETENTION_MONTHS", "60"))
+
 CELERY_BEAT_SCHEDULE = {
     # Nightly check that the audit trail's hash chain is intact (AUD-10).
     "audit-verify-chain": {

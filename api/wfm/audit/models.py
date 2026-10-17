@@ -82,6 +82,7 @@ class Action(models.TextChoices):
     ROSTER_ACTIVITY_ADDED = "roster.activity_added", "A break or activity was added to a shift"
     ROSTER_ACTIVITY_REMOVED = "roster.activity_removed", "A break or activity was removed"
     SUBJECT_EXPORTED = "employee.data_exported", "An employee's data was exported (subject access)"
+    EMPLOYEE_ANONYMISED = "employee.anonymised", "An employee was anonymised (erasure)"
     PAYROLL_EXPORTED = "payroll.exported", "Payroll file exported"
     STANDBY_BOOKED = "standby.booked", "Standby booked"
     STANDBY_CANCELLED = "standby.cancelled", "Standby cancelled"

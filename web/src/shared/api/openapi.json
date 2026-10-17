@@ -1680,6 +1680,82 @@
         "title": "EntitlementIn",
         "type": "object"
       },
+      "ErasureConfirmIn": {
+        "properties": {
+          "employeeNumber": {
+            "title": "Employeenumber",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeNumber"
+        ],
+        "title": "ErasureConfirmIn",
+        "type": "object"
+      },
+      "ErasureDoneOut": {
+        "properties": {
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "keeps": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Keeps",
+            "type": "object"
+          },
+          "removes": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Removes",
+            "type": "object"
+          }
+        },
+        "required": [
+          "employeeId",
+          "removes",
+          "keeps"
+        ],
+        "title": "ErasureDoneOut",
+        "type": "object"
+      },
+      "ErasurePreviewOut": {
+        "properties": {
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "employeeNumber": {
+            "title": "Employeenumber",
+            "type": "string"
+          },
+          "keeps": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Keeps",
+            "type": "object"
+          },
+          "removes": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Removes",
+            "type": "object"
+          }
+        },
+        "required": [
+          "employeeId",
+          "employeeNumber",
+          "removes",
+          "keeps"
+        ],
+        "title": "ErasurePreviewOut",
+        "type": "object"
+      },
       "EventIn": {
         "properties": {
           "dateFrom": {
@@ -4596,6 +4672,57 @@
           "text"
         ],
         "title": "RecommendationOut",
+        "type": "object"
+      },
+      "RetentionOut": {
+        "properties": {
+          "before": {
+            "format": "date",
+            "title": "Before",
+            "type": "string"
+          },
+          "employees": {
+            "items": {
+              "$ref": "#/components/schemas/RetentionPersonOut"
+            },
+            "title": "Employees",
+            "type": "array"
+          },
+          "months": {
+            "title": "Months",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "months",
+          "before",
+          "employees"
+        ],
+        "title": "RetentionOut",
+        "type": "object"
+      },
+      "RetentionPersonOut": {
+        "properties": {
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "employeeNumber": {
+            "title": "Employeenumber",
+            "type": "string"
+          },
+          "endDate": {
+            "format": "date",
+            "title": "Enddate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "employeeNumber",
+          "endDate"
+        ],
+        "title": "RetentionPersonOut",
         "type": "object"
       },
       "RoleIn": {
@@ -8850,6 +8977,53 @@
         ]
       }
     },
+    "/api/v1/people/employees/{employee_id}/anonymise": {
+      "post": {
+        "operationId": "wfm_people_api_employee_anonymise",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employee_id",
+            "required": true,
+            "schema": {
+              "title": "Employee Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ErasureConfirmIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErasureDoneOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Anonymise a leaver (cannot be undone); the employee number must be typed again",
+        "tags": [
+          "people"
+        ]
+      }
+    },
     "/api/v1/people/employees/{employee_id}/data-export": {
       "get": {
         "operationId": "wfm_people_api_employee_data_export",
@@ -8875,6 +9049,43 @@
           }
         ],
         "summary": "Everything held about one employee, for a subject-access request",
+        "tags": [
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/employees/{employee_id}/erasure-request": {
+      "post": {
+        "operationId": "wfm_people_api_erasure_request",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "employee_id",
+            "required": true,
+            "schema": {
+              "title": "Employee Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErasurePreviewOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Whether a leaver may be anonymised, and what would be removed (changes nothing)",
         "tags": [
           "people"
         ]
@@ -9491,6 +9702,33 @@
         "summary": "Your published shifts and leave for the coming weeks",
         "tags": [
           "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/retention": {
+      "get": {
+        "operationId": "wfm_people_api_retention",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Leavers gone longer than the retention period, for the admin to review",
+        "tags": [
           "people"
         ]
       }

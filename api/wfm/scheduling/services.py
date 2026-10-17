@@ -178,6 +178,9 @@ def delete_shift(*, user: User, shift_id: int) -> None:
 # --- employees ---------------------------------------------------------------------------------
 
 
+PRIVATE_FIELDS = frozenset({"name", "emp_no"})
+
+
 @dataclass(frozen=True, slots=True)
 class SkillInput:
     queue_id: int
@@ -294,7 +297,8 @@ def create_employee(
                 entity_id=str(employee.pk),
                 subject_employee_id=employee.pk,
                 changes=[
-                    audit.FieldChange("employee", str(employee.pk), "emp_no", None, emp_no),
+                    # A number identifies a person; the trail cannot be edited, so not stored.
+                    audit.FieldChange("employee", str(employee.pk), "emp_no", None, "set"),
                     audit.FieldChange(
                         "employee",
                         str(employee.pk),
@@ -434,14 +438,15 @@ def update_employee(
         )
         after = {k: getattr(employee, k) for k in before if k != "manager"}
         after["manager"] = new_manager.emp_no if new_manager else None
-        # A name is personal data: the trail says it changed, not what it was or became.
+        # A name and an employee number identify a person and the trail cannot be edited (so it
+        # cannot be erased later): the trail says they changed, not what they were or became.
         changes = [
             audit.FieldChange(
                 "employee",
                 str(employee.pk),
                 k,
-                None if k == "name" else str(before[k]),
-                "changed" if k == "name" else str(after[k]),
+                None if k in PRIVATE_FIELDS else str(before[k]),
+                "changed" if k in PRIVATE_FIELDS else str(after[k]),
             )
             for k in before
             if before[k] != after[k]
