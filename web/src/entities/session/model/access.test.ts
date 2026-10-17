@@ -20,8 +20,14 @@ describe('role matrix (docs/04-UML.md section 2.6)', () => {
     for (const role of ROLES) expect(keysFor(role).length).toBeGreaterThan(0)
   })
 
-  it('limits agents to their own schedule, availability, leave and swaps', () => {
-    expect(keysFor('agent').sort()).toEqual(['leave', 'my-availability', 'my-schedule', 'swaps'])
+  it('limits agents to their own schedule, availability, leave, swaps and quality results', () => {
+    expect(keysFor('agent').sort()).toEqual([
+      'leave',
+      'my-availability',
+      'my-schedule',
+      'quality',
+      'swaps',
+    ])
   })
 
   it('keeps configuration and the audit log admin-only', () => {
