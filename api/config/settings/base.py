@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "wfm.insight",
     "wfm.reports",
     "wfm.intraday",
+    "wfm.attendance",
     "wfm.overtime",
 ]
 

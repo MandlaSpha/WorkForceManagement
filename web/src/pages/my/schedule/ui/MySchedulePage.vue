@@ -12,6 +12,7 @@ import {
   useMySchedule,
 } from '@/entities/my-schedule'
 import type { ScheduleDay } from '@/entities/my-schedule'
+import { OwnDay } from '@/features/attendance/own-day'
 import { ApiProblem, problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import { formatDayLabel } from '@/shared/lib/datetime'
@@ -249,6 +250,8 @@ const dayNumber = (iso: string) => String(Number(iso.slice(8)))
           </ul>
         </template>
       </template>
+
+      <OwnDay />
 
       <p class="text-sm text-ink-muted">
         Need time off?

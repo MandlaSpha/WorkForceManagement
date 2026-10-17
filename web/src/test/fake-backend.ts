@@ -16,6 +16,7 @@ import type { ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
 import type { HiringPlan, HiringPlanSummary } from '@/entities/workforce/hiring-plan'
 import type { Intraday } from '@/entities/intraday'
+import type { AttendanceDay, MyAttendance } from '@/entities/workforce/attendance'
 import type { ShiftActivity } from '@/entities/scheduling'
 import type { Peaks } from '@/entities/peaks'
 import type { ReportSchedule } from '@/entities/report-schedule'
@@ -187,6 +188,10 @@ export const backend = {
   activities: [] as ShiftActivity[],
   /** The intraday view of a day. */
   intraday: null as Intraday | null,
+  /** Attendance: a queue day, and the signed-in person's own day (null: not on the employee
+   * list). The state-file upload is mocked in the tests, as the call-data upload is. */
+  adherence: null as AttendanceDay | null,
+  myAttendance: null as MyAttendance | null,
   /** Report schedules, and the email domains reports may go to. */
   schedules: [] as ReportSchedule[],
   reportDomains: [] as string[],
@@ -287,6 +292,8 @@ export const backend = {
     this.hiringPlans = []
     this.activities = []
     this.intraday = null
+    this.adherence = null
+    this.myAttendance = null
     this.schedules = []
     this.reportDomains = []
     this.scorecard = null
@@ -835,6 +842,18 @@ export const handlers = [
   }),
 
   http.get('*/api/v1/intraday', () => HttpResponse.json(backend.intraday)),
+
+  http.get('*/api/v1/attendance/adherence', () =>
+    backend.adherence
+      ? HttpResponse.json(backend.adherence)
+      : problem(404, 'resource.not_found', 'Not found'),
+  ),
+
+  http.get('*/api/v1/attendance/mine', () =>
+    backend.myAttendance
+      ? HttpResponse.json(backend.myAttendance)
+      : problem(422, 'attendance.no_employee_record', 'Not on the employee list'),
+  ),
 
   http.get('*/api/v1/capacity/hiring-plans', () =>
     HttpResponse.json(

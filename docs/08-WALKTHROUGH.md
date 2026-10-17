@@ -151,6 +151,8 @@ Below the import, **ACD logins nobody owns yet** lists logins found on imported 
 
 **Operate > Hiring plan.** As `planner`, make a plan: people employed now, how many leave each month, how fast a new hire gets productive, and the people needed for each of 12 to 18 months. It shows how many to hire and when (a hire is made as many months ahead as the ramp is long), the months that are short, and the months where no hire could have helped in time. As `executive` you read the same plan without any rand figure.
 
+**People > Attendance.** As `planner` or `admin`, load an agent-state CSV (`login,state,from,to`, local times; the layout is a stand-in until the ACD vendor confirms the real feed) in the panel at the top: it says how many rows were stored, skipped as already held or rejected (with line numbers), and which logins are not linked to a person (never guessed). Pick a queue and a day to see each rostered person's adherence (time available, on a call or in wrap-up over scheduled time, breaks and lunch not counted), late starts, early finishes and out-of-adherence minutes. A person with no state data shows "no data", not 0%. A `lead` sees only their own team; as `agent` you see your own planned-versus-actual day under My schedule, and nobody else's.
+
 ## Not built yet (so you are not looking for it)
 
 Per-team leave limits, scheduled reports, intraday, adherence, ITSM and Azure AD
