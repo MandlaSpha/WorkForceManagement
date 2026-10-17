@@ -14,6 +14,8 @@ import PageHeader from '@/shared/ui/PageHeader.vue'
 import SelectField from '@/shared/ui/SelectField.vue'
 import TabBar from '@/shared/ui/TabBar.vue'
 
+import ServiceMetrics from './ServiceMetrics.vue'
+
 const session = useSessionStore()
 const screen = NAV_ITEMS.find((item) => item.key === 'service-desk')
 // Cosmetic: the API refuses bringing work in and setting productive time for any other role.
@@ -35,6 +37,7 @@ const data = computed(() => demand.data.value)
 const tab = ref('demand')
 const TABS = computed(() => [
   { key: 'demand', label: 'Demand & capacity' },
+  { key: 'metrics', label: 'Service metrics' },
   ...(canChange.value ? [{ key: 'import', label: 'Bring in work' }] : []),
 ])
 </script>
@@ -189,6 +192,15 @@ const TABS = computed(() => [
           </div>
         </template>
       </template>
+    </div>
+
+    <div
+      v-else-if="tab === 'metrics'"
+      id="sd-panel-metrics"
+      role="tabpanel"
+      aria-labelledby="sd-tab-metrics"
+    >
+      <ServiceMetrics />
     </div>
 
     <div v-else id="sd-panel-import" role="tabpanel" aria-labelledby="sd-tab-import">

@@ -169,6 +169,7 @@ class TestTheTwoSteps:
             "notifications": 1,
             "overtimeReasons": 1,
             "payRecords": 1,
+            "qualityResults": 0,
             "signInLinks": 1,
         }
         assert body["keeps"] == {

@@ -19,6 +19,7 @@ import type { AttendanceDay, MyAttendance } from '@/entities/workforce/attendanc
 import type { CostReport, UtilisationReport } from '@/entities/workforce/utilisation'
 import type { WorkloadBalance } from '@/entities/workforce/workload-balance'
 import type { Credential, Requirement, SkillGap } from '@/entities/workforce/skills'
+import type { QualityPerson, QualityTeam } from '@/entities/workforce/quality'
 import type { Wellbeing } from '@/entities/workforce/wellbeing'
 import type { BackupTeam, Mobilise } from '@/entities/workforce/continuity'
 import type { Intraday, IntradaySuggestions } from '@/entities/intraday'
@@ -37,7 +38,7 @@ import type {
 } from '@/entities/scheduling'
 import type { MySchedule } from '@/entities/my-schedule'
 import type { BoardEntry, Swap, SwapShift } from '@/entities/swap'
-import type { Demand, WorkImport } from '@/entities/service-desk'
+import type { Demand, ServiceKpiReport, WorkImport } from '@/entities/service-desk'
 import type {
   Backtest,
   ForecastAccuracy,
@@ -209,6 +210,15 @@ export const backend = {
   requirements: [] as Requirement[],
   gaps: [] as SkillGap[],
   wellbeing: null as Wellbeing | null,
+  /** Quality results: the team list, one person by employee id, and the signed-in person's own
+   * (null: the API refuses or the person is not on the list). The windows asked for are kept. */
+  qualityTeam: null as QualityTeam | null,
+  qualityPeople: {} as Record<number, QualityPerson>,
+  myQuality: null as QualityPerson | null,
+  qualityQueries: [] as string[],
+  /** Service metrics from imported tickets (null: the API refuses), and the months asked for. */
+  serviceKpis: null as ServiceKpiReport | null,
+  serviceKpiQueries: [] as string[],
   /** Business continuity: the backup teams, and the mobilise answer (null: the queue is unknown).
    * The queries asked are kept so a test can check what was sent. */
   backupTeams: [] as BackupTeam[],
@@ -333,6 +343,12 @@ export const backend = {
     this.requirements = []
     this.gaps = []
     this.wellbeing = null
+    this.qualityTeam = null
+    this.qualityPeople = {}
+    this.myQuality = null
+    this.qualityQueries = []
+    this.serviceKpis = null
+    this.serviceKpiQueries = []
     this.backupTeams = []
     this.mobilise = null
     this.mobiliseQueries = []
@@ -689,6 +705,32 @@ export const handlers = [
       ? HttpResponse.json(backend.wellbeing)
       : problem(403, 'auth.forbidden', 'Forbidden'),
   ),
+
+  http.get('*/api/v1/quality/team', ({ request }) => {
+    backend.qualityQueries.push(new URL(request.url).search)
+    return backend.qualityTeam
+      ? HttpResponse.json(backend.qualityTeam)
+      : problem(403, 'auth.forbidden', 'Forbidden')
+  }),
+
+  http.get('*/api/v1/quality/people/:id', ({ params }) => {
+    const found = backend.qualityPeople[Number(params.id)]
+    return found ? HttpResponse.json(found) : problem(404, 'resource.not_found', 'Not found')
+  }),
+
+  http.get('*/api/v1/quality/mine', ({ request }) => {
+    backend.qualityQueries.push(new URL(request.url).search)
+    return backend.myQuality
+      ? HttpResponse.json(backend.myQuality)
+      : problem(422, 'quality.no_employee_record', 'You are not on the employee list yet.')
+  }),
+
+  http.get('*/api/v1/service-kpis/report', ({ request }) => {
+    backend.serviceKpiQueries.push(new URL(request.url).search)
+    return backend.serviceKpis
+      ? HttpResponse.json(backend.serviceKpis)
+      : problem(403, 'auth.forbidden', 'Forbidden')
+  }),
 
   http.get('*/api/v1/scheduling/roster/activities', () => HttpResponse.json(backend.activities)),
 

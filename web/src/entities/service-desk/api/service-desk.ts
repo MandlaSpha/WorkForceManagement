@@ -1,6 +1,6 @@
 import { api, unwrap } from '@/shared/api'
 
-import type { Demand, WorkImport } from '../model/types'
+import type { Demand, ServiceKpiReport, WorkImport } from '../model/types'
 
 export async function fetchDemand(asOf: string, days: number): Promise<Demand> {
   return unwrap(
@@ -30,4 +30,9 @@ export async function setProductiveMinutes(poolId: number, minutes: number): Pro
       body: { productiveMinutesPerDay: minutes },
     }),
   )
+}
+
+/** `month` is the first day of the month, as YYYY-MM-DD. */
+export async function fetchServiceKpis(month: string): Promise<ServiceKpiReport> {
+  return unwrap(await api.GET('/api/v1/service-kpis/report', { params: { query: { month } } }))
 }

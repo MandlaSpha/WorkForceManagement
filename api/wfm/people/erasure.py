@@ -31,6 +31,7 @@ from wfm.overtime.models import (
     StandbyShift,
     StandbyStatus,
 )
+from wfm.quality.models import QualityResult
 from wfm.scheduling.models import AgentLogin, Employee, ShiftAssignment
 from wfm.skills.models import EmployeeCredential
 
@@ -81,6 +82,7 @@ def _counts(employee: Employee) -> dict[str, dict[str, int]]:
         .exclude(reason="")
         .count(),
         "payRecords": EmployeePay.objects.filter(employee=employee).count(),
+        "qualityResults": QualityResult.objects.filter(employee=employee).count(),
         "signInLinks": (1 + IdentityLink.objects.filter(user=user).count()) if user else 0,
     }
     keeps = {
@@ -188,6 +190,7 @@ def anonymise(admin: User, employee_id: int, typed_number: str) -> dict[str, Any
         Availability.objects.filter(employee=employee).delete()
         EmployeeCredential.objects.filter(employee=employee).delete()
         EmployeePay.objects.filter(employee=employee).delete()
+        QualityResult.objects.filter(employee=employee).delete()
         OvertimeRequest.objects.filter(employee=employee).update(reason="")
         employee.emp_no = f"{PLACEHOLDER_PREFIX}{token}"
         employee.name = f"Former employee {token}"

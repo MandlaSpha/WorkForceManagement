@@ -224,6 +224,70 @@ describe('bringing work in', () => {
   })
 })
 
+describe('service metrics', () => {
+  const figures = {
+    closed: 3,
+    mttrH: 36,
+    fcrKnown: 3,
+    fcrPct: 66.7,
+    csatCount: 2,
+    csatAverage: 3.5,
+    csatSatisfiedPct: 50,
+    npsCount: 0,
+    nps: null,
+    backlogCount: 1,
+    backlogAvgAgeDays: 5.1,
+    backlogMedianAgeDays: 5.1,
+    backlogOldestAgeDays: 5.1,
+    ticketsPriced: 2,
+    requiredFte: 0.9,
+  }
+  const kpis = (costVisible: boolean) => {
+    const cost = costVisible ? 120.5 : null
+    return {
+      month: '2026-05-01',
+      asOf: '2026-05-25',
+      basis: 'measured',
+      costVisible,
+      total: { ...figures, costPerTicketRands: cost },
+      pools: [
+        {
+          ...figures,
+          costPerTicketRands: cost,
+          poolId: 1,
+          pool: 'Service Desk',
+          staffingComplete: false,
+        },
+      ],
+    }
+  }
+
+  it('shows figures beside staffing, a dash for no answers, and cost to pay roles', async () => {
+    const user = userEvent.setup()
+    await open()
+    backend.serviceKpis = kpis(true)
+    await user.click(await screen.findByRole('tab', { name: 'Service metrics' }))
+    const row = await screen.findByTestId('kpi-pool-1')
+    const col = (n: string) => row.querySelector(`[data-col="${n}"]`)?.textContent
+    expect(col('mttr')).toContain('36.0 h')
+    expect(col('fcr')).toContain('66.7%')
+    expect(col('nps')).toContain('—')
+    expect(col('cost')).toContain('R120.50')
+    expect(col('fte')).toContain('at least 0.90')
+  })
+
+  it('shows no rand figure to customer operations', async () => {
+    const user = userEvent.setup()
+    await open('customer_ops')
+    backend.serviceKpis = kpis(false)
+    await user.click(await screen.findByRole('tab', { name: 'Service metrics' }))
+    const row = await screen.findByTestId('kpi-pool-1')
+    expect(row.querySelector('[data-col="cost"]')?.textContent).toContain('—')
+    expect(screen.getByTestId('metrics-how')).toHaveTextContent('planners and admins only')
+    expect(screen.getByTestId('service-metrics').textContent).not.toMatch(/R\d/)
+  })
+})
+
 describe('who may open it', () => {
   it.each(['planner', 'admin', 'customer_ops'])('opens for %s', async (role) => {
     await open(role)

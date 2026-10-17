@@ -102,6 +102,19 @@ def parse(content: bytes, filename: str) -> Parsed:
     return parsed
 
 
+def read_table(content: bytes, filename: str) -> list[list[str]]:
+    """The rows of a .csv or .xlsx file as text, header first, for the other file importers (so
+    reading a workbook exists once). Raises `UnreadableFileError`."""
+    name = filename.lower()
+    if name.endswith(".xlsx"):
+        table = _read_xlsx(content)
+    elif name.endswith(".csv"):
+        table = _read_csv(content)
+    else:
+        raise UnreadableFileError("Use a .csv or .xlsx file.")
+    return [[_cell(v) for v in row] for row in table]
+
+
 def _read_csv(content: bytes) -> list[list[object]]:
     try:
         text = content.decode("utf-8-sig")

@@ -93,6 +93,8 @@ class Action(models.TextChoices):
     BACKUP_MEMBER_ADDED = "backup_team.member_added", "Person added to a backup team"
     BACKUP_MEMBER_REMOVED = "backup_team.member_removed", "Person removed from a backup team"
     ATTENDANCE_IMPORTED = "attendance.imported", "Agent-state file imported"
+    QUALITY_IMPORTED = "quality.imported", "Quality results file imported"
+    QUALITY_IMPORT_REFUSED = "quality.import_refused", "Quality results import refused"
     CREDENTIALS_SET = "credentials.set", "Employee credentials set"
     QUEUE_REQUIREMENTS_SET = "queue_requirements.set", "Queue skill requirements set"
     AVAILABILITY_ADDED = "availability.added", "Availability window added"

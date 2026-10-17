@@ -59,6 +59,11 @@ class WorkItem(models.Model):
     due_at = models.DateTimeField(null=True, blank=True)  # the deadline; none when it has none
     effort_minutes = models.PositiveIntegerField(null=True, blank=True)  # none: not estimated
     closed_at = models.DateTimeField(null=True, blank=True)  # none: still open
+    # Survey answers and the first-contact flag, as the ITSM tool exports them (KPI-01). None: the
+    # export did not say, which is not the same as "no" or "0".
+    first_contact_resolved = models.BooleanField(null=True, blank=True)
+    csat = models.PositiveSmallIntegerField(null=True, blank=True)  # 1 to 5
+    nps = models.PositiveSmallIntegerField(null=True, blank=True)  # 0 to 10
 
     objects = ScopedByRole.as_manager()
 
@@ -66,6 +71,17 @@ class WorkItem(models.Model):
         indexes = [
             models.Index(fields=["pool", "closed_at", "due_at"], name="sd_open_by_pool"),
             models.Index(fields=["opened_at"], name="sd_opened"),
+            models.Index(fields=["closed_at"], name="sd_closed"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(csat__isnull=True) | models.Q(csat__gte=1, csat__lte=5),
+                name="servicedesk_csat_range",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(nps__isnull=True) | models.Q(nps__lte=10),
+                name="servicedesk_nps_range",
+            ),
         ]
 
     def __str__(self) -> str:
