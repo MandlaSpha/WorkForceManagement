@@ -36,8 +36,37 @@ describe('signing in', () => {
 
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeVisible()
     expect(router.currentRoute.value.name).toBe('dashboard')
-    expect(screen.getByText('Pat Planner', { selector: 'p' })).toBeVisible()
-    expect(screen.getByText('Planner', { selector: 'p' })).toBeVisible()
+    const menu = screen.getByRole('button', { name: 'Account menu for Pat Planner' })
+    expect(within(menu).getByText('Planner')).toBeVisible()
+  })
+
+  it('keeps the account actions in a menu that opens, closes and leads to change password', async () => {
+    // Failure caught: Sign out and Change password loose in the top bar again, or a menu that
+    // cannot be closed from the keyboard.
+    backend.signedIn = { username: 'planner', displayName: 'Pat Planner', role: 'planner' }
+    const user = userEvent.setup()
+    await renderApp('/employees')
+    const trigger = await screen.findByRole('button', { name: /^Account menu/ })
+    expect(screen.queryByRole('menuitem', { name: 'Sign out' })).toBeNull()
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('menuitem', { name: 'Change password' })).toBeVisible()
+    expect(screen.getByRole('menuitem', { name: 'Sign out' })).toBeVisible()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(trigger).toHaveFocus()
+
+    await user.click(trigger)
+    await user.click(screen.getByRole('heading', { name: 'Employees', level: 1 }))
+    expect(screen.queryByRole('menu')).toBeNull()
+
+    await user.click(trigger)
+    await user.click(screen.getByRole('menuitem', { name: 'Change password' }))
+    expect(await screen.findByRole('heading', { name: 'Change your password' })).toBeVisible()
+    expect(screen.queryByRole('menu')).toBeNull()
   })
 
   it('sends the user where they were going, but only to a same-site address', async () => {
@@ -135,7 +164,7 @@ describe('what each role sees in the sidebar', () => {
 describe('top bar', () => {
   it('shows honest empty pickers until sites and queues exist', async () => {
     backend.signedIn = { username: 'planner', displayName: 'Pat Planner', role: 'planner' }
-    await renderApp('/')
+    await renderApp('/planner')
 
     expect(await screen.findByRole('option', { name: 'No sites yet' })).toBeInTheDocument()
     expect(screen.getByLabelText('Site')).toBeDisabled()
@@ -144,11 +173,26 @@ describe('top bar', () => {
 
   it('hides site and queue pickers from agents', async () => {
     backend.signedIn = { username: 'agent', displayName: 'Alex Agent', role: 'agent' }
-    await renderApp('/')
+    await renderApp('/planner')
 
     await screen.findByRole('link', { name: 'My schedule' })
     expect(screen.queryByLabelText('Site')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Next week' })).toBeVisible()
+  })
+
+  it('shows only the pickers the open screen reads', async () => {
+    // Failure caught: a week stepper on every screen, including ones it does nothing for.
+    backend.signedIn = { username: 'planner', displayName: 'Pat Planner', role: 'planner' }
+    await renderApp('/employees')
+    await screen.findByRole('link', { name: 'Employees' })
+    expect(screen.queryByRole('group', { name: 'Week' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Queue')).not.toBeInTheDocument()
+  })
+
+  it('shows the queue but no week on a screen that reads only the queue', async () => {
+    backend.signedIn = { username: 'planner', displayName: 'Pat Planner', role: 'planner' }
+    await renderApp('/peaks')
+    expect(await screen.findByLabelText('Queue')).toBeVisible()
+    expect(screen.queryByRole('group', { name: 'Week' })).not.toBeInTheDocument()
   })
 
   it('moves the week with the stepper', async () => {
@@ -183,7 +227,8 @@ describe('top bar', () => {
     const user = userEvent.setup()
     const { router } = await renderApp('/')
 
-    await user.click(await screen.findByRole('button', { name: 'Sign out' }))
+    await user.click(await screen.findByRole('button', { name: /^Account menu/ }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Sign out' }))
 
     await waitFor(() => expect(router.currentRoute.value.name).toBe('login'))
     expect(backend.signedIn).toBeNull()

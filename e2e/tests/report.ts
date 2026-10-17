@@ -99,10 +99,13 @@ export async function buildReport(options: {
  * file's first and last call are its own. The half-hour, and so the hand-worked numbers, do not
  * change. */
 export function callsAt10(count: number): Call[] {
+  // A random starting minute as well as random seconds: the importer refuses a file with the same
+  // first call, last call and row count as an earlier one, and a shared dev database meets many.
+  const base = rand(Math.max(1, 30 - Math.ceil(count / 2)))
   return Array.from({ length: count }, (_, i) => ({
     type: 'INBOUND',
     status: 'Agent',
-    clock: `10:${String(Math.floor(i / 2)).padStart(2, '0')}:${String(
+    clock: `10:${String(base + Math.floor(i / 2)).padStart(2, '0')}:${String(
       (i % 2) * 30 + rand(30),
     ).padStart(2, '0')}`,
     wait: 0,

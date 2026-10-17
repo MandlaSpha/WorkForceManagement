@@ -184,3 +184,19 @@ def test_contracts_hold_the_queues_to_their_promises_and_billing_is_the_one_at_r
     # Billing is short of people all week by design, so its contract is at risk.
     assert rows["Claims line"].at_risk
     assert rows["Claims line"].gap > 0
+
+
+def test_each_lead_has_swap_work_from_their_own_team(seeded: None) -> None:
+    # Failure caught: a demo where one lead sees every swap and the other none, so the two-team
+    # approval flow (a lead decides only for their own people) cannot be shown.
+    from django.contrib.auth import get_user_model
+
+    users = get_user_model().objects
+    for username in ("lead", "lead2"):
+        mine = SwapRequest.objects.for_user(users.get(username=username))
+        assert mine.exclude(from_employee__user__username=username).exists(), username
+    waiting = SwapRequest.objects.filter(status=SwapStatus.AWAITING_APPROVAL)
+    assert waiting.exists()
+    for swap in waiting:
+        decider = swap.from_employee.manager
+        assert decider is not None, "a waiting swap must have a lead who can decide it"

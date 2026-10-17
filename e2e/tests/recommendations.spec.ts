@@ -75,9 +75,10 @@ test('a planner applies suggestions one at a time and the list recalculates, and
     await expect(page.getByRole('table', { name: 'Employees' }).getByText(name)).toBeVisible()
   }
 
+  // The queue and week pickers appear only on screens that read them.
+  await page.getByRole('link', { name: 'Roster' }).click()
   await page.getByLabel('Queue').selectOption({ label: queue })
   await page.getByRole('button', { name: 'Next week' }).click()
-  await page.getByRole('link', { name: 'Roster' }).click()
 
   await page.getByRole('link', { name: 'Recommendations' }).click()
   await expect(page.getByTestId('rec-gap')).toContainText('5')

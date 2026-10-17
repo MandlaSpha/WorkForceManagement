@@ -224,3 +224,49 @@ describe('approving a swap', () => {
     expect(await screen.findByTestId('nothing-to-approve')).toBeVisible()
   })
 })
+
+describe('my swaps, active and earlier', () => {
+  it('keeps what is waiting apart from history, and shows only a few earlier ones at first', async () => {
+    // Failure caught: every swap ever made in one long list, with the one that needs me buried.
+    const user = userEvent.setup()
+    const finished = Array.from({ length: 8 }, (_, n) =>
+      swapOf({ id: 100 + n, status: 'approved', asker: true }),
+    )
+    await open('agent', { swaps: [...finished, swapOf({ id: 1, status: 'open', asker: true })] })
+    const waiting = await screen.findByRole('list', { name: 'My swaps' })
+    expect(within(waiting).getAllByRole('listitem')).toHaveLength(1)
+    const earlier = screen.getByRole('list', { name: 'Earlier swaps' })
+    expect(within(earlier).getAllByRole('listitem')).toHaveLength(5)
+
+    await user.click(screen.getByTestId('history-toggle'))
+    expect(within(earlier).getAllByRole('listitem')).toHaveLength(8)
+  })
+
+  it('says nothing is waiting when everything is finished', async () => {
+    await open('agent', { swaps: [swapOf({ id: 5, status: 'rejected', asker: true })] })
+    expect(await screen.findByTestId('none-waiting')).toBeVisible()
+    expect(screen.queryByTestId('history-toggle')).toBeNull()
+  })
+})
+
+describe('open team requests for the people who approve', () => {
+  it('lets a lead see what their team has posted and nobody has taken, without actions', async () => {
+    // Failure caught: a lead blind to requests still waiting on their team.
+    const user = userEvent.setup()
+    await open('lead', {
+      swaps: [
+        swapOf({
+          id: 7,
+          status: 'open',
+          fromEmployee: 'Casey Teammate',
+          asker: false,
+          colleague: false,
+        }),
+      ],
+    })
+    await user.click(await screen.findByRole('tab', { name: /Approvals/ }))
+    const row = await screen.findByTestId('open-7')
+    expect(row).toHaveTextContent('Casey Teammate')
+    expect(within(row).queryByRole('button')).toBeNull()
+  })
+})

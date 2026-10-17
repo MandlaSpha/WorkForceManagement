@@ -105,6 +105,7 @@ test('shifts, people and a roster change the planner heatmap, and publishing loc
   })
 
   await test.step('with nobody rostered the gap is the whole requirement', async () => {
+    await page.getByRole('link', { name: 'Roster' }).click()
     await page.getByLabel('Queue').selectOption({ label: queue })
     await page.getByRole('button', { name: 'Next week' }).click()
     await page.getByRole('link', { name: 'Planner' }).click()

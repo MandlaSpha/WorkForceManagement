@@ -50,7 +50,8 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
   const late = `SB${id}`
   const first = addDays(today(), 22 + rand(3))
   const second = addDays(today(), 25 + rand(4))
-  const week = (day: string) => `/api/v1/scheduling/roster?queue_id=${queueId}&week_start=${mondayOf(day)}`
+  const week = (day: string) =>
+    `/api/v1/scheduling/roster?queue_id=${queueId}&week_start=${mondayOf(day)}`
   let queueId = 0
   let agentId = 0
   let leadId = 0
@@ -59,10 +60,16 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
   await test.step('an admin adds the two shifts (only admins may)', async () => {
     await signIn(page, 'admin')
     const a = await send(page, 'POST', '/api/v1/scheduling/shifts', {
-      code: early, startTime: '07:00', endTime: '15:30', paidMinutes: 480,
+      code: early,
+      startTime: '07:00',
+      endTime: '15:30',
+      paidMinutes: 480,
     })
     const b = await send(page, 'POST', '/api/v1/scheduling/shifts', {
-      code: late, startTime: '13:00', endTime: '22:00', paidMinutes: 480,
+      code: late,
+      startTime: '13:00',
+      endTime: '22:00',
+      paidMinutes: 480,
     })
     shifts = { [early]: a.id, [late]: b.id }
     await signOut(page)
@@ -75,7 +82,10 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
     queueId = queues.find((q: { name: string }) => q.name === queueName).id
 
     const people = await (await page.request.get('/api/v1/scheduling/employees')).json()
-    for (const [empNo, setId] of [['DEMO-AGENT', (v: number) => (agentId = v)], ['DEMO-LEAD', (v: number) => (leadId = v)]] as const) {
+    for (const [empNo, setId] of [
+      ['DEMO-AGENT', (v: number) => (agentId = v)],
+      ['DEMO-LEAD', (v: number) => (leadId = v)],
+    ] as const) {
       const person = people.find((p: { empNo: string }) => p.empNo === empNo)
       expect(person, `${empNo} should exist: run seed_demo`).toBeTruthy()
       setId(person.id)
@@ -86,13 +96,21 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
         workMode: person.workMode,
         weeklyHours: person.weeklyHours,
         skills: [
-          ...person.skills.map((s: { queueId: number; level: number }) => ({ queueId: s.queueId, level: s.level })),
+          ...person.skills.map((s: { queueId: number; level: number }) => ({
+            queueId: s.queueId,
+            level: s.level,
+          })),
           { queueId, level: 1 },
         ],
       })
     }
     const assign = (employeeId: number, day: string, templateId: number | null) =>
-      send(page, 'PUT', '/api/v1/scheduling/roster/assignments', { queueId, employeeId, day, templateId })
+      send(page, 'PUT', '/api/v1/scheduling/roster/assignments', {
+        queueId,
+        employeeId,
+        day,
+        templateId,
+      })
     await assign(agentId, first, shifts[early])
     await assign(leadId, second, shifts[late])
     await signOut(page)
@@ -125,7 +143,9 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
     const take = page.getByRole('form', { name: new RegExp(`Take the ${early} request`) })
     const offered = take.getByLabel(/in return/)
     await expect(offered.locator('option', { hasText: late })).toHaveCount(1)
-    await offered.selectOption(await offered.locator('option', { hasText: late }).getAttribute('value'))
+    await offered.selectOption(
+      await offered.locator('option', { hasText: late }).getAttribute('value'),
+    )
     await take.getByRole('button', { name: 'Take this swap' }).click()
     await expect(page.getByTestId('swap-result')).toContainText('A lead decides next')
     // The lead is one of the two people, so cannot approve it even though leads may approve.
@@ -145,8 +165,14 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
     await signIn(page, 'planner')
     await page.goto('/shift-swaps')
     await page.getByRole('tab', { name: 'Approvals' }).click()
-    const row = page.getByRole('listitem').filter({ hasText: early }).filter({ hasText: late }).first()
-    await row.getByRole('button', { name: /Approve the swap between Alex Agent and Lee Lead/ }).click()
+    const row = page
+      .getByRole('listitem')
+      .filter({ hasText: early })
+      .filter({ hasText: late })
+      .first()
+    await row
+      .getByRole('button', { name: /Approve the swap between Alex Agent and Lee Lead/ })
+      .click()
     await expect(page.getByTestId('swap-result')).toContainText('exchanged on the roster')
 
     const cells = async (day: string) => {
@@ -163,9 +189,15 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
     expect((await cells(second)).agent).toBe(late)
     expect((await cells(second)).lead).toBeNull()
 
-    for (const [employeeId, day] of [[leadId, first], [agentId, second]] as const) {
+    for (const [employeeId, day] of [
+      [leadId, first],
+      [agentId, second],
+    ] as const) {
       await send(page, 'PUT', '/api/v1/scheduling/roster/assignments', {
-        queueId, employeeId, day, templateId: null,
+        queueId,
+        employeeId,
+        day,
+        templateId: null,
       })
     }
     await signOut(page)

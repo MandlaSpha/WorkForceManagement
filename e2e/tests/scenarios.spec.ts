@@ -1,6 +1,13 @@
 import { expect, test } from '@playwright/test'
 
-import { expectNoAccessibilityViolations, importDay, nextMonday, PASSWORD, signIn } from './helpers'
+import {
+  expectNoAccessibilityViolations,
+  importDay,
+  nextMonday,
+  PASSWORD,
+  signIn,
+  signOut,
+} from './helpers'
 import { addDays, rand } from './report'
 
 /**
@@ -86,7 +93,7 @@ test('a lead may ask, but executives and agents cannot, in the API or the screen
   })
   expect(noVersion.status()).toBe(404) // allowed to ask; there is just no such forecast
 
-  await page.getByRole('button', { name: 'Sign out' }).click()
+  await signOut(page)
   await signIn(page, 'executive')
   const csrf2 = (await page.context().cookies()).find((c) => c.name === 'csrftoken')?.value ?? ''
   const refused = await page.request.post('/api/v1/forecasting/scenarios', {

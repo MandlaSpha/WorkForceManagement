@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
+import { NAV_ITEMS, type NavItem } from '@/shared/config'
 import SelectField from '@/shared/ui/SelectField.vue'
 
 import { useContextStore } from '../model/store'
@@ -10,11 +13,19 @@ withDefaults(defineProps<{ showScope?: boolean }>(), { showScope: true })
 
 const context = useContextStore()
 useSyncQueues()
+
+// Only the pickers the open screen actually reads: the rest would change nothing and confuse.
+const route = useRoute()
+const uses = computed(
+  () => (NAV_ITEMS as readonly NavItem[]).find((item) => item.key === route.name)?.context ?? [],
+)
+const showQueue = computed(() => uses.value.includes('queue'))
+const showWeek = computed(() => uses.value.includes('week'))
 </script>
 
 <template>
-  <div class="flex flex-wrap items-end gap-3">
-    <div v-if="showScope" class="w-44">
+  <div v-if="showQueue || showWeek" class="flex flex-wrap items-end gap-3">
+    <div v-if="showScope && showQueue" class="w-44">
       <SelectField
         v-model="context.siteId"
         label="Site"
@@ -22,7 +33,7 @@ useSyncQueues()
         empty-text="No sites yet"
       />
     </div>
-    <div v-if="showScope" class="w-40">
+    <div v-if="showScope && showQueue" class="w-40">
       <SelectField
         v-model="context.queueId"
         label="Queue"
@@ -31,6 +42,7 @@ useSyncQueues()
       />
     </div>
     <div
+      v-if="showWeek"
       class="flex items-center rounded-lg border border-line bg-surface"
       role="group"
       aria-label="Week"

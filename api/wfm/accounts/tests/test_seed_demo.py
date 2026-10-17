@@ -6,6 +6,7 @@ from django.core.management.base import CommandError
 from django.test import override_settings
 from django.utils import timezone
 
+from wfm.accounts.management.commands.seed_demo import DEMO_ACCOUNTS, DEMO_TEAM_ACCOUNTS
 from wfm.accounts.models import Role, User
 from wfm.audit.models import AuditEvent
 from wfm.scheduling.models import Employee
@@ -30,7 +31,7 @@ def test_seeding_twice_does_not_duplicate_or_reset_passwords() -> None:
     call_command("seed_demo", password=STRONG)
     call_command("seed_demo", password="another-password-456")
 
-    assert User.objects.count() == len(Role)
+    assert User.objects.count() == len(DEMO_ACCOUNTS) + len(DEMO_TEAM_ACCOUNTS)
     assert User.objects.get(username="planner").check_password(STRONG)
 
 
@@ -62,7 +63,7 @@ def test_reset_passwords_updates_existing_demo_users_and_clears_lockout() -> Non
     assert planner.check_password("rotated-password-789")
     assert planner.failed_login_count == 0
     assert planner.locked_until is None
-    assert User.objects.count() == len(Role)
+    assert User.objects.count() == len(DEMO_ACCOUNTS) + len(DEMO_TEAM_ACCOUNTS)
 
 
 @override_settings(DEBUG=True)
@@ -71,13 +72,29 @@ def test_the_demo_floor_logins_get_one_synthetic_employee_record_each() -> None:
     call_command("seed_demo", password=STRONG)
 
     employees = Employee.objects.filter(user__isnull=False)
-    assert sorted((e.emp_no, e.user.username) for e in employees) == [
-        ("DEMO-AGENT", "agent"),
-        ("DEMO-LEAD", "lead"),
-    ]
-    # Only the two who work the floor: planners, admins and the rest are not on the roster list
-    # just by being demo users.
-    assert Employee.objects.count() == 2
+    names = sorted((e.emp_no, e.user.username) for e in employees)
+    assert ("DEMO-AGENT", "agent") in names
+    assert ("DEMO-LEAD", "lead") in names
+    # Only the people who work the floor (two leads and ten agents): planners, admins and the rest
+    # are not on the roster list just by being demo users.
+    assert Employee.objects.count() == 12
+
+
+@override_settings(DEBUG=True)
+def test_two_teams_of_five_agents_each_under_their_own_lead() -> None:
+    # Failure caught: a demo where one lead holds everybody, so a swap needing a different lead's
+    # approval, or a lead seeing only their own team, cannot be tried.
+    call_command("seed_demo", password=STRONG)
+    teams = {
+        lead: sorted(
+            Employee.objects.filter(manager__emp_no=lead, user__role=Role.AGENT).values_list(
+                "emp_no", flat=True
+            )
+        )
+        for lead in ("DEMO-LEAD", "DEMO-LEAD2")
+    }
+    assert [len(members) for members in teams.values()] == [5, 5]
+    assert set(teams["DEMO-LEAD"]).isdisjoint(teams["DEMO-LEAD2"])
 
 
 @override_settings(DEBUG=True)

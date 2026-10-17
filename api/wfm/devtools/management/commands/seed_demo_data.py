@@ -33,7 +33,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from wfm.accounts.models import Role, User
+from wfm.accounts.models import User
 from wfm.audit import services as audit
 from wfm.audit.models import ActorType
 from wfm.contracts import services as contract_services
@@ -137,6 +137,7 @@ class Cast:
     planner: User
     lead: User
     admin: User
+    lead2: User | None = None
 
 
 def planning_monday(today: date) -> date:
@@ -167,7 +168,19 @@ class Command(BaseCommand):
         self.stdout.write("Forecasts published.")
         self._rosters(cast, queues, staff, today)
         self.stdout.write("Rosters built.")
-        self._leave(cast, staff["Demo Support"], today)
+        floor = {p.emp_no: p for p in staff["Demo Support"] if p.user_id is not None}
+        order = [
+            "DEMO-AGENT6",
+            "DEMO-AGENT3",
+            "DEMO-AGENT7",
+            "DEMO-AGENT2",
+            "DEMO-AGENT8",
+            "DEMO-AGENT4",
+        ]
+        first = [floor[e] for e in order if e in floor]
+        rest = [p for p in staff["Demo Support"] if p not in first]
+        # Each lead has waiting requests from their own team; the rest come from the bulk staff.
+        self._leave(cast, [*first, *rest], today)
         self.stdout.write("Leave in every state.")
         self._contracts(cast, queues)
         self.stdout.write("Customers and contracts.")
@@ -185,11 +198,13 @@ class Command(BaseCommand):
     # --- people who act ------------------------------------------------------------------------
 
     def _cast(self) -> Cast:
-        users = {u.role: u for u in User.objects.filter(username__in=["planner", "lead", "admin"])}
-        missing = {Role.PLANNER, Role.LEAD, Role.ADMIN} - set(users)
-        if missing:
+        users = {
+            u.username: u
+            for u in User.objects.filter(username__in=["planner", "lead", "lead2", "admin"])
+        }
+        if not {"planner", "lead", "admin"} <= set(users):
             raise CommandError("Run seed_demo first: it creates the planner, lead and admin.")
-        return Cast(users[Role.PLANNER], users[Role.LEAD], users[Role.ADMIN])
+        return Cast(users["planner"], users["lead"], users["admin"], users.get("lead2"))
 
     # --- call history --------------------------------------------------------------------------
 
@@ -228,7 +243,12 @@ class Command(BaseCommand):
         rng.shuffle(names)
         number = 0
         staff: dict[str, list[Employee]] = {}
-        demo_floor = list(Employee.objects.filter(emp_no__in=["DEMO-AGENT", "DEMO-LEAD"]))
+        # The people the demo logins stand for: two leads, each with a team of five agents.
+        demo_floor = list(
+            Employee.objects.filter(user__isnull=False, emp_no__startswith="DEMO-").order_by(
+                "emp_no"
+            )
+        )
         for queue_name, (full, part, seasonal) in HEADCOUNT.items():
             queue = queues[queue_name]
             extra = SkillInput(queues["Demo Support"].pk) if queue_name == "Demo Billing" else None
@@ -258,14 +278,9 @@ class Command(BaseCommand):
             for part_timer in made[full : full + part]:  # part-timers work Monday to Wednesday
                 for weekday in (3, 4):
                     self._declare(cast, part_timer, weekday, "cannot", time(0, 0), time(0, 0))
-        for floor_person in demo_floor:  # the `agent` and `lead` logins work the Support queue
+        for floor_person in demo_floor:  # the demo leads and agents work the Support queue
             EmployeeSkill.objects.get_or_create(employee=floor_person, queue=queues["Demo Support"])
             staff["Demo Support"].append(floor_person)
-        lead = next((p for p in demo_floor if p.emp_no == "DEMO-LEAD"), None)
-        if lead is not None:  # the demo lead leads the whole Support team
-            Employee.objects.filter(pk__in=[e.pk for e in staff["Demo Support"]]).exclude(
-                pk=lead.pk
-            ).update(manager=lead)
         if (
             demo_floor
         ):  # the demo agent never works Sundays and would rather finish early on Fridays
@@ -461,24 +476,24 @@ class Command(BaseCommand):
 
         # Approved, and already taken off next week's roster.
         approved = ask(people[0], "annual", monday + timedelta(days=2), monday + timedelta(days=4))
-        leave_services.decide(user=cast.lead, request_id=approved.pk, approve=True)
+        leave_services.decide(user=cast.planner, request_id=approved.pk, approve=True)
         # Waiting, over next Monday (the short day): the impact panel shows what it would cost.
         ask(people[1], "annual", monday, monday + timedelta(days=1))
         # Waiting, further out, for a course.
         ask(people[2], "training", monday + timedelta(days=14), monday + timedelta(days=15))
         # Turned down: too many on leave that week.
         refused = ask(people[3], "annual", monday + timedelta(days=7), monday + timedelta(days=11))
-        leave_services.decide(user=cast.lead, request_id=refused.pk, approve=False)
+        leave_services.decide(user=cast.planner, request_id=refused.pk, approve=False)
         # Approved and then withdrawn, so the shifts went back.
         withdrawn = ask(people[4], "family", monday + timedelta(days=8), monday + timedelta(days=8))
-        leave_services.decide(user=cast.lead, request_id=withdrawn.pk, approve=True)
+        leave_services.decide(user=cast.planner, request_id=withdrawn.pk, approve=True)
         leave_services.cancel(user=cast.planner, request_id=withdrawn.pk)
         # Already taken: sick leave over the last working days.
         back = today - timedelta(days=3)
         while back.weekday() > 4 or (back + timedelta(days=1)).weekday() > 4:
             back -= timedelta(days=1)
         taken = ask(people[5], "sick", back, back + timedelta(days=1))
-        leave_services.decide(user=cast.lead, request_id=taken.pk, approve=True)
+        leave_services.decide(user=cast.planner, request_id=taken.pk, approve=True)
 
     # --- customers and contracts -----------------------------------------------------------------
 
@@ -519,9 +534,14 @@ class Command(BaseCommand):
             .order_by("day", "pk")
         )
         agent = User.objects.filter(username="agent").first()
-        # People the lead decides for or is: left out, because nobody decides their own swap.
-        free = [s for s in shifts if cast.lead.pk != s.employee.user_id]
+        agent_id = agent.pk if agent else None
+        leads = [u for u in (cast.lead, cast.lead2) if u is not None]
+        # People the leads decide for or are: a lead's own swap is for somebody else to decide.
+        free = [s for s in shifts if s.employee.user_id not in {u.pk for u in leads}]
         used: set[int] = set()
+
+        def team_of(lead: User) -> list[ShiftAssignment]:
+            return [s for s in free if s.employee.manager and s.employee.manager.user_id == lead.pk]
 
         def fits(a: ShiftAssignment, b: ShiftAssignment) -> bool:
             return (
@@ -537,25 +557,30 @@ class Command(BaseCommand):
                 user=cast.planner, give_id=give.pk, employee_id=give.employee_id
             )
 
-        # Two requests the demo agent can take, so their board has something to show.
-        mine = [s for s in free if agent and s.employee.user_id == agent.pk]
+        # Two requests the demo agent can take, so their board has something to show: one from each
+        # team when there is one, so each lead sees an open request of their own team.
+        mine = [s for s in free if s.employee.user_id == agent_id]
+        pools = [team_of(u) for u in leads] + [free]
         posted = 0
-        for give in free:
+        for pool in pools:
             if posted == 2:
                 break
-            if give.employee.user_id == (agent.pk if agent else None):
-                continue
-            if any(fits(give, m) for m in mine):
-                post_for(give)
-                posted += 1
+            for give in pool:
+                if give.employee.user_id == agent_id or give.pk in used:
+                    continue
+                if any(fits(give, m) for m in mine):
+                    post_for(give)
+                    posted += 1
+                    break
 
-        # One matched and waiting for the lead, one approved.
-        others = [s for s in free if not (agent and s.employee.user_id == agent.pk)]
-        for stage in ("matched", "approved"):
-            pair = next(
-                ((g, t) for g in others for t in others if fits(g, t)),
-                None,
-            )
+        # One matched and waiting for a lead, one approved, each within a team so that lead decides.
+        stages = [("matched", cast.lead), ("approved", cast.lead2 or cast.lead)]
+        for stage, lead in stages:
+            pool = team_of(lead)
+            others = [s for s in pool if s.employee.user_id != agent_id] or [
+                s for s in free if s.employee.user_id != agent_id
+            ]
+            pair = next(((g, t) for g in others for t in others if fits(g, t)), None)
             if pair is None:
                 continue
             give, take = pair
@@ -568,7 +593,7 @@ class Command(BaseCommand):
                 employee_id=take.employee_id,
             )
             if stage == "approved":
-                swap_services.decide(user=cast.lead, swap_id=swap.pk, approve=True)
+                swap_services.decide(user=cast.planner, swap_id=swap.pk, approve=True)
 
     # --- service desk --------------------------------------------------------------------------
 

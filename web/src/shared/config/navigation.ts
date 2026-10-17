@@ -22,6 +22,9 @@ export interface NavItem {
   readonly feature: FeatureKey
   /** One plain sentence saying what the screen does (UI principle 1). */
   readonly subtitle: string
+  /** Which of the top bar's pickers this screen reads. A picker no screen reads would only
+   * confuse, so the bar shows just these and nothing at all when the list is empty. */
+  readonly context?: readonly ('queue' | 'week')[]
   /** Delivery phase that builds the real screen; 0 means it exists already. */
   readonly phase: number
 }
@@ -34,6 +37,7 @@ export const NAV_ITEMS = [
     group: 'Home',
     icon: 'home',
     feature: 'core',
+    context: ['week'],
     phase: 0,
     subtitle:
       'Measured service across every queue, month by month. Coverage and headcount join once rosters exist.',
@@ -67,6 +71,7 @@ export const NAV_ITEMS = [
     group: 'Operate',
     icon: 'layout-grid',
     feature: 'scheduling',
+    context: ['queue', 'week'],
     phase: 2,
     subtitle: 'Coverage against requirement at 30-minute resolution.',
   },
@@ -87,6 +92,7 @@ export const NAV_ITEMS = [
     group: 'Operate',
     icon: 'calendar-days',
     feature: 'scheduling',
+    context: ['queue', 'week'],
     phase: 2,
     subtitle: 'Who works when. Assign or clear a shift and coverage updates instantly.',
   },
@@ -107,6 +113,7 @@ export const NAV_ITEMS = [
     group: 'Operate',
     icon: 'sparkles',
     feature: 'optimisation',
+    context: ['queue', 'week'],
     phase: 4,
     subtitle: 'Concrete fixes for the day’s coverage gaps. Apply one and watch coverage close.',
   },
@@ -127,6 +134,7 @@ export const NAV_ITEMS = [
     group: 'Operate',
     icon: 'layers',
     feature: 'capacity',
+    context: ['week'],
     phase: 5,
     subtitle: 'Establishment, attrition and hiring over the planning horizon.',
   },
@@ -240,6 +248,7 @@ export const NAV_ITEMS = [
     group: 'Insight',
     icon: 'sliders-horizontal',
     feature: 'forecasting',
+    context: ['queue'],
     phase: 2,
     subtitle:
       'Tune how forecasts look back, and back-test the result against what really happened.',
@@ -251,6 +260,7 @@ export const NAV_ITEMS = [
     group: 'Insight',
     icon: 'bar-chart-3',
     feature: 'telephony',
+    context: ['queue'],
     phase: 5,
     subtitle: 'The busiest and quietest days and half-hours of a queue, from measured calls.',
   },

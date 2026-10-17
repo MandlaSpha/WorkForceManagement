@@ -28,6 +28,21 @@ DEMO_ACCOUNTS: tuple[tuple[str, Role, str], ...] = (
     ("customerops", Role.CUSTOMER_OPS, "Casey Customer-Ops"),
 )
 
+# Two small teams to see swaps and approvals with: Lee Lead leads `agent` and agent2 to agent5;
+# Lou Lead leads agent6 to agent10. All are synthetic.
+DEMO_TEAM_ACCOUNTS: tuple[tuple[str, Role, str, str], ...] = (
+    ("lead2", Role.LEAD, "Lou Lead", ""),
+    ("agent2", Role.AGENT, "Blake Agent", "lead"),
+    ("agent3", Role.AGENT, "Cam Agent", "lead"),
+    ("agent4", Role.AGENT, "Dee Agent", "lead"),
+    ("agent5", Role.AGENT, "Eden Agent", "lead"),
+    ("agent6", Role.AGENT, "Fran Agent", "lead2"),
+    ("agent7", Role.AGENT, "Gus Agent", "lead2"),
+    ("agent8", Role.AGENT, "Hal Agent", "lead2"),
+    ("agent9", Role.AGENT, "Ira Agent", "lead2"),
+    ("agent10", Role.AGENT, "Jo Agent", "lead2"),
+)
+
 
 class Command(BaseCommand):
     help = "Create synthetic demo users (development only)."
@@ -51,7 +66,10 @@ class Command(BaseCommand):
 
         created = 0
         with transaction.atomic():
-            for username, role, full_name in DEMO_ACCOUNTS:
+            for username, role, full_name in (
+                *DEMO_ACCOUNTS,
+                *((u, r, n) for u, r, n, _ in DEMO_TEAM_ACCOUNTS),
+            ):
                 first, last = full_name.split(" ", 1)
                 user, was_created = User.objects.get_or_create(
                     username=username,
@@ -78,6 +96,11 @@ class Command(BaseCommand):
             lead = employee_model.objects.filter(emp_no="DEMO-LEAD").first()
             if lead is not None:
                 employee_model.objects.filter(emp_no="DEMO-AGENT").update(manager=lead)
+            for username, _, _, boss in DEMO_TEAM_ACCOUNTS:
+                if boss:
+                    employee_model.objects.filter(emp_no=f"DEMO-{username.upper()}").update(
+                        manager=employee_model.objects.filter(emp_no=f"DEMO-{boss.upper()}").first()
+                    )
             audit.record(
                 actor=None,
                 action="system.seed_demo",

@@ -49,7 +49,7 @@ test('an admin adds a user, who must choose their own password, and can then swi
   await change.getByLabel('New password', { exact: true }).fill(OWN)
   await change.getByLabel('New password again').fill(OWN)
   await change.getByRole('button', { name: 'Change password' }).click()
-  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Account menu/ })).toBeVisible()
   await signOut(page)
 
   // Their old temporary password no longer works; their own does.
@@ -66,7 +66,7 @@ test('an admin adds a user, who must choose their own password, and can then swi
   await signOut(page)
   await signIn(page, username, OWN, { expectSuccess: false })
   await expect(page.getByRole('alert')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Sign out' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Account menu/ })).toHaveCount(0)
 })
 
 test('only an admin may use user administration, in the screen or in the API', async ({ page }) => {

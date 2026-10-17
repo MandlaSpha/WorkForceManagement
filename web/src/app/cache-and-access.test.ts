@@ -36,7 +36,8 @@ describe("one person's figures never reach the next person on the same browser",
     await screen.findByTestId('tile-offered')
     expect(cachedAnswers(queryClient).length).toBeGreaterThan(0)
 
-    await user.click(await screen.findByRole('button', { name: 'Sign out' }))
+    await user.click(await screen.findByRole('button', { name: /^Account menu/ }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Sign out' }))
 
     await waitFor(() => expect(cachedAnswers(queryClient)).toHaveLength(0))
   })

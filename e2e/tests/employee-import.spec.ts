@@ -43,7 +43,9 @@ test('a planner checks an employee file, imports it, and importing it again chan
     '1 with a contract that is not permanent or seasonal',
   )
   await expect(page.getByTestId('emp-import-ignored')).toContainText('Favourite colour')
-  await expect(page.getByRole('table', { name: 'Employees' })).not.toContainText(`Import Alpha ${id}`)
+  await expect(page.getByRole('table', { name: 'Employees' })).not.toContainText(
+    `Import Alpha ${id}`,
+  )
 
   await page.getByRole('button', { name: 'Import these' }).click()
   await expect(report).toContainText('Imported:')

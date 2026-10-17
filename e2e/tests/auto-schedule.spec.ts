@@ -75,9 +75,10 @@ test('a planner previews and applies auto-schedule, the roster rules still hold,
     await expect(page.getByRole('table', { name: 'Employees' }).getByText(name)).toBeVisible()
   }
 
+  // The queue and week pickers appear only on screens that read them.
+  await page.getByRole('link', { name: 'Roster' }).click()
   await page.getByLabel('Queue').selectOption({ label: queue })
   await page.getByRole('button', { name: 'Next week' }).click()
-  await page.getByRole('link', { name: 'Roster' }).click()
 
   // Preview: it says what it would do and writes nothing.
   await page.getByRole('button', { name: 'Auto-schedule' }).click()

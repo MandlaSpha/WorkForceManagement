@@ -32,7 +32,8 @@ describe('the top-bar queue picker', () => {
     const view = await openScheduling('/planner')
     await waitFor(() => expect(useContextStore(view.pinia).queues).toHaveLength(1))
 
-    await user.click(await screen.findByRole('button', { name: 'Sign out' }))
+    await user.click(await screen.findByRole('button', { name: /^Account menu/ }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Sign out' }))
 
     await waitFor(() => expect(useContextStore(view.pinia).queues).toEqual([]))
     expect(useContextStore(view.pinia).queueNumber).toBeNull()

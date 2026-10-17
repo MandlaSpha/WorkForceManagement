@@ -116,10 +116,12 @@ const dayNumber = (iso: string) => String(Number(iso.slice(8)))
       </NoticeBox>
       <template v-else-if="schedule.data.value">
         <NoticeBox v-if="schedule.data.value.unpublishedShifts > 0" data-testid="unpublished">
-          {{ schedule.data.value.unpublishedShifts }}
-          {{ schedule.data.value.unpublishedShifts === 1 ? 'shift is' : 'shifts are' }} not
-          published yet, so {{ schedule.data.value.unpublishedShifts === 1 ? 'it is' : 'they are' }}
-          not shown. They can still change.
+          Your planner has pencilled in {{ schedule.data.value.unpublishedShifts }} more
+          {{ schedule.data.value.unpublishedShifts === 1 ? 'shift' : 'shifts' }} for you, but that
+          roster is not final yet. Do not plan around
+          {{ schedule.data.value.unpublishedShifts === 1 ? 'it' : 'them' }}: you will see
+          {{ schedule.data.value.unpublishedShifts === 1 ? 'it' : 'them' }} here once the roster is
+          published.
         </NoticeBox>
         <NoticeBox v-if="schedule.data.value.openSwaps > 0" data-testid="open-swaps">
           {{ schedule.data.value.openSwaps }}
@@ -175,10 +177,10 @@ const dayNumber = (iso: string) => String(Number(iso.slice(8)))
                     :key="s.shift + s.queue"
                     class="mt-1 rounded bg-brand-soft px-1 py-0.5 text-[11px] leading-tight text-brand-ink"
                   >
-                    <span class="font-semibold">{{ s.shift }}</span>
-                    <span class="tabular-nums">
-                      {{ clock(s.startTime) }}-{{ clock(s.endTime) }}</span
-                    >
+                    <span class="block font-semibold">{{ s.shift }}</span>
+                    <span class="block tabular-nums">
+                      {{ clock(s.startTime) }} to {{ clock(s.endTime) }}
+                    </span>
                   </p>
                   <p
                     v-for="l in byDay.get(iso)?.leave ?? []"

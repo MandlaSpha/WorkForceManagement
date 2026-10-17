@@ -17,12 +17,17 @@ test.beforeAll(() => {
   if (!PASSWORD) throw new Error('Set WFM_DEMO_PASSWORD to the demo account password.')
 })
 
-/** A Monday between 8 and 90 weeks from now, as an ISO date. */
+/** A Monday between 8 and 90 weeks from now, as an ISO date, in a month with no public holiday
+ * (February, July, October, November), so the Monday and the Tuesday after it are both working
+ * days and the "2 working days" the spec expects does not depend on the calendar. */
 function someMonday(): string {
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
   const day = new Date(`${today}T00:00:00Z`)
   const toMonday = (8 - day.getUTCDay()) % 7 || 7
-  return addDays(today, toMonday + 7 * (8 + rand(82)))
+  for (;;) {
+    const monday = addDays(today, toMonday + 7 * (8 + rand(82)))
+    if ([2, 7, 10, 11].includes(Number(monday.slice(5, 7)))) return monday
+  }
 }
 
 test('an agent asks for leave, a lead sees its effect and approves it, and the agent can cancel it', async ({
@@ -34,6 +39,15 @@ test('an agent asks for leave, a lead sees its effect and approves it, and the a
 
   // The agent: balances, then asks.
   await signIn(page, 'agent')
+  // Unpaid-leave requests an earlier run left waiting (it died before cancelling) would be found
+  // first by the lead's list below: withdraw them, so this run sees only its own.
+  const csrf = (await page.context().cookies()).find((c) => c.name === 'csrftoken')?.value ?? ''
+  const stale = await (await page.request.get('/api/v1/people/leave/requests?status=pending')).json()
+  for (const old of stale.filter((r: { leaveType: string }) => r.leaveType === 'Unpaid leave')) {
+    await page.request.post(`/api/v1/people/leave/requests/${old.id}/cancel`, {
+      headers: { 'X-CSRFToken': csrf },
+    })
+  }
   await page.goto('/leave')
   await expect(page.getByTestId('balance-annual')).toContainText('days left')
   await expect(page.getByTestId('balance-unpaid')).toContainText('no limit')
@@ -123,6 +137,15 @@ test('an admin sets a blackout period, leave inside it is refused with the reaso
   const name = `E2E close ${rand(100_000)}`
 
   await signIn(page, 'admin')
+  // Blackouts left by earlier runs that died before their clean-up would clutter every later run
+  // and every real screen on this database: remove them first.
+  const csrf = (await page.context().cookies()).find((c) => c.name === 'csrftoken')?.value ?? ''
+  const left = await (await page.request.get('/api/v1/people/leave/blackouts')).json()
+  for (const old of left.filter((b: { name: string }) => b.name.startsWith('E2E close '))) {
+    await page.request.delete(`/api/v1/people/leave/blackouts/${old.id}`, {
+      headers: { 'X-CSRFToken': csrf },
+    })
+  }
   await page.goto('/leave')
   await page.getByRole('tab', { name: 'Rules' }).click()
   const form = page.getByRole('form', { name: 'Add a blackout period' })

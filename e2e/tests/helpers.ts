@@ -17,11 +17,12 @@ export async function signIn(
   await page.getByLabel('Username').fill(username)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  if (expectSuccess) await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible()
+  if (expectSuccess) await expect(page.getByRole('button', { name: /^Account menu/ })).toBeVisible()
 }
 
 export async function signOut(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Sign out' }).click()
+  await page.getByRole('button', { name: /^Account menu/ }).click()
+  await page.getByRole('menuitem', { name: 'Sign out' }).click()
   await expect(page).toHaveURL(/\/login/)
 }
 

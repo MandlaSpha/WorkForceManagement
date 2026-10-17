@@ -48,7 +48,10 @@ describe('the month', () => {
     await open()
     const cell = await screen.findByTestId(`day-${day(15)}`)
     expect(cell).toHaveTextContent('D1')
-    expect(cell).toHaveTextContent('09:00-17:30')
+    // Failure caught: the code and the time run together ("D109:00") when read.
+    expect(cell).toHaveTextContent('09:00 to 17:30')
+    expect(within(cell).getByText('D1').tagName).toBe('SPAN')
+    expect(within(cell).getByText('D1').textContent).toBe('D1')
     expect(screen.getByTestId(`day-${day(16)}`)).not.toHaveTextContent('D1')
   })
 
@@ -118,7 +121,9 @@ describe('notices', () => {
     await open({ unpublishedShifts: 2 })
     // Failure caught: showing draft shifts as final tells someone to plan around a roster that
     // can still change.
-    expect(await screen.findByTestId('unpublished')).toHaveTextContent(/2 shifts are not published/)
+    expect(await screen.findByTestId('unpublished')).toHaveTextContent(
+      /pencilled in 2 more shifts for you, but that roster is not final yet/,
+    )
   })
 
   it('has no standing notice when every shift is published', async () => {

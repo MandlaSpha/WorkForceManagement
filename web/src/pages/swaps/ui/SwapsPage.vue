@@ -29,8 +29,20 @@ const decides = computed(() => ['lead', 'planner', 'admin'].includes(session.use
 const all = useSwaps(null)
 const board = useBoard()
 const mine = computed(() => (all.data.value ?? []).filter((s) => s.asker || s.colleague))
+// What still needs somebody comes first; finished swaps are history, a few at a time.
+const active = computed(() => mine.value.filter((s) => isOpen(s.status)))
+const finished = computed(() => mine.value.filter((s) => !isOpen(s.status)))
+const HISTORY_SHOWN = 5
+const showAllHistory = ref(false)
+const history = computed(() =>
+  showAllHistory.value ? finished.value : finished.value.slice(0, HISTORY_SHOWN),
+)
 const toApprove = computed(() =>
   (all.data.value ?? []).filter((s) => s.status === 'awaiting_approval'),
+)
+// Team requests nobody has taken yet: the lead or planner can see them coming, not act on them.
+const stillOpen = computed(() =>
+  (all.data.value ?? []).filter((s) => s.status === 'open' && !s.asker && !s.colleague),
 )
 const taking = ref<number | null>(null) // the board request whose "take" panel is open
 
@@ -93,34 +105,66 @@ const TABS = computed(() => [
       <NoticeBox v-else-if="all.isError.value" tone="danger">
         Could not load your swaps. {{ problemMessage(all.error.value) }}
       </NoticeBox>
-      <section v-else class="space-y-2" aria-labelledby="mine-title">
-        <h2 id="mine-title" class="text-base font-semibold text-ink">My swaps</h2>
-        <NoticeBox v-if="mine.length === 0">You have not posted or taken a swap.</NoticeBox>
-        <ul v-else class="space-y-3" aria-label="My swaps">
-          <li
-            v-for="s in mine"
-            :key="s.id"
-            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-4"
-            :data-testid="`mine-${s.id}`"
+      <div v-else class="space-y-6">
+        <section class="space-y-2" aria-labelledby="mine-title">
+          <h2 id="mine-title" class="text-base font-semibold text-ink">Waiting</h2>
+          <NoticeBox v-if="mine.length === 0">You have not posted or taken a swap.</NoticeBox>
+          <NoticeBox v-else-if="active.length === 0" data-testid="none-waiting">
+            Nothing is waiting on you or on anybody else.
+          </NoticeBox>
+          <ul v-else class="space-y-3" aria-label="My swaps">
+            <li
+              v-for="s in active"
+              :key="s.id"
+              class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface p-4"
+              :data-testid="`mine-${s.id}`"
+            >
+              <div>
+                <p class="text-sm text-ink">{{ describe(s) }}</p>
+                <span
+                  class="mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                  :class="STATUS_TONE[s.status]"
+                >
+                  {{ STATUS_LABEL[s.status] ?? s.status }}
+                </span>
+              </div>
+              <SwapActions :swap="s" :decides="decides" @answered="reported" />
+            </li>
+          </ul>
+        </section>
+
+        <section v-if="finished.length > 0" class="space-y-2" aria-labelledby="history-title">
+          <h2 id="history-title" class="text-base font-semibold text-ink">Earlier swaps</h2>
+          <ul
+            class="divide-y divide-line rounded-xl border border-line bg-surface"
+            aria-label="Earlier swaps"
           >
-            <div>
-              <p class="text-sm text-ink">{{ describe(s) }}</p>
+            <li
+              v-for="s in history"
+              :key="s.id"
+              class="flex flex-wrap items-center justify-between gap-2 px-4 py-2"
+              :data-testid="`mine-${s.id}`"
+            >
+              <p class="text-sm text-ink-muted">{{ describe(s) }}</p>
               <span
-                class="mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
                 :class="STATUS_TONE[s.status]"
               >
                 {{ STATUS_LABEL[s.status] ?? s.status }}
               </span>
-            </div>
-            <SwapActions
-              v-if="isOpen(s.status)"
-              :swap="s"
-              :decides="decides"
-              @answered="reported"
-            />
-          </li>
-        </ul>
-      </section>
+            </li>
+          </ul>
+          <button
+            v-if="finished.length > HISTORY_SHOWN"
+            type="button"
+            class="text-sm font-medium text-brand-ink underline"
+            data-testid="history-toggle"
+            @click="showAllHistory = !showAllHistory"
+          >
+            {{ showAllHistory ? 'Show fewer' : `Show all ${finished.length} earlier swaps` }}
+          </button>
+        </section>
+      </div>
     </div>
 
     <div
@@ -199,6 +243,24 @@ const TABS = computed(() => [
           <SwapActions v-else :swap="s" :decides="decides" @answered="reported" />
         </li>
       </ul>
+
+      <section v-if="stillOpen.length > 0" class="space-y-2" aria-labelledby="open-title">
+        <h2 id="open-title" class="text-base font-semibold text-ink">Waiting for a colleague</h2>
+        <p class="text-sm text-ink-muted">
+          Posted by your team and not taken yet. They reach you for approval once a colleague takes
+          them.
+        </p>
+        <ul class="space-y-2" aria-label="Open team requests">
+          <li
+            v-for="s in stillOpen"
+            :key="s.id"
+            class="rounded-xl border border-line bg-surface px-4 py-2 text-sm text-ink"
+            :data-testid="`open-${s.id}`"
+          >
+            {{ describe(s) }} <span class="text-ink-muted">({{ s.queue }})</span>
+          </li>
+        </ul>
+      </section>
     </div>
   </div>
 </template>

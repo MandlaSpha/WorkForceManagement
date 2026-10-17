@@ -8,6 +8,8 @@ Everything here is synthetic or your own imported data; nothing comes from `File
 logins (made by `seed_demo`) are `planner`, `lead`, `agent`, `admin`, `executive`, `customerops`,
 all with the demo password. Sign in as different roles to see how the menu and the data change.
 
+**Two teams to try swaps and approvals with.** `lead` (Lee) leads `agent`, `agent2`, `agent3`, `agent4`, `agent5`; `lead2` (Lou) leads `agent6` to `agent10`. All work the Support queue, so any agent can take a swap another posts. Post a swap as `agent2`, take it as `agent3` (Shift swaps > Open requests), then sign in as `lead` and decide it under Approvals; `lead` also sees what the team has posted and nobody has taken. `lead2` sees only their own team. The planner and admin see and decide for both. Leave works the same way: a request from `agent7` reaches `lead2`, not `lead`.
+
 ## The idea in one paragraph
 
 Call volumes come in (imported from the telephony reports). The system **forecasts** how many calls
@@ -91,7 +93,7 @@ The two people see each other's names once it is matched. With the demo data the
 
 ## Phase 3: The agent's own pages and availability (SCH-08, ESS-01)
 
-Sign in as `agent`: you land on **My schedule**: the whole month as a Monday-to-Sunday calendar with your published shifts and leave (use the arrows to move between months, *List* for a plain list). Shifts in a week the planner has not published are only counted ("2 shifts are not published yet"), never shown, because they can still change. Links take you to Leave and Shift swaps.
+Sign in as `agent`: you land on **My schedule**: the whole month as a Monday-to-Sunday calendar with your published shifts and leave (use the arrows to move between months, *List* for a plain list). Shifts in a week the planner has not published are only counted ("Your planner has pencilled in 2 more shifts for you, but that roster is not final yet"), never shown, because they can still change. Links take you to Leave and Shift swaps.
 
 **My availability**: declare a weekly time you *cannot work* (the roster will refuse a shift covering it, and so will a swap) or would *rather work* (a wish the planner can see). Declaring nothing tells the planner nothing; it does not mean you are free. The demo agent never works Sundays and would rather finish early on Fridays; the demo part-timers cannot work Thursday or Friday, and the demo roster respects it.
 

@@ -16,7 +16,7 @@ from django.utils import timezone
 from wfm_engine.kpi import Totals, kpis
 
 from wfm.accounts.models import User
-from wfm.scheduling.selectors import overview
+from wfm.scheduling.selectors import week_plan
 from wfm.telephony.models import Queue
 from wfm.telephony.selectors import kpi_summary
 
@@ -54,7 +54,10 @@ def contract_rows(user: User, week_start: date) -> list[ContractRow]:
         members.setdefault(link.contract_id, []).append(link.queue)
 
     measured = {q.queue_id: q.totals for q in kpi_summary(user, window_from, window_to).queues}
-    coverage = {p.queue.pk: p.summary for p in overview(user, week_start).plans}
+    # Only the queues a contract holds: planning every queue of the site just to read these few
+    # made this screen slower with every queue anybody ever made.
+    held = {q.pk: q for queues in members.values() for q in queues}
+    coverage = {queue_id: week_plan(user, queue_id, week_start).summary for queue_id in held}
 
     rows: list[ContractRow] = []
     for contract in Contract.objects.for_user(user).select_related("customer"):
