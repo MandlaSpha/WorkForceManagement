@@ -270,6 +270,24 @@ Modules are sold separately, so each one can be switched off for a customer that
 | FEAT-05 | Switching a feature off **never deletes its data**; switching it back on restores it | M |
 | FEAT-06 | A **signed licence file** (modules + expiry, verified by the application) so VMK can grant, renew and lapse modules without redeploying; the customer's Admin sees what is licensed, read-only | S |
 
+### 3.18 Added after re-reading the source requirements document (17 Oct 2026)
+The Gijima general WFM list and the Customer Services list (source: "The Workforce Management_Requirements.docx") name areas the first plan left out or only touched. They are now requirements and are planned in Phase 8 (tech spec section 8).
+
+| ID | Requirement | Pri | Source |
+|---|---|---|---|
+| UTL-01 | Engineer utilisation and billability per person, team, customer and contract: worked hours against billable hours, with a target and the gap (extends SD-02; shown by role, never a league table of named people to peers) | S | GIJ, Customer Services list |
+| UTL-02 | Cost per engineer, cost per ticket and overtime cost against contract revenue where rates are known (pay figures stay hidden from agents and executives) | C | GIJ |
+| WLB-01 | Workload balancing: show over- and under-loaded engineers or queues for a day and suggest moving work or people (a suggestion, never an automatic reassignment) | S | GIJ |
+| SKL-01 | Skills, certifications, language and security clearance on the employee, used by the roster and the recommendations (extends SD-03) | S | GIJ |
+| WEL-01 | Early-warning flags for overload and burnout (long runs of days, repeated overtime, no rest days, rising unplanned absence) shown to the lead and the planner as a conversation prompt, not as a score of a person | C | GIJ AI list |
+| WEL-02 | Skill-gap flags: a queue or shift whose required skill has too few people | C | GIJ AI list |
+| BCP-01 | Business continuity: named backup teams per queue, a "mobilise" view listing who can cover a failed site or an outbreak, with remote-work flags and the roster impact | S | GIJ, tender 5 |
+| QUA-01 | Quality results per agent (call or ticket score, CSAT, coaching due) imported from the quality tool as a file, shown to the lead and the planner; the scoring itself stays in the quality tool | C | GIJ |
+| KPI-01 | Service metrics from imported ticket data: cost per ticket, MTTR, FCR, CSAT, NPS, backlog age, shown beside staffing | C | GIJ metrics list |
+| MOB-01 | Mobile-friendly agent and lead pages (schedule, swaps, leave, availability) usable at phone width; field-engineer dispatch and navigation stay out of scope | S | GIJ, tender 5 |
+| INT-05 | Integration adapters behind one interface: ITSM (ServiceNow, BMC Helix, HaloITSM, Jira Service Management), attendance (biometric, Teams) and monitoring (SolarWinds, Splunk), each file-first and live only against a real tenant | C | GIJ |
+| INT-06 | Live agent-state feed from the telephony platform for real-time adherence (today an imported file) | S | tender 3.4 |
+
 ## 4. Non-functional requirements
 
 | ID | Requirement | Source |
@@ -300,7 +318,7 @@ Forecast accuracy ≥ 90% daily / ≥ 85% interval; schedule adherence ≥ 90%; 
 
 ## 6. Out of scope (initially)
 
-Full QA/interaction scoring, HR onboarding lifecycle, field-engineer mobile dispatch/navigation, changes to ACD/ITSM/HR systems themselves.
+Full QA/interaction scoring (only imported results, QUA-01), HR onboarding lifecycle, field-engineer mobile dispatch/navigation (agent and lead pages are mobile-friendly, MOB-01), changes to ACD/ITSM/HR systems themselves.
 
 ## 7. Open questions
 
