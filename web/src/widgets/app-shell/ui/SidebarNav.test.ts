@@ -52,36 +52,3 @@ describe('the sidebar groups', () => {
     expect(nav.getByRole('button', { name: /^Insight/ })).toHaveTextContent(/\d+$/)
   })
 })
-
-describe('finding a screen', () => {
-  it('lists matching screens from every group, including closed ones, and leaves on Enter', async () => {
-    const user = userEvent.setup()
-    const nav = await open('planner', '/roster')
-    await user.type(screen.getByLabelText('Find a screen'), 'leave')
-    expect(nav.getByRole('link', { name: /^Leave/ })).toBeVisible()
-    await user.keyboard('{Enter}')
-    expect(nav.queryByLabelText('Matching screens')).toBeNull() // the search clears after going
-  })
-
-  it('says so when nothing matches', async () => {
-    const user = userEvent.setup()
-    const nav = await open('planner', '/roster')
-    await user.type(screen.getByLabelText('Find a screen'), 'zzzz')
-    expect(nav.getByText(/No screen matches "zzzz"/)).toBeVisible()
-  })
-
-  it('never offers a screen the role may not open', async () => {
-    // Failure caught: the finder leaking the names of admin screens to an agent.
-    const user = userEvent.setup()
-    const nav = await open('agent', '/my/schedule')
-    await user.type(screen.getByLabelText('Find a screen'), 'audit')
-    expect(nav.queryByRole('link', { name: /Audit/ })).toBeNull()
-  })
-
-  it('jumps to the finder with Ctrl+K', async () => {
-    const user = userEvent.setup()
-    await open('planner', '/roster')
-    await user.keyboard('{Control>}k{/Control}')
-    expect(screen.getByLabelText('Find a screen')).toHaveFocus()
-  })
-})

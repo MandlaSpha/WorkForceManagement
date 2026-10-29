@@ -6,6 +6,8 @@ import { NotificationBell } from '@/features/account/notifications'
 import { ThemeToggle } from '@/features/toggle-theme'
 import { useSessionStore } from '@/entities/session'
 
+import BreadcrumbTrail from './BreadcrumbTrail.vue'
+
 defineProps<{ menuOpen: boolean }>()
 defineEmits<{ toggleMenu: [] }>()
 
@@ -24,6 +26,8 @@ const session = useSessionStore()
     >
       <Menu :size="18" aria-hidden="true" />
     </button>
+
+    <BreadcrumbTrail />
 
     <!-- Agents work in their own week only; everyone else picks a site and queue too. -->
     <ContextBar :show-scope="session.user?.role !== 'agent'" />

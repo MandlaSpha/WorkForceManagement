@@ -38,6 +38,21 @@ export interface NavMatch {
   path: string
   label: string
   icon: string
+  subtitle: string
+}
+
+/** Every screen in the groups, in menu order: what the palette lists before anything is typed. */
+export function allScreens(groups: readonly VisibleGroup[]): NavMatch[] {
+  return groups.flatMap((g) =>
+    g.items.map((item) => ({
+      group: g.group,
+      key: item.key,
+      path: item.path,
+      label: item.label,
+      icon: item.icon,
+      subtitle: item.subtitle,
+    })),
+  )
 }
 
 /** Screens whose name, group or description contains every word typed, label matches first. */
@@ -59,6 +74,7 @@ export function findScreens(groups: readonly VisibleGroup[], query: string): Nav
           path: item.path,
           label: item.label,
           icon: item.icon,
+          subtitle: item.subtitle,
         },
       })
     }

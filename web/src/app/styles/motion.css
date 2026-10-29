@@ -78,3 +78,25 @@ html.theme-fade *::after {
   transform: translateY(-2px);
   box-shadow: var(--shadow-pop);
 }
+
+/* Dialog: the backdrop fades and the panel rises 8px as it fades in. The reduced-motion block in
+   index.css zeroes these durations, so nothing waits for them. */
+.dialog-enter-active,
+.dialog-leave-active {
+  transition: opacity 0.2s var(--ease-out);
+}
+.dialog-enter-active .dialog-panel,
+.dialog-leave-active .dialog-panel {
+  transition:
+    opacity 0.2s var(--ease-out),
+    transform 0.2s var(--ease-out);
+}
+.dialog-enter-from,
+.dialog-leave-to {
+  opacity: 0;
+}
+.dialog-enter-from .dialog-panel,
+.dialog-leave-to .dialog-panel {
+  opacity: 0;
+  transform: translateY(8px);
+}

@@ -92,7 +92,9 @@ const TABS = computed(() => [
 </script>
 
 <template>
-  <PageHeader eyebrow="People" :title="screen?.label ?? 'Leave'" :subtitle="screen?.subtitle" />
+  <PageHeader eyebrow="People" :title="screen?.label ?? 'Leave'" :subtitle="screen?.subtitle">
+    <template v-if="!noRecord" #actions><ApplyLeaveForm /></template>
+  </PageHeader>
 
   <div class="space-y-4">
     <TabBar v-model="tab" :tabs="TABS" label="Leave sections" id-prefix="leave" />
@@ -155,11 +157,6 @@ const TABS = computed(() => [
             At most {{ awayLimit.data.value.maxConcurrent }} people can be away at once.
           </p>
         </NoticeBox>
-
-        <section class="space-y-2" aria-labelledby="ask-title">
-          <h2 id="ask-title" class="text-base font-semibold text-ink">Ask for leave</h2>
-          <ApplyLeaveForm />
-        </section>
 
         <section class="space-y-2" aria-labelledby="mine-title">
           <h2 id="mine-title" class="text-base font-semibold text-ink">My requests</h2>
