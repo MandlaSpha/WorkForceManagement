@@ -16,11 +16,17 @@ import {
 import type { Decision } from '@/entities/leave'
 import { useSessionStore } from '@/entities/session'
 import { ApplyLeaveForm } from '@/features/leave/apply'
-import { CancelLeaveButton, DecisionButtons, ImpactPanel } from '@/features/leave/decide'
+import {
+  CancelLeaveButton,
+  DecisionButtons,
+  ImpactPanel,
+  LeaveBoard,
+} from '@/features/leave/decide'
 import { EntitlementForm } from '@/features/leave/entitlement'
 import { AwayLimitForm, BlackoutManager } from '@/features/leave/rules'
 import { ApiProblem, problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
+import { isPhone } from '@/shared/ui/viewport'
 import { todayInJohannesburg } from '@/shared/lib/week'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
@@ -78,6 +84,18 @@ function reported(who: string, d: Decision): void {
   outcome.value = `${verb} leave for ${who}${shifts.length > 0 ? `: ${shifts.join(', ')}` : ''}.`
 }
 
+// Board for the people who decide, on a desktop; a list on a phone and for agents.
+const view = ref(decides.value && !isPhone() ? 'board' : 'list')
+const VIEWS = [
+  { key: 'board', label: 'Board' },
+  { key: 'list', label: 'List' },
+]
+
+function boardDecided(who: string, d: Decision, reason?: string): void {
+  reported(who, d)
+  if (reason) outcome.value = `${outcome.value} Reason: ${reason}.`
+}
+
 const tab = ref('mine')
 const TABS = computed(() => [
   { key: 'mine', label: 'My leave' },
@@ -97,12 +115,29 @@ const TABS = computed(() => [
   </PageHeader>
 
   <div class="space-y-4">
-    <TabBar v-model="tab" :tabs="TABS" label="Leave sections" id-prefix="leave" />
+    <TabBar v-model="view" :tabs="VIEWS" label="Leave view" id-prefix="leave-view" variant="pill" />
+    <TabBar
+      v-if="view === 'list'"
+      v-model="tab"
+      :tabs="TABS"
+      label="Leave sections"
+      id-prefix="leave"
+    />
 
     <NoticeBox v-if="outcome" data-testid="decision-result" role="status">{{ outcome }}</NoticeBox>
 
     <div
-      v-if="tab === 'mine'"
+      v-if="view === 'board'"
+      id="leave-view-panel-board"
+      role="tabpanel"
+      aria-labelledby="leave-view-tab-board"
+    >
+      <LeaveBoard :decides="decides" @decided="boardDecided" />
+      <p class="mt-3 text-xs text-ink-muted">To ask for leave or see balances, switch to List.</p>
+    </div>
+
+    <div
+      v-else-if="tab === 'mine'"
       id="leave-panel-mine"
       role="tabpanel"
       aria-labelledby="leave-tab-mine"

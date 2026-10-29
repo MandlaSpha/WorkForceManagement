@@ -13,7 +13,15 @@ export {
   setEntitlement,
 } from './api/leave'
 export type { Decide } from './api/leave'
-export { canCancel, daysLeft, rangeLabel, STATUS_LABEL, STATUS_TONE } from './model/format'
+export { canMoveLeave, groupLeave, isMovableLeave, LEAVE_STAGES } from './model/board'
+export {
+  canCancel,
+  daysLeft,
+  formatDays,
+  rangeLabel,
+  STATUS_LABEL,
+  STATUS_TONE,
+} from './model/format'
 export {
   leaveKeys,
   useAwayLimit,
