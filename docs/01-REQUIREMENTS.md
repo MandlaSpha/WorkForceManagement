@@ -168,10 +168,10 @@ Priority: **M** = must (MVP), **S** = should (phase 2), **C** = could (later). U
 | RPT-09 | Investment-Board KPI pack | S | PROP |
 | RPT-10 | **Self-service report schedules.** Anyone who may read a report can set up their own schedule: which report, which recipient email(s), how often and when (daily, weekly, monthly, a time in SAST), and pause or delete it. Safeguards: a report contains only what its **owner** may see (the same `for_user` scoping), never what a recipient could not; recipients are limited to an admin-set allowed email domain list; sending, changes and failures are audited; no personal data in the email body beyond what the report itself holds; a schedule stops if its owner is deactivated | M | Product owner, UIF 3.6 |
 
-### 3.12 Copilot (role-scoped AI assistant) — PARKED, not a current requirement
+### 3.12 Copilot (role-scoped AI assistant) — v1 built 29 Oct 2026 (rule-based, read-only); model-backed adapter parked
 Decision (12 Oct 2026): neither the UIF specification nor the Gijima requirements ask for an AI assistant, so it is **out of the current scope, phases and test plan**. The reference app has one (Copilot page, roster Assistant button); we do not build it now. The rules below are kept so that, if it is ever requested, it is added safely: it may only answer from data the asking user is already allowed to see, as a convenience over the existing authorised API and never a second route to the data.
 
-All AI-xx items below are therefore **Parked**, whatever priority they show.
+Update, 29 Oct 2026: the owner asked for version 1 with a pluggable answerer, a rule-based default, core questions per role and read-only behaviour. AI-01 to AI-09 and AI-11 are built for that scope (tech spec section 12). AI-10 (provider and residency of a *model*) stays open: v1 sends nothing to any model. Pay and overtime-money questions are refused for every role in v1.
 
 | ID | Requirement | Pri | Source |
 |---|---|---|---|

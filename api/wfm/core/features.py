@@ -36,6 +36,7 @@ class Feature(StrEnum):
     CAPACITY = "capacity"
     INTRADAY = "intraday"
     SERVICE_DESK = "service_desk"
+    COPILOT = "copilot"
 
 
 CORE: Final = "core"
@@ -74,6 +75,10 @@ REGISTRY: Final[dict[Feature, FeatureInfo]] = {
     Feature.CAPACITY: FeatureInfo("Capacity planning", requires=(Feature.FORECASTING,)),
     Feature.INTRADAY: FeatureInfo("Intraday monitoring", requires=(Feature.TELEPHONY,)),
     Feature.SERVICE_DESK: FeatureInfo("Tickets and emails alongside calls"),
+    Feature.COPILOT: FeatureInfo(
+        "Copilot: role-scoped questions answered from data the role can already see",
+        requires=(Feature.PEOPLE,),
+    ),
 }
 
 

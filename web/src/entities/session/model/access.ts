@@ -57,6 +57,7 @@ export const ACCESS: Record<NavKey, readonly Role[]> = {
   analytics: ['planner', 'admin', 'executive', 'customer_ops'],
   calibration: ['planner', 'admin'],
   reports: ['planner', 'lead', 'admin', 'executive', 'customer_ops'],
+  copilot: ['agent', 'lead', 'planner', 'admin', 'executive', 'customer_ops'],
 
   configure: ['admin'],
   users: ['admin'],

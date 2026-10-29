@@ -2538,6 +2538,99 @@
         "title": "ContractOut",
         "type": "object"
       },
+      "CopilotActionOut": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "path"
+        ],
+        "title": "CopilotActionOut",
+        "type": "object"
+      },
+      "CopilotAnswerOut": {
+        "properties": {
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/CopilotActionOut"
+            },
+            "title": "Actions",
+            "type": "array"
+          },
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "refused": {
+            "title": "Refused",
+            "type": "boolean"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/CopilotSourceOut"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "suggestions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "answer",
+          "refused",
+          "sources",
+          "actions",
+          "suggestions"
+        ],
+        "title": "CopilotAnswerOut",
+        "type": "object"
+      },
+      "CopilotAskIn": {
+        "properties": {
+          "question": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "CopilotAskIn",
+        "type": "object"
+      },
+      "CopilotSourceOut": {
+        "properties": {
+          "rows": {
+            "title": "Rows",
+            "type": "integer"
+          },
+          "tool": {
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tool",
+          "rows"
+        ],
+        "title": "CopilotSourceOut",
+        "type": "object"
+      },
       "Coverage": {
         "properties": {
           "intervalsTotal": {
@@ -3336,7 +3429,8 @@
           "insight",
           "capacity",
           "intraday",
-          "service_desk"
+          "service_desk",
+          "copilot"
         ],
         "title": "Feature",
         "type": "string"
@@ -11559,6 +11653,43 @@
         "summary": "Change a contract",
         "tags": [
           "contracts"
+        ]
+      }
+    },
+    "/api/v1/copilot/ask": {
+      "post": {
+        "operationId": "wfm_copilot_api_ask",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopilotAskIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CopilotAnswerOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Ask the Copilot a question; it answers only from what the asking role can see",
+        "tags": [
+          "copilot"
         ]
       }
     },

@@ -12,6 +12,7 @@ from wfm.audit.api import router as audit_router
 from wfm.capacity.api import router as capacity_router
 from wfm.continuity.api import router as continuity_router
 from wfm.contracts.api import router as contracts_router
+from wfm.copilot.api import router as copilot_router
 from wfm.core.api import router as system_router
 from wfm.core.errors import ApiError, problem_response
 from wfm.forecasting.api import router as forecasting_router
@@ -78,3 +79,4 @@ api.add_router("/notifications", notifications_router)
 api.add_router("/overtime", overtime_router)
 api.add_router("/service-desk", servicedesk_router)
 api.add_router("/utilisation", utilisation_router)
+api.add_router("/copilot", copilot_router)

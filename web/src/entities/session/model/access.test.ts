@@ -20,8 +20,9 @@ describe('role matrix (docs/04-UML.md section 2.6)', () => {
     for (const role of ROLES) expect(keysFor(role).length).toBeGreaterThan(0)
   })
 
-  it('limits agents to their own schedule, availability, leave, swaps and quality results', () => {
+  it('limits agents to their own schedule, availability, leave, swaps, quality and the Copilot', () => {
     expect(keysFor('agent').sort()).toEqual([
+      'copilot',
       'leave',
       'my-availability',
       'my-schedule',

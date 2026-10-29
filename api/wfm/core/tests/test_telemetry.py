@@ -173,6 +173,27 @@ def test_login_password_never_reaches_a_span(spans: InMemorySpanExporter) -> Non
     assert token not in recorded
 
 
+def test_a_copilot_question_never_reaches_a_span(spans: InMemorySpanExporter) -> None:
+    # Failure caught: the question text (it can name a person) or the answer in a span, a query
+    # parameter or an event. The question lives only in the audit trail, for admin review.
+    client = signed_in_client(Role.AGENT)
+    spans.clear()
+
+    response = client.post(
+        "/api/v1/copilot/ask",
+        {"question": "When is Zandile Qwertyuiop's next leave? CANARY-QUESTION-9917"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    recorded = everything_recorded(spans)
+    for secret in ("Zandile", "Qwertyuiop", "CANARY-QUESTION-9917", "next leave"):
+        assert secret not in recorded
+    assert "I can't share" not in recorded
+    event = AuditEvent.objects.get(action=Action.COPILOT_ASKED)
+    assert "CANARY-QUESTION-9917" in event.reason  # kept on the trail for admins (AI-08)
+
+
 def test_query_strings_are_removed_from_spans(spans: InMemorySpanExporter) -> None:
     Client().get("/api/v1/auth/csrf?search=hunter2&name=Pat")
 

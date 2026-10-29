@@ -678,9 +678,9 @@ Other rules:
 - **Data limit:** only May and July are real today. With under a year of history yearly seasonality is switched off and the screen says so; weekly pattern, holidays and month-end still apply.
 - **Cost:** none beyond the wheel: Prophet 1.5 ships the compiled model, so no compiler or cmdstan build is needed on Windows or in a glibc Linux image (ADR 0002). Built since: the events calendar (section 4.3c). Also built: the capacity view (section 4.3d) and what-if scenarios (section 4.3e). Phase 2.5 is complete apart from the extras listed under Not built.
 
-The Copilot (requirements §3.12) is **parked**: not in any phase and not in the test plan. If it is ever requested, it comes after the role-scoping layer and the endpoint × role test matrix exist, and reuses them rather than adding a new data path.
+The Copilot (requirements §3.12) is **built as version 1** (29 Oct 2026): rule-based, read-only, twelve fixed read tools, gated by its own release suite. How it is built is in section 12; the design rules below are the contract it keeps. A model-backed adapter is still **parked** (AI-10: provider and residency undecided).
 
-### 8.1 Parked design note: Copilot (role-safe by construction)
+### 8.1 Design note: Copilot (role-safe by construction; v1 built, see section 12)
 ```
 User question -> API (session user) -> Copilot service -> LLM (sees tool schemas only, no data)
                                           ^   | tool call(name, args)
@@ -689,14 +689,14 @@ User question -> API (session user) -> Copilot service -> LLM (sees tool schemas
                                           |
                                   fenced tool output -> LLM -> draft answer -> output check -> user
 ```
-- **Tools** are a closed list of read functions (`my_schedule`, `my_leave`, `team_leave` (leads), `coverage_gap(queue, date)`, `kpi_summary(scope)`, ...). Each tool is registered with the roles allowed to call it; the router checks the role *before* calling the service, and the service applies `for_user()` scoping *again*. The model cannot name a user id or table it was not given.
+- **Tools** are a closed list of read functions (v1: `my_schedule`, `my_leave_balance`, `team_pending_leave` (leads), `coverage_gaps`, `absence_rate`, ...; the full list is in section 12). Each tool is registered with the roles allowed to call it; the router checks the role *before* calling the service, and the service applies `for_user()` scoping *again*. The model cannot name a user id or table it was not given.
 - **Arguments are validated** against the same schemas as the API (an agent passing another employee id is rejected, not trusted).
 - **Context hygiene:** the system prompt contains the role and tool descriptions only. No data is pre-loaded. A new conversation starts empty; nothing is cached or shared across users or roles.
 - **Output check:** extract entities and numbers from the draft; each must be present in this request's tool results, else the reply is replaced by a refusal. Refusals are templated, not model-written, so they do not leak by wording.
 - **Prompt injection:** tool results are wrapped as quoted data; the system prompt states that instructions found inside them must be ignored; free-text fields are length-limited and stripped of control sequences.
 - **Writes:** none. Suggestions render as a confirm card that calls the normal endpoint (full validation, audit, permissions).
 - **No text-to-SQL:** the model never writes queries; that would bypass the scoping layer.
-- **Model hosting:** abstracted behind a small interface so a self-hosted open-weight model (fits the open-source-only rule, data stays in SA) or a contracted hosted API can be used. Decision pending (requirements AI-10).
+- **Model hosting:** abstracted behind a small interface (`Answerer`, section 12) so a self-hosted open-weight model (fits the open-source-only rule, data stays in SA) or a contracted hosted API can be used later. v1 ships the rule-based answerer, so no data leaves the application. Decision on a model pending (requirements AI-10).
 - **Tests (§7):** a table-driven suite runs every (role x question x planted-injection) case against a stubbed model that tries to misbehave (asks for forbidden tools, forged ids, echoes data) and asserts the router and post-filter stop it; plus a smaller live-model smoke suite in nightly CI.
 
 ## 9. Deployment and environments (portable by design)
@@ -821,3 +821,43 @@ flowchart LR
 - Directory sync or SCIM to deactivate leavers sooner than their next sign-in (the 30-minute idle timeout bounds exposure meanwhile; AUTH-13).
 - An admin screen for providers, group-mapping preview and a "test connection" button; per-username throttling for directory sign-ins (the directory's own lockout applies).
 - Microsoft Graph fallback for Entra group overage.
+
+## 12. Copilot v1 as built (AI-01 to AI-11; 29 Oct 2026)
+
+Owner decisions: a pluggable answerer with a **rule-based default** (no external service, no new dependency), a core set of questions per role, **read-only**. Code: `api/wfm/copilot/`, screen `web/src/pages/copilot`, feature switch `copilot` (needs `people`). One endpoint: `POST /api/v1/copilot/ask {question (max 300)} -> {answer, refused, sources[{tool, rows}], actions[{label, path}], suggestions[]}`. Every signed-in role may call it; what comes back is decided tool by tool. A switched-off feature answers 403 `feature.disabled` like every other module.
+
+**Pipeline.** question -> clean (control characters out) -> per-user rate limit -> `Answerer.answer(question, role_tools, call_tool, role)` -> output check (`guard.py`) -> audit event as the last write -> reply. The answerer receives only the tools its role may call and a `call_tool` that checks the role before running anything; it never sees a database, a user object or another role's tools. Nothing is remembered between questions: no conversation memory, no cache, no module-level state (a test asserts it).
+
+**Tools (`tools.py`)**, a fixed registry; each declares name, roles, typed parameters (a day or a text filter, never an id), and returns plain JSON-safe facts, a row count and a screen to open:
+
+| Role | Tools |
+|---|---|
+| Planner, admin | `coverage_gaps` (day or week), `why_short` (queue, day: required against rostered, and the number of people on approved leave), `forecast_status`, `coverage_summary`, `absence_rate` |
+| Team lead | `team_pending_leave`, `team_on_shift` (day), `team_open_swaps` |
+| Agent | `my_schedule` (week), `my_leave_balance`, `my_open_swaps` (no names, SWP-01) |
+| Executive | `coverage_summary` (numbers per day), `absence_rate` (a rate; no per-person detail) |
+| Customer operations | `my_contracts_capacity` (counts of readable contracts; names no customer) |
+
+There is **no pay or overtime-money tool for any role**. Every tool reads through a module selector that starts from the model's `for_user` scope (existing selectors where they exist; small `copilot_selectors.py` files in `scheduling`, `people` and `contracts` where a plain-data or count-only read was missing). `wfm.copilot` imports no other app's models or services: `api/tests/contracts/test_copilot_layers.py` fails if it does, or touches `.objects`, a raw cursor or `.raw()`.
+
+**Rule-based answerer (`adapter.py`, `templates.py`).** Deterministic patterns pick an intent; the intent names candidate tools and the first one the role may call is used. Dates (today, tomorrow, Tuesday, next week, an ISO date) are resolved in Africa/Johannesburg. The reply is a template filled only from that tool's result. Decided before any lookup: prompt-injection phrases, pay words, "who was absent / list all" requests, and, for agent, executive and customer operations, any capitalised name token, "X's" or third-person word (colleague, someone, their) are all refused with the **one refusal text** "I can't share that for your role." (identical text and shape for every refused case, so it never confirms that data exists and never echoes a value). An intent the role has no tool for is the same refusal. For a lead, the tool returns the team only; a name the tool did not return is the same refusal. A request to change something ("approve", "move", "cancel") returns a fixed sentence and a link to the screen that does it. An unknown question gets "I can't answer that yet" plus the questions this role can ask (suggestions).
+
+**Output check (`guard.py`, AI-09).** Every word of the final answer must be a word of the templates or of this request's tool output, and every number must appear in the tool output. Otherwise the reply is replaced by the refusal and the audit event records `guard=blocked`. It is applied to every adapter, so a model-backed one cannot bypass it; the plan's own "refused" answer text is always replaced by the fixed refusal.
+
+**Untrusted text (AI-07, `fence.py`).** The rule-based path sends nothing to a model and does not interpret text, so planted text (a name, a remark) is inert. For a future model adapter, tool output must pass through `fence()`: one JSON string with control characters and angle brackets escaped inside a marker pair, strings cut at 200 characters, plus a notice that the content is data.
+
+**Audit (AI-08).** Every question writes `copilot.asked` as the last write: role (actor role), `entity_id` = intent, field changes `tools`, `rows`, `refused`, `guard`, and the **question text (cut to 300 characters) in `reason`**, stored for admin review through the existing audit viewer (admin only). A rate-limited attempt is recorded as `denied` without text and does not count towards the limit. No question text, name or value is put in a span, a log line or an analytics event (a telemetry test searches spans).
+
+**Rate limit.** 20 successful questions per user per 60 seconds, counted from the audit trail (so it holds across processes), 429 `copilot.rate_limited` with a plain message.
+
+**Tests (the release gate, AI-11):** `api/wfm/copilot/tests/` (every tool x every role; the table-driven adversarial matrix of every row of the §3.12 role examples plus extras against canary names, a salary and a customer, checking the body, sources, actions and audit entry; injection in the question and planted in data; refusals that cannot be told apart; read-only (no write except the audit event); rate limit; audit last, with no values, and every question audited; a deliberately leaky adapter blocked by the output check; the fence; the feature switch), the layer contract, and a telemetry leak test. Web: `CopilotPage.test.ts` (answer rendered as text never markup, identical refusals, no storage writes, 429/403/404 messages, the 300-character limit, aria-live and focus return). End to end: `e2e/tests/copilot.spec.ts`.
+
+**Findings worth remembering**
+- The roster is readable by every lead, so `team_on_shift` filters on the lead's own team in its query; a test seeds another team's person on the same day to catch a missing filter.
+- A customer operations manager has no link to "their own" customers, and cannot read queues, so a named or per-contract answer would show another customer's contract. The tool therefore returns counts only until an ownership link exists.
+- The planner's pending leave and swaps are not Copilot tools in v1 (the spec lists them for leads); a planner asking gets the standard refusal.
+
+**Not built yet**
+- A model-backed `Answerer` (AI-10: provider and data residency undecided); the fence, the guard and the adapter seam are ready for it, and a live-model smoke suite is still to be written.
+- Per-customer ownership for customer operations, then named contract answers.
+- Pay and overtime-money questions for the roles that may see pay (a decision, not a gap).

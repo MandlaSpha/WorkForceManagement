@@ -29,6 +29,7 @@ import type { Peaks } from '@/entities/peaks'
 import type { ReportSchedule } from '@/entities/report-schedule'
 import type { Scorecard } from '@/entities/scorecard'
 import type { Shrinkage } from '@/entities/shrinkage'
+import type { components } from '@/shared/api'
 import type { AdminUser } from '@/entities/user-admin'
 import type { AuditChain, AuditEvent } from '@/entities/audit-log'
 import type {
@@ -112,6 +113,7 @@ export const ALL_FEATURES = [
   'capacity',
   'intraday',
   'service_desk',
+  'copilot',
 ] as const
 
 export const backend = {
@@ -188,6 +190,10 @@ export const backend = {
   /** Planned shrinkage by team, and the months asked for. */
   shrinkage: { month: '2026-10-01', teams: [], unplannedMeasured: false } as Shrinkage,
   shrinkageQueries: [] as string[],
+  /** Copilot: the questions asked, what the next answer is, and a problem to answer with instead. */
+  copilotQuestions: [] as string[],
+  copilotReply: null as components['schemas']['CopilotAnswerOut'] | null,
+  copilotProblem: null as { status: number; code: string; detail: string } | null,
   /** The peaks report, and the queue/range of each request. */
   peaks: null as Peaks | null,
   peaksQueries: [] as string[],
@@ -344,6 +350,9 @@ export const backend = {
     this.overtime = []
     this.shrinkage = { month: '2026-10-01', teams: [], unplannedMeasured: false }
     this.shrinkageQueries = []
+    this.copilotQuestions = []
+    this.copilotReply = null
+    this.copilotProblem = null
     this.peaks = null
     this.peaksQueries = []
     this.callDetail = null
@@ -1274,6 +1283,27 @@ export const handlers = [
     const q = new URL(request.url).searchParams
     backend.peaksQueries.push(`${q.get('queue_id')} ${q.get('date_from')} ${q.get('date_to')}`)
     return HttpResponse.json(backend.peaks)
+  }),
+
+  http.post('*/api/v1/copilot/ask', async ({ request }) => {
+    const body = (await request.json()) as { question: string }
+    backend.copilotQuestions.push(body.question)
+    const failure = backend.copilotProblem
+    if (failure) {
+      return HttpResponse.json(
+        { type: `https://wfm.local/problems/${failure.code}`, title: 'Refused', ...failure },
+        { status: failure.status, headers: { 'Content-Type': 'application/problem+json' } },
+      )
+    }
+    return HttpResponse.json(
+      backend.copilotReply ?? {
+        answer: 'Nothing to report.',
+        refused: false,
+        sources: [],
+        actions: [],
+        suggestions: [],
+      },
+    )
   }),
 
   http.get('*/api/v1/people/shrinkage', ({ request }) => {

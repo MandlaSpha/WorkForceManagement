@@ -29,6 +29,7 @@ describe('the web feature list matches the API', () => {
       capacity: true,
       intraday: true,
       service_desk: true,
+      copilot: true,
     }
     expect(Object.keys(known).sort()).toEqual([...ALL_FEATURES].sort())
   })

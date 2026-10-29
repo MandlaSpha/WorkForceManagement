@@ -469,6 +469,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/copilot/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask the Copilot a question; it answers only from what the asking role can see */
+        post: operations["wfm_copilot_api_ask"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/forecasting/accuracy": {
         parameters: {
             query?: never;
@@ -3482,6 +3499,38 @@ export interface components {
             /** Underintervals */
             underIntervals: number;
         };
+        /** CopilotActionOut */
+        CopilotActionOut: {
+            /** Label */
+            label: string;
+            /** Path */
+            path: string;
+        };
+        /** CopilotAnswerOut */
+        CopilotAnswerOut: {
+            /** Actions */
+            actions: components["schemas"]["CopilotActionOut"][];
+            /** Answer */
+            answer: string;
+            /** Refused */
+            refused: boolean;
+            /** Sources */
+            sources: components["schemas"]["CopilotSourceOut"][];
+            /** Suggestions */
+            suggestions: string[];
+        };
+        /** CopilotAskIn */
+        CopilotAskIn: {
+            /** Question */
+            question: string;
+        };
+        /** CopilotSourceOut */
+        CopilotSourceOut: {
+            /** Rows */
+            rows: number;
+            /** Tool */
+            tool: string;
+        };
         /** Coverage */
         Coverage: {
             /** Intervalstotal */
@@ -3758,7 +3807,7 @@ export interface components {
          * Feature
          * @enum {string}
          */
-        Feature: "telephony" | "forecasting" | "scheduling" | "people" | "optimisation" | "overtime" | "insight" | "capacity" | "intraday" | "service_desk";
+        Feature: "telephony" | "forecasting" | "scheduling" | "people" | "optimisation" | "overtime" | "insight" | "capacity" | "intraday" | "service_desk" | "copilot";
         /** FilterIn */
         FilterIn: {
             /**
@@ -7009,6 +7058,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ContractOut"];
+                };
+            };
+        };
+    };
+    wfm_copilot_api_ask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopilotAskIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CopilotAnswerOut"];
                 };
             };
         };
