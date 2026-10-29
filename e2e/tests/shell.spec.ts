@@ -86,6 +86,10 @@ test.describe('agent', () => {
 test.describe('admin', () => {
   test('sees configuration and the audit log', async ({ page }) => {
     await signIn(page, 'admin')
+    // Admin screens sit under Settings at the foot of the sidebar.
+    await nav(page)
+      .getByRole('button', { name: /^Settings/ })
+      .click()
     await expect(nav(page).getByRole('link', { name: 'Configure' })).toBeVisible()
     await expect(nav(page).getByRole('link', { name: 'Audit log' })).toBeVisible()
   })

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import { PASSWORD, signIn, signOut } from './helpers'
+import { openAccountMenu, PASSWORD, signIn, signOut } from './helpers'
 
 /**
  * MOB-01: the agent and lead pages work at phone width. Runs in the `mobile` project (a Pixel 7,
@@ -51,6 +51,7 @@ test.describe('the agent on a phone @mobile', () => {
   test('the menu and account buttons are big enough to hit', async ({ page }) => {
     await signIn(page, 'agent')
     await expectBigEnough(page, 'Open navigation')
+    await page.getByRole('button', { name: 'Open navigation' }).click() // the account card is in the drawer
     await expectBigEnough(page, /^Account menu/)
   })
 
@@ -81,7 +82,7 @@ test.describe('the agent on a phone @mobile', () => {
 
   test('the account menu opens inside the screen and signs out', async ({ page }) => {
     await signIn(page, 'agent')
-    await page.getByRole('button', { name: /^Account menu/ }).click()
+    await openAccountMenu(page)
     const menu = page.getByRole('menu', { name: 'Account' })
     await expect(menu).toBeInViewport({ ratio: 1 })
     await expectNoSidewaysScroll(page)
