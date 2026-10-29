@@ -204,7 +204,7 @@ test('a lead cannot see or decide leave of someone outside their team, a planner
   const headers = () => ({ 'X-CSRFToken': csrf })
   const created = await page.request.post('/api/v1/scheduling/employees', {
     headers: headers(),
-    data: { empNo: `U${id}`, name: `Unmanaged ${id}`, skills: [] },
+    data: { empNo: `E2E-U${id}`, name: `E2E Unmanaged ${id}`, skills: [] },
   })
   expect(created.status()).toBe(201)
   const employeeId = (await created.json()).id

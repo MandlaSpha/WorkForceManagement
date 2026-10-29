@@ -11,12 +11,12 @@ const TABS = [
   { key: 'three', label: 'Three' },
 ]
 
-function mount(initial = 'one') {
+function mount(initial = 'one', variant = 'underline') {
   const chosen = ref(initial)
   render({
     components: { TabBar },
     setup: () => ({ chosen, TABS }),
-    template: '<TabBar v-model="chosen" :tabs="TABS" label="Things" id-prefix="x" />',
+    template: `<TabBar v-model="chosen" :tabs="TABS" label="Things" id-prefix="x" variant="${variant}" />`,
   })
   return chosen
 }
@@ -78,5 +78,17 @@ describe('TabBar', () => {
     screen.getByRole('tab', { name: 'Two' }).focus()
     await user.keyboard('a{ArrowDown}')
     expect(chosen.value).toBe('two')
+  })
+
+  it('keeps the same roles, keys and ids as a segmented pill control', async () => {
+    // Failure caught: the restyled variant losing the tab semantics the underline strip has.
+    const chosen = mount('one', 'pill')
+    const user = userEvent.setup()
+    expect(screen.getByRole('tablist', { name: 'Things' })).toHaveClass('rounded-full')
+    expect(screen.getByRole('tab', { name: 'Two' })).toHaveAttribute('aria-controls', 'x-panel-two')
+    screen.getByRole('tab', { name: 'One' }).focus()
+    await user.keyboard('{ArrowRight}')
+    expect(chosen.value).toBe('two')
+    expect(screen.getByRole('tab', { name: 'Two' })).toHaveFocus()
   })
 })

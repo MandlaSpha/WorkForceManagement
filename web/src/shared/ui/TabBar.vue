@@ -11,6 +11,9 @@ const props = defineProps<{
   /** Prefix for the element ids: the tab is `${idPrefix}-tab-${key}`, its panel should be
    * `${idPrefix}-panel-${key}` so the two point at each other. */
   idPrefix: string
+  /** `underline` is the classic strip; `pill` is the segmented control: a soft rounded track
+   * with the chosen tab raised on it. Same roles, keys and ids either way. */
+  variant?: 'underline' | 'pill'
 }>()
 const model = defineModel<string>({ required: true })
 
@@ -40,19 +43,38 @@ function onKey(event: KeyboardEvent): void {
 </script>
 
 <template>
-  <div class="flex gap-1 overflow-x-auto border-b border-line" role="tablist" :aria-label="label">
+  <div
+    class="flex gap-1 overflow-x-auto"
+    :class="
+      variant === 'pill'
+        ? 'max-w-full rounded-full bg-surface-muted p-1 shadow-[inset_0_0_0_1px_var(--line)]'
+        : 'border-b border-line'
+    "
+    role="tablist"
+    :aria-label="label"
+  >
     <button
       v-for="t in tabs"
       :id="`${idPrefix}-tab-${t.key}`"
       :key="t.key"
       type="button"
       role="tab"
-      class="-mb-px whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium"
-      :class="
-        model === t.key
-          ? 'border-brand text-brand-ink'
-          : 'border-transparent text-ink-muted hover:text-ink'
-      "
+      class="whitespace-nowrap text-sm font-medium"
+      :class="[
+        variant === 'pill'
+          ? [
+              'press min-h-9 rounded-full px-4 py-1.5',
+              model === t.key
+                ? 'bg-surface text-ink shadow-[var(--shadow-card)]'
+                : 'text-ink-muted hover:text-ink',
+            ]
+          : [
+              '-mb-px border-b-2 px-4 py-2',
+              model === t.key
+                ? 'border-brand text-brand-ink'
+                : 'border-transparent text-ink-muted hover:text-ink',
+            ],
+      ]"
       :aria-selected="model === t.key"
       :aria-controls="`${idPrefix}-panel-${t.key}`"
       :tabindex="model === t.key ? 0 : -1"

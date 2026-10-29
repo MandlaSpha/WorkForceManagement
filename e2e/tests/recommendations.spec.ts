@@ -44,7 +44,10 @@ test('a planner applies suggestions one at a time and the list recalculates, and
   await page.getByLabel('End').fill('10:30')
   await page.getByLabel('Paid minutes').fill('30')
   await page.getByRole('button', { name: 'Add shift' }).click()
-  await expect(page.getByRole('list', { name: 'Shifts' }).getByText(shift)).toBeVisible()
+  await page.getByLabel('Search shifts').fill(shift)
+  await expect(
+    page.getByRole('table', { name: 'Shifts' }).getByRole('rowheader', { name: shift }),
+  ).toBeVisible()
   await page.getByRole('tab', { name: 'Queues' }).click()
   const settings = page.getByRole('form', { name: `Staffing settings for ${queue}` })
   await settings.getByRole('button', { name: 'Confirm settings' }).click()

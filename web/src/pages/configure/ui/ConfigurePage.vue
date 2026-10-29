@@ -25,11 +25,19 @@ const TABS = [
 </script>
 
 <template>
-  <PageHeader eyebrow="Admin" :title="screen?.label ?? 'Configure'" :subtitle="screen?.subtitle" />
+  <PageHeader eyebrow="Admin" :title="screen?.label ?? 'Configure'" :subtitle="screen?.subtitle">
+    <template #actions>
+      <TabBar
+        v-model="tab"
+        :tabs="TABS"
+        label="Configuration"
+        id-prefix="configure"
+        variant="pill"
+      />
+    </template>
+  </PageHeader>
 
   <div class="space-y-6">
-    <TabBar v-model="tab" :tabs="TABS" label="Configuration" id-prefix="configure" />
-
     <div
       v-if="tab === 'shifts'"
       id="configure-panel-shifts"
@@ -64,11 +72,14 @@ const TABS = [
       aria-labelledby="configure-tab-queues"
       class="space-y-4"
     >
-      <p class="text-sm text-ink-muted">
+      <p class="max-w-2xl text-sm text-ink-muted">
         The staffing assumptions behind every requirement. Until an admin confirms them they are
         defaults, and every screen that rests on them says so.
       </p>
-      <p v-if="queues.isPending.value" class="text-sm text-ink-muted">Loading…</p>
+      <div v-if="queues.isPending.value" class="space-y-3" aria-busy="true" aria-label="Loading">
+        <div class="skeleton h-14" />
+        <div class="skeleton h-14" />
+      </div>
       <NoticeBox v-else-if="queues.isError.value" tone="danger">
         Could not load the queues. {{ problemMessage(queues.error.value) }}
       </NoticeBox>

@@ -5,6 +5,10 @@ Every end-to-end run imports a small made-up report into the dev database, in a 
 queues' forecasts, calls, intervals and import batches so they do not pile up next to real data.
 A batch is deleted only when ALL of its calls were in test queues.
 
+It also removes the other made-up rows the specs leave: shift templates, employees (with the leave,
+overtime and swap rows made for them), customers and forecast events, found by the tight patterns
+below and never when something real still points at them.
+
 It lives in its own app, installed only in development and test settings, because it must know
 every feature that holds data about a queue and so sits at the top of the dependency graph: the
 feature apps must never import it, and production does not contain it at all.
@@ -12,19 +16,36 @@ feature apps must never import it, and production does not contain it at all.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 from django.db import transaction
-from django.db.models import PROTECT, ForeignObjectRel
+from django.db.models import PROTECT, ForeignObjectRel, Model, ProtectedError
 
 from wfm.audit import services as audit
 from wfm.audit.models import Action
-from wfm.forecasting.models import ForecastVersion
+from wfm.contracts.models import Customer
+from wfm.forecasting.models import ForecastEvent, ForecastVersion
+from wfm.scheduling.models import Employee, ShiftTemplate
 from wfm.telephony.models import CallRecord, ImportBatch, IntervalActual, Queue
 
 DEFAULT_PREFIX = "E2E Queue"
+
+# Made-up rows the browser specs leave besides queues. Each pattern is deliberately tight, so a
+# real row can only match by looking exactly like test data, and a row is only deleted when
+# nothing real still points at it (see _purge_one). New specs should name their data with the
+# "E2E" marker; the older shapes stay listed so rows from earlier runs are still cleaned.
+#   shift code:  E2E123456, E2EA1234 (current) | T123456, SA4318, SB4318, A123456, C123456 (old)
+SHIFT_CODE = re.compile(r"E2E[A-Z]?\d+|T\d{4,}|S[AB]\d{3,}|[AC]\d{5,}")
+#   employee number: E2E-123456A (current) | T123456A, SA..., U..., I..., O..., R..., A..., C...
+EMP_NO = re.compile(r"E2E-[A-Z0-9-]+|(?:T|SA|U|I|O|R|A|C)\d{4,}[A-Z0-9]?")
+#   employee name: "E2E Pat 123456" (current) | "Pat Example 123456", "Unmanaged 123456", ...
+#   BOTH the number and the name must match, and the person must have no login attached.
+EMP_NAME = re.compile(r"E2E .+|[A-Za-z]+ [A-Za-z]+ \d{3,}|Unmanaged \d{3,}")
+CUSTOMER_PREFIX = "E2E Customer "
+EVENT_NAME = re.compile(r"Payment run \d{4,}|E2E .+")
 
 
 class Command(BaseCommand):
@@ -44,9 +65,6 @@ class Command(BaseCommand):
         if len(prefix) < 3:
             raise CommandError("The prefix is too short to be safe.")
         queues = list(Queue.objects.filter(name__startswith=prefix))
-        if not queues:
-            self.stdout.write("Nothing to purge.")
-            return
 
         with transaction.atomic():
             calls = forecasts = 0
@@ -73,14 +91,85 @@ class Command(BaseCommand):
                     **{f"{relation.field.name}__in": queues}
                 ).delete()
             Queue.objects.filter(pk__in=[q.pk for q in queues]).delete()
+
+            # After the queues, so their rosters are gone and a test shift is no longer "in use".
+            extras = {
+                "employees": self._purge(
+                    Employee.objects.filter(user__isnull=True),
+                    lambda e: bool(EMP_NO.fullmatch(e.emp_no) and EMP_NAME.fullmatch(e.name)),
+                    with_dependents=True,
+                ),
+                "shifts": self._purge(
+                    ShiftTemplate.objects.all(), lambda t: bool(SHIFT_CODE.fullmatch(t.code))
+                ),
+                "customers": self._purge(
+                    Customer.objects.filter(name__startswith=CUSTOMER_PREFIX),
+                    lambda c: True,
+                    with_dependents=True,
+                ),
+                "events": self._purge(
+                    ForecastEvent.objects.all(), lambda e: bool(EVENT_NAME.fullmatch(e.name))
+                ),
+            }
+            if not queues and not any(v[0] for v in extras.values()):
+                self.stdout.write("Nothing to purge.")
+                return
+            reason = f"{calls} calls, {len(batch_ids)} imports, {forecasts} forecasts"
+            for label, (removed, _, _) in extras.items():
+                if removed:
+                    reason += f", {removed} {label}"
             audit.record(  # last write of the transaction
                 actor=None,
                 action=Action.DEV_DATA_PURGED,
                 entity_type="queue",
                 entity_id=prefix,
-                reason=f"{calls} calls, {len(batch_ids)} imports, {forecasts} forecasts",
+                reason=reason,
             )
         self.stdout.write(
             f"Purged {calls} calls, {len(batch_ids)} imports and {forecasts} forecasts "
             f"from {len(queues)} test queue(s)."
         )
+        for label, (removed, kept, rows) in extras.items():
+            self.stdout.write(
+                f"Purged {removed} {label} ({rows} rows in all); kept {kept} still in use."
+            )
+
+    @staticmethod
+    def _purge(
+        candidates: Any, is_test: Any, with_dependents: bool = False
+    ) -> tuple[int, int, int]:
+        """Delete the candidates that look like test data. Returns (removed, kept, rows).
+
+        An object that something else still points at (PROTECT) is kept, unless it is a person or
+        customer that is itself test data: then the rows that depend on it go first, because they
+        were made for it. Each object is tried in its own savepoint so one kept object never
+        blocks the rest.
+        """
+        removed = kept = rows = 0
+        for obj in [o for o in candidates if is_test(o)]:
+            try:
+                with transaction.atomic():
+                    count = 0
+                    if with_dependents:
+                        count += _delete_protected_dependents(obj)
+                    count += obj.delete()[0]
+            except ProtectedError:
+                kept += 1
+                continue
+            removed += 1
+            rows += count
+        return removed, kept, rows
+
+
+def _delete_protected_dependents(obj: Model) -> int:
+    """Delete rows that point at obj with PROTECT (a contract of a customer, a swap of a person)."""
+    total = 0
+    for relation in type(obj)._meta.get_fields(include_hidden=True):
+        if not isinstance(relation, ForeignObjectRel) or relation.on_delete is not PROTECT:
+            continue
+        if relation.related_model is None:
+            continue
+        total += relation.related_model._base_manager.filter(**{relation.field.name: obj}).delete()[
+            0
+        ]
+    return total
