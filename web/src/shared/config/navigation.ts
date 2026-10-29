@@ -350,6 +350,17 @@ export const NAV_ITEMS = [
     phase: 0,
     subtitle: 'Report packs emailed on a schedule you choose, to people on allowed domains.',
   },
+  {
+    key: 'copilot',
+    path: '/copilot',
+    label: 'Copilot',
+    group: 'Insight',
+    icon: 'sparkles',
+    feature: 'copilot',
+    phase: 0,
+    subtitle:
+      'Ask a question in plain words. It answers only from what your role can already see, and it cannot change anything.',
+  },
 
   {
     key: 'configure',

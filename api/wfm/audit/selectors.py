@@ -18,6 +18,15 @@ MAX_PAGE_SIZE = 200
 EXPORT_CAP = 10_000
 
 
+def count_recent(*, actor_user_id: int, action: str, since: datetime) -> int:
+    """How many successful events of one kind the person caused since a moment (used for rate
+    limits). It counts the person's OWN events only and returns a number, so it needs no role
+    scope."""
+    return AuditEvent.objects.filter(
+        actor_user_id=actor_user_id, action=action, occurred_at__gte=since, outcome=Outcome.SUCCESS
+    ).count()
+
+
 @dataclass(frozen=True, slots=True)
 class Filters:
     actor: str = ""  # part of a username; "system" matches events with no user

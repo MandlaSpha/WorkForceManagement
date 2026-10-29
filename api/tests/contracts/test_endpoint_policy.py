@@ -166,6 +166,7 @@ MODULE_FEATURE = {
     "/api/v1/service-desk": "service_desk",
     "/api/v1/people": "people",
     "/api/v1/overtime": "overtime",
+    "/api/v1/copilot": "copilot",
     # Auto-scheduling and recommendations are the optimisation feature, though they live with the
     # roster they act on: the most specific prefix wins.
     "/api/v1/scheduling/roster/auto-schedule": "optimisation",

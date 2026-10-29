@@ -132,6 +132,7 @@ class Action(models.TextChoices):
     CONTRACT_CREATED = "contract.created", "Contract added"
     CONTRACT_CHANGED = "contract.changed", "Contract changed"
     QUEUE_SETTINGS_CHANGED = "queue.settings_changed", "Queue staffing settings changed"
+    COPILOT_ASKED = "copilot.asked", "A question was put to the Copilot"
     AUDIT_VIEWED = "audit.viewed", "Audit log searched or viewed"
     AUDIT_EXPORTED = "audit.exported", "Audit log exported"
     CHAIN_BROKEN = "audit.chain_broken", "Audit chain integrity check failed"

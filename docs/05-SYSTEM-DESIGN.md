@@ -152,7 +152,7 @@ flowchart LR
 | Tenant mix-up (if UIF becomes a second deployment) | Separate deployment per customer (single-tenant), not shared tables — open question #7 in requirements |
 | Secrets in repo | Environment variables / Azure Key Vault; `.env` ignored |
 | POPIA | SA region, encryption at rest and in transit, subject-access export and deletion endpoints, audit of reads of sensitive fields |
-| (Parked) LLM leaks data across roles, or is tricked by planted text | Only if the Copilot is ever built: it is identity-bound, tool-only, read-only and gets no pre-loaded data; tools reuse the scoping layer; output check and templated refusals; injection-fenced tool output; per-user audit; adversarial tests gate release (requirements §3.12, tech spec §8.1) |
+| Copilot leaks data across roles, or is tricked by planted text (built in v1) | Identity-bound, tool-only, read-only and gets no pre-loaded data; tools reuse the scoping layer through selectors only (a layer test enforces it); the rule-based default means no text reaches a model; output check, one templated refusal, injection-fenced tool output for any future model adapter; every question audited; the adversarial role-leak suite gates release (requirements §3.12, tech spec §8.1 and §12) |
 
 ### 5.1 Audit trail
 
@@ -305,7 +305,7 @@ Pure engine → unit; API + DB + role matrix → integration on a Testcontainers
 | D4 | PostgreSQL only | Add a time-series/OLAP store | Volumes are small; one store simplifies consistency |
 | D5 | Celery + Valkey | Redis, RQ, Django-Q | Mature, free, BSD; Redis licence changed |
 | D6 | Server sessions + CSRF | JWT in browser storage | Same-origin SPA; easier revocation; less token-theft surface |
-| D7 | Copilot parked (not a requirement). If ever built: role-scoped by construction (tools over the scoped service layer, never direct DB access or text-to-SQL) | Build now | Not asked for by UIF/Gijima; design rules kept in requirements §3.12 and tech spec §8.1 |
+| D7 | Copilot v1 built (29 Oct 2026): pluggable answerer with a rule-based default, core questions per role, read-only; role-scoped by construction (fixed read tools over the scoped selectors, never direct DB access or text-to-SQL). A model-backed answerer stays parked until a provider is chosen (AI-10) | Build now | Owner decision; design rules in requirements §3.12 and tech spec §8.1, as built in §12 |
 | D8 | Single-tenant deployments | Shared multi-tenant schema | Stronger isolation for a Gijima/UIF split; VMK proposal already says "single-tenant" |
 | D9 | CP-SAT for rostering | Heuristics only, commercial solvers | Free, strong constraint modelling; time-boxed |
 | D10 | Measured vs modelled in the API contract | Free-form numbers | Core to the product's credibility |
