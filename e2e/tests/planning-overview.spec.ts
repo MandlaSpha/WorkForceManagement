@@ -82,7 +82,9 @@ test('leads see the overview; executives and agents do not, in the screen or in 
   await signOut(page)
 
   await signIn(page, 'executive')
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: /^Good (morning|afternoon|evening)/ }),
+  ).toBeVisible()
   await expect(page.getByRole('heading', { name: /^Planning, week of/ })).toHaveCount(0)
   const week = nextMonday()
   const refused = await page.request.get(`/api/v1/scheduling/overview?week_start=${week}`)

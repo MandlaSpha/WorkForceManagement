@@ -550,6 +550,15 @@ Insight > Call detail (feature `telephony`); `GET /api/v1/telephony/call-detail?
 - **Erasure** (4.19): the logins of the person (read before the `AgentLogin` rows are deleted) are replaced with `erased-<token>` on `CallRecord.agent_login`, `AgentOffer.agent_login` and `CallTransfer.by_login`; the same token for all of one person's logins and the token of their `ERASED-` number. Rows are kept, so offered, answered, ring and transfer counts per queue and day do not move. The preview lists `callRecordLogins`, `offerLogins`, `transferLogins`, and the audit event holds those counts (`removed_*`). `unmapped_logins` ignores `erased-` logins. Open decision for the owner: whether `CallRecord.agent_login` should be replaced (done here, so an offer cannot be joined back to the person through the call) or kept as before.
 - **Not built:** small-number suppression for a team of one or two, a queue filter on the screen, per-day ring-no-answer, and a cross-check of the IVR "reached the queue" rule against the real file (it assumes `queue_at` is empty for a call that never queued).
 
+### 4.32 Chart and motion primitives (web, `shared/ui`)
+Hand-rolled SVG/HTML, no charting dependency. `Sparkline`, `StackedBar`, `BarSeries`, `DeltaChip`, `StatTile`, `CountUp` (with `useCountUp`) and the upgraded `IntervalChart`. Rules:
+
+- **Honest data.** No data gives a plain message, never a fake line; a `null` value is an empty slot or a broken line, never zero; a single point or an all-zero series never produces NaN. Sparklines and deltas are drawn only from a series or comparison the API really returns (the dashboard sparkline is the week's daily gap; the service figures have no prior month in the API, so they carry no delta).
+- **Accessible.** Each chart is `role="img"` with an `aria-label` summary (or a legend with the numbers beside it); bars are focusable (`tabindex=0`) and show a tooltip card on hover and on keyboard focus; `DeltaChip` says "Up 3.0%" in hidden text and uses an arrow and a sign, so colour is never the only signal.
+- **Colour.** Only tokens: `--chart-1..4` and `--chart-grid` (both themes), plus `--ok`, `--danger`. Graphics meet 3:1 against the surface; text next to them uses `--ink`.
+- **Motion.** CSS animations only (stroke draw, grow-in, fade), 0.4 to 0.6 s, `cubic-bezier(.2,.7,.2,1)`, declared inside `@media (prefers-reduced-motion: no-preference)`, so they are off under reduced motion (and wherever `matchMedia` is missing, as in tests). `useCountUp` always holds the final formatted text in `text`; `shown` is only the paint value while `animating`, and is instant under reduced motion. `CountUp` puts the final value in a screen-reader-only span while it animates.
+- **Greeting.** `greeting()` in `shared/lib/datetime` (morning / afternoon / evening by Africa/Johannesburg time, first word of the display name). The name is on screen only; never in telemetry or logs.
+
 ## 11. Feature switches (licensing)
 Modules are sold separately, so each is a **feature** (`wfm/core/features.py`) that can be switched off for a customer that no longer pays for it (requirements section 3.17).
 

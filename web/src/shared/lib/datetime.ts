@@ -43,6 +43,31 @@ export function dayOf(iso: string): string {
   return DAY.format(new Date(iso))
 }
 
+const HOUR = new Intl.DateTimeFormat('en-GB', { timeZone: ZONE, hour: '2-digit', hour12: false })
+const LONG_DAY = new Intl.DateTimeFormat('en-ZA', {
+  timeZone: ZONE,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+})
+
+/** morning / afternoon / evening by South African local time. */
+export function partOfDay(now: Date): 'morning' | 'afternoon' | 'evening' {
+  const hour = Number(HOUR.format(now)) % 24
+  return hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening'
+}
+
+/** "Good morning, Thandi". The name is for the screen only: never send it to telemetry or logs. */
+export function greeting(now: Date, displayName: string | null | undefined): string {
+  const first = (displayName ?? '').trim().split(/\s+/)[0] ?? ''
+  return first ? `Good ${partOfDay(now)}, ${first}` : `Good ${partOfDay(now)}`
+}
+
+/** "Thursday 29 October" in South African time. */
+export function longDay(now: Date): string {
+  return LONG_DAY.format(now)
+}
+
 /** The South African clock time of a moment, as `HH:mm`. */
 export function timeOf(iso: string): string {
   return TIME.format(new Date(iso))

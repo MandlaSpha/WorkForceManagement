@@ -142,7 +142,7 @@ describe('who sees it', () => {
     'does not show it to %s, and does not even ask for it',
     async (role) => {
       await open(role)
-      await screen.findByRole('heading', { name: 'Dashboard' })
+      await screen.findByRole('heading', { name: /^Good (morning|afternoon|evening)/ })
       expect(screen.queryByText(/^Planning, week of/)).toBeNull()
       expect(backend.requests.filter((r) => r.path === '/api/v1/scheduling/overview')).toEqual([])
     },
@@ -153,7 +153,32 @@ describe('who sees it', () => {
     backend.overview = overviewOf()
     backend.features = backend.features.filter((f) => f !== 'scheduling')
     await openScheduling('/')
-    await screen.findByRole('heading', { name: 'Dashboard' })
+    await screen.findByRole('heading', { name: /^Good (morning|afternoon|evening)/ })
     expect(screen.queryByText(/^Planning, week of/)).toBeNull()
+  })
+})
+
+describe('the planning hero', () => {
+  it('sums the week up in one sentence from the server figures', async () => {
+    await open()
+    // Failure caught: a sentence that names the wrong queue or counts queues without a forecast.
+    expect(await screen.findByTestId('hero-summary')).toHaveTextContent(
+      /queues? (is|are) short this week; QueueB is the worst\./,
+    )
+  })
+
+  it('draws covered against short half-hours and says which queues are left out', async () => {
+    await open()
+    const bar = within(await screen.findByTestId('coverage-bar'))
+    expect(bar.getByRole('img')).toHaveAccessibleName(/92 half-hours covered and 4 short/)
+    expect(bar.getByText(/1 queue has no forecast/)).toBeVisible()
+    // The fixture week is in the past, so there is no "Today" marker.
+    expect(bar.queryByTestId('stacked-marker')).toBeNull()
+  })
+
+  it('draws the week gap as a sparkline from the real daily figures', async () => {
+    await open()
+    const tile = within(await screen.findByTestId('card-gap'))
+    expect(tile.getByRole('img')).toHaveAccessibleName('Coverage gap for each day of the week')
   })
 })

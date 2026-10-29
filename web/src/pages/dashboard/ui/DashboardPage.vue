@@ -6,6 +6,7 @@ import { useKpis, useMonths } from '@/entities/call-data'
 import { canOpen, isAvailable, useSessionStore } from '@/entities/session'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
+import { greeting, longDay } from '@/shared/lib/datetime'
 import { formatMonth } from '@/shared/lib/month'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
@@ -20,6 +21,11 @@ const mayImport = computed(() => (session.user ? canOpen(session.user, 'imports'
 const hasCallData = computed(() =>
   session.user ? isAvailable(session.user.features, 'imports') : false,
 )
+
+// Shown on screen only: the name is never sent to telemetry or logs.
+const now = new Date()
+const today = longDay(now)
+const hello = computed(() => greeting(now, session.user?.displayName))
 
 const range = useMonths(hasCallData)
 const months = computed(() => range.data.value?.months ?? [])
@@ -48,7 +54,7 @@ const showPlanning = computed(
 </script>
 
 <template>
-  <PageHeader eyebrow="Overview" title="Dashboard" :subtitle="dashboard?.subtitle" />
+  <PageHeader :eyebrow="today" :title="hello" :subtitle="dashboard?.subtitle" />
 
   <div v-if="showPlanning" class="mb-8"><PlanningOverview /></div>
 

@@ -9,6 +9,7 @@ import {
   type KpiSummary,
 } from '@/entities/call-data'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 
 const props = defineProps<{ summary: KpiSummary; periodLabel: string }>()
 
@@ -65,19 +66,20 @@ const tiles = computed(() => [
 
     <template v-else>
       <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Service figures">
-        <li
+        <!-- No delta chips: the API returns one month at a time, so there is no prior-month figure
+             to compare with, and none is invented. -->
+        <StatTile
           v-for="tile in tiles"
           :key="tile.key"
-          class="rounded-xl border border-line bg-surface p-4"
+          :label="tile.label"
+          :value="tile.value"
           :data-testid="`tile-${tile.key}`"
         >
-          <p class="text-xs font-medium text-ink-muted">{{ tile.label }}</p>
-          <p class="mt-1 text-2xl font-semibold tabular-nums text-ink">{{ tile.value }}</p>
-          <p class="mt-1 text-xs text-ink-muted">{{ tile.note }}</p>
-          <p class="mt-2 text-[10px] font-semibold uppercase tracking-wide text-brand-ink">
+          {{ tile.note }}
+          <span class="mt-2 block text-[10px] font-semibold uppercase tracking-wide text-brand-ink">
             Measured
-          </p>
-        </li>
+          </span>
+        </StatTile>
       </ul>
 
       <p class="text-xs text-ink-muted" data-testid="coverage">

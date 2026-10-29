@@ -15,7 +15,10 @@ import {
 import { useContextStore } from '@/features/context-filters'
 import { problemMessage } from '@/shared/api'
 import { formatDayLabel } from '@/shared/lib/datetime'
+import { todayInJohannesburg } from '@/shared/lib/week'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
+import StackedBar from '@/shared/ui/StackedBar.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 
 const context = useContextStore()
 const router = useRouter()
@@ -24,6 +27,44 @@ const overview = useOverview(computed(() => context.weekStart))
 const data = computed(() => overview.data.value)
 const anyForecast = computed(() => (data.value?.totals.queuesWithForecast ?? 0) > 0)
 const worstDay = computed(() => Math.max(0, ...(data.value?.days.map((d) => d.gap) ?? [0])))
+
+const queuesWithoutForecast = computed(
+  () => (data.value?.totals.queues ?? 0) - (data.value?.totals.queuesWithForecast ?? 0),
+)
+
+/** One honest sentence from the server's own figures. */
+const summary = computed(() => {
+  const d = data.value
+  if (!d) return ''
+  if (d.totals.queues === 0) return 'There are no queues yet.'
+  if (!anyForecast.value) return 'No queue has a published forecast for this week yet.'
+  const short = d.queues.filter((q) => q.intervalsKnown > 0 && q.gap > 0)
+  if (short.length === 0) return 'Every queue with a forecast is covered this week.'
+  const worstQueue = short.reduce((a, b) => (b.gap > a.gap ? b : a))
+  const n = short.length
+  return `${n} ${n === 1 ? 'queue is' : 'queues are'} short this week; ${worstQueue.queue} is the worst.`
+})
+
+const coverageSegments = computed(() => {
+  const t = data.value?.totals
+  const known = t?.intervalsKnown ?? 0
+  const under = t?.underIntervals ?? 0
+  return [
+    { key: 'covered', label: 'Covered', value: Math.max(0, known - under), tone: 'ok' as const },
+    { key: 'short', label: 'Short', value: under, tone: 'danger' as const },
+  ]
+})
+const coverageSummary = computed(
+  () =>
+    `${coverageSegments.value[0]!.value} half-hours covered and ${coverageSegments.value[1]!.value} short, across queues with a forecast.`,
+)
+
+/** Only when today is inside the shown week; position is the share of the week gone. */
+const todayMarker = computed(() => {
+  const days = data.value?.days ?? []
+  const i = days.findIndex((d) => d.day === todayInJohannesburg())
+  return i < 0 ? null : { label: 'Today', at: (i + 0.5) / days.length }
+})
 
 const SEVERITY_CLASS: Record<string, string> = {
   critical: 'bg-danger-soft text-danger',
@@ -74,39 +115,60 @@ function describe(item: Attention): string {
           rosters with. Run and publish forecasts on the Forecast screen.
         </NoticeBox>
 
+        <p class="max-w-3xl text-base text-ink" data-testid="hero-summary">{{ summary }}</p>
+
+        <div
+          v-if="anyForecast"
+          class="rounded-xl border border-line bg-surface p-4"
+          data-testid="coverage-bar"
+        >
+          <h3 class="text-sm font-semibold text-ink">Coverage this week</h3>
+          <p class="mb-2 text-xs text-ink-muted">
+            Half-hours with a forecast, covered or short. The marker shows how far through the week
+            today is.
+          </p>
+          <StackedBar
+            :segments="coverageSegments"
+            :summary="coverageSummary"
+            :marker="todayMarker"
+            unit="half-hours"
+          />
+          <p v-if="queuesWithoutForecast > 0" class="mt-2 text-xs text-ink-muted">
+            {{ queuesWithoutForecast }}
+            {{ queuesWithoutForecast === 1 ? 'queue has' : 'queues have' }} no forecast and
+            {{ queuesWithoutForecast === 1 ? 'is' : 'are' }} not counted in this bar.
+          </p>
+        </div>
+
         <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="Planning summary">
-          <li class="rounded-xl border border-line bg-surface p-4" data-testid="card-gap">
-            <p class="text-xs font-medium text-ink-muted">Coverage gap</p>
-            <p class="mt-1 text-xl font-semibold tabular-nums text-ink">
-              {{ anyForecast ? data.totals.gap : '\u2014' }}
-            </p>
-            <p class="text-xs text-ink-muted">people-half-hours short</p>
-          </li>
-          <li class="rounded-xl border border-line bg-surface p-4" data-testid="card-under">
-            <p class="text-xs font-medium text-ink-muted">Under-staffed intervals</p>
-            <p class="mt-1 text-xl font-semibold tabular-nums text-ink">
-              {{ shareLabel(data.totals.underIntervals, data.totals.intervalsKnown) }}
-            </p>
-          </li>
-          <li class="rounded-xl border border-line bg-surface p-4" data-testid="card-forecast">
-            <p class="text-xs font-medium text-ink-muted">Queues with a forecast</p>
-            <p class="mt-1 text-xl font-semibold tabular-nums text-ink">
-              {{ data.totals.queuesWithForecast }} of {{ data.totals.queues }}
-            </p>
-          </li>
-          <li class="rounded-xl border border-line bg-surface p-4" data-testid="card-rosters">
-            <p class="text-xs font-medium text-ink-muted">Rosters published</p>
-            <p class="mt-1 text-xl font-semibold tabular-nums text-ink">
-              {{ data.totals.rostersPublished }} of {{ data.totals.queues }}
-            </p>
-          </li>
-          <li class="rounded-xl border border-line bg-surface p-4" data-testid="card-headcount">
-            <p class="text-xs font-medium text-ink-muted">Headcount</p>
-            <p class="mt-1 text-xl font-semibold tabular-nums text-ink">
-              {{ data.totals.headcount }}
-            </p>
-            <p class="text-xs text-ink-muted">employed this week</p>
-          </li>
+          <StatTile
+            variant="feature"
+            label="Coverage gap"
+            :value="anyForecast ? data.totals.gap : '\u2014'"
+            :spark="anyForecast ? data.days.map((d) => d.gap) : undefined"
+            spark-label="Coverage gap for each day of the week"
+            data-testid="card-gap"
+          >
+            people-half-hours short
+          </StatTile>
+          <StatTile
+            label="Under-staffed intervals"
+            :value="shareLabel(data.totals.underIntervals, data.totals.intervalsKnown)"
+            data-testid="card-under"
+          />
+          <StatTile
+            label="Queues with a forecast"
+            :value="`${data.totals.queuesWithForecast} of ${data.totals.queues}`"
+            data-testid="card-forecast"
+          />
+          <StatTile
+            label="Rosters published"
+            :value="`${data.totals.rostersPublished} of ${data.totals.queues}`"
+            data-testid="card-rosters"
+          />
+          <StatTile label="Headcount" :value="data.totals.headcount" data-testid="card-headcount">
+            employed this week
+          </StatTile>
         </ul>
 
         <div class="grid gap-4 xl:grid-cols-3">

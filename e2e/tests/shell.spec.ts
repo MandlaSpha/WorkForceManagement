@@ -45,7 +45,9 @@ test.describe('planner', () => {
   test('sees planning screens but not admin screens, and can sign out', async ({ page }) => {
     await signIn(page, 'planner')
 
-    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: /^Good (morning|afternoon|evening)/ }),
+    ).toBeVisible()
     await expect(nav(page).getByRole('link', { name: 'Planner' })).toBeVisible()
     await expect(nav(page).getByRole('link', { name: 'Configure' })).toHaveCount(0)
     await expect(nav(page).getByRole('link', { name: 'Audit log' })).toHaveCount(0)

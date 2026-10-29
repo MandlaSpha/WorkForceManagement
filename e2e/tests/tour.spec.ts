@@ -94,7 +94,9 @@ test('@tour login, dark mode and the directory option', async ({ page }) => {
   await page.getByLabel('Username').fill('pat')
   await page.getByLabel('Password').fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: /^Good (morning|afternoon|evening)/ }),
+  ).toBeVisible()
   await shot(page, 'directory-planner--home')
 })
 
