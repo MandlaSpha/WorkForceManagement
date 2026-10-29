@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 /**
  * Every run leaves "E2E Queue ..." queues in the development database. This clears them when the
@@ -9,12 +9,17 @@ import { resolve } from 'node:path'
 export default function globalTeardown(): void {
   if (process.env.E2E_PURGE === '0') return
   try {
-    const out = execFileSync('python', ['-I', resolve(__dirname, '../infra/dev/purge_e2e.py')], {
-      encoding: 'utf8',
-      timeout: 200_000,
-    })
+    const out = execFileSync(
+      'python',
+      ['-I', fileURLToPath(new URL('../infra/dev/purge_e2e.py', import.meta.url))],
+      {
+        encoding: 'utf8',
+        timeout: 200_000,
+      },
+    )
     console.log(out.trim())
-  } catch {
-    console.log('e2e: could not clear the test queues; use the purge-e2e-data button in Aspire')
+  } catch (problem) {
+    const why = problem instanceof Error ? (problem.message.split('\n')[0] ?? '') : 'unknown'
+    console.log(`e2e: could not clear the test queues (${why}); use the purge button in Aspire`)
   }
 }

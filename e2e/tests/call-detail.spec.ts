@@ -22,7 +22,8 @@ test('a planner opens Call detail and sees every section, with no data said plai
   await expect(page.getByRole('heading', { name: 'Transfers, holds and mutes' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Incident links' })).toBeVisible()
   // Never a ranked table.
-  await expect(page.getByText(/rank|league/i)).toHaveCount(0)
+  // No rank or position column (the page says in words that the list is not ranked).
+  await expect(page.getByRole('columnheader', { name: /^(rank|position|#)$/i })).toHaveCount(0)
 })
 
 test('an executive sees aggregates only: no per-agent table and no incident numbers', async ({
