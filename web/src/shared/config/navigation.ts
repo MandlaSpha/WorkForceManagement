@@ -203,6 +203,17 @@ export const NAV_ITEMS = [
     subtitle: 'Offer, accept and approve shift swaps within the scheduling rules.',
   },
   {
+    key: 'team',
+    path: '/team',
+    label: 'Team',
+    group: 'People',
+    icon: 'users',
+    feature: 'people',
+    context: ['week'],
+    phase: 8,
+    subtitle: 'Your people for the week: hours, adherence, shifts and what is waiting on them.',
+  },
+  {
     key: 'employees',
     path: '/employees',
     label: 'Employees',

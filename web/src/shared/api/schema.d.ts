@@ -1525,6 +1525,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/people/team-overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A team's week: hours, adherence, shifts and waiting requests per person */
+        get: operations["wfm_people_team_api_team_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/imports": {
         parameters: {
             query?: never;
@@ -5926,6 +5943,114 @@ export interface components {
             /** Employeeid */
             employeeId?: number | null;
         };
+        /** TeamLeaveBalanceOut */
+        TeamLeaveBalanceOut: {
+            /** Availabledays */
+            availableDays: number | null;
+            /** Entitlementdays */
+            entitlementDays: number | null;
+            /** Leavetype */
+            leaveType: string;
+            /** Pendingdays */
+            pendingDays: number;
+            /** Takendays */
+            takenDays: number;
+        };
+        /** TeamManagerOut */
+        TeamManagerOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+        };
+        /** TeamOverviewOut */
+        TeamOverviewOut: {
+            /** Adherencethresholdpct */
+            adherenceThresholdPct: number;
+            /** Managers */
+            managers: components["schemas"]["TeamManagerOut"][];
+            /** People */
+            people: components["schemas"]["TeamPersonOut"][];
+            summary: components["schemas"]["TeamSummaryOut"];
+            /**
+             * Weekend
+             * Format: date
+             */
+            weekEnd: string;
+            /**
+             * Weekstart
+             * Format: date
+             */
+            weekStart: string;
+        };
+        /** TeamPendingLeaveOut */
+        TeamPendingLeaveOut: {
+            /** Days */
+            days: number;
+            /**
+             * Enddate
+             * Format: date
+             */
+            endDate: string;
+            /** Leavetype */
+            leaveType: string;
+            /**
+             * Startdate
+             * Format: date
+             */
+            startDate: string;
+        };
+        /** TeamPersonOut */
+        TeamPersonOut: {
+            /** Adherencepct */
+            adherencePct: number | null;
+            /** Checkin */
+            checkIn: boolean;
+            /** Contracthours */
+            contractHours: number;
+            /** Contracttype */
+            contractType: string;
+            /** Empno */
+            empNo: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Leavebalances */
+            leaveBalances: components["schemas"]["TeamLeaveBalanceOut"][];
+            /** Name */
+            name: string;
+            /** Ontrack */
+            onTrack: boolean | null;
+            /** Openswaps */
+            openSwaps: number;
+            /** Pendingleave */
+            pendingLeave: number;
+            /** Pendingrequests */
+            pendingRequests: components["schemas"]["TeamPendingLeaveOut"][];
+            /** Rosteredhours */
+            rosteredHours: number;
+            /** Shiftlist */
+            shiftList: components["schemas"]["TeamShiftOut"][];
+            /** Shifts */
+            shifts: number;
+        };
+        /** TeamShiftOut */
+        TeamShiftOut: {
+            /** Adherencepct */
+            adherencePct: number | null;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Endtime */
+            endTime: string;
+            /** Paidhours */
+            paidHours: number;
+            /** Shift */
+            shift: string;
+            /** Starttime */
+            startTime: string;
+        };
         /** TeamShrinkageOut */
         TeamShrinkageOut: {
             /** Assumedpct */
@@ -5940,6 +6065,21 @@ export interface components {
             plannedPct: string | null;
             /** Team */
             team: string;
+        };
+        /** TeamSummaryOut */
+        TeamSummaryOut: {
+            /** Contracthours */
+            contractHours: number;
+            /** Headcount */
+            headcount: number;
+            /** Ontrack */
+            onTrack: number;
+            /** Rosteredhours */
+            rosteredHours: number;
+            /** Rosteredpct */
+            rosteredPct: number | null;
+            /** Withadherence */
+            withAdherence: number;
         };
         /** TuningIn */
         TuningIn: {
@@ -8683,6 +8823,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SwapOut"];
+                };
+            };
+        };
+    };
+    wfm_people_team_api_team_overview: {
+        parameters: {
+            query?: {
+                week_start?: string | null;
+                manager_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamOverviewOut"];
                 };
             };
         };

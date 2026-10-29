@@ -9220,6 +9220,298 @@
         "title": "TakeIn",
         "type": "object"
       },
+      "TeamLeaveBalanceOut": {
+        "properties": {
+          "availableDays": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Availabledays"
+          },
+          "entitlementDays": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entitlementdays"
+          },
+          "leaveType": {
+            "title": "Leavetype",
+            "type": "string"
+          },
+          "pendingDays": {
+            "title": "Pendingdays",
+            "type": "number"
+          },
+          "takenDays": {
+            "title": "Takendays",
+            "type": "number"
+          }
+        },
+        "required": [
+          "leaveType",
+          "entitlementDays",
+          "takenDays",
+          "pendingDays",
+          "availableDays"
+        ],
+        "title": "TeamLeaveBalanceOut",
+        "type": "object"
+      },
+      "TeamManagerOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "TeamManagerOut",
+        "type": "object"
+      },
+      "TeamOverviewOut": {
+        "properties": {
+          "adherenceThresholdPct": {
+            "title": "Adherencethresholdpct",
+            "type": "number"
+          },
+          "managers": {
+            "items": {
+              "$ref": "#/components/schemas/TeamManagerOut"
+            },
+            "title": "Managers",
+            "type": "array"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/TeamPersonOut"
+            },
+            "title": "People",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/TeamSummaryOut"
+          },
+          "weekEnd": {
+            "format": "date",
+            "title": "Weekend",
+            "type": "string"
+          },
+          "weekStart": {
+            "format": "date",
+            "title": "Weekstart",
+            "type": "string"
+          }
+        },
+        "required": [
+          "weekStart",
+          "weekEnd",
+          "adherenceThresholdPct",
+          "summary",
+          "managers",
+          "people"
+        ],
+        "title": "TeamOverviewOut",
+        "type": "object"
+      },
+      "TeamPendingLeaveOut": {
+        "properties": {
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "endDate": {
+            "format": "date",
+            "title": "Enddate",
+            "type": "string"
+          },
+          "leaveType": {
+            "title": "Leavetype",
+            "type": "string"
+          },
+          "startDate": {
+            "format": "date",
+            "title": "Startdate",
+            "type": "string"
+          }
+        },
+        "required": [
+          "leaveType",
+          "startDate",
+          "endDate",
+          "days"
+        ],
+        "title": "TeamPendingLeaveOut",
+        "type": "object"
+      },
+      "TeamPersonOut": {
+        "properties": {
+          "adherencePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adherencepct"
+          },
+          "checkIn": {
+            "title": "Checkin",
+            "type": "boolean"
+          },
+          "contractHours": {
+            "title": "Contracthours",
+            "type": "number"
+          },
+          "contractType": {
+            "title": "Contracttype",
+            "type": "string"
+          },
+          "empNo": {
+            "title": "Empno",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "leaveBalances": {
+            "items": {
+              "$ref": "#/components/schemas/TeamLeaveBalanceOut"
+            },
+            "title": "Leavebalances",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "onTrack": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ontrack"
+          },
+          "openSwaps": {
+            "title": "Openswaps",
+            "type": "integer"
+          },
+          "pendingLeave": {
+            "title": "Pendingleave",
+            "type": "integer"
+          },
+          "pendingRequests": {
+            "items": {
+              "$ref": "#/components/schemas/TeamPendingLeaveOut"
+            },
+            "title": "Pendingrequests",
+            "type": "array"
+          },
+          "rosteredHours": {
+            "title": "Rosteredhours",
+            "type": "number"
+          },
+          "shiftList": {
+            "items": {
+              "$ref": "#/components/schemas/TeamShiftOut"
+            },
+            "title": "Shiftlist",
+            "type": "array"
+          },
+          "shifts": {
+            "title": "Shifts",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "employeeId",
+          "empNo",
+          "name",
+          "contractType",
+          "contractHours",
+          "rosteredHours",
+          "shifts",
+          "adherencePct",
+          "onTrack",
+          "pendingLeave",
+          "openSwaps",
+          "checkIn",
+          "shiftList",
+          "leaveBalances",
+          "pendingRequests"
+        ],
+        "title": "TeamPersonOut",
+        "type": "object"
+      },
+      "TeamShiftOut": {
+        "properties": {
+          "adherencePct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adherencepct"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "endTime": {
+            "title": "Endtime",
+            "type": "string"
+          },
+          "paidHours": {
+            "title": "Paidhours",
+            "type": "number"
+          },
+          "shift": {
+            "title": "Shift",
+            "type": "string"
+          },
+          "startTime": {
+            "title": "Starttime",
+            "type": "string"
+          }
+        },
+        "required": [
+          "day",
+          "shift",
+          "startTime",
+          "endTime",
+          "paidHours",
+          "adherencePct"
+        ],
+        "title": "TeamShiftOut",
+        "type": "object"
+      },
       "TeamShrinkageOut": {
         "properties": {
           "assumedPct": {
@@ -9270,6 +9562,51 @@
           "assumedPct"
         ],
         "title": "TeamShrinkageOut",
+        "type": "object"
+      },
+      "TeamSummaryOut": {
+        "properties": {
+          "contractHours": {
+            "title": "Contracthours",
+            "type": "number"
+          },
+          "headcount": {
+            "title": "Headcount",
+            "type": "integer"
+          },
+          "onTrack": {
+            "title": "Ontrack",
+            "type": "integer"
+          },
+          "rosteredHours": {
+            "title": "Rosteredhours",
+            "type": "number"
+          },
+          "rosteredPct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rosteredpct"
+          },
+          "withAdherence": {
+            "title": "Withadherence",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "headcount",
+          "withAdherence",
+          "onTrack",
+          "rosteredHours",
+          "contractHours",
+          "rosteredPct"
+        ],
+        "title": "TeamSummaryOut",
         "type": "object"
       },
       "TuningIn": {
@@ -14668,6 +15005,68 @@
           }
         ],
         "summary": "Reject a swap",
+        "tags": [
+          "people",
+          "people"
+        ]
+      }
+    },
+    "/api/v1/people/team-overview": {
+      "get": {
+        "operationId": "wfm_people_team_api_team_overview",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Week Start"
+            }
+          },
+          {
+            "in": "query",
+            "name": "manager_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Manager Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamOverviewOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "A team's week: hours, adherence, shifts and waiting requests per person",
         "tags": [
           "people",
           "people"
