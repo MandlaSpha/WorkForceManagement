@@ -6,43 +6,59 @@
 /* Semantic tokens: components use these names, never raw colours, so light and dark stay in step.
    Contrast checked for WCAG 2.1 AA on the pairs actually used (ink on canvas/surface, brand-contrast on brand). */
 :root {
-  --canvas: #f7f8fa;
-  --surface: #ffffff;
+  --canvas: #eceef2;
+  --surface: #fbfbfc;
   --surface-muted: #f1f3f6;
-  --line: #e2e6ec;
-  --ink: #12161d;
-  --ink-muted: #5a6473;
-  --brand: #14529f;
+  --line: #d9dce3;
+  --ink: #151a26;
+  --ink-muted: #586073;
+  --brand: #2a4fd0;
   --brand-contrast: #ffffff;
-  --brand-soft: #e6eefa;
-  --brand-ink: #14529f;
+  --brand-soft: #e1e8fb;
+  --brand-ink: #2546b8;
   --danger: #b42318;
   --danger-soft: #fdecea;
-  --warn: #9a5b00;
-  --warn-soft: #fff4d6;
-  --ok: #17692f;
-  --ok-soft: #e1f5e7;
-  --focus: #1f6fe0;
+  --warn: #8a5200;
+  --warn-soft: #fff1cf;
+  --ok: #0f6b52;
+  --ok-soft: #dcf3ea;
+  --focus: #2a4fd0;
+  /* The dark navy sidebar keeps its own colours in both themes. */
+  --side: #10182b;
+  --side-top: #182440;
+  --on-side: #e8ecf5;
+  --side-dim: #b4bdd2;
+  --side-faint: #8b95ad;
+  --side-hover: #ffffff14;
+  --side-line: #ffffff1f;
+  --side-pill: #eef2fb;
+  --on-side-pill: #10182b;
+  --shadow-card: 0 1px 2px #151c2e0a, 0 12px 32px -22px #151c2e47;
+  --shadow-pop: 0 24px 60px -18px #151c2e52, 0 2px 8px #151c2e14;
 }
 
 .dark {
-  --canvas: #0b1018;
-  --surface: #121923;
-  --surface-muted: #19222e;
-  --line: #263243;
+  --canvas: #0c0f14;
+  --surface: #141a22;
+  --surface-muted: #1b2129;
+  --line: #2a3340;
   --ink: #e8ecf2;
   --ink-muted: #a2adbd;
-  --brand: #2f6fd6;
-  --brand-contrast: #ffffff;
-  --brand-soft: #172742;
-  --brand-ink: #8db4f5;
+  --brand: #7b95ff;
+  --brand-contrast: #0c1020;
+  --brand-soft: #1d2748;
+  --brand-ink: #a9bbff;
   --danger: #ff8a7d;
   --danger-soft: #3a1714;
   --warn: #f2c15c;
   --warn-soft: #3a2c0b;
   --ok: #6fd48a;
   --ok-soft: #12301b;
-  --focus: #6aa2f0;
+  --focus: #9db2ff;
+  --side: #0d1424;
+  --side-top: #141d33;
+  --shadow-card: 0 1px 0 #ffffff08 inset, 0 16px 40px -26px #000000e6;
+  --shadow-pop: 0 24px 60px -18px #000000cc, 0 0 0 1px #ffffff14;
 }
 
 @theme inline {
@@ -62,9 +78,23 @@
   --color-warn-soft: var(--warn-soft);
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
+  --color-side: var(--side);
+  --color-side-top: var(--side-top);
+  --color-on-side: var(--on-side);
+  --color-side-dim: var(--side-dim);
+  --color-side-faint: var(--side-faint);
+  --color-side-hover: var(--side-hover);
+  --color-side-line: var(--side-line);
+  --color-side-pill: var(--side-pill);
+  --color-on-side-pill: var(--on-side-pill);
   --font-sans:
-    Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    sans-serif;
+    'Urbanist Variable', Urbanist, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  /* Rounder than the Tailwind defaults: controls 12px, tiles 20px, cards 24px. */
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
 }
 
 html {
@@ -145,4 +175,10 @@ body {
 .quiet-scroll:hover,
 .quiet-scroll:focus-within {
   scrollbar-color: var(--color-line, #cbd5e1) transparent;
+}
+
+/* Cards: the many panels written as `rounded-xl border border-line bg-surface` get the soft lift of
+   the new look without each one being edited. New code can use the same classes. */
+[class~='rounded-xl'][class~='bg-surface'] {
+  box-shadow: var(--shadow-card);
 }

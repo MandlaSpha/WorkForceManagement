@@ -92,17 +92,17 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 
 <template>
   <div class="flex h-full flex-col">
-    <div class="px-4 pb-2 pt-5">
+    <div class="px-5 pb-3 pt-5">
       <BrandMark />
-      <p class="mt-2 text-sm font-semibold text-ink">Workforce Management</p>
+      <p class="mt-2.5 text-sm font-semibold text-on-side">Workforce Management</p>
     </div>
 
-    <div class="px-3 pb-2">
+    <div class="px-4 pb-2">
       <label class="sr-only" for="screen-finder">Find a screen</label>
       <div class="relative">
         <Search
           :size="14"
-          class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted"
+          class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-side-faint"
           aria-hidden="true"
         />
         <input
@@ -112,24 +112,24 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           type="search"
           autocomplete="off"
           placeholder="Find a screen"
-          class="h-9 w-full rounded-lg border border-line bg-surface pl-8 pr-10 text-sm text-ink placeholder:text-ink-muted"
+          class="h-10 w-full rounded-xl border border-side-line bg-side-hover pl-9 pr-12 text-sm text-on-side placeholder:text-side-faint"
           @keydown.enter.prevent="firstResult"
           @keydown.esc="query = ''"
         />
         <kbd
-          class="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-line px-1 text-[10px] text-ink-muted lg:block"
+          class="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-md border border-side-line px-1.5 text-[10px] text-side-faint lg:block"
           aria-hidden="true"
           >Ctrl K</kbd
         >
       </div>
     </div>
 
-    <nav aria-label="Main navigation" class="quiet-scroll flex-1 overflow-y-auto px-2 pb-4">
+    <nav aria-label="Main navigation" class="quiet-scroll flex-1 overflow-y-auto px-3 pb-4">
       <ul v-if="query.trim()" class="mt-1 space-y-0.5" aria-label="Matching screens">
         <li v-for="m in results" :key="m.key">
           <RouterLink
             :to="m.path"
-            class="flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm text-ink-muted hover:bg-surface-muted hover:text-ink lg:min-h-9"
+            class="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm text-side-dim hover:bg-side-hover hover:text-on-side lg:min-h-10"
             @click="query = ''"
           >
             <component :is="NAV_ICONS[m.icon]" :size="16" aria-hidden="true" />
@@ -137,7 +137,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
             <span class="text-[10px] uppercase tracking-wider">{{ m.group }}</span>
           </RouterLink>
         </li>
-        <li v-if="results.length === 0" class="px-2 py-2 text-sm text-ink-muted">
+        <li v-if="results.length === 0" class="px-2 py-2 text-sm text-side-dim">
           No screen matches "{{ query.trim() }}".
         </li>
       </ul>
@@ -147,7 +147,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           <h2>
             <button
               type="button"
-              class="flex min-h-9 w-full items-center gap-1 rounded-lg px-2 text-[11px] font-semibold uppercase tracking-wider text-ink-muted hover:bg-surface-muted hover:text-ink"
+              class="mt-2 flex min-h-9 w-full items-center gap-1 rounded-xl px-3 text-[11px] font-semibold uppercase tracking-wider text-side-faint hover:text-on-side"
               :aria-expanded="open.has(g.group)"
               :aria-controls="groupId(g.group)"
               @click="toggle(g.group)"
@@ -166,11 +166,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
             <li v-for="item in g.items" :key="item.key">
               <RouterLink
                 :to="item.path"
-                class="flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm lg:min-h-9"
+                class="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm lg:min-h-10"
                 :class="
                   isActivePath(item.path, route.path)
-                    ? 'bg-brand-soft font-medium text-brand-ink'
-                    : 'text-ink-muted hover:bg-surface-muted hover:text-ink'
+                    ? 'bg-side-pill font-semibold text-on-side-pill'
+                    : 'text-side-dim hover:bg-side-hover hover:text-on-side'
                 "
                 :aria-current="isActivePath(item.path, route.path) ? 'page' : undefined"
                 active-class=""

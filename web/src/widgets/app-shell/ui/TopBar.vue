@@ -15,12 +15,10 @@ const session = useSessionStore()
 </script>
 
 <template>
-  <header
-    class="flex flex-wrap items-end gap-x-4 gap-y-2 border-b border-line bg-surface px-4 py-2 sm:px-6"
-  >
+  <header class="flex flex-wrap items-end gap-x-4 gap-y-2 px-4 pb-2 pt-4 sm:px-6">
     <button
       type="button"
-      class="inline-flex size-11 items-center justify-center rounded-lg text-ink-muted hover:bg-surface-muted lg:hidden"
+      class="inline-flex size-11 items-center justify-center rounded-xl bg-surface text-ink-muted shadow-[var(--shadow-card)] hover:text-ink lg:hidden"
       aria-label="Open navigation"
       aria-controls="sidebar"
       :aria-expanded="menuOpen"
@@ -32,7 +30,9 @@ const session = useSessionStore()
     <!-- Agents work in their own week only; everyone else picks a site and queue too. -->
     <ContextBar :show-scope="session.user?.role !== 'agent'" />
 
-    <div class="ml-auto flex items-center gap-1">
+    <div
+      class="ml-auto flex items-center gap-1 rounded-2xl bg-surface px-1.5 py-1 shadow-[var(--shadow-card)]"
+    >
       <NotificationBell />
       <ThemeToggle />
       <AccountMenu />

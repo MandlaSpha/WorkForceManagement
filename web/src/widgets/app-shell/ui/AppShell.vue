@@ -43,7 +43,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 
     <aside
       id="sidebar"
-      class="fixed inset-y-0 left-0 z-40 w-64 shrink-0 border-r border-line bg-surface transition-transform lg:static lg:translate-x-0"
+      class="fixed inset-y-0 left-0 z-40 w-72 shrink-0 bg-side text-on-side shadow-[var(--shadow-pop)] transition-transform lg:static lg:m-3 lg:w-64 lg:translate-x-0 lg:rounded-[1.5rem]"
       :class="menuOpen ? 'translate-x-0' : 'invisible -translate-x-full lg:visible'"
     >
       <SidebarNav />
@@ -51,7 +51,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 
     <div class="flex min-w-0 flex-1 flex-col">
       <TopBar :menu-open="menuOpen" @toggle-menu="menuOpen = !menuOpen" />
-      <main id="main" class="flex-1 overflow-y-auto px-4 py-6 sm:px-6" tabindex="-1">
+      <main id="main" class="flex-1 overflow-y-auto px-4 pb-8 pt-2 sm:px-6" tabindex="-1">
         <RouterView />
       </main>
     </div>

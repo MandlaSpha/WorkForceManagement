@@ -4,6 +4,7 @@ import { createApp } from 'vue'
 
 import { initTelemetry } from '@/shared/telemetry'
 
+import '@fontsource-variable/urbanist'
 import './styles/index.css'
 import App from './App.vue'
 import { queryClientConfig } from './query'
