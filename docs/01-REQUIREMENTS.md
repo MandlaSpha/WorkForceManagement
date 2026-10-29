@@ -168,10 +168,10 @@ Priority: **M** = must (MVP), **S** = should (phase 2), **C** = could (later). U
 | RPT-09 | Investment-Board KPI pack | S | PROP |
 | RPT-10 | **Self-service report schedules.** Anyone who may read a report can set up their own schedule: which report, which recipient email(s), how often and when (daily, weekly, monthly, a time in SAST), and pause or delete it. Safeguards: a report contains only what its **owner** may see (the same `for_user` scoping), never what a recipient could not; recipients are limited to an admin-set allowed email domain list; sending, changes and failures are audited; no personal data in the email body beyond what the report itself holds; a schedule stops if its owner is deactivated | M | Product owner, UIF 3.6 |
 
-### 3.12 Copilot (role-scoped AI assistant) — PARKED, not a current requirement
-Decision (12 Oct 2026): neither the UIF specification nor the Gijima requirements ask for an AI assistant, so it is **out of the current scope, phases and test plan**. The reference app has one (Copilot page, roster Assistant button); we do not build it now. The rules below are kept so that, if it is ever requested, it is added safely: it may only answer from data the asking user is already allowed to see, as a convenience over the existing authorised API and never a second route to the data.
+### 3.12 Copilot (role-scoped AI assistant) — UN-PARKED 29 Oct 2026 (first version: rule-based adapter, core questions per role)
+**Update 29 Oct 2026:** the owner asked for the Copilot. Version 1 builds the safe pipeline with a rule-based default behind a model adapter (AI-10 stays open: a hosted API or a local model plugs in later by configuration) and answers core questions per role; every AI-xx rule below applies, and AI-11 (the adversarial role-leak suite) gates release. Earlier decision (12 Oct 2026): neither the UIF specification nor the Gijima requirements ask for an AI assistant, so it is **out of the current scope, phases and test plan**. The reference app has one (Copilot page, roster Assistant button); we do not build it now. The rules below are kept so that, if it is ever requested, it is added safely: it may only answer from data the asking user is already allowed to see, as a convenience over the existing authorised API and never a second route to the data.
 
-All AI-xx items below are therefore **Parked**, whatever priority they show.
+All AI-xx items below now apply to version 1 as written (AI-09 and AI-11 included).
 
 | ID | Requirement | Pri | Source |
 |---|---|---|---|
