@@ -1,0 +1,80 @@
+/* Motion shared by the whole app. Every rule here is switched off by the prefers-reduced-motion
+   block in index.css, so nothing depends on an animation finishing. */
+
+:root {
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* A screen settles in instead of snapping: a short rise and fade. */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-enter {
+  animation: page-enter 0.38s var(--ease-out) both;
+}
+
+/* Switching theme fades the colours instead of flipping them. The class is on <html> for a
+   moment only, so ordinary hover transitions elsewhere are untouched. */
+html.theme-fade,
+html.theme-fade *,
+html.theme-fade *::before,
+html.theme-fade *::after {
+  transition:
+    background-color 0.3s var(--ease-out),
+    border-color 0.3s var(--ease-out),
+    color 0.3s var(--ease-out),
+    fill 0.3s var(--ease-out),
+    stroke 0.3s var(--ease-out) !important;
+}
+
+/* A grey bar that shimmers while figures load, in place of a bare "Loading...". */
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    100deg,
+    var(--surface-muted) 30%,
+    color-mix(in srgb, var(--surface-muted) 55%, var(--surface)) 50%,
+    var(--surface-muted) 70%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s linear infinite;
+}
+
+/* Things you can press feel pressed. */
+.press {
+  transition:
+    transform 0.18s var(--ease-out),
+    box-shadow 0.18s var(--ease-out),
+    background-color 0.18s var(--ease-out),
+    color 0.18s var(--ease-out),
+    opacity 0.18s var(--ease-out);
+}
+.press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* A card that is a link or button rises a little under the pointer. */
+.lift {
+  transition:
+    transform 0.28s var(--ease-out),
+    box-shadow 0.28s var(--ease-out);
+}
+.lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-pop);
+}

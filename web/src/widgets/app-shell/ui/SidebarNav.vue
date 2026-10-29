@@ -6,6 +6,7 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useSessionStore } from '@/entities/session'
 import type { NavGroup } from '@/shared/config'
 import BrandMark from '@/shared/ui/BrandMark.vue'
+import ExpandTransition from '@/shared/ui/ExpandTransition.vue'
 
 import { isActivePath } from '../model/active'
 import { NAV_ICONS } from '../model/icons'
@@ -154,7 +155,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
             >
               <ChevronRight
                 :size="14"
-                class="transition-transform"
+                class="transition-transform duration-300"
                 :class="open.has(g.group) ? 'rotate-90' : ''"
                 aria-hidden="true"
               />
@@ -162,25 +163,27 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
               <span class="font-normal normal-case tracking-normal">{{ g.items.length }}</span>
             </button>
           </h2>
-          <ul v-show="open.has(g.group)" :id="groupId(g.group)" class="mt-0.5 space-y-0.5">
-            <li v-for="item in g.items" :key="item.key">
-              <RouterLink
-                :to="item.path"
-                class="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm lg:min-h-10"
-                :class="
-                  isActivePath(item.path, route.path)
-                    ? 'bg-side-pill font-semibold text-on-side-pill'
-                    : 'text-side-dim hover:bg-side-hover hover:text-on-side'
-                "
-                :aria-current="isActivePath(item.path, route.path) ? 'page' : undefined"
-                active-class=""
-                exact-active-class=""
-              >
-                <component :is="NAV_ICONS[item.icon]" :size="16" aria-hidden="true" />
-                {{ item.label }}
-              </RouterLink>
-            </li>
-          </ul>
+          <ExpandTransition>
+            <ul v-show="open.has(g.group)" :id="groupId(g.group)" class="mt-0.5 space-y-0.5">
+              <li v-for="item in g.items" :key="item.key">
+                <RouterLink
+                  :to="item.path"
+                  class="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm lg:min-h-10"
+                  :class="
+                    isActivePath(item.path, route.path)
+                      ? 'bg-side-pill font-semibold text-on-side-pill'
+                      : 'text-side-dim hover:bg-side-hover hover:text-on-side'
+                  "
+                  :aria-current="isActivePath(item.path, route.path) ? 'page' : undefined"
+                  active-class=""
+                  exact-active-class=""
+                >
+                  <component :is="NAV_ICONS[item.icon]" :size="16" aria-hidden="true" />
+                  {{ item.label }}
+                </RouterLink>
+              </li>
+            </ul>
+          </ExpandTransition>
         </section>
       </template>
     </nav>

@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './motion.css';
 
 /* Dark mode is a class on <html>, set before first paint (index.html) and by the theme toggle. */
 @custom-variant dark (&:where(.dark, .dark *));

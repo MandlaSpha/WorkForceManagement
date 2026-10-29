@@ -15,10 +15,12 @@ withDefaults(
     :type="type"
     :disabled="disabled || loading"
     :aria-busy="loading || undefined"
-    class="inline-flex min-h-11 items-center sm:min-h-10 justify-center gap-2 rounded-lg px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+    class="press inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-10"
     :class="{
-      'bg-brand text-brand-contrast hover:opacity-90': variant === 'primary',
-      'border border-line bg-surface text-ink hover:bg-surface-muted': variant === 'secondary',
+      'bg-brand text-brand-contrast shadow-sm hover:-translate-y-px hover:shadow-md':
+        variant === 'primary',
+      'border border-line bg-surface text-ink hover:-translate-y-px hover:bg-surface-muted hover:shadow-sm':
+        variant === 'secondary',
       'text-ink-muted hover:bg-surface-muted hover:text-ink': variant === 'ghost',
     }"
   >
