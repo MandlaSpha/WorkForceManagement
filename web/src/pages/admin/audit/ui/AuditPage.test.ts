@@ -77,7 +77,7 @@ describe('the audit log screen', () => {
     await user.selectOptions(screen.getByLabelText('Outcome'), 'denied')
     await user.type(screen.getByLabelText(/^Who/), 'amy')
     await user.type(screen.getByLabelText(/^From/), '2026-10-01')
-    await user.click(screen.getByRole('button', { name: 'Search' }))
+    await user.click(within(screen.getByRole('main')).getByRole('button', { name: 'Search' }))
 
     await waitFor(() => expect(screen.queryByTestId('audit-1')).toBeNull())
     const last = backend.auditQueries.at(-1) ?? ''

@@ -194,8 +194,11 @@ describe('the dashboard never invents a figure', () => {
     asRole('planner')
     await renderApp('/')
 
-    await waitFor(() =>
-      expect(screen.getByRole('alert')).toHaveTextContent(/Could not check which months/),
-    )
+    // The planning overview has no handler in this test, so the page shows two alerts; the one
+    // about the months must be among them.
+    await waitFor(() => {
+      const alerts = within(screen.getByRole('main')).getAllByRole('alert')
+      expect(alerts.map((a) => a.textContent).join(' ')).toMatch(/Could not check which months/)
+    })
   })
 })

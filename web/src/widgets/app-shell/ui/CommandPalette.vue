@@ -16,14 +16,15 @@ const session = useSessionStore()
 const router = useRouter()
 const context = useContextStore()
 
-// The same cached query the top bar uses; roles without queues never ask.
+// The same cached query the top bar uses; roles without queues never ask. It is only an observer
+// while the palette is open, so merely having the palette on the page adds no refetching.
 const wantsQueues = computed(
   () =>
     session.user !== null &&
     session.user.role !== 'agent' &&
     session.user.features.includes('telephony'),
 )
-const queues = useQueues(wantsQueues)
+const queues = useQueues(computed(() => wantsQueues.value && paletteOpen.value))
 
 // The typed text lives only in this component: it is filtered here and never sent anywhere.
 const query = ref('')
