@@ -46,8 +46,8 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
   test.setTimeout(180_000)
   const id = rand(10_000)
   const queueName = `E2E Queue swap${id}`
-  const early = `SA${id}`
-  const late = `SB${id}`
+  const early = `E2EA${id}`
+  const late = `E2EB${id}`
   const first = addDays(today(), 22 + rand(3))
   const second = addDays(today(), 25 + rand(4))
   const week = (day: string) =>

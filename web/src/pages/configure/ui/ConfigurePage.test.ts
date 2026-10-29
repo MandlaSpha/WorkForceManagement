@@ -5,16 +5,102 @@ import { describe, expect, it } from 'vitest'
 import { capacityOf } from '@/test/capacity-fixtures'
 import { backend } from '@/test/fake-backend'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
+import { shiftOf } from '@/test/scheduling-fixtures'
+
+const codesIn = (table: HTMLElement) =>
+  within(table)
+    .getAllByRole('rowheader')
+    .map((c) => c.textContent)
 
 describe('shift templates', () => {
-  it('lists the library with times, overnight marker and paid hours', async () => {
+  it('lists the library as a table with times, overnight marker and paid hours', async () => {
     seedScheduling()
     await openScheduling('/configure', 'admin')
 
-    const list = await screen.findByRole('list', { name: 'Shifts' })
-    expect(within(list).getByText('D1')).toBeVisible()
-    expect(within(list).getByText(/22:00–06:00 \(overnight\)/)).toBeVisible()
-    expect(within(list).getAllByText(/8h paid/).length).toBeGreaterThan(0)
+    const table = await screen.findByRole('table', { name: 'Shifts' })
+    const row = within(table).getByRole('row', { name: /D1/ })
+    expect(within(row).getByText('09:00')).toBeVisible()
+    expect(within(table).getByRole('row', { name: /N1/ })).toHaveTextContent('(overnight)')
+    expect(within(table).getAllByText(/8h paid/).length).toBeGreaterThan(0)
+    expect(codesIn(table)).toEqual(['E1', 'D1', 'L1', 'N1']) // earliest start first
+  })
+
+  it('sorts by a column and says which way', async () => {
+    seedScheduling()
+    const user = userEvent.setup()
+    await openScheduling('/configure', 'admin')
+    const table = await screen.findByRole('table', { name: 'Shifts' })
+
+    await user.click(within(table).getByRole('button', { name: /^Code/ }))
+    expect(within(table).getByRole('columnheader', { name: /Code/ })).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    )
+    expect(codesIn(table)).toEqual(['D1', 'E1', 'L1', 'N1'])
+
+    await user.click(within(table).getByRole('button', { name: /^Code/ }))
+    expect(within(table).getByRole('columnheader', { name: /Code/ })).toHaveAttribute(
+      'aria-sort',
+      'descending',
+    )
+    expect(codesIn(table)).toEqual(['N1', 'L1', 'E1', 'D1'])
+  })
+
+  it('finds a shift by search and says when nothing matches', async () => {
+    seedScheduling()
+    const user = userEvent.setup()
+    await openScheduling('/configure', 'admin')
+
+    await user.type(await screen.findByLabelText('Search shifts'), 'n1')
+    expect(codesIn(screen.getByRole('table', { name: 'Shifts' }))).toEqual(['N1'])
+
+    await user.clear(screen.getByLabelText('Search shifts'))
+    await user.type(screen.getByLabelText('Search shifts'), 'zzz')
+    expect(screen.queryByRole('table', { name: 'Shifts' })).toBeNull()
+    expect(screen.getByText(/No shift matches "zzz"/)).toBeVisible()
+  })
+
+  it('says so when there are no shifts yet, and the add form is still there', async () => {
+    // Failure caught: an empty library showing an empty table, or hiding the way to add one.
+    seedScheduling()
+    backend.shifts = []
+    await openScheduling('/configure', 'admin')
+
+    expect(await screen.findByText('No shifts yet. Add one below.')).toBeVisible()
+    expect(screen.queryByRole('table', { name: 'Shifts' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Add shift' })).toBeVisible()
+    expect(document.querySelector('.skeleton')).toBeNull() // the loading state does not linger
+  })
+
+  it('shows 20 shifts at a time and adds 20 more on request', async () => {
+    // Failure caught: a long library rendered in one go, or "show more" skipping or repeating rows.
+    seedScheduling()
+    backend.shifts = Array.from({ length: 45 }, (_, i) =>
+      shiftOf({ id: 100 + i, code: `S${String(i).padStart(2, '0')}` }),
+    )
+    const user = userEvent.setup()
+    await openScheduling('/configure', 'admin')
+
+    const table = await screen.findByRole('table', { name: 'Shifts' })
+    expect(codesIn(table)).toHaveLength(20)
+    expect(screen.getByText('Showing 20 of 45')).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Show more (25 left)' }))
+    expect(codesIn(table)).toHaveLength(40)
+    await user.click(screen.getByRole('button', { name: 'Show more (5 left)' }))
+    expect(codesIn(table)).toHaveLength(45)
+    expect(screen.queryByRole('button', { name: /Show more/ })).toBeNull()
+  })
+
+  it('lays the add form out as rows that stack on a phone', async () => {
+    // Failure caught: label and control side by side on a narrow screen, squeezing both.
+    seedScheduling()
+    await openScheduling('/configure', 'admin')
+    const form = await screen.findByRole('form', { name: 'Add a shift' })
+    const row = within(form).getByText('Paid minutes', { selector: 'p' }).closest('div.flex')
+    expect(row).toHaveClass('flex-col')
+    expect(row).toHaveClass('sm:flex-row')
+    expect(within(form).getByText('What the person is paid for.')).toBeVisible()
   })
 
   it('sends the new shift with the CSRF token and clears the code box', async () => {
@@ -71,12 +157,68 @@ describe('shift templates', () => {
     await openScheduling('/configure', 'admin')
 
     await user.click(await screen.findByRole('button', { name: 'Delete shift D1' }))
+    await user.click(screen.getByRole('button', { name: 'Yes, delete' }))
 
     expect(await screen.findByTestId('shift-delete-error')).toHaveTextContent(/rostered/)
     expect(backend.writes[0]).toMatchObject({
       method: 'DELETE',
       path: '/api/v1/scheduling/shifts/2',
     })
+    // The confirmation closes; the shift is still listed.
+    expect(screen.queryByText('Delete D1?')).toBeNull()
+    expect(screen.getByRole('table', { name: 'Shifts' })).toHaveTextContent('D1')
+  })
+
+  it('asks before deleting and sends nothing if you cancel', async () => {
+    // Failure caught: one stray click deleting a shift.
+    seedScheduling()
+    const user = userEvent.setup()
+    await openScheduling('/configure', 'admin')
+
+    await user.click(await screen.findByRole('button', { name: 'Delete shift D1' }))
+    expect(screen.getByText('Delete D1?')).toBeVisible()
+    expect(backend.writes).toHaveLength(0)
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByText('Delete D1?')).toBeNull()
+    expect(backend.writes).toHaveLength(0)
+
+    await user.click(screen.getByRole('button', { name: 'Delete shift D1' }))
+    await user.click(screen.getByRole('button', { name: 'Yes, delete' }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+  })
+})
+
+describe('settings footer and tabs', () => {
+  it('flags edits as unsaved and Discard puts the saved value back', async () => {
+    // Failure caught: a footer claiming "saved" while edits are pending, or a Discard that leaves
+    // the edit in the box.
+    seedScheduling()
+    const user = userEvent.setup()
+    await openScheduling('/configure', 'admin')
+    await user.click(await screen.findByRole('tab', { name: 'Queues' }))
+
+    const shrinkage = await screen.findByLabelText('Shrinkage (%)')
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeDisabled()
+    await user.clear(shrinkage)
+    await user.type(shrinkage, '25')
+    expect(screen.getByText('You have unsaved changes')).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Discard' }))
+    expect(shrinkage).toHaveValue(30)
+    expect(screen.queryByText('You have unsaved changes')).toBeNull()
+    expect(backend.writes).toHaveLength(0)
+  })
+
+  it('draws the tabs as a segmented control and keeps each tab in its panel', async () => {
+    seedScheduling()
+    const user = userEvent.setup()
+    await openScheduling('/configure', 'admin')
+    expect(await screen.findByRole('tablist', { name: 'Configuration' })).toHaveClass(
+      'rounded-full',
+    )
+    await user.click(screen.getByRole('tab', { name: 'Rules' }))
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'configure-panel-rules')
   })
 })
 

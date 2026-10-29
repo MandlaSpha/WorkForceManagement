@@ -163,3 +163,78 @@ def test_removes_the_skills_and_rosters_of_a_test_queue_and_keeps_a_real_one() -
     assert EmployeeSkill.objects.filter(queue=real_queue).count() == 1
     assert RosterWeek.objects.filter(queue=real_queue).count() == 1
     assert not EmployeeSkill.objects.filter(queue__name__startswith="E2E").exists()
+
+
+def make_shift(code: str) -> Any:
+    from datetime import time
+
+    from wfm.scheduling.models import ShiftTemplate
+
+    return ShiftTemplate.objects.create(
+        code=code, start_time=time(9), end_time=time(17), paid_minutes=480
+    )
+
+
+@pytest.mark.usefixtures("development")
+def test_removes_test_shifts_and_people_and_keeps_real_ones() -> None:
+    # Failure caught: test shifts (T113139, SA4318) and "Pat Example 1" people piling up in the
+    # dev database, or a pattern loose enough to take a real shift code or real employee.
+    from wfm.scheduling.models import Employee, ShiftTemplate
+
+    for code in ("E2E123456", "E2EA4318", "T113139", "SA4318"):
+        make_shift(code)
+    for code in ("D1", "N2", "T1", "S0830", "SAT", "E2E"):  # real-looking: must survive
+        make_shift(code)
+    Employee.objects.create(emp_no="E2E-1A", name="E2E Pat 1")
+    Employee.objects.create(emp_no="T113139A", name="Pat Example 113139")
+    Employee.objects.create(emp_no="E-1", name="Real Person")
+    Employee.objects.create(emp_no="T113139C", name="Real Person")  # number alone is not enough
+    Employee.objects.create(emp_no="K-9", name="Pat Example 113139")  # name alone is not enough
+
+    call_command("purge_e2e_data")
+
+    assert sorted(ShiftTemplate.objects.values_list("code", flat=True)) == sorted(
+        ["D1", "N2", "T1", "S0830", "SAT", "E2E"]
+    )
+    assert sorted(Employee.objects.values_list("emp_no", flat=True)) == ["E-1", "K-9", "T113139C"]
+    assert "2 employees" in AuditEvent.objects.get(action=Action.DEV_DATA_PURGED).reason
+
+
+@pytest.mark.usefixtures("development")
+def test_removes_what_was_made_for_a_test_person_but_keeps_a_shift_real_data_uses() -> None:
+    # Failure caught: the purge dying on "protected" assignments of a test person, or deleting a
+    # test-pattern shift that a real person is still rostered on.
+    from wfm.scheduling.models import Employee, RosterWeek, ShiftAssignment, ShiftTemplate
+
+    queue = Queue.objects.create(name="Billing")
+    week = RosterWeek.objects.create(queue=queue, week_start=date(2026, 10, 19))
+    shift = make_shift("T555555")
+    unused = make_shift("T666666")
+    test_person = Employee.objects.create(emp_no="T555555A", name="Pat Example 555555")
+    real_person = Employee.objects.create(emp_no="E-7", name="Real Person")
+    for person in (test_person, real_person):
+        ShiftAssignment.objects.create(
+            roster_week=week, employee=person, day=date(2026, 10, 19), template=shift
+        )
+
+    call_command("purge_e2e_data")
+
+    assert list(Employee.objects.values_list("emp_no", flat=True)) == ["E-7"]
+    assert ShiftAssignment.objects.count() == 1
+    assert list(ShiftTemplate.objects.values_list("code", flat=True)) == ["T555555"]
+    assert not ShiftTemplate.objects.filter(pk=unused.pk).exists()
+
+
+@pytest.mark.usefixtures("development")
+def test_a_person_with_a_login_is_never_purged_and_a_second_run_changes_nothing() -> None:
+    from wfm.scheduling.models import Employee
+
+    login = User.objects.create_user(username="someone", password="x", role=Role.AGENT)
+    Employee.objects.create(emp_no="E2E-9", name="E2E Linked 9", user=login)
+    Employee.objects.create(emp_no="E2E-8", name="E2E Gone 8")
+
+    call_command("purge_e2e_data")
+    call_command("purge_e2e_data")  # idempotent
+
+    assert list(Employee.objects.values_list("emp_no", flat=True)) == ["E2E-9"]
+    assert AuditEvent.objects.filter(action=Action.DEV_DATA_PURGED).count() == 1

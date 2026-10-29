@@ -11,6 +11,8 @@ defineProps<{
   max?: number
   autocomplete?: string
   error?: string
+  /** The label stays for screen readers but is not drawn: a settings row already shows it. */
+  hideLabel?: boolean
 }>()
 
 const id = useId()
@@ -18,7 +20,12 @@ const id = useId()
 
 <template>
   <div class="space-y-1">
-    <label :for="id" class="block text-xs font-medium text-ink-muted">{{ label }}</label>
+    <label
+      :for="id"
+      class="block text-xs font-medium text-ink-muted"
+      :class="{ 'sr-only': hideLabel }"
+      >{{ label }}</label
+    >
     <input
       :id="id"
       :value="model"

@@ -48,11 +48,11 @@ test('shifts, people and a roster change the planner heatmap, and publishing loc
   test.setTimeout(180_000)
   const id = rand(1_000_000)
   const queue = `E2E Queue r${id}`
-  const shift = `T${id}`
+  const shift = `E2E${id}`
   const target = addDays(nextMonday(), 0)
   const people = [
-    { empNo: `T${id}A`, name: `Pat Example ${id}` },
-    { empNo: `T${id}B`, name: `Sam Example ${id}` },
+    { empNo: `E2E-${id}A`, name: `E2E Pat ${id}` },
+    { empNo: `E2E-${id}B`, name: `E2E Sam ${id}` },
   ]
   const cell = (slot: number) => page.getByTestId(`cell-${target}-${slot}`)
 
@@ -68,7 +68,10 @@ test('shifts, people and a roster change the planner heatmap, and publishing loc
     await page.getByRole('link', { name: 'Configure' }).click()
     await page.getByLabel('Code').fill(shift)
     await page.getByRole('button', { name: 'Add shift' }).click()
-    await expect(page.getByRole('list', { name: 'Shifts' }).getByText(shift)).toBeVisible()
+    await page.getByLabel('Search shifts').fill(shift)
+    await expect(
+      page.getByRole('table', { name: 'Shifts' }).getByRole('rowheader', { name: shift }),
+    ).toBeVisible()
 
     await page.getByRole('tab', { name: 'Queues' }).click()
     const settings = page.getByRole('form', { name: `Staffing settings for ${queue}` })
