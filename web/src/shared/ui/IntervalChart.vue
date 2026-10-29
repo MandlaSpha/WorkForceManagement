@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 export interface ChartPoint {
   label: string // x-axis label, "10:00"
@@ -36,11 +36,33 @@ const maxBar = computed(() => ceil(Math.max(0, ...props.points.map((p) => p.bars
 const maxLine = computed(() => ceil(Math.max(0, ...props.points.map((p) => p.line ?? 0))))
 const step = computed(() => innerW / Math.max(1, props.points.length))
 
+const hover = ref<number | null>(null)
+
+function onMove(e: PointerEvent): void {
+  const el = e.currentTarget as SVGGraphicsElement
+  const box = el.getBoundingClientRect()
+  if (box.width === 0) return
+  const i = Math.floor(((e.clientX - box.left) / box.width) * props.points.length)
+  hover.value = Math.min(props.points.length - 1, Math.max(0, i))
+}
+
+const tip = computed(() => {
+  const p = hover.value === null ? null : props.points[hover.value]
+  if (!p || hover.value === null) return null
+  const bar = p.bars === null ? 'no value' : p.bars.toFixed(1)
+  const line = p.line === null ? 'no value' : String(p.line)
+  return {
+    left: ((LEFT + hover.value * step.value + step.value / 2) / W) * 100,
+    text: `${p.label}: ${props.barLabel} ${bar}, ${props.lineLabel} ${line}`,
+  }
+})
+
 const bars = computed(() =>
   props.points.flatMap((p, i) => {
     if (p.bars === null) return [] // no value is no bar, never a bar of zero height
     const height = (p.bars / maxBar.value) * innerH
     return {
+      index: i,
       key: p.label,
       x: LEFT + i * step.value + step.value * 0.15,
       y: TOP + innerH - height,
@@ -75,7 +97,16 @@ const xLabels = computed(() =>
 </script>
 
 <template>
-  <figure class="space-y-2">
+  <figure class="relative space-y-2">
+    <div
+      v-if="tip"
+      class="pointer-events-none absolute z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink px-2 py-1 text-xs text-canvas shadow-pop"
+      :style="{ left: `${tip.left}%`, top: '0' }"
+      role="status"
+      data-testid="chart-tooltip"
+    >
+      {{ tip.text }}
+    </div>
     <svg
       :viewBox="`0 0 ${W} ${H}`"
       class="w-full"
@@ -83,6 +114,16 @@ const xLabels = computed(() =>
       :aria-label="summary"
       data-testid="interval-chart"
     >
+      <line
+        v-for="g in [0.25, 0.5, 0.75]"
+        :key="g"
+        :x1="LEFT"
+        :x2="W - RIGHT"
+        :y1="TOP + innerH * g"
+        :y2="TOP + innerH * g"
+        class="stroke-chart-grid"
+        stroke-dasharray="3 5"
+      />
       <line :x1="LEFT" :x2="W - RIGHT" :y1="TOP + innerH" :y2="TOP + innerH" class="stroke-line" />
       <rect
         v-for="bar in bars"
@@ -91,8 +132,29 @@ const xLabels = computed(() =>
         :y="bar.y"
         :width="bar.width"
         :height="bar.height"
-        class="fill-brand/40"
+        rx="4"
+        class="bar-grow fill-brand/40"
+        :class="hover === bar.index ? 'fill-brand/70' : ''"
         data-testid="chart-bar"
+      />
+      <line
+        v-if="hover !== null"
+        :x1="LEFT + hover * step + step / 2"
+        :x2="LEFT + hover * step + step / 2"
+        :y1="TOP"
+        :y2="TOP + innerH"
+        class="stroke-ink-muted"
+        stroke-dasharray="2 3"
+        data-testid="chart-crosshair"
+      />
+      <rect
+        :x="LEFT"
+        :y="TOP"
+        :width="innerW"
+        :height="innerH"
+        fill="transparent"
+        @pointermove="onMove"
+        @pointerleave="hover = null"
       />
       <path
         v-if="linePath"

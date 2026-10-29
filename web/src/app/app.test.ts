@@ -34,7 +34,9 @@ describe('signing in', () => {
 
     await signIn(user, 'planner')
 
-    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeVisible()
+    expect(
+      await screen.findByRole('heading', { name: /^Good (morning|afternoon|evening), Pat$/ }),
+    ).toBeVisible()
     expect(router.currentRoute.value.name).toBe('dashboard')
     const menu = screen.getByRole('button', { name: 'Account menu for Pat Planner' })
     expect(within(menu).getByText('Planner')).toBeVisible()

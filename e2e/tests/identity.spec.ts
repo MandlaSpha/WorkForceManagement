@@ -46,7 +46,9 @@ test('a directory planner signs in and gets the planner role from their group', 
 }) => {
   await directorySignIn(page, 'pat')
 
-  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: /^Good (morning|afternoon|evening)/ }),
+  ).toBeVisible()
   const header = page.getByRole('banner')
   await expect(header.getByText('Pat Planner')).toBeVisible()
   await expect(header.getByText('Planner', { exact: true })).toBeVisible()
