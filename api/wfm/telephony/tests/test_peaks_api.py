@@ -106,3 +106,37 @@ def test_bad_ranges_are_refused() -> None:
     backwards = get(c, q.pk, "2031-03-05", "2031-03-01")
     too_long = get(c, q.pk, "2020-01-01", "2031-03-01")
     assert (backwards.status_code, too_long.status_code) == (422, 422)
+
+
+def test_daily_profile_and_heat_cover_the_range() -> None:
+    # Failure caught: the charts getting only the top five, or a gap day sent as zero calls.
+    q = Queue.objects.create(name="Q")
+    calls(q, 3, 8, 0, 30)  # Monday
+    calls(q, 3, 8, 30, 10)
+    calls(q, 5, 8, 0, 20)  # Wednesday; the 4th has no rows
+    calls(q, 10, 8, 0, 10)  # Monday again
+    body = ask(client(Role.PLANNER), q)
+    assert body["daily"] == [
+        {"day": "2031-03-03", "offered": 40},
+        {"day": "2031-03-05", "offered": 20},
+        {"day": "2031-03-10", "offered": 10},
+    ]
+    assert [(s["slot"], s["averageOffered"], s["days"]) for s in body["profile"]] == [
+        ("08:00", "20.0", 3),
+        ("08:30", "10.0", 1),
+    ]
+    monday_8 = next(c for c in body["heat"] if c["weekday"] == 0 and c["slot"] == 16)
+    assert (monday_8["averageOffered"], monday_8["days"]) == ("20.0", 2)
+    assert len(body["heat"]) == 3
+
+
+def test_new_fields_are_empty_for_an_empty_queue() -> None:
+    body = ask(client(Role.PLANNER), Queue.objects.create(name="Q"))
+    assert (body["daily"], body["profile"], body["heat"]) == ([], [], [])
+
+
+@pytest.mark.parametrize("role", [Role.ADMIN, Role.PLANNER, Role.LEAD, Role.EXECUTIVE])
+def test_every_allowed_role_gets_the_new_fields(role: Role) -> None:
+    q = Queue.objects.create(name="Q")
+    calls(q, 3, 8, 0, 3)
+    assert len(ask(client(role), q)["daily"]) == 1

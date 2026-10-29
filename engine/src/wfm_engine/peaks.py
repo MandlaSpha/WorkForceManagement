@@ -36,12 +36,23 @@ class SlotAverage:
 
 
 @dataclass(frozen=True, slots=True)
+class HeatCell:
+    weekday: int  # 0 = Monday .. 6 = Sunday
+    slot: time
+    average_offered: Decimal
+    days: int  # how many such weekdays had rows in this half-hour
+
+
+@dataclass(frozen=True, slots=True)
 class Report:
     busiest_days: list[DayTotal]
     quietest_days: list[DayTotal]
     busiest_intervals: list[IntervalTotal]
     busiest_slots: list[SlotAverage]
     quietest_slots: list[SlotAverage]  # among slots that ever saw a call: the queue is open then
+    daily: list[DayTotal]  # every measured day, oldest first (a gap is missing, not zero)
+    profile: list[SlotAverage]  # every half-hour that saw a call, by time of day
+    heat: list[HeatCell]  # weekday x half-hour, only cells that saw a call
 
 
 def analyse(intervals: Iterable[tuple[datetime, int]], top: int = TOP) -> Report:
@@ -51,7 +62,12 @@ def analyse(intervals: Iterable[tuple[datetime, int]], top: int = TOP) -> Report
     slot_sum: dict[time, int] = defaultdict(int)
     slot_days: dict[time, set[date]] = defaultdict(set)
     rows = sorted(intervals)
+    cell_sum: dict[tuple[int, time], int] = defaultdict(int)
+    cell_days: dict[tuple[int, time], set[date]] = defaultdict(set)
     for start, offered in rows:
+        key = (start.weekday(), start.time())
+        cell_sum[key] += offered
+        cell_days[key].add(start.date())
         per_day[start.date()] += offered
         slot_sum[start.time()] += offered
         slot_days[start.time()].add(start.date())
@@ -66,6 +82,16 @@ def analyse(intervals: Iterable[tuple[datetime, int]], top: int = TOP) -> Report
         for slot, total in slot_sum.items()
         if total > 0
     ]
+    heat = [
+        HeatCell(
+            wd,
+            slot,
+            (Decimal(total) / len(cell_days[wd, slot])).quantize(_TENTH, ROUND_HALF_UP),
+            len(cell_days[wd, slot]),
+        )
+        for (wd, slot), total in sorted(cell_sum.items())
+        if total > 0
+    ]
     return Report(
         busiest_days=sorted(days, key=lambda d: (-d.offered, d.day))[:top],
         quietest_days=sorted(days, key=lambda d: (d.offered, d.day))[:top],
@@ -74,4 +100,7 @@ def analyse(intervals: Iterable[tuple[datetime, int]], top: int = TOP) -> Report
         )[:top],
         busiest_slots=sorted(slots, key=lambda s: (-s.average_offered, s.slot))[:top],
         quietest_slots=sorted(slots, key=lambda s: (s.average_offered, s.slot))[:top],
+        daily=sorted(days, key=lambda d: d.day),
+        profile=sorted(slots, key=lambda s: s.slot),
+        heat=heat,
     )

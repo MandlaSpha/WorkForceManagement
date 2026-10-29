@@ -3861,6 +3861,17 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** HeatCellOut */
+        HeatCellOut: {
+            /** Averageoffered */
+            averageOffered: string;
+            /** Days */
+            days: number;
+            /** Slot */
+            slot: number;
+            /** Weekday */
+            weekday: number;
+        };
         /** HiringPlanIn */
         HiringPlanIn: {
             /** Attritionpctpermonth */
@@ -4706,6 +4717,8 @@ export interface components {
             busiestIntervals: components["schemas"]["IntervalOut"][];
             /** Busiestslots */
             busiestSlots: components["schemas"]["SlotOut"][];
+            /** Daily */
+            daily: components["schemas"]["DayOut"][];
             /**
              * Datefrom
              * Format: date
@@ -4718,6 +4731,10 @@ export interface components {
             dateTo: string;
             /** Daysmeasured */
             daysMeasured: number;
+            /** Heat */
+            heat: components["schemas"]["HeatCellOut"][];
+            /** Profile */
+            profile: components["schemas"]["SlotOut"][];
             /** Queueid */
             queueId: number;
             /** Quietestdays */

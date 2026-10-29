@@ -1,3 +1,5 @@
 export { fetchPeaks } from './api/peaks'
+export { summarise, slotName, weekdayOf, WEEKDAYS } from './model/derive'
+export type { PeaksSummary } from './model/derive'
 export { usePeaks } from './model/queries'
-export type { PeakSlot, Peaks } from './model/types'
+export type { HeatCell, PeakSlot, Peaks } from './model/types'

@@ -9,6 +9,12 @@ export interface BarItem {
   value: number | null
   /** Optional second series drawn as a line (same scale as the bars unless `lineScale`). */
   line?: number | null
+  /** Full name for the tooltip and screen readers when `label` is a short axis label. */
+  title?: string
+  /** Highlight: a high or low bar takes a second colour. Say what it means in `mark`. */
+  tone?: 'high' | 'low'
+  /** A short text drawn above the bar (for example "Busiest"). */
+  mark?: string
 }
 
 const props = withDefaults(
@@ -20,8 +26,15 @@ const props = withDefaults(
     summary: string
     format?: (n: number) => string
     emptyText?: string
+    /** Show every n-th axis label (the others stay available as tooltips). */
+    labelEvery?: number
   }>(),
-  { lineLabel: '', format: (n: number) => n.toLocaleString('en-ZA'), emptyText: 'No data yet' },
+  {
+    labelEvery: 1,
+    lineLabel: '',
+    format: (n: number) => n.toLocaleString('en-ZA'),
+    emptyText: 'No data yet',
+  },
 )
 
 const known = computed(() => props.items.filter((i) => i.value !== null))
@@ -49,29 +62,45 @@ const linePath = computed(() => {
   <figure v-else class="space-y-2" data-testid="bar-series">
     <div role="img" :aria-label="summary" class="relative">
       <ul
-        class="grid h-28 items-end gap-2 border-b border-line"
+        class="grid h-28 items-end border-b border-line"
+        :class="items.length > 24 ? 'gap-px' : 'gap-2'"
         :style="{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }"
       >
         <li
           v-for="(item, i) in items"
-          :key="item.label"
+          :key="item.title ?? item.label"
           class="group relative flex h-full flex-col justify-end outline-none"
           tabindex="0"
-          :aria-label="`${item.label}: ${item.value === null ? 'no value' : format(item.value)}${
+          :aria-label="`${item.title ?? item.label}: ${item.value === null ? 'no value' : format(item.value)}${
             item.line != null ? `, ${lineLabel} ${format(item.line)}` : ''
           }`"
           :data-testid="`bar-${i}`"
         >
           <span
             v-if="item.value !== null"
-            class="bar-grow block w-full rounded-t-lg bg-chart-1 group-hover:opacity-80 group-focus-visible:opacity-80"
+            class="bar-grow block w-full rounded-t-lg group-hover:opacity-80 group-focus-visible:opacity-80"
+            :class="
+              item.tone === 'high'
+                ? 'bg-chart-3'
+                : item.tone === 'low'
+                  ? 'bg-chart-2'
+                  : 'bg-chart-1'
+            "
             :style="{ height: pct(item.value), minHeight: item.value > 0 ? '2px' : '0' }"
           ></span>
+          <span
+            v-if="item.mark && item.value !== null"
+            class="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold text-ink"
+            :style="{ bottom: `calc(${pct(item.value)} + 2px)` }"
+            aria-hidden="true"
+            >{{ item.mark }}</span
+          >
           <span
             role="tooltip"
             class="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-ink px-2 py-1 text-xs font-medium text-canvas opacity-0 shadow-pop group-hover:opacity-100 group-focus-visible:opacity-100"
           >
-            {{ item.label }}: {{ item.value === null ? 'no value' : format(item.value) }}
+            {{ item.title ?? item.label }}:
+            {{ item.value === null ? 'no value' : format(item.value) }}
           </span>
         </li>
       </ul>
@@ -99,7 +128,9 @@ const linePath = computed(() => {
       :style="{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }"
       aria-hidden="true"
     >
-      <li v-for="item in items" :key="item.label">{{ item.label }}</li>
+      <li v-for="(item, i) in items" :key="item.title ?? item.label" class="truncate">
+        {{ i % labelEvery === 0 ? item.label : '' }}
+      </li>
     </ol>
     <figcaption class="flex flex-wrap gap-4 text-xs text-ink-muted">
       <span class="inline-flex items-center gap-1.5">

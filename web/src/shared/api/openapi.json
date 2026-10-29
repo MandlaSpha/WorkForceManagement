@@ -3599,6 +3599,34 @@
         "title": "ForecastVersionOut",
         "type": "object"
       },
+      "HeatCellOut": {
+        "properties": {
+          "averageOffered": {
+            "title": "Averageoffered",
+            "type": "string"
+          },
+          "days": {
+            "title": "Days",
+            "type": "integer"
+          },
+          "slot": {
+            "title": "Slot",
+            "type": "integer"
+          },
+          "weekday": {
+            "title": "Weekday",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "weekday",
+          "slot",
+          "averageOffered",
+          "days"
+        ],
+        "title": "HeatCellOut",
+        "type": "object"
+      },
       "HiringPlanIn": {
         "properties": {
           "attritionPctPerMonth": {
@@ -5750,6 +5778,13 @@
             "title": "Busiestslots",
             "type": "array"
           },
+          "daily": {
+            "items": {
+              "$ref": "#/components/schemas/DayOut"
+            },
+            "title": "Daily",
+            "type": "array"
+          },
           "dateFrom": {
             "format": "date",
             "title": "Datefrom",
@@ -5763,6 +5798,20 @@
           "daysMeasured": {
             "title": "Daysmeasured",
             "type": "integer"
+          },
+          "heat": {
+            "items": {
+              "$ref": "#/components/schemas/HeatCellOut"
+            },
+            "title": "Heat",
+            "type": "array"
+          },
+          "profile": {
+            "items": {
+              "$ref": "#/components/schemas/SlotOut"
+            },
+            "title": "Profile",
+            "type": "array"
           },
           "queueId": {
             "title": "Queueid",
@@ -5792,7 +5841,10 @@
           "quietestDays",
           "busiestIntervals",
           "busiestSlots",
-          "quietestSlots"
+          "quietestSlots",
+          "daily",
+          "profile",
+          "heat"
         ],
         "title": "PeaksOut",
         "type": "object"

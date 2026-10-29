@@ -36,6 +36,13 @@ class SlotOut(Schema):
     days: int
 
 
+class HeatCellOut(Schema):
+    weekday: int  # 0 = Monday .. 6 = Sunday
+    slot: int  # half-hour of the day, 0..47
+    averageOffered: Decimal  # noqa: N815
+    days: int
+
+
 class PeaksOut(Schema):
     queueId: int  # noqa: N815
     dateFrom: date  # noqa: N815
@@ -46,6 +53,9 @@ class PeaksOut(Schema):
     busiestIntervals: list[IntervalOut]  # noqa: N815
     busiestSlots: list[SlotOut]  # noqa: N815
     quietestSlots: list[SlotOut]  # noqa: N815
+    daily: list[DayOut]
+    profile: list[SlotOut]
+    heat: list[HeatCellOut]
 
 
 def _slots(found: list[peaks.SlotAverage]) -> list[SlotOut]:
@@ -92,4 +102,15 @@ def peaks_and_troughs(
         ],
         busiestSlots=_slots(report.busiest_slots),
         quietestSlots=_slots(report.quietest_slots),
+        daily=_days(report.daily),
+        profile=_slots(report.profile),
+        heat=[
+            HeatCellOut(
+                weekday=c.weekday,
+                slot=c.slot.hour * 2 + c.slot.minute // 30,
+                averageOffered=c.average_offered,
+                days=c.days,
+            )
+            for c in report.heat
+        ],
     )
