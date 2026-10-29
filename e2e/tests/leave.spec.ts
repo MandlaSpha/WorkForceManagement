@@ -42,7 +42,9 @@ test('an agent asks for leave, a lead sees its effect and approves it, and the a
   // Unpaid-leave requests an earlier run left waiting (it died before cancelling) would be found
   // first by the lead's list below: withdraw them, so this run sees only its own.
   const csrf = (await page.context().cookies()).find((c) => c.name === 'csrftoken')?.value ?? ''
-  const stale = await (await page.request.get('/api/v1/people/leave/requests?status=pending')).json()
+  const stale = await (
+    await page.request.get('/api/v1/people/leave/requests?status=pending')
+  ).json()
   for (const old of stale.filter((r: { leaveType: string }) => r.leaveType === 'Unpaid leave')) {
     await page.request.post(`/api/v1/people/leave/requests/${old.id}/cancel`, {
       headers: { 'X-CSRFToken': csrf },
@@ -52,11 +54,15 @@ test('an agent asks for leave, a lead sees its effect and approves it, and the a
   await expect(page.getByTestId('balance-annual')).toContainText('days left')
   await expect(page.getByTestId('balance-unpaid')).toContainText('no limit')
   await expect(page.getByTestId('defaults-notice')).toBeVisible()
+  await page.getByRole('button', { name: 'Request leave' }).click()
   const form = page.getByRole('form', { name: 'Ask for leave' })
   await form.getByLabel('Kind of leave').selectOption({ label: 'Unpaid leave' })
   await form.getByLabel('First day').fill(monday)
   await form.getByLabel('Last day').fill(tuesday)
-  await form.getByRole('button', { name: 'Ask for leave' }).click()
+  await page
+    .getByRole('dialog', { name: 'Request leave' })
+    .getByRole('button', { name: 'Ask for leave' })
+    .click()
   await expect(page.getByTestId('apply-result')).toContainText('Asked for 2 working days')
   await expectNoAccessibilityViolations(page)
   await signOut(page)
@@ -160,15 +166,22 @@ test('an admin sets a blackout period, leave inside it is refused with the reaso
   await signIn(page, 'agent')
   await page.goto('/leave')
   await expect(page.getByTestId('leave-rules-notice')).toContainText(name)
+  await page.getByRole('button', { name: 'Request leave' }).click()
   const ask = page.getByRole('form', { name: 'Ask for leave' })
   await ask.getByLabel('Kind of leave').selectOption({ label: 'Unpaid leave' })
   await ask.getByLabel('First day').fill(wednesday)
   await ask.getByLabel('Last day').fill(wednesday)
-  await ask.getByRole('button', { name: 'Ask for leave' }).click()
+  await page
+    .getByRole('dialog', { name: 'Request leave' })
+    .getByRole('button', { name: 'Ask for leave' })
+    .click()
   await expect(page.getByTestId('apply-error')).toContainText(name)
   // Sick leave cannot wait, so a blackout never refuses it.
   await ask.getByLabel('Kind of leave').selectOption({ label: 'Sick leave' })
-  await ask.getByRole('button', { name: 'Ask for leave' }).click()
+  await page
+    .getByRole('dialog', { name: 'Request leave' })
+    .getByRole('button', { name: 'Ask for leave' })
+    .click()
   await expect(page.getByTestId('apply-result')).toContainText('Asked for 1 working day')
   await signOut(page)
 

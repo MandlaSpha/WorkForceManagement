@@ -6,6 +6,7 @@ import {
   formatDateTime,
   formatDayLabel,
   greeting,
+  relativeTime,
   longDay,
   partOfDay,
   timeOf,
@@ -67,5 +68,22 @@ describe('formatDayLabel', () => {
     expect(formatDayLabel('2026-05-25')).toMatch(/Mon.*25.*May/)
     expect(formatDayLabel('2026-05-01')).toMatch(/Fri.*1.*May/)
     expect(formatDayLabel('2026-12-31')).toMatch(/Thu.*31.*Dec/)
+  })
+})
+
+const now = new Date('2026-05-20T12:00:00Z')
+
+describe('relativeTime', () => {
+  it('says how long ago in the unit a person would use', () => {
+    // Failure caught: "0 min ago" or "1440 min ago" instead of plain words.
+    expect(relativeTime('2026-05-20T11:59:50Z', now)).toBe('just now')
+    expect(relativeTime('2026-05-20T11:55:00Z', now)).toBe('5 min ago')
+    expect(relativeTime('2026-05-20T09:00:00Z', now)).toBe('3 h ago')
+    expect(relativeTime('2026-05-18T12:00:00Z', now)).toBe('2 d ago')
+  })
+
+  it('falls back to a date after a week, and never throws on a bad value', () => {
+    expect(relativeTime('2026-04-01T12:00:00Z', now)).toMatch(/1/)
+    expect(relativeTime('nonsense', now)).toBe('just now')
   })
 })

@@ -90,12 +90,39 @@ describe('the notification bell', () => {
     await waitFor(() => expect(screen.queryByTestId('unread-count')).toBeNull())
   })
 
-  it('closes with Escape', async () => {
+  it('closes with Escape and puts focus back on the bell', async () => {
+    // Failure caught: Escape closing the card but dropping keyboard users at the top of the page.
     const user = userEvent.setup()
     await open([note()])
-    await user.click(await screen.findByRole('button', { name: /^Notifications/ }))
+    const bell = await screen.findByRole('button', { name: /^Notifications/ })
+    await user.click(bell)
     expect(await screen.findByRole('region', { name: 'Notifications' })).toBeVisible()
     await user.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('region', { name: 'Notifications' })).toBeNull())
+    expect(bell).toHaveFocus()
+  })
+
+  it('moves between notices with the arrow keys', async () => {
+    // Failure caught: a list only reachable by tabbing through every row.
+    const user = userEvent.setup()
+    await open([note({ id: 1 }), note({ id: 2, message: 'A swap was answered.' })])
+    await user.click(await screen.findByRole('button', { name: /^Notifications/ }))
+    const first = await screen.findByTestId('notification-1')
+    await waitFor(() => expect(first).toHaveFocus())
+    await user.keyboard('{ArrowDown}')
+    expect(screen.getByTestId('notification-2')).toHaveFocus()
+    await user.keyboard('{ArrowUp}')
+    expect(first).toHaveFocus()
+  })
+
+  it('announces the unread count politely, and shows how long ago', async () => {
+    // Failure caught: a badge change nobody using a screen reader hears about.
+    const user = userEvent.setup()
+    await open([note({ id: 1 })])
+    await waitFor(() =>
+      expect(screen.getByTestId('unread-live')).toHaveTextContent('1 unread notifications'),
+    )
+    await user.click(await screen.findByRole('button', { name: /^Notifications/ }))
+    expect(await screen.findByTestId('notification-1')).toHaveTextContent(/ago|\d/)
   })
 })

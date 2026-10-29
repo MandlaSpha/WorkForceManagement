@@ -67,7 +67,9 @@ describe('asking for leave', () => {
   it('sends the kind and the dates with the CSRF token, and says how many days it was', async () => {
     const user = userEvent.setup()
     await open()
+    await user.click(await screen.findByRole('button', { name: 'Request leave' }))
     const form = await screen.findByRole('form', { name: 'Ask for leave' })
+    const dialog = screen.getByRole('dialog', { name: 'Request leave' })
 
     await within(form).findByRole('option', { name: 'Sick leave' }) // the kinds load first
     await user.selectOptions(within(form).getByLabelText('Kind of leave'), 'Sick leave')
@@ -75,7 +77,7 @@ describe('asking for leave', () => {
     await user.type(within(form).getByLabelText('First day'), '2099-06-01')
     await user.clear(within(form).getByLabelText('Last day'))
     await user.type(within(form).getByLabelText('Last day'), '2099-06-02')
-    await user.click(within(form).getByRole('button', { name: 'Ask for leave' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Ask for leave' }))
 
     await waitFor(() => expect(backend.writes).toHaveLength(1))
     expect(backend.writes[0]).toEqual({
@@ -96,8 +98,9 @@ describe('asking for leave', () => {
       title: 'Leave refused',
       detail: 'Sick leave has 0.0 days left in 2026; 1 were asked for.',
     }
-    const form = await screen.findByRole('form', { name: 'Ask for leave' })
-    await user.click(within(form).getByRole('button', { name: 'Ask for leave' }))
+    await user.click(await screen.findByRole('button', { name: 'Request leave' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Request leave' })
+    await user.click(within(dialog).getByRole('button', { name: 'Ask for leave' }))
     expect(await screen.findByTestId('apply-error')).toHaveTextContent(/0.0 days left/)
   })
 })

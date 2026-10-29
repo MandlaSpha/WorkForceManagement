@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
+import CommandPalette from './CommandPalette.vue'
 import SidebarNav from './SidebarNav.vue'
 import TopBar from './TopBar.vue'
 
@@ -40,6 +41,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
       aria-hidden="true"
       @click="menuOpen = false"
     />
+
+    <CommandPalette />
 
     <aside
       id="sidebar"
