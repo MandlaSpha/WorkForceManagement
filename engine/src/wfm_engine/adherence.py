@@ -34,6 +34,9 @@ STATES = (
     "logged_out",
 )
 WORKING_STATES = frozenset({"available", "on_call", "wrap_up"})
+ADHERENCE_THRESHOLD_PCT = (
+    90.0  # below this a day is out of adherence; a week is "on track" at or above
+)
 GRACE_MIN = 5  # a late start or early finish within this is not an exception
 MAX_INTERVAL_HOURS = 24
 MAX_ERRORS_KEPT = 50
@@ -112,7 +115,7 @@ def adherence(
     actual: Iterable[StateSpan],
     *,
     grace_min: int = GRACE_MIN,
-    threshold_pct: float = 90.0,
+    threshold_pct: float = ADHERENCE_THRESHOLD_PCT,
 ) -> Adherence:
     """Adherence of one person-day. `scheduled` is the on-the-phone time (overlaps are merged,
     not counted twice). `actual` is every state interval; an unknown state is not working."""

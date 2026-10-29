@@ -147,3 +147,14 @@ def my_day(user: User, employee: Employee, day: date) -> PersonDay | None:
         employee=employee, start_at__lt=end + MARGIN, end_at__gt=start - MARGIN
     )
     return _person_day(assignment, list(near))
+
+
+def person_days(user: User, assignments: list[ShiftAssignment]) -> dict[int, list[PersonDay]]:
+    """The planned-against-actual day of each given published shift, grouped by person and in day
+    order. The caller has already scoped the shifts to people the reader may see; the states are
+    scoped again here. A day with no state rows has `has_data` false: no percentage is claimed."""
+    states = _states_by_person(user, sorted({a.employee_id for a in assignments}), assignments)
+    out: dict[int, list[PersonDay]] = defaultdict(list)
+    for a in sorted(assignments, key=lambda x: x.day):
+        out[a.employee_id].append(_person_day(a, states.get(a.employee_id, [])))
+    return out

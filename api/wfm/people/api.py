@@ -32,12 +32,14 @@ from .schemas import (
 )
 from .shrinkage_api import router as shrinkage_router
 from .swap_api import router as swap_router
+from .team_api import router as team_router
 
 router = Router(tags=["people"])
 router.add_router("/swaps", swap_router)
 router.add_router("/leave", rules_router)
 router.add_router("", ess_router)
 router.add_router("", shrinkage_router)
+router.add_router("", team_router)
 
 SELF = RoleSessionAuth(*sorted(SELF_ROLES), feature=Feature.PEOPLE)
 APPROVE = RoleSessionAuth(*sorted(APPROVE_ROLES), feature=Feature.PEOPLE)

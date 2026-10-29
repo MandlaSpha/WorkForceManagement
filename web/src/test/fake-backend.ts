@@ -20,6 +20,7 @@ import type { CostReport, UtilisationReport } from '@/entities/workforce/utilisa
 import type { WorkloadBalance } from '@/entities/workforce/workload-balance'
 import type { Credential, Requirement, SkillGap } from '@/entities/workforce/skills'
 import type { QualityPerson, QualityTeam } from '@/entities/workforce/quality'
+import type { TeamOverview } from '@/entities/workforce/team'
 import type { Wellbeing } from '@/entities/workforce/wellbeing'
 import type { BackupTeam, Mobilise } from '@/entities/workforce/continuity'
 import type { Intraday, IntradaySuggestions } from '@/entities/intraday'
@@ -222,6 +223,9 @@ export const backend = {
   requirements: [] as Requirement[],
   gaps: [] as SkillGap[],
   wellbeing: null as Wellbeing | null,
+  /** The Team screen's week (null: the API refuses), and the query strings asked, in order. */
+  team: null as TeamOverview | null,
+  teamQueries: [] as string[],
   /** Quality results: the team list, one person by employee id, and the signed-in person's own
    * (null: the API refuses or the person is not on the list). The windows asked for are kept. */
   qualityTeam: null as QualityTeam | null,
@@ -370,6 +374,8 @@ export const backend = {
     this.requirements = []
     this.gaps = []
     this.wellbeing = null
+    this.team = null
+    this.teamQueries = []
     this.qualityTeam = null
     this.qualityPeople = {}
     this.myQuality = null
@@ -759,6 +765,13 @@ export const handlers = [
   }),
 
   http.get('*/api/v1/skills/gaps', () => HttpResponse.json(backend.gaps)),
+
+  http.get('*/api/v1/people/team-overview', ({ request }) => {
+    backend.teamQueries.push(new URL(request.url).search)
+    return backend.team
+      ? HttpResponse.json(backend.team)
+      : problem(403, 'auth.forbidden', 'Forbidden')
+  }),
 
   http.get('*/api/v1/wellbeing/flags', () =>
     backend.wellbeing
