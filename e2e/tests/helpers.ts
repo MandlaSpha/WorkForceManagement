@@ -17,11 +17,22 @@ export async function signIn(
   await page.getByLabel('Username').fill(username)
   await page.getByLabel('Password').fill(password)
   await page.getByRole('button', { name: 'Sign in' }).click()
-  if (expectSuccess) await expect(page.getByRole('button', { name: /^Account menu/ })).toBeVisible()
+  // The account card lives at the foot of the sidebar, which is a closed drawer on a phone, so
+  // "signed in" means the card exists, not that it is on screen.
+  if (expectSuccess)
+    await expect(page.getByRole('button', { name: /^Account menu/ })).toBeAttached()
+}
+
+/** Opens the account menu from the user card at the foot of the sidebar; on a phone the sidebar
+ * is a drawer, so it is opened first. */
+export async function openAccountMenu(page: Page): Promise<void> {
+  const card = page.getByRole('button', { name: /^Account menu/ })
+  if (!(await card.isVisible())) await page.getByRole('button', { name: 'Open navigation' }).click()
+  await card.click()
 }
 
 export async function signOut(page: Page): Promise<void> {
-  await page.getByRole('button', { name: /^Account menu/ }).click()
+  await openAccountMenu(page)
   await page.getByRole('menuitem', { name: 'Sign out' }).click()
   await expect(page).toHaveURL(/\/login/)
 }

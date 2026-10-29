@@ -6,8 +6,6 @@ import { NotificationBell } from '@/features/account/notifications'
 import { ThemeToggle } from '@/features/toggle-theme'
 import { useSessionStore } from '@/entities/session'
 
-import AccountMenu from './AccountMenu.vue'
-
 defineProps<{ menuOpen: boolean }>()
 defineEmits<{ toggleMenu: [] }>()
 
@@ -35,7 +33,6 @@ const session = useSessionStore()
     >
       <NotificationBell />
       <ThemeToggle />
-      <AccountMenu />
     </div>
   </header>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import { clock } from '@/entities/availability'
@@ -12,12 +12,14 @@ import {
   useMySchedule,
 } from '@/entities/my-schedule'
 import type { ScheduleDay } from '@/entities/my-schedule'
+import WeekCalendar from './WeekCalendar.vue'
+import WeekGlance from './WeekGlance.vue'
 import { OwnDay } from '@/features/attendance/own-day'
 import { ApiProblem, problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import { formatDayLabel } from '@/shared/lib/datetime'
 import { isPhone } from '@/shared/ui/viewport'
-import { todayInJohannesburg } from '@/shared/lib/week'
+import { addDays, todayInJohannesburg, weekStartOf } from '@/shared/lib/week'
 import AppButton from '@/shared/ui/AppButton.vue'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
@@ -36,10 +38,43 @@ const ACTIVITY: Record<string, string> = {
 
 const month = ref(monthOf(today))
 // A month grid does not fit a phone, so a phone starts on the list of days.
-const view = ref<'month' | 'list'>(isPhone() ? 'list' : 'month')
+const phone = isPhone()
+const chosen = ref<'month' | 'week' | 'list'>(phone ? 'list' : 'month')
+// The time grid needs width too: on a phone the week falls back to the agenda list.
+const view = computed(() => (phone && chosen.value === 'week' ? 'list' : chosen.value))
+const weekStart = ref(weekStartOf(today))
 const grid = computed(() => monthGrid(month.value))
-const from = computed(() => grid.value.from)
-const to = computed(() => grid.value.to)
+// The week view also asks for the day before (a night shift's tail) and the week after (for
+// "Up next"); the other views ask for the month grid as before.
+const from = computed(() =>
+  view.value === 'week' ? addDays(weekStart.value, -1) : grid.value.from,
+)
+const to = computed(() => (view.value === 'week' ? addDays(weekStart.value, 13) : grid.value.to))
+
+function johannesburgMinutes(): number {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Africa/Johannesburg',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date())
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0)
+  return get('hour') * 60 + get('minute')
+}
+const nowMin = ref(johannesburgMinutes())
+let timer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  timer = setInterval(() => (nowMin.value = johannesburgMinutes()), 60_000)
+})
+onBeforeUnmount(() => clearInterval(timer))
+
+const weekShifts = computed(() => {
+  const end = addDays(weekStart.value, 6)
+  return (schedule.data.value?.shifts ?? []).filter((s) => s.day >= weekStart.value && s.day <= end)
+})
+const weekTitle = computed(
+  () => `${formatDayLabel(weekStart.value)} to ${formatDayLabel(addDays(weekStart.value, 6))}`,
+)
 
 const schedule = useMySchedule(from, to)
 const noRecord = computed(
@@ -75,7 +110,36 @@ const dayNumber = (iso: string) => String(Number(iso.slice(8)))
     </NoticeBox>
     <template v-else>
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
+        <div v-if="view === 'week'" class="flex items-center gap-2">
+          <AppButton
+            variant="secondary"
+            aria-label="Previous week"
+            @click="weekStart = addDays(weekStart, -7)"
+          >
+            ‹
+          </AppButton>
+          <h2
+            class="min-w-48 text-center text-base font-semibold text-ink"
+            data-testid="week-title"
+          >
+            {{ weekTitle }}
+          </h2>
+          <AppButton
+            variant="secondary"
+            aria-label="Next week"
+            @click="weekStart = addDays(weekStart, 7)"
+          >
+            ›
+          </AppButton>
+          <AppButton
+            v-if="weekStart !== weekStartOf(today)"
+            variant="ghost"
+            @click="weekStart = weekStartOf(today)"
+          >
+            This week
+          </AppButton>
+        </div>
+        <div v-else class="flex items-center gap-2">
           <AppButton
             variant="secondary"
             aria-label="Previous month"
@@ -108,14 +172,22 @@ const dayNumber = (iso: string) => String(Number(iso.slice(8)))
           <AppButton
             :variant="view === 'month' ? 'primary' : 'secondary'"
             :aria-pressed="view === 'month'"
-            @click="view = 'month'"
+            @click="chosen = 'month'"
           >
             Month
           </AppButton>
           <AppButton
+            v-if="!phone"
+            :variant="view === 'week' ? 'primary' : 'secondary'"
+            :aria-pressed="view === 'week'"
+            @click="chosen = 'week'"
+          >
+            Week
+          </AppButton>
+          <AppButton
             :variant="view === 'list' ? 'primary' : 'secondary'"
             :aria-pressed="view === 'list'"
-            @click="view = 'list'"
+            @click="chosen = 'list'"
           >
             List
           </AppButton>
@@ -141,8 +213,23 @@ const dayNumber = (iso: string) => String(Number(iso.slice(8)))
           </RouterLink>
         </NoticeBox>
 
+        <div v-if="view === 'week'" class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
+          <WeekCalendar
+            :week-start="weekStart"
+            :shifts="schedule.data.value.shifts"
+            :today="today"
+            :now-minutes="nowMin"
+          />
+          <WeekGlance
+            :week-shifts="weekShifts"
+            :upcoming="schedule.data.value.shifts"
+            :today="today"
+            :now-minutes="nowMin"
+          />
+        </div>
+
         <div
-          v-if="view === 'month'"
+          v-else-if="view === 'month'"
           class="overflow-x-auto rounded-xl border border-line bg-surface"
         >
           <table

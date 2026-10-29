@@ -59,6 +59,10 @@ test('a directory planner signs in and gets the planner role from their group', 
 
 test('a directory admin gets the admin screens', async ({ page }) => {
   await directorySignIn(page, 'ash')
+  // Admin screens sit under Settings at the foot of the sidebar.
+  await nav(page)
+    .getByRole('button', { name: /^Settings/ })
+    .click()
   await expect(nav(page).getByRole('link', { name: 'Configure' })).toBeVisible()
   await expect(nav(page).getByRole('link', { name: 'Audit log' })).toBeVisible()
 })

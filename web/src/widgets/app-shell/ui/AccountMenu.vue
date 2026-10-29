@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { KeyRound } from 'lucide-vue-next'
+import { Ellipsis, KeyRound } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
@@ -44,11 +44,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-if="session.user" ref="root" class="relative pl-2">
+  <div v-if="session.user" ref="root" class="relative">
     <button
       ref="trigger"
       type="button"
-      class="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg p-1 hover:bg-surface-muted"
+      class="flex min-h-14 w-full items-center gap-3 rounded-2xl bg-side-hover p-2 text-left hover:bg-side-line"
       aria-haspopup="menu"
       :aria-expanded="open"
       aria-controls="account-menu"
@@ -56,15 +56,20 @@ onBeforeUnmount(() => {
       @click="open = !open"
     >
       <span
-        class="inline-flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-semibold text-brand-ink"
+        class="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-side-pill text-xs font-semibold text-on-side-pill ring-2 ring-side-line ring-offset-2 ring-offset-side"
         aria-hidden="true"
       >
         {{ initials }}
       </span>
-      <span class="hidden text-left leading-tight sm:block">
-        <span class="block text-sm font-medium text-ink">{{ session.user.displayName }}</span>
-        <span class="block text-xs text-ink-muted">{{ ROLE_LABELS[session.user.role] }}</span>
+      <span class="min-w-0 flex-1 leading-tight">
+        <span class="block truncate text-sm font-semibold text-on-side">{{
+          session.user.displayName
+        }}</span>
+        <span class="block truncate text-xs text-side-dim">{{
+          ROLE_LABELS[session.user.role]
+        }}</span>
       </span>
+      <Ellipsis :size="18" class="shrink-0 text-side-dim" aria-hidden="true" />
     </button>
 
     <div
@@ -72,7 +77,7 @@ onBeforeUnmount(() => {
       id="account-menu"
       role="menu"
       aria-label="Account"
-      class="absolute right-0 z-30 mt-2 w-56 rounded-xl border border-line bg-surface p-1 shadow-lg"
+      class="absolute inset-x-0 bottom-full z-50 mb-2 rounded-2xl border border-line bg-surface p-1 text-ink shadow-[var(--shadow-pop)]"
     >
       <p class="px-3 py-2 text-xs text-ink-muted">
         Signed in as <span class="font-medium text-ink">{{ session.user.displayName }}</span>
@@ -80,13 +85,13 @@ onBeforeUnmount(() => {
       <RouterLink
         to="/change-password"
         role="menuitem"
-        class="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink hover:bg-surface-muted"
+        class="flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink hover:bg-surface-muted"
         @click="close()"
       >
         <KeyRound :size="16" aria-hidden="true" />
         Change password
       </RouterLink>
-      <div role="none" class="border-t border-line pt-1 mt-1">
+      <div role="none" class="mt-1 border-t border-line pt-1">
         <SignOutButton class="w-full justify-start" role="menuitem" />
       </div>
     </div>

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import { monthGrid, monthLabel, monthOf, shiftMonth } from '@/entities/my-schedule'
 import type { MySchedule } from '@/entities/my-schedule'
-import { todayInJohannesburg } from '@/shared/lib/week'
+import { addDays, todayInJohannesburg, weekStartOf } from '@/shared/lib/week'
 import { backend } from '@/test/fake-backend'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
 
@@ -174,5 +174,55 @@ describe('breaks inside a shift', () => {
     })
     const cell = await screen.findByTestId(`day-${day(15)}`)
     expect(within(cell).getByTestId('activity')).toHaveTextContent('Lunch 12:00')
+  })
+})
+
+describe('the week calendar', () => {
+  it('draws published shifts as blocks, with a glance card and the current-time marker today', async () => {
+    // Failure caught: a week view that omits a shift, drops the glance totals, or loses "now".
+    const monday = weekStartOf(today)
+    const user = userEvent.setup()
+    await open({
+      fromDate: addDays(monday, -1),
+      toDate: addDays(monday, 13),
+      shifts: [
+        {
+          day: monday,
+          shift: 'D1',
+          startTime: '09:00:00',
+          endTime: '17:00:00',
+          queue: 'QueueA',
+          activities: [{ kind: 'lunch', startTime: '12:00', endTime: '13:00' }],
+        },
+        {
+          day: addDays(monday, 2),
+          shift: 'N1',
+          startTime: '22:00:00',
+          endTime: '06:00:00',
+          queue: 'QueueA',
+          activities: [],
+        },
+      ],
+    })
+    await user.click(await screen.findByRole('button', { name: 'Week' }))
+    const blocks = await screen.findAllByTestId('week-block')
+    // The night shift is cut at midnight: one day block, one block for each part of the night.
+    expect(blocks).toHaveLength(3)
+    expect(screen.getByTestId('glance-shifts')).toHaveTextContent('2')
+    expect(screen.getByTestId('glance-hours')).toHaveTextContent('15 h')
+    expect(screen.getByTestId('glance-activity')).toHaveTextContent('Lunch')
+    expect(screen.getByTestId('week-glance')).toBeVisible()
+    if (today >= monday && today <= addDays(monday, 6)) {
+      expect(screen.getByTestId('now-marker')).toBeInTheDocument()
+    }
+  })
+
+  it('goes back to the agenda list with the existing list view', async () => {
+    // Failure caught: Agenda no longer reachable once the week view exists.
+    const user = userEvent.setup()
+    await open()
+    await user.click(await screen.findByRole('button', { name: 'Week' }))
+    await user.click(screen.getByRole('button', { name: 'List' }))
+    expect(await screen.findByLabelText('My days')).toBeInTheDocument()
   })
 })
