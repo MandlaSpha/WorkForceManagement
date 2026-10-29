@@ -21,6 +21,11 @@ export const STATUS_TONE: Record<string, string> = {
   cancelled: 'bg-surface-muted text-ink-muted',
 }
 
+/** "1 day", "6 days". */
+export function formatDays(days: number): string {
+  return `${days} ${days === 1 ? 'day' : 'days'}`
+}
+
 /** "13 of 15 days left", or "no limit" for a kind of leave without one. */
 export function daysLeft(available: number | null, entitlement: number | null): string {
   if (available === null || entitlement === null) return 'no limit'

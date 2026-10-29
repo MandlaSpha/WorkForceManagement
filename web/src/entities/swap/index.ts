@@ -8,6 +8,8 @@ export {
   takeSwap,
 } from './api/swap'
 export type { SwapAnswer } from './api/swap'
+export { canMoveSwap, groupSwaps, isMovableSwap, stageOf, SWAP_STAGES } from './model/board'
+export type { MoveVerdict, SwapStage } from './model/board'
 export {
   describe,
   isOpen,

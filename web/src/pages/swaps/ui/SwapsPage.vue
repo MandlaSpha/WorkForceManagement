@@ -12,10 +12,11 @@ import {
   useSwaps,
 } from '@/entities/swap'
 import type { Swap, SwapAnswer } from '@/entities/swap'
-import { SwapActions } from '@/features/swap/answer'
+import { SwapActions, SwapBoard } from '@/features/swap/answer'
 import { OfferSwapForm } from '@/features/swap/offer'
 import { TakeSwapPanel } from '@/features/swap/take'
 import { problemMessage } from '@/shared/api'
+import { isPhone } from '@/shared/ui/viewport'
 import { NAV_ITEMS } from '@/shared/config'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
@@ -63,6 +64,13 @@ function taken(message: string): void {
   taking.value = null
 }
 
+// Board for the people who decide, on a desktop; a list on a phone and for agents.
+const view = ref(decides.value && !isPhone() ? 'board' : 'list')
+const VIEWS = [
+  { key: 'board', label: 'Board' },
+  { key: 'list', label: 'List' },
+]
+
 const tab = ref('mine')
 const TABS = computed(() => [
   { key: 'mine', label: 'My swaps' },
@@ -79,11 +87,28 @@ const TABS = computed(() => [
   />
 
   <div class="space-y-4">
-    <TabBar v-model="tab" :tabs="TABS" label="Shift swap sections" id-prefix="swaps" />
+    <TabBar v-model="view" :tabs="VIEWS" label="Swap view" id-prefix="swaps-view" variant="pill" />
+    <TabBar
+      v-if="view === 'list'"
+      v-model="tab"
+      :tabs="TABS"
+      label="Shift swap sections"
+      id-prefix="swaps"
+    />
     <NoticeBox v-if="outcome" data-testid="swap-result" role="status">{{ outcome }}</NoticeBox>
 
     <div
-      v-if="tab === 'mine'"
+      v-if="view === 'board'"
+      id="swaps-view-panel-board"
+      role="tabpanel"
+      aria-labelledby="swaps-view-tab-board"
+    >
+      <SwapBoard :decides="decides" @answered="outcome = $event" />
+      <p class="mt-3 text-xs text-ink-muted">To post a swap or take one, switch to List.</p>
+    </div>
+
+    <div
+      v-else-if="tab === 'mine'"
       id="swaps-panel-mine"
       role="tabpanel"
       aria-labelledby="swaps-tab-mine"

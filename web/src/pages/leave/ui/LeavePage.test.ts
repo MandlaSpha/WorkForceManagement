@@ -12,7 +12,11 @@ async function open(role = 'agent', requests = [requestOf()]) {
   backend.balances = balancesOf()
   backend.leaveRequests = requests
   backend.impact = impactOf()
-  return openScheduling('/leave', role)
+  const view = await openScheduling('/leave', role)
+  // The people who decide start on the board; these tests are about the list.
+  if (['lead', 'planner', 'admin'].includes(role))
+    await userEvent.setup().click(await screen.findByRole('tab', { name: 'List' }))
+  return view
 }
 
 describe('my leave', () => {

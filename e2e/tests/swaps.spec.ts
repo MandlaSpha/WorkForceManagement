@@ -131,6 +131,8 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
   await test.step('the colleague sees the request without the poster’s name and takes it', async () => {
     await signIn(page, 'lead')
     await page.goto('/shift-swaps')
+    // Deciders open on the board; taking a request is done from the list.
+    await page.getByRole('tab', { name: 'List', exact: true }).click()
     await page.getByRole('tab', { name: 'Open requests' }).click()
     const card = page.getByRole('listitem').filter({ hasText: early }).first()
     await expect(card).toContainText('A colleague on')
@@ -164,15 +166,18 @@ test('an agent offers a swap, the colleague accepts, a planner approves, and the
   await test.step('a planner approves it and the roster has the two shifts exchanged', async () => {
     await signIn(page, 'planner')
     await page.goto('/shift-swaps')
-    await page.getByRole('tab', { name: 'Approvals' }).click()
-    const row = page
+    // Planners open on the board: the swap sits under 'Accepted - needs approval'. Move it with the
+    // keyboard-accessible menu (dragging does the same).
+    const accepted = page.getByTestId('kanban-col-accepted')
+    const card = accepted
       .getByRole('listitem')
       .filter({ hasText: early })
       .filter({ hasText: late })
       .first()
-    await row
-      .getByRole('button', { name: /Approve the swap between Alex Agent and Lee Lead/ })
-      .click()
+    await expect(card).toContainText('Alex Agent and Lee Lead')
+    await card.getByRole('button', { name: /^Move .* to/ }).click()
+    await card.getByRole('button', { name: /^Approved/ }).click()
+    await expect(page.getByTestId('kanban-live')).toContainText('Approved')
     await expect(page.getByTestId('swap-result')).toContainText('exchanged on the roster')
 
     const cells = async (day: string) => {

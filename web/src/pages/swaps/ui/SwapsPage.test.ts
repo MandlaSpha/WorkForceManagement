@@ -16,7 +16,11 @@ async function open(
   backend.board = over.board ?? []
   backend.swapOffers = over.offers ?? []
   backend.swaps = over.swaps ?? []
-  return openScheduling('/shift-swaps', role)
+  const view = await openScheduling('/shift-swaps', role)
+  // The people who decide start on the board; these tests are about the list.
+  if (['lead', 'planner', 'admin'].includes(role))
+    await userEvent.setup().click(await screen.findByRole('tab', { name: 'List' }))
+  return view
 }
 
 describe('posting a swap request', () => {

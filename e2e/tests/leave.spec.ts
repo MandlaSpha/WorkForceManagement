@@ -76,16 +76,26 @@ test('an agent asks for leave, a lead sees its effect and approves it, and the a
     'Leave is waiting for your decision.',
   )
   await page.keyboard.press('Escape')
-  await page.getByRole('tab', { name: 'Approvals' }).click()
-  const request = page
+  // Leads open on the board: the request is a card under Pending, with its effect on coverage.
+  const pending = page.getByTestId('kanban-col-pending')
+  const request = pending
     .getByRole('listitem')
     .filter({ hasText: 'Alex Agent' })
     .filter({ hasText: 'Unpaid leave' })
     .first()
   await expect(request).toContainText('2 days')
-  await request.getByRole('button', { name: /Show coverage impact/ }).click()
-  await expect(request.getByTestId('impact')).toContainText('nothing changes in the roster') // not rostered
-  await request.getByRole('button', { name: 'Approve leave for Alex Agent' }).click()
+  await expect(request.getByTestId('coverage-chip')).toContainText('No roster change') // not rostered
+  // The same request is still on the list, with the full impact text.
+  await page.getByRole('tab', { name: 'List', exact: true }).click()
+  await page.getByRole('tab', { name: 'Approvals' }).click()
+  await page
+    .getByRole('button', { name: 'Show coverage impact for Alex Agent' })
+    .first()
+    .click()
+  await expect(page.getByTestId('impact').first()).toContainText('nothing changes in the roster')
+  await page.getByRole('tab', { name: 'Board', exact: true }).click()
+  // Approve it by dragging the card onto Approved (the Move to menu does the same by keyboard).
+  await request.dragTo(page.getByTestId('kanban-col-approved'))
   await expect(page.getByTestId('decision-result')).toContainText('Approved leave for Alex Agent')
   await signOut(page)
 
