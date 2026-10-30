@@ -9,3 +9,8 @@ export async function fetchScorecard(from: string, to: string): Promise<Scorecar
     }),
   )
 }
+
+/** The address of the CSV of the scorecard for a range. */
+export function scorecardCsvUrl(from: string, to: string): string {
+  return `/api/v1/insight/scorecard.csv?date_from=${from}&date_to=${to}`
+}

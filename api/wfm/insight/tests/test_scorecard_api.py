@@ -140,3 +140,32 @@ class TestRange:
         backwards = c.get(URL, {"date_from": "2031-03-05", "date_to": "2031-03-01"})
         too_long = c.get(URL, {"date_from": "2020-01-01", "date_to": "2031-03-01"})
         assert (backwards.status_code, too_long.status_code) == (422, 422)
+
+
+class TestScorecardCsv:
+    CSV = "/api/v1/insight/scorecard.csv"
+
+    @pytest.mark.parametrize("role", [Role.ADMIN, Role.PLANNER, Role.EXECUTIVE, Role.CUSTOMER_OPS])
+    def test_these_roles_can_download_it(self, role: Role) -> None:
+        calls(MON, 10, 8)
+        response = client(role).get(self.CSV, {"date_from": str(MON), "date_to": str(TUE)})
+        assert response.status_code == 200
+        assert response["Content-Type"].startswith("text/csv")
+        text = response.content.decode()
+        assert text.startswith("section,key_or_day,label")
+        assert "figure,service_level" in text
+        assert ("day,2031-03-03" in text) == (role != Role.CUSTOMER_OPS)  # scoped like the screen
+        assert "cost_per_contact" not in text  # no money figure leaves in a file
+
+    @pytest.mark.parametrize("role", [Role.LEAD, Role.AGENT])
+    def test_other_roles_are_refused(self, role: Role) -> None:
+        response = client(role).get(self.CSV, {"date_from": str(MON), "date_to": str(TUE)})
+        assert response.status_code == 403
+
+    def test_a_bad_range_is_refused(self) -> None:
+        response = client(Role.ADMIN).get(self.CSV, {"date_from": str(TUE), "date_to": str(MON)})
+        assert response.status_code == 422
+
+    def test_it_needs_a_login(self) -> None:
+        anonymous = Client().get(self.CSV, {"date_from": str(MON), "date_to": str(TUE)})
+        assert anonymous.status_code in (401, 403)

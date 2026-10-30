@@ -7962,6 +7962,11 @@
             "title": "Hour",
             "type": "integer"
           },
+          "paused": {
+            "default": false,
+            "title": "Paused",
+            "type": "boolean"
+          },
           "queueId": {
             "anyOf": [
               {
@@ -12930,6 +12935,47 @@
         ]
       }
     },
+    "/api/v1/insight/scorecard.csv": {
+      "get": {
+        "operationId": "wfm_insight_api_scorecard_csv",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date From",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Date To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Download the scorecard for a range as CSV (same roles and scoping as the screen)",
+        "tags": [
+          "insight"
+        ]
+      }
+    },
     "/api/v1/intraday": {
       "get": {
         "operationId": "wfm_intraday_api_get_intraday",
@@ -15436,6 +15482,26 @@
           }
         ],
         "summary": "Schedule a report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/reports/schedules.csv": {
+      "get": {
+        "operationId": "wfm_reports_api_schedules_csv",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Download the schedules you may see as CSV",
         "tags": [
           "reports"
         ]

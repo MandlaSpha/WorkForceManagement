@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 from ninja import Router, Schema, Status
+from wfm_engine import payroll as fmt
 
 from wfm.accounts.models import Role
 from wfm.core.features import Feature
@@ -28,6 +29,7 @@ class ScheduleIn(Schema):
     hour: int
     weekday: int = 0
     dayOfMonth: int = 1  # noqa: N815
+    paused: bool = False  # create it already paused
 
 
 class SchedulePatch(Schema):
@@ -98,6 +100,44 @@ def list_schedules(request: HttpRequest) -> list[ScheduleOut]:
     return [_out(s, user.pk, user.role == Role.ADMIN) for s in found]
 
 
+CSV_HEADER = [
+    "report", "queue", "frequency", "hour", "weekday", "day_of_month", "recipients",
+    "paused", "last_sent_at", "last_outcome", "owner",
+]  # fmt: skip
+
+
+@router.get(
+    "/schedules.csv",
+    auth=AUTH,
+    response={200: None},
+    summary="Download the schedules you may see as CSV",
+)
+def schedules_csv(request: HttpRequest) -> HttpResponse:
+    user = current_user(request)
+    as_admin = user.role == Role.ADMIN
+    found = ReportSchedule.objects.for_user(user).select_related("owner", "queue")
+    rows = [
+        [
+            s.report,
+            s.queue.name if s.queue else "",
+            s.frequency,
+            str(s.hour),
+            str(s.weekday),
+            str(s.day_of_month),
+            "; ".join(s.recipients),
+            "yes" if s.paused else "no",
+            s.last_sent_at.isoformat() if s.last_sent_at else "",
+            s.last_outcome,
+            (s.owner.get_full_name() or s.owner.username) if as_admin else "",
+        ]
+        for s in found
+    ]
+    response = HttpResponse(fmt.to_csv(CSV_HEADER, rows), content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="report-schedules.csv"'
+    response["Cache-Control"] = "no-store"
+    return response
+
+
 @router.post("/schedules", auth=AUTH, response={201: ScheduleOut}, summary="Schedule a report")
 def create(request: HttpRequest, body: ScheduleIn) -> Status[ScheduleOut]:
     made = services.create(
@@ -109,6 +149,7 @@ def create(request: HttpRequest, body: ScheduleIn) -> Status[ScheduleOut]:
         hour=body.hour,
         weekday=body.weekday,
         day_of_month=body.dayOfMonth,
+        paused=body.paused,
     )
     return Status(201, _one(request, made.pk))
 

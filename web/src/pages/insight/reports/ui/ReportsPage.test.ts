@@ -54,6 +54,7 @@ describe('scheduling a report', () => {
         hour: 7,
         weekday: 0,
         dayOfMonth: 1,
+        paused: false,
       },
       csrf: 'test-csrf-token',
     })
@@ -105,6 +106,29 @@ describe('scheduling a report', () => {
       expect(backend.writes[0]?.body).toMatchObject({ report: 'board', queueId: null })
     },
   )
+
+  it('can start a schedule paused', async () => {
+    const user = userEvent.setup()
+    await open()
+    const form = await screen.findByRole('form', { name: 'Schedule a report' })
+    await user.click(within(form).getByRole('checkbox', { name: 'Start paused' }))
+    await user.type(within(form).getByLabelText(/Send to/), 'boss@example.co.za')
+    await user.click(within(form).getByRole('button', { name: 'Schedule report' }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]?.body).toMatchObject({ paused: true })
+  })
+
+  it('names each report type by its title only, with the blurb as the description', async () => {
+    await open()
+    const radio = await screen.findByRole('radio', { name: 'Peaks and troughs' })
+    expect(radio).toHaveAccessibleDescription(/\S/)
+  })
+
+  it('offers the list as a CSV once there is a schedule', async () => {
+    await open('planner', [schedule()])
+    const link = await screen.findByTestId('schedules-csv')
+    expect(link).toHaveAttribute('href', '/api/v1/reports/schedules.csv')
+  })
 
   it('does not offer a lead the board pack', async () => {
     // Failure caught: offering a lead a pack the API will refuse.

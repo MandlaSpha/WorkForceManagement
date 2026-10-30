@@ -736,6 +736,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/insight/scorecard.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download the scorecard for a range as CSV (same roles and scoping as the screen) */
+        get: operations["wfm_insight_api_scorecard_csv"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/intraday": {
         parameters: {
             query?: never;
@@ -1639,6 +1656,23 @@ export interface paths {
         put?: never;
         /** Schedule a report */
         post: operations["wfm_reports_api_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/schedules.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download the schedules you may see as CSV */
+        get: operations["wfm_reports_api_schedules_csv"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5537,6 +5571,11 @@ export interface components {
             frequency: string;
             /** Hour */
             hour: number;
+            /**
+             * Paused
+             * @default false
+             */
+            paused: boolean;
             /** Queueid */
             queueId?: number | null;
             /** Recipients */
@@ -7675,6 +7714,27 @@ export interface operations {
             };
         };
     };
+    wfm_insight_api_scorecard_csv: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     wfm_intraday_api_get_intraday: {
         parameters: {
             query: {
@@ -9062,6 +9122,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ScheduleOut"];
                 };
+            };
+        };
+    };
+    wfm_reports_api_schedules_csv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

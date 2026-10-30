@@ -19,7 +19,7 @@ from openpyxl import load_workbook
 from wfm.accounts.models import Role, User
 from wfm.audit.models import Action, AuditChange, AuditEvent
 from wfm.reports import services
-from wfm.reports.models import ReportSchedule
+from wfm.reports.models import ReportSchedule, ReportSettings
 from wfm.telephony.models import Queue
 
 pytestmark = pytest.mark.django_db
@@ -423,3 +423,51 @@ class TestBoardPack:
         assert rows
         assert all(r[3] in ("measured", "modelled", "needs_data") for r in rows)
         assert "Service level" in {r[0] for r in rows}
+
+
+class TestCsvAndPausedCreate:
+    def _allow(self) -> None:
+        ReportSettings.objects.update_or_create(
+            pk=1, defaults={"allowed_domains": ["example.co.za"]}
+        )
+
+    def test_a_schedule_can_be_made_paused(self) -> None:
+        self._allow()
+        r = client(Role.PLANNER).post(SCHEDULES, body(paused=True), content_type="application/json")
+        assert r.status_code == 201, r.content
+        assert r.json()["paused"] is True
+        assert ReportSchedule.objects.get().paused is True
+
+    def test_it_is_active_by_default(self) -> None:
+        self._allow()
+        r = client(Role.PLANNER).post(SCHEDULES, body(), content_type="application/json")
+        assert r.json()["paused"] is False
+
+    @pytest.mark.parametrize(
+        "role", [Role.ADMIN, Role.PLANNER, Role.LEAD, Role.EXECUTIVE, Role.CUSTOMER_OPS]
+    )
+    def test_these_roles_can_download_the_list(self, role: Role) -> None:
+        response = client(role).get(SCHEDULES + ".csv")
+        assert response.status_code == 200
+        assert response.content.decode().startswith("report,queue,frequency")
+
+    def test_an_agent_is_refused(self) -> None:
+        assert client(Role.AGENT).get(SCHEDULES + ".csv").status_code == 403
+
+    def test_it_holds_only_your_own_and_is_formula_safe(self) -> None:
+        self._allow()
+        mine = client(Role.PLANNER, "planner-a")
+        mine.post(SCHEDULES, body(), content_type="application/json")
+        other = client(Role.PLANNER, "planner-b")
+        other.post(
+            SCHEDULES, body(recipients=["other@example.co.za"]), content_type="application/json"
+        )
+        ReportSchedule.objects.filter(owner__username="planner-a").update(
+            queue=Queue.objects.create(name="=SUM(A1)")
+        )
+        text = mine.get(SCHEDULES + ".csv").content.decode()
+        assert "boss@example.co.za" in text
+        assert "other@example.co.za" not in text
+        assert "'=SUM(A1)" in text
+        admin_text = client(Role.ADMIN).get(SCHEDULES + ".csv").content.decode()
+        assert "other@example.co.za" in admin_text

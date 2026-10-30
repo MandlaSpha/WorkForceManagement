@@ -32,6 +32,7 @@ const frequency = ref('daily')
 const hour = ref('7')
 const weekday = ref('0')
 const dayOfMonth = ref('1')
+const startPaused = ref(false)
 
 const queueOptions = computed(() =>
   props.queues.map((q) => ({ value: String(q.id), label: q.name })),
@@ -61,6 +62,7 @@ function submit(): void {
       hour: Number(hour.value),
       weekday: Number(weekday.value),
       dayOfMonth: Number(dayOfMonth.value),
+      paused: startPaused.value,
     },
     { onSuccess: () => (recipients.value = '') },
   )
@@ -93,6 +95,7 @@ function submit(): void {
             class="sr-only"
             name="report-type"
             :value="r"
+            :aria-labelledby="`${uid}-${r}-name`"
             :aria-describedby="`${uid}-${r}`"
           />
           <span
@@ -102,7 +105,9 @@ function submit(): void {
             <component :is="ICON[r as keyof typeof ICON] ?? FileBarChart" :size="18" />
           </span>
           <span class="min-w-0">
-            <span class="block text-sm font-semibold text-ink">{{ REPORT_LABEL[r] ?? r }}</span>
+            <span :id="`${uid}-${r}-name`" class="block text-sm font-semibold text-ink">{{
+              REPORT_LABEL[r] ?? r
+            }}</span>
             <span :id="`${uid}-${r}`" class="mt-0.5 block text-xs text-ink-muted">
               {{ REPORT_BLURB[r] ?? '' }}
             </span>
@@ -182,6 +187,12 @@ function submit(): void {
             hide-label
             :options="hourOptions"
           />
+        </SettingsRow>
+        <SettingsRow label="Start paused" helper="Make it now, switch it on later.">
+          <label class="flex items-center gap-2 text-sm text-ink">
+            <input v-model="startPaused" type="checkbox" class="size-4" />
+            Start paused
+          </label>
         </SettingsRow>
         <template #footer>
           <SettingsFooter
