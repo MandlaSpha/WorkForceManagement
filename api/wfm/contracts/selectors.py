@@ -20,7 +20,7 @@ from wfm.scheduling.selectors import week_plan
 from wfm.telephony.models import Queue
 from wfm.telephony.selectors import kpi_summary
 
-from .models import Contract, ContractQueue, Customer
+from .models import Contract, ContractQueue, Customer, CustomerAssignment
 
 WINDOW_DAYS = 28
 
@@ -89,3 +89,12 @@ def _judge(row: ContractRow) -> None:
         row.risks.append(
             f"{row.under_intervals} half-hours of the week are short of the people needed"
         )
+
+
+def assignees(user: User, customer_id: int) -> list[User] | None:
+    """The customer operations managers assigned to a customer (admin only); None if no such
+    customer is readable."""
+    if not Customer.objects.for_user(user).filter(pk=customer_id).exists():
+        return None
+    links = CustomerAssignment.objects.for_user(user).filter(customer_id=customer_id)
+    return [link.user for link in links.select_related("user").order_by("user__username")]

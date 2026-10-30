@@ -1,6 +1,23 @@
 import { api, unwrap } from '@/shared/api'
 
-import type { ContractChange, ContractRow, Customer, NewContract } from '../model/types'
+import type { Assignee, ContractChange, ContractRow, Customer, NewContract } from '../model/types'
+
+export async function fetchAssignees(customerId: number): Promise<Assignee[]> {
+  return unwrap(
+    await api.GET('/api/v1/contracts/customers/{customer_id}/assignees', {
+      params: { path: { customer_id: customerId } },
+    }),
+  )
+}
+
+export async function setAssignees(customerId: number, userIds: number[]): Promise<Assignee[]> {
+  return unwrap(
+    await api.PUT('/api/v1/contracts/customers/{customer_id}/assignees', {
+      params: { path: { customer_id: customerId } },
+      body: { userIds },
+    }),
+  )
+}
 
 export async function fetchContracts(): Promise<ContractRow[]> {
   return unwrap(await api.GET('/api/v1/contracts', { params: { query: {} } }))

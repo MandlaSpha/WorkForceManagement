@@ -5,6 +5,7 @@ import { useQueues } from '@/entities/call-data'
 import { coverage, measured, promise, useContracts, useCustomers } from '@/entities/contract'
 import type { ContractRow } from '@/entities/contract'
 import { useSessionStore } from '@/entities/session'
+import { AssigneesForm } from '@/features/commercial/assignees'
 import { ContractForm } from '@/features/commercial/contract'
 import { CustomerForm } from '@/features/commercial/customer'
 import { problemMessage } from '@/shared/api'
@@ -54,6 +55,15 @@ const atRisk = computed(() => (contracts.data.value ?? []).filter((c) => c.atRis
         @cancel="editing = null"
       />
     </div>
+
+    <details v-if="canChange && (customers.data.value ?? []).length > 0" class="space-y-3">
+      <summary class="cursor-pointer text-sm font-medium text-brand-ink">
+        Who looks after each customer
+      </summary>
+      <div class="mt-3 grid gap-3 md:grid-cols-2">
+        <AssigneesForm v-for="c in customers.data.value" :key="c.id" :customer="c" />
+      </div>
+    </details>
 
     <p v-if="contracts.isPending.value" class="text-sm text-ink-muted">Loading…</p>
     <NoticeBox v-else-if="contracts.isError.value" tone="danger">

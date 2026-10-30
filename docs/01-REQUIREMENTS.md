@@ -146,6 +146,7 @@ Priority: **M** = must (MVP), **S** = should (phase 2), **C** = could (later). U
 | CAP-02 | Permanent vs seasonal/overflow planning (e.g. 100 + 250 for UIF) | M | UIF 4 |
 | CAP-03 | Plan versions and assumptions; planner-emitted warnings ("no forecast for period X", "requisition date already passed") | M | VID |
 | CAP-04 | Capacity and SLA risk by customer, contract and support tier | M | GIJ, PROP 1.7 |
+| CAP-05 | A customer operations manager sees only the customers an admin assigned to them (their contracts, queues, risk view, board-pack queues and Copilot counts); with no assignment they see nothing. Assignments are audited (`customer.assigned`) | M | Role isolation (product owner) |
 
 ### 3.10 Service desk (non-voice work)
 | ID | Requirement | Pri | Source |

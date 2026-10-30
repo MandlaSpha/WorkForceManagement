@@ -452,6 +452,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/contracts/customers/{customer_id}/assignees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Customer operations managers assigned to a customer */
+        get: operations["wfm_contracts_api_list_assignees"];
+        /** Set who looks after a customer */
+        put: operations["wfm_contracts_api_set_assignees"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contracts/{contract_id}": {
         parameters: {
             query?: never;
@@ -2780,6 +2798,20 @@ export interface components {
             shiftId: number | null;
             /** Weekstatus */
             weekStatus: string;
+        };
+        /** AssigneeOut */
+        AssigneeOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Username */
+            username: string;
+        };
+        /** AssigneesIn */
+        AssigneesIn: {
+            /** Userids */
+            userIds: number[];
         };
         /** AttendanceImportOut */
         AttendanceImportOut: {
@@ -7240,6 +7272,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CustomerOut"];
+                };
+            };
+        };
+    };
+    wfm_contracts_api_list_assignees: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssigneeOut"][];
+                };
+            };
+        };
+    };
+    wfm_contracts_api_set_assignees: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssigneesIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssigneeOut"][];
                 };
             };
         };

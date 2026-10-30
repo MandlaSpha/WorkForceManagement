@@ -520,6 +520,13 @@ class Command(BaseCommand):
             sl_threshold_s=30,
             queue_ids=[queues["Billing Support"].pk],
         )
+        # The demo customer operations manager looks after the first customer only, so the
+        # contracts screen shows the scoping: the second customer is not theirs to see.
+        casey = User.objects.filter(username="customerops", role="customer_ops").first()
+        if casey is not None:
+            contract_services.set_assignees(
+                user=cast.admin, customer_id=acme.pk, user_ids=[casey.pk]
+            )
 
     # --- shift swaps ---------------------------------------------------------------------------
 

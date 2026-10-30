@@ -13,7 +13,7 @@ from typing import Any, Self
 
 from django.db import models
 
-from wfm.accounts.models import User
+from wfm.accounts.models import Role, User
 from wfm.core.scoping import ScopedQuerySet
 
 from .policy import AGGREGATE_ROLES, IMPORT_ROLES
@@ -21,6 +21,8 @@ from .policy import AGGREGATE_ROLES, IMPORT_ROLES
 
 class QueueQuerySet(ScopedQuerySet):
     def for_user(self, user: Any) -> Self:
+        if user.role == Role.CUSTOMER_OPS:  # only the queues of contracts of their own customers
+            return self.filter(contract_link__contract__customer__assignments__user=user)
         return self if user.role in AGGREGATE_ROLES else self.none()
 
 

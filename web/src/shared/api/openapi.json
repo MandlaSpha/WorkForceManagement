@@ -392,6 +392,45 @@
         "title": "AssignOut",
         "type": "object"
       },
+      "AssigneeOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "name"
+        ],
+        "title": "AssigneeOut",
+        "type": "object"
+      },
+      "AssigneesIn": {
+        "properties": {
+          "userIds": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Userids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "userIds"
+        ],
+        "title": "AssigneesIn",
+        "type": "object"
+      },
       "AttendanceImportOut": {
         "properties": {
           "errors": {
@@ -12020,6 +12059,96 @@
           }
         ],
         "summary": "Add a customer",
+        "tags": [
+          "contracts"
+        ]
+      }
+    },
+    "/api/v1/contracts/customers/{customer_id}/assignees": {
+      "get": {
+        "operationId": "wfm_contracts_api_list_assignees",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customer_id",
+            "required": true,
+            "schema": {
+              "title": "Customer Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AssigneeOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Customer operations managers assigned to a customer",
+        "tags": [
+          "contracts"
+        ]
+      },
+      "put": {
+        "operationId": "wfm_contracts_api_set_assignees",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "customer_id",
+            "required": true,
+            "schema": {
+              "title": "Customer Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssigneesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AssigneeOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Set who looks after a customer",
         "tags": [
           "contracts"
         ]

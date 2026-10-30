@@ -9,14 +9,14 @@ from decimal import Decimal
 
 from django.db import IntegrityError, transaction
 
-from wfm.accounts.models import User
+from wfm.accounts.models import Role, User
 from wfm.audit import services as audit
 from wfm.audit.models import Action
 from wfm.core.errors import ApiError, not_found
 from wfm.telephony import services as telephony
 from wfm.telephony.models import Queue
 
-from .models import Contract, ContractQueue, Customer
+from .models import Contract, ContractQueue, Customer, CustomerAssignment
 
 
 def _invalid(code: str, detail: str, status: int = 422) -> ApiError:
@@ -215,3 +215,51 @@ def update_contract(
             "contract.name_taken", "That customer already has a contract with that name.", 409
         ) from None
     return contract
+
+
+def set_assignees(*, user: User, customer_id: int, user_ids: Sequence[int]) -> list[User]:
+    """Replace the customer operations managers who look after this customer. Only active
+    accounts with that role may be assigned. The trail holds counts and ids, never names."""
+    wanted = set(user_ids)
+    with transaction.atomic():
+        customer = (
+            Customer.objects.select_for_update(no_key=True)
+            .for_user(user)
+            .filter(pk=customer_id)
+            .first()
+        )
+        if customer is None:
+            raise not_found("No such customer.")
+        people = list(
+            User.objects.filter(pk__in=wanted, role=Role.CUSTOMER_OPS, is_active=True).order_by(
+                "username"
+            )
+        )
+        if len(people) != len(wanted):
+            raise _invalid(
+                "customer.assignee_invalid",
+                "Each person must be an active customer operations manager.",
+            )
+        before = set(
+            CustomerAssignment.objects.filter(customer=customer).values_list("user_id", flat=True)
+        )
+        CustomerAssignment.objects.filter(customer=customer).exclude(user__in=people).delete()
+        for person in people:
+            CustomerAssignment.objects.get_or_create(customer=customer, user=person)
+        if before != wanted:
+            audit.record(  # last write of the transaction
+                actor=user,
+                action=Action.CUSTOMER_ASSIGNED,
+                entity_type="customer",
+                entity_id=str(customer.pk),
+                changes=[
+                    audit.FieldChange(
+                        "customer",
+                        str(customer.pk),
+                        "assignees",
+                        ",".join(map(str, sorted(before))),
+                        ",".join(map(str, sorted(wanted))),
+                    )
+                ],
+            )
+    return people

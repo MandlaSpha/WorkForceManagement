@@ -186,6 +186,17 @@ def test_contracts_hold_the_queues_to_their_promises_and_billing_is_the_one_at_r
     assert rows["Claims line"].gap > 0
 
 
+def test_the_demo_customer_ops_manager_sees_only_their_assigned_customer(seeded: None) -> None:
+    # Failure caught: a demo account that sees every customer, hiding the scoping from a viewer.
+    from django.contrib.auth import get_user_model
+
+    from wfm.contracts import selectors as contract_selectors
+
+    casey = get_user_model().objects.get(username="customerops")
+    names = [c.name for c in contract_selectors.customers(casey)]
+    assert names == ["Demo Health Group"]
+
+
 def test_each_lead_has_swap_work_from_their_own_team(seeded: None) -> None:
     # Failure caught: a demo where one lead sees every swap and the other none, so the two-team
     # approval flow (a lead decides only for their own people) cannot be shown.
