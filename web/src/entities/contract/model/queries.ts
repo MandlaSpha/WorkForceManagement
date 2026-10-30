@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/vue-query'
+import { computed } from 'vue'
+import type { Ref } from 'vue'
 
-import { fetchContracts, fetchCustomers } from '../api/contracts'
+import { fetchAssignees, fetchContracts, fetchCustomers } from '../api/contracts'
 
 /** Any change to a customer or contract invalidates `all`. */
 export const contractKeys = {
@@ -15,4 +17,12 @@ export function useContracts() {
 
 export function useCustomers() {
   return useQuery({ queryKey: contractKeys.customers, queryFn: fetchCustomers })
+}
+
+/** Who looks after a customer (admin only). */
+export function useAssignees(customerId: Ref<number>) {
+  return useQuery({
+    queryKey: computed(() => [...contractKeys.customers, customerId.value, 'assignees']),
+    queryFn: () => fetchAssignees(customerId.value),
+  })
 }

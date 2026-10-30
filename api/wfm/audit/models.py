@@ -129,6 +129,7 @@ class Action(models.TextChoices):
     ROSTER_REFUSED = "roster.refused", "Roster change refused"
     ROSTER_EXPORTED = "roster.exported", "Roster exported"
     CUSTOMER_CREATED = "customer.created", "Customer added"
+    CUSTOMER_ASSIGNED = "customer.assigned", "Customer assignees changed"
     CONTRACT_CREATED = "contract.created", "Contract added"
     CONTRACT_CHANGED = "contract.changed", "Contract changed"
     QUEUE_SETTINGS_CHANGED = "queue.settings_changed", "Queue staffing settings changed"

@@ -16,7 +16,7 @@ from wfm_engine import overtime as pricing
 
 from wfm.accounts.models import Role, User
 from wfm.audit.models import Action, AuditEvent
-from wfm.contracts.models import Contract, ContractQueue, Customer
+from wfm.contracts.models import Contract, ContractQueue, Customer, CustomerAssignment
 from wfm.overtime.models import EmployeePay, OvertimeRequest, OvertimeStatus
 from wfm.people.tests.team import lead_of
 from wfm.scheduling.models import (
@@ -141,6 +141,11 @@ def test_people_rows_for_planners_in_number_order_and_never_ranked(world: World)
 def test_executives_and_customer_operations_see_groups_but_no_named_person(
     world: World, role: Role
 ) -> None:
+    unassigned = get(role, REPORT, month=MONTH).json()
+    if role == Role.CUSTOMER_OPS:  # no customer assigned yet: no contract is theirs
+        assert unassigned["contracts"] == []
+        user = User.objects.get(username=f"u-{role.value}")
+        CustomerAssignment.objects.create(customer=Customer.objects.get(name="Acme"), user=user)
     body = get(role, REPORT, month=MONTH).json()
     assert body["people"] == []
     assert body["contracts"], "they still see the aggregate"

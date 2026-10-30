@@ -12,7 +12,7 @@ import type {
 } from '@/entities/leave'
 import type { AvailabilityWindow } from '@/entities/availability'
 import type { Inbox } from '@/entities/notification'
-import type { ContractRow, Customer } from '@/entities/contract'
+import type { Assignee, ContractRow, Customer } from '@/entities/contract'
 import type { Overtime, OvertimeSummary, PayStatus, Standby } from '@/entities/overtime'
 import type { HiringPlan, HiringPlanSummary } from '@/entities/workforce/hiring-plan'
 import type { AttendanceDay, MyAttendance } from '@/entities/workforce/attendance'
@@ -256,6 +256,8 @@ export const backend = {
   /** Customers and contracts, with how each is doing. */
   contracts: [] as ContractRow[],
   customers: [] as Customer[],
+  /** Who looks after each customer (customer id to its customer operations managers). */
+  assignees: {} as Record<number, Assignee[]>,
   /** User administration: every account, as the admin sees them. */
   users: [] as AdminUser[],
   /** The audit log as the admin reads it, the hash chain verdict, and each search's query string. */
@@ -351,6 +353,7 @@ export const backend = {
     this.auditQueries = []
     this.contracts = []
     this.customers = []
+    this.assignees = {}
     this.overtime = []
     this.shrinkage = { month: '2026-10-01', teams: [], unplannedMeasured: false }
     this.shrinkageQueries = []
@@ -1481,6 +1484,22 @@ export const handlers = [
     const created: Customer = { id: 50 + backend.customers.length, name: sent.name }
     backend.customers = [...backend.customers, created]
     return HttpResponse.json(created, { status: 201 })
+  }),
+
+  http.get('*/api/v1/contracts/customers/:id/assignees', (info) =>
+    HttpResponse.json(backend.assignees[Number(info.params.id)] ?? []),
+  ),
+
+  http.put('*/api/v1/contracts/customers/:id/assignees', async (info) => {
+    const sent = (await info.request.clone().json()) as { userIds: number[] }
+    const response = await schedulingWrite(info, 'PUT')
+    if (!response.ok) return response
+    const id = Number(info.params.id)
+    const chosen = backend.users
+      .filter((u) => sent.userIds.includes(u.id))
+      .map((u) => ({ id: u.id, username: u.username, name: u.name }))
+    backend.assignees = { ...backend.assignees, [id]: chosen }
+    return HttpResponse.json(chosen)
   }),
 
   http.get('*/api/v1/contracts', () => HttpResponse.json(backend.contracts)),

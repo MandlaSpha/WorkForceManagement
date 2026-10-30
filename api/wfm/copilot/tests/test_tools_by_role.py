@@ -117,3 +117,19 @@ def test_the_day_defaults_to_today(seeded: dict[str, Any]) -> None:
 
     result = tools.call_tool(user_of(Role.LEAD), "team_on_shift", {})
     assert result.facts["day"] == timezone.localdate().isoformat()
+
+
+def test_customer_ops_count_only_their_assigned_customers_contracts(
+    seeded: dict[str, Any],
+) -> None:
+    # Failure caught: a customer operations manager counting a contract of a customer nobody
+    # assigned to them (the canary contract exists, held by another customer).
+    from wfm.contracts.models import Contract, Customer, CustomerAssignment
+
+    user = user_of(Role.CUSTOMER_OPS)
+    assert tools.call_tool(user, "my_contracts_capacity", {}).facts == {"contracts": 0, "active": 0}
+    own = Customer.objects.create(name="Own Customerco")
+    Contract.objects.create(customer=own, name="Own Contract", sl_target_pct=80, sl_threshold_s=20)
+    CustomerAssignment.objects.create(customer=own, user=user)
+    facts = tools.call_tool(user, "my_contracts_capacity", {}).facts
+    assert facts == {"contracts": 1, "active": 1}

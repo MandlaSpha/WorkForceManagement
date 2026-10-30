@@ -317,9 +317,8 @@ def absence_rate(user: User, params: Mapping[str, Any]) -> ToolResult:
 
 
 def my_contracts_capacity(user: User, params: Mapping[str, Any]) -> ToolResult:
-    """Counts of the contracts this role can read. No contract or customer is named: the system
-    has no link from a customer operations manager to their own customers yet, so naming would
-    risk showing someone else's contract (open decision, tech spec section 8.2)."""
+    """Counts of the contracts this role can read: for customer operations, only those of the
+    customers an admin assigned to them (none until then). No contract or customer is named."""
     found = contract_reads.contract_counts(user)
     facts = {"contracts": found.contracts, "active": found.active}
     return ToolResult("my_contracts_capacity", facts, found.contracts, "/contracts")

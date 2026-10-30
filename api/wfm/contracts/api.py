@@ -7,6 +7,8 @@ from django.http import HttpRequest
 from django.utils import timezone
 from ninja import Field, Router, Schema, Status
 
+from wfm.accounts.models import User
+from wfm.core.errors import not_found
 from wfm.core.features import Feature
 from wfm.core.permissions import RoleSessionAuth, current_user
 
@@ -117,6 +119,46 @@ def update_contract(request: HttpRequest, contract_id: int, body: ContractChange
         queue_ids=body.queueIds,
     )
     return _one(user, changed)
+
+
+class AssigneeOut(Schema):
+    id: int
+    username: str
+    name: str
+
+
+class AssigneesIn(Schema):
+    userIds: list[int]  # noqa: N815
+
+
+@router.get(
+    "/customers/{customer_id}/assignees",
+    auth=WRITE,
+    response=list[AssigneeOut],
+    summary="Customer operations managers assigned to a customer",
+)
+def list_assignees(request: HttpRequest, customer_id: int) -> list[AssigneeOut]:
+    found = selectors.assignees(current_user(request), customer_id)
+    if found is None:
+        raise not_found("No such customer.")
+    return [_assignee(u) for u in found]
+
+
+@router.put(
+    "/customers/{customer_id}/assignees",
+    auth=WRITE,
+    response=list[AssigneeOut],
+    summary="Set who looks after a customer",
+)
+def set_assignees(request: HttpRequest, customer_id: int, body: AssigneesIn) -> list[AssigneeOut]:
+    people = services.set_assignees(
+        user=current_user(request), customer_id=customer_id, user_ids=body.userIds
+    )
+    return [_assignee(u) for u in people]
+
+
+def _assignee(u: User) -> AssigneeOut:
+    return AssigneeOut(id=u.pk, username=u.username, name=u.get_full_name() or u.username)
 
 
 def _customer(c: Customer) -> CustomerOut:

@@ -95,6 +95,48 @@ describe('changing contracts', () => {
     })
   })
 
+  it('assigns a customer to a customer operations manager, and offers no one else', async () => {
+    const user = userEvent.setup()
+    await open('admin')
+    const account = (id: number, username: string, role: string, active = true) => ({
+      id,
+      username,
+      name: `Name ${username}`,
+      role,
+      roleFromDirectory: false,
+      active,
+      locked: false,
+      hasPassword: true,
+      mustChangePassword: false,
+      employee: null,
+      lastLogin: null,
+    })
+    backend.users = [
+      account(1, 'admin', 'admin'),
+      account(7, 'casey', 'customer_ops'),
+      account(8, 'gone', 'customer_ops', false),
+      account(9, 'pat', 'planner'),
+    ]
+    await user.click(await screen.findByText('Who looks after each customer'))
+    const form = await screen.findByRole('form', { name: 'Who looks after Acme' })
+    expect(await within(form).findAllByRole('checkbox')).toHaveLength(1)
+    await user.click(within(form).getByRole('checkbox', { name: 'Name casey' }))
+    await user.click(within(form).getByRole('button', { name: 'Save who looks after it' }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]).toEqual({
+      method: 'PUT',
+      path: '/api/v1/contracts/customers/5/assignees',
+      body: { userIds: [7] },
+      csrf: 'test-csrf-token',
+    })
+  })
+
+  it('does not offer the assignment to a planner', async () => {
+    await open('planner')
+    await screen.findByTestId('contract-1')
+    expect(screen.queryByText('Who looks after each customer')).toBeNull()
+  })
+
   it('adds a contract holding the chosen queues to the numbers typed', async () => {
     const user = userEvent.setup()
     await open('admin', [])
