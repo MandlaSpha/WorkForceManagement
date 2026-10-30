@@ -35,7 +35,11 @@ test('a planner schedules a report, pauses it and deletes it after confirming', 
 
   // Needs an allowed domain; when none is set the form says so and the test stops here.
   if (await page.getByTestId('no-domains').isVisible()) return
-  const helper = (await form.getByText(/One address per line, on /).first().textContent()) ?? ''
+  const helper =
+    (await form
+      .getByText(/One address per line, on /)
+      .first()
+      .textContent()) ?? ''
   const domain = /on ([\w.-]+?)[.,]/.exec(`${helper},`)?.[1]
   test.skip(!domain, 'No allowed domain could be read from the form.')
 
