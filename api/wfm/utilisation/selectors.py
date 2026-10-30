@@ -94,6 +94,10 @@ def _shifts(user: User, first: date, *, roles: frozenset[Role]) -> list[Shift]:
         if contract is not None:
             row = terms.get(contract.pk)
             target = row.utilisation_target_pct if row else Decimal(DEFAULT_TARGET_PCT)
+        if (
+            contract is None and user.role == Role.CUSTOMER_OPS
+        ):  # only work under their own customers
+            continue
         rows.append(Shift(a.employee, a.roster_week.queue_id, worked, billable, contract, target))
     return rows
 

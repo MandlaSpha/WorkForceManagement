@@ -144,6 +144,9 @@ def test_executives_and_customer_operations_see_groups_but_no_named_person(
     unassigned = get(role, REPORT, month=MONTH).json()
     if role == Role.CUSTOMER_OPS:  # no customer assigned yet: no contract is theirs
         assert unassigned["contracts"] == []
+        # Failure caught: tables built from the whole roster leaked other customers.
+        assert unassigned["teams"] == []
+        assert unassigned["customers"] == []
         user = User.objects.get(username=f"u-{role.value}")
         CustomerAssignment.objects.create(customer=Customer.objects.get(name="Acme"), user=user)
     body = get(role, REPORT, month=MONTH).json()
