@@ -125,6 +125,7 @@ Priority: **M** = must (MVP), **S** = should (phase 2), **C** = could (later). U
 |---|---|---|---|
 | LV-01 | Leave types (annual, sick, family, study, maternity, training, unpaid), entitlements and balances (BCEA) | M | GIJ |
 | LV-02 | Agent applies; Team Lead approves/rejects; approval writes leave into schedule and updates coverage; cancel reverses both | M | VID |
+| LV-05 | A rejected leave request or swap keeps the reason the approver gave (optional, up to 300 characters); the requester, both swap parties and approvers see it, other agents never do; the reason is in the audit entry | S | Product owner (30 Oct 2026) |
 | LV-03 | Show coverage impact (cost in hours, intervals affected) before approval | M | VID |
 | LV-04 | Blackout periods and max-concurrent-leave rules | S | PROP |
 | SWP-01 | Shift swap: a person posts a shift; colleagues on the queue whose own shifts fit the rules take it; a lead approves, with rule validation. Other agents never see the poster's name or schedule; names show only once matched (decision 15 Oct 2026, POPIA) | M | VID |
