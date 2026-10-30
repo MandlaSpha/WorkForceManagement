@@ -12,7 +12,7 @@ from . import swap_selectors as selectors
 from . import swap_services as services
 from .models import SwapRequest
 from .policy import APPROVE_ROLES, SELF_ROLES
-from .swap_schemas import BoardOut, RejectIn, SwapIn, SwapOut, SwapShiftOut, TakeIn
+from .swap_schemas import BoardOut, SwapIn, SwapOut, SwapRejectIn, SwapShiftOut, TakeIn
 
 router = Router(tags=["people"])
 
@@ -103,7 +103,7 @@ def approve(request: HttpRequest, swap_id: int) -> SwapOut:
 
 
 @router.post("/{swap_id}/reject", auth=APPROVE, response=SwapOut, summary="Reject a swap")
-def reject(request: HttpRequest, swap_id: int, body: RejectIn) -> SwapOut:
+def reject(request: HttpRequest, swap_id: int, body: SwapRejectIn) -> SwapOut:
     user = current_user(request)
     reason = body.reason
     return _swap_out(

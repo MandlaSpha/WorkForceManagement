@@ -4631,6 +4631,18 @@
         "title": "KpiOut",
         "type": "object"
       },
+      "LeaveRejectIn": {
+        "properties": {
+          "reason": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "title": "LeaveRejectIn",
+        "type": "object"
+      },
       "LeaveRequestIn": {
         "properties": {
           "employeeId": {
@@ -7342,18 +7354,6 @@
         "title": "RecommendationOut",
         "type": "object"
       },
-      "RejectIn": {
-        "properties": {
-          "reason": {
-            "default": "",
-            "maxLength": 300,
-            "title": "Reason",
-            "type": "string"
-          }
-        },
-        "title": "RejectIn",
-        "type": "object"
-      },
       "RequirementIn": {
         "properties": {
           "kind": {
@@ -9298,6 +9298,18 @@
           "colleague"
         ],
         "title": "SwapOut",
+        "type": "object"
+      },
+      "SwapRejectIn": {
+        "properties": {
+          "reason": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "title": "SwapRejectIn",
         "type": "object"
       },
       "SwapShiftOut": {
@@ -14753,7 +14765,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RejectIn"
+                "$ref": "#/components/schemas/LeaveRejectIn"
               }
             }
           },
@@ -15329,7 +15341,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RejectIn"
+                "$ref": "#/components/schemas/SwapRejectIn"
               }
             }
           },

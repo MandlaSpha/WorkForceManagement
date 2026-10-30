@@ -72,7 +72,11 @@ def ask(login_name: str, start: date, end: date | None = None, code: str = "unpa
 
 
 def decide(request_id: int, what: str = "approve", who: str = "u-lead") -> Any:
-    return as_user(who, Role.LEAD).post(f"{LEAVE}/requests/{request_id}/{what}")
+    client = as_user(who, Role.LEAD)
+    path = f"{LEAVE}/requests/{request_id}/{what}"
+    if what == "reject":
+        return client.post(path, {}, content_type="application/json")
+    return client.post(path)
 
 
 def blackout(name: str, first: date, last: date) -> Any:

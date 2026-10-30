@@ -25,10 +25,10 @@ from .schemas import (
     ErasureDoneOut,
     ErasurePreviewOut,
     ImpactOut,
+    LeaveRejectIn,
     LeaveRequestIn,
     LeaveRequestOut,
     LeaveTypeOut,
-    RejectIn,
     RetentionOut,
 )
 from .shrinkage_api import router as shrinkage_router
@@ -162,7 +162,7 @@ def approve(request: HttpRequest, request_id: int) -> DecisionOut:
     response=DecisionOut,
     summary="Reject a request",
 )
-def reject(request: HttpRequest, request_id: int, body: RejectIn) -> DecisionOut:
+def reject(request: HttpRequest, request_id: int, body: LeaveRejectIn) -> DecisionOut:
     user = current_user(request)
     reason = body.reason
     return _decision_out(

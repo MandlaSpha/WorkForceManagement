@@ -4316,6 +4316,14 @@ export interface components {
             slThresholdS: number;
             total: components["schemas"]["QueueKpisOut"];
         };
+        /** LeaveRejectIn */
+        LeaveRejectIn: {
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
         /** LeaveRequestIn */
         LeaveRequestIn: {
             /** Employeeid */
@@ -5325,14 +5333,6 @@ export interface components {
             /** Text */
             text: string;
         };
-        /** RejectIn */
-        RejectIn: {
-            /**
-             * Reason
-             * @default
-             */
-            reason: string;
-        };
         /** RequirementIn */
         RequirementIn: {
             /** Kind */
@@ -6037,6 +6037,14 @@ export interface components {
             toEmployee: string | null;
             /** Toshift */
             toShift: string | null;
+        };
+        /** SwapRejectIn */
+        SwapRejectIn: {
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
         };
         /** SwapShiftOut */
         SwapShiftOut: {
@@ -8730,7 +8738,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RejectIn"];
+                "application/json": components["schemas"]["LeaveRejectIn"];
             };
         };
         responses: {
@@ -9045,7 +9053,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RejectIn"];
+                "application/json": components["schemas"]["SwapRejectIn"];
             };
         };
         responses: {

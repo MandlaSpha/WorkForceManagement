@@ -48,7 +48,7 @@ class SwapOut(Schema):
     colleague: bool  # the signed-in person took it
 
 
-class RejectIn(Schema):
+class SwapRejectIn(Schema):
     reason: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] = ""
 
 

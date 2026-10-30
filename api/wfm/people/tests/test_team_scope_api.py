@@ -93,7 +93,12 @@ class TestLeaveIsScopedToTheTeam:
         theirs = ask_leave(as_user("u-colleague", Role.AGENT), TUE)
         lead = as_user("u-lead", Role.LEAD)
         for what in ("approve", "reject"):
-            assert lead.post(f"{LEAVE}/requests/{theirs}/{what}").status_code == 404
+            assert (
+                lead.post(
+                    f"{LEAVE}/requests/{theirs}/{what}", {}, content_type="application/json"
+                ).status_code
+                == 404
+            )
         assert lead.get(f"{LEAVE}/requests/{theirs}/impact").status_code == 404
         # Their own lead can.
         assert (
@@ -171,7 +176,12 @@ class TestSwapsAreScopedToTheTeam:
         outsider = as_user("u-lead3", Role.LEAD)
         assert outsider.get(SW).json() == []
         for what in ("approve", "reject"):
-            assert outsider.post(f"{SW}/{swap_id}/{what}").status_code == 404
+            assert (
+                outsider.post(
+                    f"{SW}/{swap_id}/{what}", {}, content_type="application/json"
+                ).status_code
+                == 404
+            )
 
 
 class TestAvailabilityIsScopedToTheTeam:

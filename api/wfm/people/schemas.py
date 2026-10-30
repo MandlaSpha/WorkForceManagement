@@ -66,7 +66,7 @@ class LeaveRequestOut(Schema):
     mine: bool  # the request is the signed-in person's own
 
 
-class RejectIn(Schema):
+class LeaveRejectIn(Schema):
     reason: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] = ""
 
 

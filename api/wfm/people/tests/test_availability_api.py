@@ -320,7 +320,9 @@ class TestMySchedule:
         approved, rejected = ask("2026-06-02"), ask("2026-06-03")
         ask("2026-06-04")  # left pending
         login(Role.LEAD).post(f"/api/v1/people/leave/requests/{approved}/approve")
-        login(Role.LEAD).post(f"/api/v1/people/leave/requests/{rejected}/reject")
+        login(Role.LEAD).post(
+            f"/api/v1/people/leave/requests/{rejected}/reject", {}, content_type="application/json"
+        )
         body = (
             login(Role.AGENT)
             .get(SCHEDULE, {"from_date": "2026-06-01", "to_date": "2026-06-07"})
