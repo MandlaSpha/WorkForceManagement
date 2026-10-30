@@ -83,10 +83,6 @@ function dismiss(): void {
             {{ p.employee }}: {{ formatDayLabel(p.day) }}, {{ p.shift }}
           </li>
         </ul>
-        <p class="text-xs text-ink-muted">
-          Existing shifts are never changed, and every shift is checked against the roster rules
-          again when applied.
-        </p>
         <div class="flex gap-2">
           <AppButton
             v-if="proposal.placements.length > 0"

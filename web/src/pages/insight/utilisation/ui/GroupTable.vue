@@ -35,7 +35,21 @@ defineProps<{ caption: string; kind: string; rows: readonly UtilisationGroup[] }
           </th>
           <td class="px-3 py-2">{{ hours(r.workedMin) }}</td>
           <td class="px-3 py-2">{{ hours(r.billableMin) }}</td>
-          <td class="px-3 py-2 font-semibold">{{ pct(r.utilisationPct) }}</td>
+          <td class="px-3 py-2 font-semibold">
+            {{ pct(r.utilisationPct) }}
+            <div class="relative mt-1 h-1.5 w-28 rounded-full bg-surface-muted" aria-hidden="true">
+              <div
+                class="h-full rounded-full"
+                :class="r.gapPct != null && r.gapPct < 0 ? 'bg-warn' : 'bg-brand'"
+                :style="{ width: `${Math.min(100, Math.max(0, r.utilisationPct ?? 0))}%` }"
+              ></div>
+              <div
+                v-if="r.targetPct != null"
+                class="absolute -top-0.5 h-2.5 w-0.5 bg-ink"
+                :style="{ left: `${Math.min(100, Math.max(0, r.targetPct))}%` }"
+              ></div>
+            </div>
+          </td>
           <td class="px-3 py-2">
             {{ pct(r.targetPct) }}
             <span v-if="r.targetIsDefault" class="text-xs text-ink-muted">(assumed)</span>

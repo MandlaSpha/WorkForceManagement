@@ -15,10 +15,6 @@ const retention = useRetention()
       {{ problemMessage(retention.error.value) }}
     </NoticeBox>
     <template v-else-if="retention.data.value">
-      <p class="text-sm text-ink-muted">
-        People who left more than {{ retention.data.value.months }} months ago. Nothing is changed
-        until you choose to anonymise someone.
-      </p>
       <p v-if="retention.data.value.employees.length === 0" class="text-sm text-ink-muted">
         Nobody is past the retention period.
       </p>

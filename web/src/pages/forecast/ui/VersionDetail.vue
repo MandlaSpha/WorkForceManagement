@@ -14,6 +14,7 @@ import {
 import { problemMessage } from '@/shared/api'
 import { formatDayLabel } from '@/shared/lib/datetime'
 import { ForecastRangeView } from '@/widgets/forecast-range'
+import CountUp from '@/shared/ui/CountUp.vue'
 import IntervalChart from '@/shared/ui/IntervalChart.vue'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import SelectField from '@/shared/ui/SelectField.vue'
@@ -50,9 +51,16 @@ const setView = (view: ForecastView): void =>
 
 const points = computed(() => dayPoints(intervals.data.value ?? [], day.value))
 const summary = computed(() => summarise(points.value))
-const chartPoints = computed(() =>
-  points.value.map((p) => ({ label: p.label, bars: p.volume, line: p.required })),
-)
+// A day's calls fill a few hours: the axis runs over those, with two half-hours either side, and
+// starts on an even half-hour so the labels fall on whole hours.
+const chartPoints = computed(() => {
+  const all = points.value.map((p) => ({ label: p.label, bars: p.volume, line: p.required }))
+  const busy = all.flatMap((p, i) => ((p.bars ?? 0) > 0 || (p.line ?? 0) > 0 ? [i] : []))
+  if (busy.length === 0) return all
+  const first = Math.max(0, Math.min(...busy) - 2)
+  const last = Math.min(all.length - 1, Math.max(...busy) + 2)
+  return all.slice(first - (first % 2), last + 1)
+})
 
 const number = (key: string): number => Number(props.version.params[key])
 const age = computed(() => historyAgeDays(props.version))
@@ -80,6 +88,13 @@ const backtest = computed(() => {
   return b && typeof b.prophetDailyPct === 'number' && typeof b.baselineDailyPct === 'number'
     ? { prophet: b.prophetDailyPct, baseline: b.baselineDailyPct, days: Number(b.daysScored) }
     : null
+})
+
+// The one sentence worth reading first: when the day is hardest and what it asks for.
+const finding = computed(() => {
+  const peak = summary.value.peak
+  if (!peak || summary.value.maxRequired === null) return null
+  return `${formatDayLabel(day.value)} is busiest at ${peak.label}: about ${Math.round(peak.volume)} calls, ${summary.value.maxRequired} agents to roster.`
 })
 
 const chartSummary = computed(
@@ -121,6 +136,101 @@ const chartSummary = computed(
       </div>
     </div>
 
+    <ForecastRangeView
+      v-if="view !== 'day'"
+      :version="version"
+      :view="view"
+      :anchor="rangeAnchor"
+      @update:anchor="emit('change', view, $event)"
+      @open="emit('change', 'day', $event)"
+    />
+    <p v-else-if="intervals.isPending.value" class="text-sm text-ink-muted">Loading…</p>
+    <NoticeBox v-else-if="intervals.isError.value" tone="danger">
+      Could not load this forecast. {{ problemMessage(intervals.error.value) }}
+    </NoticeBox>
+
+    <template v-else-if="days.length > 0">
+      <p v-if="finding" class="text-sm font-semibold text-brand-ink" data-testid="finding">
+        {{ finding }}
+      </p>
+      <div class="grid gap-4 lg:grid-cols-3">
+        <div
+          class="rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] lg:col-span-2"
+        >
+          <IntervalChart
+            :points="chartPoints"
+            :summary="chartSummary"
+            bar-label="Expected calls"
+            line-label="Agents to roster"
+            :label-every="2"
+          />
+        </div>
+        <dl class="grid content-start gap-3">
+          <div class="rounded-2xl bg-brand-soft p-4">
+            <dt class="text-xs font-medium text-brand-ink">Expected calls</dt>
+            <dd
+              class="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-ink"
+              data-testid="total-calls"
+            >
+              <CountUp :value="summary.totalVolume" :format="(n) => n.toFixed(1)" />
+            </dd>
+            <dd
+              v-if="summary.totalLower !== null && summary.totalUpper !== null"
+              class="text-xs tabular-nums text-ink-muted"
+              data-testid="total-range"
+            >
+              80% range {{ summary.totalLower.toFixed(0) }} to {{ summary.totalUpper.toFixed(0) }}
+            </dd>
+          </div>
+          <div class="rounded-2xl bg-warn-soft p-4">
+            <dt class="text-xs font-medium text-ink-muted">Busiest half-hour</dt>
+            <dd
+              class="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-ink"
+              data-testid="peak"
+            >
+              <template v-if="summary.peak">
+                {{ summary.peak.label }} · {{ summary.peak.volume.toFixed(1) }} calls
+              </template>
+              <template v-else>None</template>
+            </dd>
+          </div>
+          <div class="rounded-2xl bg-ok-soft p-4">
+            <dt class="text-xs font-medium text-ink-muted">Most agents to roster</dt>
+            <dd
+              class="mt-1 text-3xl font-semibold tabular-nums tracking-tight text-ink"
+              data-testid="max-required"
+            >
+              <CountUp v-if="summary.maxRequired !== null" :value="summary.maxRequired" />
+              <template v-else>—</template>
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <p class="text-sm text-ink-muted" data-testid="basis">
+        Forecast from past call history.
+        <template v-if="usedProphet && backtest">
+          On the last {{ backtest.days }} days it got the day's total about
+          {{ Math.round(backtest.prophet) }}% right.
+        </template>
+        Staffing includes {{ number('shrinkagePct') }}% shrinkage.
+      </p>
+      <details class="text-xs text-ink-muted" data-testid="how-made">
+        <summary class="cursor-pointer text-ink">How this was made</summary>
+        <p v-if="usedProphet && backtest" class="mt-1" data-testid="model">
+          Model: Prophet. On {{ backtest.days }} past days it predicted the day's total
+          {{ backtest.prophet.toFixed(1) }}% right, against {{ backtest.baseline.toFixed(1) }}% for
+          the baseline, which is why it was used. It forecasts each day's total; the total is then
+          spread over the half-hours in the shape of recent days.
+        </p>
+        <p class="mt-1" data-testid="evidence">
+          Daily shape from the {{ evidence }} most recent earlier
+          {{ evidence === 1 ? 'day' : 'days' }} with the same weekday that have call data. Agents to
+          roster include {{ number('shrinkagePct') }}% shrinkage.
+        </p>
+      </details>
+    </template>
+
     <NoticeBox v-if="!version.assumptionsConfirmed" tone="warn" data-testid="assumptions-notice">
       The staffing assumptions for {{ version.queue }} are defaults that nobody has confirmed:
       {{ number('slTargetPct') }}% of calls answered within {{ number('slThresholdS') }} s, an
@@ -148,80 +258,5 @@ const chartSummary = computed(
         missingDays.map(formatDayLabel).join(', ')
       }}).
     </NoticeBox>
-
-    <ForecastRangeView
-      v-if="view !== 'day'"
-      :version="version"
-      :view="view"
-      :anchor="rangeAnchor"
-      @update:anchor="emit('change', view, $event)"
-      @open="emit('change', 'day', $event)"
-    />
-    <p v-else-if="intervals.isPending.value" class="text-sm text-ink-muted">Loading…</p>
-    <NoticeBox v-else-if="intervals.isError.value" tone="danger">
-      Could not load this forecast. {{ problemMessage(intervals.error.value) }}
-    </NoticeBox>
-
-    <template v-else-if="days.length > 0">
-      <dl class="grid gap-3 sm:grid-cols-3">
-        <div class="rounded-xl border border-line bg-surface p-3">
-          <dt class="text-xs text-ink-muted">Expected calls</dt>
-          <dd class="text-xl font-semibold tabular-nums text-ink" data-testid="total-calls">
-            {{ summary.totalVolume.toFixed(1) }}
-          </dd>
-          <dd
-            v-if="summary.totalLower !== null && summary.totalUpper !== null"
-            class="text-xs tabular-nums text-ink-muted"
-            data-testid="total-range"
-          >
-            80% range {{ summary.totalLower.toFixed(0) }} to {{ summary.totalUpper.toFixed(0) }}
-          </dd>
-        </div>
-        <div class="rounded-xl border border-line bg-surface p-3">
-          <dt class="text-xs text-ink-muted">Busiest half-hour</dt>
-          <dd class="text-xl font-semibold tabular-nums text-ink" data-testid="peak">
-            <template v-if="summary.peak">
-              {{ summary.peak.label }} · {{ summary.peak.volume.toFixed(1) }} calls
-            </template>
-            <template v-else>None</template>
-          </dd>
-        </div>
-        <div class="rounded-xl border border-line bg-surface p-3">
-          <dt class="text-xs text-ink-muted">Most agents to roster</dt>
-          <dd class="text-xl font-semibold tabular-nums text-ink" data-testid="max-required">
-            {{ summary.maxRequired ?? '—' }}
-          </dd>
-        </div>
-      </dl>
-
-      <IntervalChart
-        :points="chartPoints"
-        :summary="chartSummary"
-        bar-label="Expected calls"
-        line-label="Agents to roster"
-      />
-      <p class="text-sm text-ink-muted" data-testid="basis">
-        Forecast from past call history.
-        <template v-if="usedProphet && backtest">
-          On the last {{ backtest.days }} days it got the day's total about
-          {{ Math.round(backtest.prophet) }}% right.
-        </template>
-        Staffing includes {{ number('shrinkagePct') }}% shrinkage.
-      </p>
-      <details class="text-xs text-ink-muted" data-testid="how-made">
-        <summary class="cursor-pointer text-ink">How this was made</summary>
-        <p v-if="usedProphet && backtest" class="mt-1" data-testid="model">
-          Model: Prophet. On {{ backtest.days }} past days it predicted the day's total
-          {{ backtest.prophet.toFixed(1) }}% right, against {{ backtest.baseline.toFixed(1) }}% for
-          the baseline, which is why it was used. It forecasts each day's total; the total is then
-          spread over the half-hours in the shape of recent days.
-        </p>
-        <p class="mt-1" data-testid="evidence">
-          Daily shape from the {{ evidence }} most recent earlier
-          {{ evidence === 1 ? 'day' : 'days' }} with the same weekday that have call data. Agents to
-          roster include {{ number('shrinkagePct') }}% shrinkage.
-        </p>
-      </details>
-    </template>
   </section>
 </template>

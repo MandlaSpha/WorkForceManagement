@@ -31,10 +31,6 @@ function assign(login: string): void {
     aria-labelledby="map-title"
   >
     <h2 id="map-title" class="text-base font-semibold text-ink">ACD logins nobody owns yet</h2>
-    <p class="text-sm text-ink-muted">
-      These logins appear on imported calls but are not tied to a person, so their calls cannot be
-      attributed. One person can have several logins.
-    </p>
     <ul class="space-y-2" aria-label="Unmapped ACD logins">
       <li
         v-for="u in unmapped.data.value"

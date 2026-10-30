@@ -43,6 +43,16 @@ const options = computed(() => months.value.map((m) => ({ value: m, label: forma
 
 const kpis = useKpis(month)
 
+// The calendar month before, when it has calls: the tiles compare with it.
+const previousMonth = computed(() => {
+  if (!month.value) return null
+  const [year, mon] = month.value.split('-').map(Number)
+  const d = new Date(year ?? 1970, (mon ?? 1) - 2, 1)
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  return months.value.includes(key) ? key : null
+})
+const previous = useKpis(previousMonth)
+
 // The planning overview is the planner's: only those who may open the planner see it, and only
 // when scheduling is part of the plan. The API refuses everyone else anyway.
 const showPlanning = computed(
@@ -64,10 +74,6 @@ const showPlanning = computed(
         <h2 class="text-base font-semibold text-ink" data-testid="service-title">
           Service figures{{ month ? ` · ${formatMonth(month)}` : '' }}
         </h2>
-        <p class="text-xs text-ink-muted">
-          Calls that were actually handled in the month you choose here. This is not the planning
-          week above.
-        </p>
       </div>
       <div class="w-44">
         <SelectField v-model="selected" label="Month" :options="options" />
@@ -107,6 +113,9 @@ const showPlanning = computed(
         v-else-if="kpis.data.value"
         :summary="kpis.data.value"
         :period-label="formatMonth(month)"
+        :month="month"
+        :previous="previousMonth ? (previous.data.value ?? null) : null"
+        :previous-label="previousMonth ? formatMonth(previousMonth) : undefined"
       />
     </template>
   </section>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 export interface ChartPoint {
   label: string // x-axis label, "10:00"
@@ -24,8 +24,8 @@ const props = withDefaults(
 
 const W = 960
 const H = 280
-const LEFT = 44
-const RIGHT = 44
+const LEFT = 48
+const RIGHT = 48
 const TOP = 12
 const BOTTOM = 28
 const innerW = W - LEFT - RIGHT
@@ -37,6 +37,34 @@ const maxLine = computed(() => ceil(Math.max(0, ...props.points.map((p) => p.lin
 const step = computed(() => innerW / Math.max(1, props.points.length))
 
 const hover = ref<number | null>(null)
+
+// The drawing scales with the width of the page, so its text would too. Axis text is set in
+// drawing units that come out as TICK_PX on screen, the same size as the text around the chart.
+const TICK_PX = 12
+const svg = ref<SVGSVGElement | null>(null)
+const shownWidth = ref(W)
+let watcher: ResizeObserver | null = null
+onMounted(() => {
+  if (!svg.value || typeof ResizeObserver === 'undefined') return
+  watcher = new ResizeObserver(([entry]) => {
+    if (entry && entry.contentRect.width > 0) shownWidth.value = entry.contentRect.width
+  })
+  watcher.observe(svg.value)
+})
+onBeforeUnmount(() => watcher?.disconnect())
+// Whole numbers only, and a number once: with a top of 1 the quarters would all read 0 or 1.
+function ticksFor(top: number): Array<{ f: number; v: number }> {
+  const seen = new Set<number>()
+  return [0, 0.25, 0.5, 0.75, 1].flatMap((f) => {
+    const v = Math.round(top * f)
+    if (seen.has(v)) return []
+    seen.add(v)
+    return { f: v / top, v }
+  })
+}
+const leftTicks = computed(() => ticksFor(maxBar.value))
+const rightTicks = computed(() => ticksFor(maxLine.value))
+const tickSize = computed(() => `${(TICK_PX * W) / shownWidth.value}px`)
 
 function onMove(e: PointerEvent): void {
   const el = e.currentTarget as SVGGraphicsElement
@@ -108,6 +136,7 @@ const xLabels = computed(() =>
       {{ tip.text }}
     </div>
     <svg
+      ref="svg"
       :viewBox="`0 0 ${W} ${H}`"
       class="w-full"
       role="img"
@@ -134,6 +163,7 @@ const xLabels = computed(() =>
         :height="bar.height"
         rx="4"
         class="bar-grow fill-brand/40"
+        :style="{ animationDelay: `${Math.min(bar.index * 22, 700)}ms` }"
         :class="hover === bar.index ? 'fill-brand/70' : ''"
         data-testid="chart-bar"
       />
@@ -161,20 +191,39 @@ const xLabels = computed(() =>
         :d="linePath"
         fill="none"
         stroke-width="2"
-        class="stroke-danger"
+        pathLength="1"
+        class="spark-line stroke-danger"
         data-testid="chart-line"
       />
-      <text :x="LEFT - 6" :y="TOP + 8" text-anchor="end" class="fill-ink-muted text-[10px]">
-        {{ maxBar }}
+      <text
+        v-for="t in leftTicks"
+        :key="`l${t.f}`"
+        :x="LEFT - 8"
+        :y="TOP + innerH * (1 - t.f) + 4"
+        text-anchor="end"
+        class="fill-ink-muted"
+        :style="{ fontSize: tickSize }"
+      >
+        {{ t.v }}
       </text>
-      <text :x="W - RIGHT + 6" :y="TOP + 8" class="fill-danger text-[10px]">{{ maxLine }}</text>
+      <text
+        v-for="t in rightTicks"
+        :key="`r${t.f}`"
+        :x="W - RIGHT + 8"
+        :y="TOP + innerH * (1 - t.f) + 4"
+        class="fill-danger"
+        :style="{ fontSize: tickSize }"
+      >
+        {{ t.v }}
+      </text>
       <text
         v-for="tick in xLabels"
         :key="tick.i"
         :x="tick.x"
         :y="H - 8"
         text-anchor="middle"
-        class="fill-ink-muted text-[10px]"
+        class="fill-ink-muted"
+        :style="{ fontSize: tickSize }"
       >
         {{ tick.label }}
       </text>

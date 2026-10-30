@@ -153,11 +153,6 @@ describe('call detail', () => {
     expect(screen.getByTestId('ivr-Support')).toBeVisible()
   })
 
-  it('says a lead sees only their own team', async () => {
-    await open('lead', report({ scope: 'team', incidentsAllowed: false, incidents: null }))
-    expect(await screen.findByText(/Only agents in your own team are listed/)).toBeVisible()
-  })
-
   it('never ranks: the page has no rank column or team average', async () => {
     // Failure caught: a league table creeping into the agent list.
     await open()

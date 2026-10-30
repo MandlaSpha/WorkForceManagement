@@ -90,9 +90,5 @@ const mark = (day: string): string | null =>
         </button>
       </div>
     </div>
-    <p class="text-xs text-ink-muted" data-testid="holiday-note">
-      Events from the Events tab are shown on the days they cover. Public holidays are not recorded
-      in the system yet, so they are not marked.
-    </p>
   </div>
 </template>

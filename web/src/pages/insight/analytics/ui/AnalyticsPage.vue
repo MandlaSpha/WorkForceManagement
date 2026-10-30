@@ -31,6 +31,39 @@ watch(choice, (key) => {
   to.value = today
 })
 const card = useScorecard(from, to)
+
+// The stretch just before, as long as the chosen one: each tile says how far its figure moved.
+const DAY_MS = 86_400_000
+const dayOf = (iso: string): number => Date.parse(`${iso}T00:00:00Z`)
+const isoOf = (ms: number): string => new Date(ms).toISOString().slice(0, 10)
+const before = computed(() => {
+  const length = Math.round((dayOf(to.value) - dayOf(from.value)) / DAY_MS) + 1
+  const end = dayOf(from.value) - DAY_MS
+  return { from: isoOf(end - (length - 1) * DAY_MS), to: isoOf(end) }
+})
+const earlier = useScorecard(
+  computed(() => before.value.from),
+  computed(() => before.value.to),
+)
+
+// Which way is good news, and whether the change is said in points or in percent.
+const MOVES: Record<string, { good: 'up' | 'down'; points: boolean }> = {
+  service_level: { good: 'up', points: true },
+  abandon_rate: { good: 'down', points: true },
+  asa: { good: 'down', points: false },
+  aht: { good: 'down', points: false },
+  offered: { good: 'up', points: false },
+  forecast_accuracy: { good: 'up', points: true },
+}
+const TINTS = ['brand', 'ok', 'warn', 'danger'] as const
+
+function change(item: ScorecardItem): number | null {
+  const move = MOVES[item.key]
+  const then = earlier.data.value?.items.find((i) => i.key === item.key)?.value
+  if (!move || item.value === null || then === null || then === undefined) return null
+  if (move.points) return item.value - then
+  return then === 0 ? null : ((item.value - then) / then) * 100
+}
 const csvUrl = computed(() => scorecardCsvUrl(from.value, to.value))
 
 const BASIS: Record<string, { label: string; tone: string }> = {
@@ -39,16 +72,19 @@ const BASIS: Record<string, { label: string; tone: string }> = {
   needs_data: { label: 'Needs data', tone: 'bg-surface-muted text-ink-muted' },
 }
 
-/** "-" for a figure with nothing behind it, never 0. */
-function shown(item: ScorecardItem): string {
-  if (item.value === null) return '-'
+/** One figure as text; the tiles also count up to it. */
+function format(item: ScorecardItem, value: number): string {
   const n = item.unit === 's' || item.unit === 'calls' || item.unit === 'half-hours' ? 0 : 1
-  const text = item.value.toLocaleString('en-ZA', {
+  const text = value.toLocaleString('en-ZA', {
     minimumFractionDigits: n,
     maximumFractionDigits: n,
   })
   const withUnit = item.unit === '%' ? `${text}%` : item.unit === 'R' ? `R ${text}` : text
   return ['s', 'half-hours', 'calls'].includes(item.unit) ? `${withUnit} ${item.unit}` : withUnit
+}
+/** "-" for a figure with nothing behind it, never 0. */
+function shown(item: ScorecardItem): string {
+  return item.value === null ? '-' : format(item, item.value)
 }
 
 const items = computed(() => card.data.value?.items ?? [])
@@ -58,14 +94,22 @@ const missing = computed(() => items.value.length - known.value.length)
 const lead = computed(() => known.value.slice(0, 2))
 
 const days = computed(() => card.data.value?.days ?? [])
-const points = computed(() =>
-  days.value.map((d) => ({
-    label: d.day.slice(5),
-    bars: d.offered,
-    line: d.serviceLevelPct,
-  })),
-)
-const totalCalls = computed(() => days.value.reduce((sum, d) => sum + d.offered, 0))
+// Every day of the range is on the axis: a day with no calls shows as a gap, not as a short axis.
+const points = computed(() => {
+  const byDay = new Map(days.value.map((d) => [d.day, d]))
+  const out: Array<{ label: string; bars: number | null; line: number | null }> = []
+  if (from.value > to.value) return out
+  for (let t = dayOf(from.value); t <= dayOf(to.value); t += DAY_MS) {
+    const iso = isoOf(t)
+    const d = byDay.get(iso)
+    out.push({
+      label: iso.slice(5),
+      bars: d ? d.offered : null,
+      line: d ? d.serviceLevelPct : null,
+    })
+  }
+  return out
+})
 </script>
 
 <template>
@@ -164,6 +208,25 @@ const totalCalls = computed(() => days.value.reduce((sum, d) => sum + d.offered,
     </NoticeBox>
 
     <template v-else-if="card.data.value">
+      <section
+        v-if="days.length > 0"
+        class="page-enter rounded-2xl border border-line bg-surface p-4 shadow-card"
+        aria-labelledby="trend-title"
+      >
+        <h2 id="trend-title" class="text-sm font-semibold text-ink">
+          Calls and service level by day
+        </h2>
+        <div class="mt-3">
+          <IntervalChart
+            :points="points"
+            summary="Calls offered each day as bars, and the service level as a line"
+            bar-label="Calls offered"
+            line-label="Service level (%)"
+          />
+        </div>
+      </section>
+      <NoticeBox v-else data-testid="no-trend">No calls were measured in that range.</NoticeBox>
+
       <ul
         class="page-enter grid grid-cols-2 gap-3 lg:grid-cols-4"
         aria-label="Figures"
@@ -173,8 +236,14 @@ const totalCalls = computed(() => days.value.reduce((sum, d) => sum + d.offered,
           v-for="(item, i) in items"
           :key="item.key"
           :variant="i === 0 && item.value !== null ? 'feature' : 'default'"
+          :tint="item.value === null ? undefined : TINTS[i % TINTS.length]"
+          :delta="change(item) ?? undefined"
+          :delta-unit="MOVES[item.key]?.points ? ' pts' : '%'"
+          :delta-good-when="MOVES[item.key]?.good"
+          delta-versus="vs the stretch before"
           :label="item.label"
-          :value="shown(item)"
+          :value="item.value ?? shown(item)"
+          :format="(n) => format(item, n)"
           :data-testid="`item-${item.key}`"
         >
           <span
@@ -187,30 +256,6 @@ const totalCalls = computed(() => days.value.reduce((sum, d) => sum + d.offered,
           <span v-if="item.note" class="mt-1 block">{{ item.note }}</span>
         </StatTile>
       </ul>
-
-      <section
-        v-if="points.length > 0"
-        class="page-enter rounded-2xl border border-line bg-surface p-4 shadow-card"
-        aria-labelledby="trend-title"
-      >
-        <h2 id="trend-title" class="text-sm font-semibold text-ink">
-          Calls and service level by day
-        </h2>
-        <p class="mt-1 text-xs text-ink-muted">
-          {{ totalCalls.toLocaleString('en-ZA') }} calls over {{ points.length }}
-          {{ points.length === 1 ? 'day' : 'days' }} with calls. A day with no service level has no
-          point on the line.
-        </p>
-        <div class="mt-3">
-          <IntervalChart
-            :points="points"
-            summary="Calls offered each day as bars, and the service level as a line"
-            bar-label="Calls offered"
-            line-label="Service level (%)"
-          />
-        </div>
-      </section>
-      <NoticeBox v-else data-testid="no-trend">No calls were measured in that range.</NoticeBox>
 
       <section
         v-if="days.length > 0"

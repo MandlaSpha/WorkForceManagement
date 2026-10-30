@@ -102,9 +102,6 @@ function show(id: string): void {
         :queues="queues.data.value ?? []"
         @ran="show($event.id)"
       />
-      <NoticeBox v-else>
-        You can read forecasts here. Planners and admins run and publish them.
-      </NoticeBox>
 
       <p v-if="versions.isPending.value" class="text-sm text-ink-muted">Loading versions…</p>
       <NoticeBox v-else-if="versions.isError.value" tone="danger">

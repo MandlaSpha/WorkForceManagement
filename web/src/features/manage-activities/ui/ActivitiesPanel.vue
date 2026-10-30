@@ -84,11 +84,6 @@ const label = (a: ShiftActivity) =>
 <template>
   <section class="space-y-3" aria-labelledby="activities-title">
     <h2 id="activities-title" class="text-sm font-semibold text-ink">Breaks and activities</h2>
-    <p class="text-xs text-ink-muted">
-      Time inside a shift when someone is not on the phones. Coverage on the planner counts only the
-      people on the phones.
-    </p>
-
     <form
       v-if="canChange"
       class="flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4"

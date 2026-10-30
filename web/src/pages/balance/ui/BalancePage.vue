@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import { STATE_LABEL, useBalance } from '@/entities/workforce/workload-balance'
 import { problemMessage } from '@/shared/api'
@@ -7,11 +7,20 @@ import { NAV_ITEMS } from '@/shared/config'
 import { todayInJohannesburg } from '@/shared/lib/week'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 
 const screen = NAV_ITEMS.find((item) => item.key === 'balance')
 const day = ref(todayInJohannesburg())
 const balance = useBalance(day)
 
+const queues = computed(() => balance.data.value?.queues ?? [])
+// Queues with no forecast that day have no load to show: they are listed, not drawn as empty rows.
+const withLoad = computed(() => queues.value.filter((q) => q.loadRatio != null))
+const withoutLoad = computed(() => queues.value.filter((q) => q.loadRatio == null))
+const inState = (state: string): number => queues.value.filter((q) => q.state === state).length
+const TOP = 1.5 // the bar is full at 150% load, with a tick at 100%
+const barWidth = (v: number | null | undefined): string =>
+  `${Math.min(100, Math.max(0, ((v ?? 0) / TOP) * 100))}%`
 const ratio = (v: number | null | undefined) => (v == null ? '-' : `${Math.round(v * 100)}%`)
 const hoursOf = (slots: number) => (slots / 2).toFixed(1)
 </script>
@@ -35,54 +44,84 @@ const hoursOf = (slots: number) => (slots / 2).toFixed(1)
     </NoticeBox>
 
     <template v-else-if="balance.data.value">
-      <NoticeBox data-testid="balance-note">
-        {{ balance.data.value.note }} Load is what the published forecast needs divided by what the
-        roster puts on the phones, over the half-hours where a requirement is known. Over 110% is
-        stretched; under 80% is slack. Check shift hours before acting on a move.
-      </NoticeBox>
-
       <NoticeBox v-if="balance.data.value.queues.length === 0" data-testid="balance-none">
         There are no queues in your view yet.
       </NoticeBox>
-      <div v-else class="overflow-x-auto rounded-xl border border-line bg-surface">
-        <table class="w-full text-left text-sm">
-          <caption class="sr-only">
-            Load of each queue for the day
-          </caption>
-          <thead class="text-xs text-ink-muted">
-            <tr>
-              <th scope="col" class="px-3 py-2">Queue</th>
-              <th scope="col" class="px-3 py-2">Needed (person-h)</th>
-              <th scope="col" class="px-3 py-2">Rostered (person-h)</th>
-              <th scope="col" class="px-3 py-2">Load</th>
-              <th scope="col" class="px-3 py-2">State</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="q in balance.data.value.queues"
+      <template v-else>
+        <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Queues by load">
+          <StatTile label="Stretched" :value="inState('stretched')" tint="warn" />
+          <StatTile label="Balanced" :value="inState('balanced')" tint="ok" />
+          <StatTile label="Slack" :value="inState('slack')" tint="brand" />
+          <StatTile label="No forecast" :value="withoutLoad.length" tint="danger">
+            queues with nothing to compare
+          </StatTile>
+        </ul>
+
+        <ul class="grid gap-3 lg:grid-cols-2" aria-label="Load of each queue for the day">
+          <li
+            v-for="q in withLoad"
+            :key="q.queueId"
+            class="rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]"
+            :data-testid="`queue-${q.queue}`"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <h2 class="truncate text-base font-semibold text-ink">{{ q.queue }}</h2>
+              <span
+                class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                :class="
+                  q.state === 'stretched'
+                    ? 'bg-warn-soft text-warn'
+                    : q.state === 'balanced'
+                      ? 'bg-ok-soft text-ok'
+                      : 'bg-surface-muted text-ink'
+                "
+              >
+                {{ STATE_LABEL[q.state] ?? q.state }}
+              </span>
+            </div>
+            <div class="mt-3 flex items-baseline justify-between text-sm">
+              <span class="text-2xl font-semibold tabular-nums text-ink">{{
+                ratio(q.loadRatio)
+              }}</span>
+              <span class="tabular-nums text-ink-muted">
+                {{ hoursOf(q.requiredSlots) }} h needed · {{ hoursOf(q.scheduledSlots) }} h rostered
+              </span>
+            </div>
+            <div class="relative mt-2 h-2 rounded-full bg-surface-muted" aria-hidden="true">
+              <div
+                class="h-full rounded-full"
+                :class="q.state === 'stretched' ? 'bg-warn' : 'bg-brand'"
+                :style="{ width: barWidth(q.loadRatio) }"
+              ></div>
+              <div
+                class="absolute -top-1 h-4 w-0.5 rounded bg-ink"
+                :style="{ left: barWidth(1) }"
+              ></div>
+            </div>
+          </li>
+        </ul>
+
+        <details
+          v-if="withoutLoad.length > 0"
+          class="rounded-2xl border border-line bg-surface p-4"
+          data-testid="no-load-queues"
+        >
+          <summary class="cursor-pointer text-sm font-semibold text-ink">
+            {{ withoutLoad.length }}
+            {{ withoutLoad.length === 1 ? 'queue has' : 'queues have' }} no forecast on this day
+          </summary>
+          <ul class="mt-2 flex flex-wrap gap-1.5">
+            <li
+              v-for="q in withoutLoad"
               :key="q.queueId"
-              class="border-t border-line"
+              class="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs text-ink"
               :data-testid="`queue-${q.queue}`"
             >
-              <th scope="row" class="px-3 py-2 font-medium text-ink">{{ q.queue }}</th>
-              <td class="px-3 py-2">{{ hoursOf(q.requiredSlots) }}</td>
-              <td class="px-3 py-2">{{ hoursOf(q.scheduledSlots) }}</td>
-              <td class="px-3 py-2 font-semibold">{{ ratio(q.loadRatio) }}</td>
-              <td class="px-3 py-2">
-                <span
-                  class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                  :class="
-                    q.state === 'stretched' ? 'bg-warn-soft text-warn' : 'bg-surface-muted text-ink'
-                  "
-                >
-                  {{ STATE_LABEL[q.state] ?? q.state }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              {{ q.queue }} · {{ STATE_LABEL[q.state] ?? q.state }}
+            </li>
+          </ul>
+        </details>
+      </template>
 
       <section aria-labelledby="moves-heading" class="space-y-2">
         <h2 id="moves-heading" class="text-base font-semibold text-ink">Suggested moves</h2>
@@ -93,13 +132,12 @@ const hoursOf = (slots: number) => (slots / 2).toFixed(1)
           <li
             v-for="m in balance.data.value.suggestions"
             :key="m.employeeId"
-            class="rounded-xl border border-line bg-surface p-3 text-sm"
+            class="rounded-2xl border border-line bg-surface p-4 text-sm shadow-[var(--shadow-card)]"
             :data-testid="`move-${m.empNo}`"
           >
             Move <strong>{{ m.employee }}</strong> ({{ m.empNo }}) from
             <strong>{{ m.fromQueue }}</strong> to <strong>{{ m.toQueue }}</strong
-            >: about {{ hoursOf(m.slots) }} hours of cover. A planner changes the roster; nothing is
-            moved from here.
+            >: about {{ hoursOf(m.slots) }} hours of cover.
           </li>
         </ul>
       </section>

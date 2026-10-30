@@ -38,12 +38,6 @@ function apply(filters: AuditFilters): void {
   <div class="space-y-6" aria-live="polite">
     <ChainStatus />
 
-    <NoticeBox>
-      The log is read-only: nothing here can change or delete an event. Looking at it and
-      downloading it are recorded too (what you filtered by, never what you saw). Times are South
-      African time.
-    </NoticeBox>
-
     <FilterBar :applied="applied" @apply="apply" />
 
     <p v-if="events.isPending.value" class="text-sm text-ink-muted">Loading…</p>

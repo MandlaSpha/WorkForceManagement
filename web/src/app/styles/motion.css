@@ -17,7 +17,224 @@
   }
 }
 .page-enter {
-  animation: page-enter 0.38s var(--ease-out) both;
+  animation: page-enter 0.38s var(--ease-out) backwards;
+}
+
+/* A screen assembles itself, slowly enough to watch: the header, then each block about 110 ms
+   after the one before, then every tile and card of a grid, one by one about 90 ms apart (the
+   twentieth starts about 2 s in, and anything after it arrives with it). Put `page-stagger` on
+   the element that holds the screen. The reduced-motion block in index.css switches it all off,
+   delays included, so nothing waits to appear. */
+.page-stagger > *,
+.page-stagger > section > * {
+  animation: page-enter 0.7s var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 110ms);
+}
+.page-stagger ul.grid > li,
+.page-stagger ol.grid > li {
+  animation: page-enter 0.7s var(--ease-out) backwards;
+  animation-delay: calc(0.25s + var(--j, 0) * 90ms);
+}
+
+.page-stagger > *:nth-child(1),
+.page-stagger > section > *:nth-child(1) {
+  --i: 0;
+}
+
+.page-stagger > *:nth-child(2),
+.page-stagger > section > *:nth-child(2) {
+  --i: 1;
+}
+
+.page-stagger > *:nth-child(3),
+.page-stagger > section > *:nth-child(3) {
+  --i: 2;
+}
+
+.page-stagger > *:nth-child(4),
+.page-stagger > section > *:nth-child(4) {
+  --i: 3;
+}
+
+.page-stagger > *:nth-child(5),
+.page-stagger > section > *:nth-child(5) {
+  --i: 4;
+}
+
+.page-stagger > *:nth-child(6),
+.page-stagger > section > *:nth-child(6) {
+  --i: 5;
+}
+
+.page-stagger > *:nth-child(7),
+.page-stagger > section > *:nth-child(7) {
+  --i: 6;
+}
+
+.page-stagger > *:nth-child(n + 8),
+.page-stagger > section > *:nth-child(n + 8) {
+  --i: 7;
+}
+
+.page-stagger ul.grid > li:nth-child(1),
+.page-stagger ol.grid > li:nth-child(1) {
+  --j: 0;
+}
+
+.page-stagger ul.grid > li:nth-child(2),
+.page-stagger ol.grid > li:nth-child(2) {
+  --j: 1;
+}
+
+.page-stagger ul.grid > li:nth-child(3),
+.page-stagger ol.grid > li:nth-child(3) {
+  --j: 2;
+}
+
+.page-stagger ul.grid > li:nth-child(4),
+.page-stagger ol.grid > li:nth-child(4) {
+  --j: 3;
+}
+
+.page-stagger ul.grid > li:nth-child(5),
+.page-stagger ol.grid > li:nth-child(5) {
+  --j: 4;
+}
+
+.page-stagger ul.grid > li:nth-child(6),
+.page-stagger ol.grid > li:nth-child(6) {
+  --j: 5;
+}
+
+.page-stagger ul.grid > li:nth-child(7),
+.page-stagger ol.grid > li:nth-child(7) {
+  --j: 6;
+}
+
+.page-stagger ul.grid > li:nth-child(8),
+.page-stagger ol.grid > li:nth-child(8) {
+  --j: 7;
+}
+
+.page-stagger ul.grid > li:nth-child(9),
+.page-stagger ol.grid > li:nth-child(9) {
+  --j: 8;
+}
+
+.page-stagger ul.grid > li:nth-child(10),
+.page-stagger ol.grid > li:nth-child(10) {
+  --j: 9;
+}
+
+.page-stagger ul.grid > li:nth-child(11),
+.page-stagger ol.grid > li:nth-child(11) {
+  --j: 10;
+}
+
+.page-stagger ul.grid > li:nth-child(12),
+.page-stagger ol.grid > li:nth-child(12) {
+  --j: 11;
+}
+
+.page-stagger ul.grid > li:nth-child(13),
+.page-stagger ol.grid > li:nth-child(13) {
+  --j: 12;
+}
+
+.page-stagger ul.grid > li:nth-child(14),
+.page-stagger ol.grid > li:nth-child(14) {
+  --j: 13;
+}
+
+.page-stagger ul.grid > li:nth-child(15),
+.page-stagger ol.grid > li:nth-child(15) {
+  --j: 14;
+}
+
+.page-stagger ul.grid > li:nth-child(16),
+.page-stagger ol.grid > li:nth-child(16) {
+  --j: 15;
+}
+
+.page-stagger ul.grid > li:nth-child(17),
+.page-stagger ol.grid > li:nth-child(17) {
+  --j: 16;
+}
+
+.page-stagger ul.grid > li:nth-child(18),
+.page-stagger ol.grid > li:nth-child(18) {
+  --j: 17;
+}
+
+.page-stagger ul.grid > li:nth-child(19),
+.page-stagger ol.grid > li:nth-child(19) {
+  --j: 18;
+}
+
+.page-stagger ul.grid > li:nth-child(n + 20),
+.page-stagger ol.grid > li:nth-child(n + 20) {
+  --j: 19;
+}
+
+/* The side menu slides in the same way when the app opens: the logo, the search, then each group. */
+@keyframes side-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sidebar-stagger > *,
+.sidebar-stagger nav section {
+  animation: side-enter 0.6s var(--ease-out) backwards;
+  animation-delay: calc(var(--k, 0) * 80ms);
+}
+
+.sidebar-stagger > *:nth-child(1) {
+  --k: 0;
+}
+
+.sidebar-stagger > *:nth-child(2) {
+  --k: 1;
+}
+
+.sidebar-stagger > *:nth-child(3) {
+  --k: 2;
+}
+
+.sidebar-stagger nav section:nth-child(1) {
+  --k: 3;
+}
+
+.sidebar-stagger nav section:nth-child(2) {
+  --k: 4;
+}
+
+.sidebar-stagger nav section:nth-child(3) {
+  --k: 5;
+}
+
+.sidebar-stagger nav section:nth-child(4) {
+  --k: 6;
+}
+
+.sidebar-stagger nav section:nth-child(5) {
+  --k: 7;
+}
+
+.sidebar-stagger nav section:nth-child(6) {
+  --k: 8;
+}
+
+.sidebar-stagger nav section:nth-child(7) {
+  --k: 9;
+}
+
+.sidebar-stagger nav section:nth-child(n + 8) {
+  --k: 9;
 }
 
 /* Switching theme fades the colours instead of flipping them. The class is on <html> for a
@@ -99,4 +316,23 @@ html.theme-fade *::after {
 .dialog-leave-to .dialog-panel {
   opacity: 0;
   transform: translateY(8px);
+}
+
+/* Cards and tiles lift a little under the pointer. Only where there is a pointer to hover with and
+   motion is welcome. The entrance animations above use `backwards`, not `both`, so they do not
+   hold a transform that would win over this one. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  li[class~='shadow-[var(--shadow-card)]'],
+  li[class~='shadow-card'],
+  .card-lift {
+    transition:
+      transform 0.25s var(--ease-out),
+      box-shadow 0.25s var(--ease-out);
+  }
+  li[class~='shadow-[var(--shadow-card)]']:hover,
+  li[class~='shadow-card']:hover,
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-pop);
+  }
 }

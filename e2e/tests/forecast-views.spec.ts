@@ -58,7 +58,6 @@ test('a planner reads the forecast as a week and a month, and opens a day from t
   await page.getByRole('button', { name: 'Month', exact: true }).click()
   await expect(page).toHaveURL(/view=month/)
   await expect(page.getByTestId('month-grid')).toBeVisible()
-  await expect(page.getByTestId('holiday-note')).toContainText('Public holidays are not recorded')
   await page.getByTestId('month-grid').locator(`[data-day="${target}"]`).click()
   await expect(page.getByRole('button', { name: 'Day', exact: true })).toHaveAttribute(
     'aria-pressed',

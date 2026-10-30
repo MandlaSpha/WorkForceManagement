@@ -8,6 +8,9 @@ import {
   SHIFT_TONE,
   formatHours,
   rosterExportUrl,
+  shareLabel,
+  useActivities,
+  usePlan,
   useRoster,
 } from '@/entities/scheduling'
 import { ShiftCellSelect } from '@/features/assign-shift'
@@ -20,6 +23,9 @@ import { NAV_ITEMS } from '@/shared/config'
 import { formatDayLabel } from '@/shared/lib/datetime'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
+
+import DayTimeline from './DayTimeline.vue'
 
 const session = useSessionStore()
 const context = useContextStore()
@@ -28,6 +34,45 @@ const screen = NAV_ITEMS.find((item) => item.key === 'roster')
 const canChange = computed(() => ['planner', 'admin'].includes(session.user?.role ?? ''))
 
 const roster = useRoster(
+  computed(() => context.queueNumber),
+  computed(() => context.weekStart),
+)
+// The same plan the Planner shows, so what is changed here is judged against the requirement.
+const plan = usePlan(
+  computed(() => context.queueNumber),
+  computed(() => context.weekStart),
+)
+const summary = computed(() => plan.data.value?.summary ?? null)
+/** Half-hours short on a day, or null when the forecast does not say. */
+function shortOn(day: string): number | null {
+  const cells = plan.data.value?.cells[day]
+  if (!cells || !cells.some((c) => c.variance !== null)) return null
+  return cells.filter((c) => c.variance !== null && c.variance < 0).length
+}
+// The rota is a week grid to build in, or one day as a timeline to read the shape of the floor.
+const view = ref<'week' | 'day'>('week')
+const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
+const chosenDay = ref('')
+const timelineDay = computed(() => {
+  const days = roster.data.value?.days ?? []
+  return days.includes(chosenDay.value)
+    ? chosenDay.value
+    : days.includes(today)
+      ? today
+      : (days[0] ?? '')
+})
+const nowMin = computed(() => {
+  if (timelineDay.value !== today) return null
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Africa/Johannesburg',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date())
+  const part = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0)
+  return (part('hour') % 24) * 60 + part('minute')
+})
+const activities = useActivities(
   computed(() => context.queueNumber),
   computed(() => context.weekStart),
 )
@@ -83,6 +128,28 @@ const shiftIdOf = (row: { cells: ReadonlyArray<{ day: string; shiftId: number }>
         You can read the roster here. Planners and admins build it.
       </NoticeBox>
 
+      <ul
+        v-if="summary && summary.intervalsKnown > 0"
+        class="grid gap-3 sm:grid-cols-3"
+        aria-label="Coverage this week"
+      >
+        <StatTile
+          label="Under-staffed half-hours"
+          :value="shareLabel(summary.underIntervals, summary.intervalsKnown)"
+          tint="danger"
+          data-testid="roster-under"
+        />
+        <StatTile label="Coverage gap" :value="summary.gap" tint="warn" data-testid="roster-gap">
+          {{ summary.scheduledTotal }} scheduled · {{ summary.requiredTotal }} required
+        </StatTile>
+        <StatTile
+          label="People rostered"
+          :value="`${roster.data.value.rows.filter((r) => r.daysWorked > 0).length} of ${roster.data.value.rows.length}`"
+          tint="brand"
+          data-testid="roster-people"
+        />
+      </ul>
+
       <AutoScheduleButton
         v-if="editable && context.queueNumber !== null"
         :queue-id="context.queueNumber"
@@ -93,6 +160,29 @@ const shiftIdOf = (row: { cells: ReadonlyArray<{ day: string; shiftId: number }>
         <p class="font-medium">That change was not made.</p>
         <p>{{ refusal }}</p>
       </NoticeBox>
+
+      <div
+        v-if="roster.data.value.rows.length > 0"
+        class="inline-flex rounded-lg border border-line"
+        role="group"
+        aria-label="Rota view"
+      >
+        <button
+          v-for="v in [
+            { key: 'week', label: 'Week grid' },
+            { key: 'day', label: 'Day timeline' },
+          ] as const"
+          :key="v.key"
+          type="button"
+          class="min-h-10 px-3 text-sm font-medium first:rounded-l-lg last:rounded-r-lg"
+          :class="view === v.key ? 'bg-brand text-brand-contrast' : 'bg-surface text-ink'"
+          :aria-pressed="view === v.key"
+          :data-testid="`view-${v.key}`"
+          @click="view = v.key"
+        >
+          {{ v.label }}
+        </button>
+      </div>
 
       <ul class="flex flex-wrap gap-2 text-xs" aria-label="Legend">
         <li
@@ -111,6 +201,15 @@ const shiftIdOf = (row: { cells: ReadonlyArray<{ day: string; shiftId: number }>
       <NoticeBox v-else-if="roster.data.value.shifts.length === 0">
         There are no shift templates yet. An admin adds them in Configure.
       </NoticeBox>
+
+      <DayTimeline
+        v-else-if="view === 'day'"
+        :roster="roster.data.value"
+        :day="timelineDay"
+        :activities="activities.data.value ?? []"
+        :now-min="nowMin"
+        @update:day="chosenDay = $event"
+      />
 
       <div v-else class="overflow-x-auto rounded-xl border border-line bg-surface">
         <table class="w-full min-w-[56rem] text-left text-sm">
@@ -137,6 +236,14 @@ const shiftIdOf = (row: { cells: ReadonlyArray<{ day: string; shiftId: number }>
                 <span class="block font-normal" :data-testid="`on-${day}`">
                   {{ roster.data.value.onCounts[day] ?? 0 }} on
                 </span>
+                <span
+                  v-if="shortOn(day) !== null"
+                  class="mt-0.5 inline-block rounded-full px-1.5 text-[11px] font-semibold"
+                  :class="shortOn(day) ? 'bg-danger-soft text-danger' : 'bg-ok-soft text-ok'"
+                  :data-testid="`short-${day}`"
+                >
+                  {{ shortOn(day) ? `${shortOn(day)} short` : 'covered' }}
+                </span>
               </th>
             </tr>
           </thead>
@@ -147,9 +254,9 @@ const shiftIdOf = (row: { cells: ReadonlyArray<{ day: string; shiftId: number }>
               class="border-b border-line"
             >
               <th scope="row" class="px-4 py-2 font-normal">
-                <span class="block font-medium text-ink">{{ row.name }}</span>
+                <span class="block font-medium text-ink" :title="row.empNo">{{ row.name }}</span>
                 <span class="block text-xs text-ink-muted">
-                  {{ row.empNo }} · {{ row.daysWorked }}d {{ formatHours(row.paidMinutes) }} of
+                  {{ row.daysWorked }}d · {{ formatHours(row.paidMinutes) }} of
                   {{ row.weeklyHours }}h
                 </span>
               </th>

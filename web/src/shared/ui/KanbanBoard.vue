@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends { id: number }">
-import { ChevronDown, GripVertical } from 'lucide-vue-next'
+import { ChevronDown } from 'lucide-vue-next'
 import { nextTick, ref } from 'vue'
 
 /** A board of stages with cards that move between them. It knows nothing of swaps or leave: the
@@ -34,6 +34,16 @@ const props = defineProps<{
   announcement?: string
 }>()
 const emit = defineEmits<{ move: [item: T, to: string] }>()
+
+// A long column shows its first cards and asks before showing the rest.
+const SHOWN = 6
+const expanded = ref<ReadonlySet<string>>(new Set())
+function visible(c: KanbanColumn<T>): T[] {
+  return expanded.value.has(c.key) ? c.items : c.items.slice(0, SHOWN)
+}
+function showAll(key: string): void {
+  expanded.value = new Set([...expanded.value, key])
+}
 
 const dragging = ref<T | null>(null)
 const over = ref<string | null>(null)
@@ -100,10 +110,6 @@ defineExpose({ focusCard })
 
 <template>
   <div ref="root" class="space-y-3">
-    <p class="text-xs text-ink-muted" data-testid="kanban-hint">
-      <GripVertical :size="14" class="mr-1 inline align-text-bottom" aria-hidden="true" />
-      Drag cards between stages, or use the Move to button on a card.
-    </p>
     <p class="sr-only" role="status" aria-live="polite" data-testid="kanban-live">
       {{ announcement }}
     </p>
@@ -166,7 +172,7 @@ defineExpose({ focusCard })
         <ul v-else-if="c.items.length > 0" class="space-y-3" :aria-label="c.label">
           <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- dragging is the shortcut; the Move to button is the accessible path -->
           <li
-            v-for="item in c.items"
+            v-for="item in visible(c)"
             :key="item.id"
             class="kanban-card relative rounded-2xl border border-line bg-surface p-3 shadow-[var(--shadow-card)]"
             :class="[
@@ -222,8 +228,17 @@ defineExpose({ focusCard })
             </ul>
           </li>
         </ul>
+        <button
+          v-if="!loading && c.items.length > SHOWN && !expanded.has(c.key)"
+          type="button"
+          class="press mt-3 w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm font-medium text-brand-ink"
+          :data-testid="`kanban-more-${c.key}`"
+          @click="showAll(c.key)"
+        >
+          Show {{ c.items.length - SHOWN }} more
+        </button>
         <p
-          v-else
+          v-else-if="!loading && c.items.length === 0"
           class="rounded-2xl border border-dashed border-line px-3 py-6 text-center text-sm text-ink-muted"
           :data-testid="`kanban-empty-${c.key}`"
         >

@@ -38,7 +38,6 @@ describe('shrinkage', () => {
     const row = await screen.findByTestId('team-Sam Lead')
     expect(row).toHaveTextContent('10.0%')
     expect(row).toHaveTextContent('30.0%')
-    expect(screen.getByTestId('unplanned-note')).toHaveTextContent('not guessed')
   })
 
   it('shows a dash, not 0%, when a team has no contracted hours', async () => {

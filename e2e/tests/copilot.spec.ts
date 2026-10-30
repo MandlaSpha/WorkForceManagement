@@ -24,9 +24,6 @@ test('a planner asks a coverage question and gets an answer with an Open link', 
   await signIn(page, 'planner')
   await page.goto('/copilot')
   await expect(page.getByRole('heading', { name: 'Copilot', level: 1 })).toBeVisible()
-  await expect(page.getByTestId('copilot-banner')).toContainText(
-    'Copilot only answers from what your role can already see. It cannot change anything.',
-  )
 
   await ask(page, 'Which queue has the biggest gap on Tuesday?')
 

@@ -9,7 +9,7 @@ import { prefersReducedMotion } from './motion'
 export function useCountUp(
   target: Ref<number> | (() => number),
   format: (n: number) => string,
-  durationMs = 500,
+  durationMs = 1300,
 ) {
   const read = () => (typeof target === 'function' ? target() : target.value)
   const text = ref(format(read()))

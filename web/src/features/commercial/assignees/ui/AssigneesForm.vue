@@ -58,10 +58,6 @@ function submit(): void {
         {{ m.name }}
       </label>
     </fieldset>
-    <p class="text-xs text-ink-muted">
-      A manager sees only the customers chosen here, with their contracts and queues. With none
-      chosen they see nothing.
-    </p>
     <AppButton type="submit" :loading="save.isPending.value">Save who looks after it</AppButton>
     <NoticeBox v-if="save.isError.value" tone="danger" data-testid="assignees-error">
       {{ problemMessage(save.error.value) }}

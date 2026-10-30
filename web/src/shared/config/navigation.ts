@@ -369,8 +369,7 @@ export const NAV_ITEMS = [
     icon: 'sparkles',
     feature: 'copilot',
     phase: 0,
-    subtitle:
-      'Ask a question in plain words. It answers only from what your role can already see, and it cannot change anything.',
+    subtitle: 'Ask a question in plain words.',
   },
 
   {

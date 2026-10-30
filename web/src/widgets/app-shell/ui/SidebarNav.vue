@@ -75,7 +75,7 @@ const groupCount = (g: { items: { key: string }[] }): number =>
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <div class="sidebar-stagger flex h-full flex-col">
     <div class="px-5 pb-3 pt-5">
       <BrandMark />
       <p class="mt-2.5 text-sm font-semibold text-on-side">Workforce Management</p>

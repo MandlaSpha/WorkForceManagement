@@ -13,6 +13,7 @@ import { NAV_ITEMS } from '@/shared/config'
 import AppButton from '@/shared/ui/AppButton.vue'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 
 const screen = NAV_ITEMS.find((item) => item.key === 'contracts')
 const session = useSessionStore()
@@ -25,7 +26,11 @@ const queues = useQueues()
 
 // "new" shows the add form; a contract shows the change form for it.
 const editing = ref<ContractRow | 'new' | null>(null)
-const atRisk = computed(() => (contracts.data.value ?? []).filter((c) => c.atRisk).length)
+const list = computed(() => contracts.data.value ?? [])
+const atRisk = computed(() => list.value.filter((c) => c.atRisk).length)
+const totalCalls = computed(() => list.value.reduce((sum, c) => sum + c.offered, 0))
+const totalShort = computed(() => list.value.reduce((sum, c) => sum + c.underIntervals, 0))
+const bar = (pct: number | null): string => `${Math.min(100, Math.max(0, pct ?? 0))}%`
 </script>
 
 <template>
@@ -36,13 +41,6 @@ const atRisk = computed(() => (contracts.data.value ?? []).filter((c) => c.atRis
   </PageHeader>
 
   <section class="space-y-6" aria-live="polite">
-    <NoticeBox data-testid="how-measured">
-      <strong>Measured</strong> is the service level actually achieved over the last 28 days of
-      imported calls. <strong>This week</strong> is <em>modelled</em>: the roster against the
-      published forecast. Neither is invented: with no calls or no forecast the figure is missing,
-      not zero.
-    </NoticeBox>
-
     <div v-if="canChange" class="space-y-4">
       <CustomerForm />
       <ContractForm
@@ -76,71 +74,97 @@ const atRisk = computed(() => (contracts.data.value ?? []).filter((c) => c.atRis
       >
     </NoticeBox>
     <template v-else>
-      <p class="text-sm text-ink" data-testid="risk-summary">
-        <strong>{{ atRisk }}</strong> of {{ contracts.data.value?.length }}
-        {{ contracts.data.value?.length === 1 ? 'contract is' : 'contracts are' }} at risk.
-      </p>
-      <div class="overflow-x-auto rounded-xl border border-line bg-surface">
-        <table class="w-full min-w-[52rem] text-left text-sm" data-testid="contracts-table">
-          <caption class="sr-only">
-            Contracts
-          </caption>
-          <thead class="border-b border-line bg-surface-muted text-xs text-ink-muted">
-            <tr>
-              <th scope="col" class="px-4 py-2 font-medium">Contract</th>
-              <th scope="col" class="px-3 py-2 font-medium">Queues</th>
-              <th scope="col" class="px-3 py-2 font-medium">Promised</th>
-              <th scope="col" class="px-3 py-2 font-medium">Measured</th>
-              <th scope="col" class="px-3 py-2 font-medium">This week</th>
-              <th scope="col" class="px-3 py-2 font-medium">Status</th>
-              <th v-if="canChange" scope="col" class="px-4 py-2 text-right font-medium">
-                <span class="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="c in contracts.data.value"
-              :key="c.id"
-              class="border-b border-line align-top"
-              :data-testid="`contract-${c.id}`"
+      <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Contracts at a glance">
+        <StatTile label="Contracts" :value="list.length" tint="brand" />
+        <StatTile
+          label="At risk"
+          :value="atRisk"
+          :tint="atRisk > 0 ? 'danger' : 'ok'"
+          data-testid="risk-summary"
+        >
+          of {{ list.length }} {{ list.length === 1 ? 'contract is' : 'contracts are' }} at risk
+        </StatTile>
+        <StatTile label="Calls, last 28 days" :value="totalCalls" tint="ok" />
+        <StatTile label="Short this week" :value="totalShort" tint="warn">half-hours</StatTile>
+      </ul>
+
+      <ul class="grid gap-4 lg:grid-cols-2" aria-label="Contracts" data-testid="contracts-list">
+        <li
+          v-for="c in list"
+          :key="c.id"
+          class="rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]"
+          :data-testid="`contract-${c.id}`"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="truncate text-xs text-ink-muted">{{ c.customer }}</p>
+              <h2 class="truncate text-base font-semibold text-ink">
+                {{ c.name }}<template v-if="!c.active"> · ended</template>
+              </h2>
+            </div>
+            <span
+              class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+              :class="c.atRisk ? 'bg-danger-soft text-danger' : 'bg-ok-soft text-ok'"
             >
-              <th scope="row" class="px-4 py-2 text-left font-medium text-ink">
-                {{ c.customer }}
-                <span class="block text-xs font-normal text-ink-muted">
-                  {{ c.name }}<template v-if="!c.active"> · ended</template>
-                </span>
-              </th>
-              <td class="px-3 py-2">{{ c.queues.map((q) => q.name).join(', ') || '—' }}</td>
-              <td class="px-3 py-2 tabular-nums">{{ promise(c) }}</td>
-              <td class="px-3 py-2">{{ measured(c) }}</td>
-              <td class="px-3 py-2">{{ coverage(c) }}</td>
-              <td class="px-3 py-2">
-                <span
-                  v-if="c.atRisk"
-                  class="rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-semibold text-danger"
-                >
-                  At risk
-                </span>
-                <span v-else class="text-ink-muted">OK</span>
-                <ul v-if="c.risks.length > 0" class="mt-1 list-disc pl-4 text-xs text-ink-muted">
-                  <li v-for="r in c.risks" :key="r">{{ r }}</li>
-                </ul>
-              </td>
-              <td v-if="canChange" class="px-4 py-2 text-right">
-                <button
-                  type="button"
-                  class="text-sm font-medium text-brand-ink underline"
-                  :aria-label="`Change ${c.customer} ${c.name}`"
-                  @click="editing = c"
-                >
-                  Change
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              {{ c.atRisk ? 'At risk' : 'OK' }}
+            </span>
+          </div>
+
+          <ul class="mt-2 flex flex-wrap gap-1.5" aria-label="Queues">
+            <li
+              v-for="q in c.queues"
+              :key="q.id"
+              class="rounded-full bg-surface-muted px-2.5 py-0.5 text-xs text-ink"
+            >
+              {{ q.name }}
+            </li>
+            <li v-if="c.queues.length === 0" class="text-xs text-ink-muted">No queues</li>
+          </ul>
+
+          <div class="mt-4">
+            <div class="flex items-baseline justify-between gap-3 text-sm">
+              <span class="tabular-nums text-ink">{{ measured(c) }}</span>
+              <span class="tabular-nums text-ink-muted">Promised {{ promise(c) }}</span>
+            </div>
+            <div
+              class="relative mt-2 h-2 rounded-full bg-surface-muted"
+              role="img"
+              :aria-label="`Measured against ${c.slTargetPct}% promised`"
+            >
+              <div
+                class="h-full rounded-full"
+                :class="c.atRisk ? 'bg-danger' : 'bg-brand'"
+                :style="{ width: bar(c.measuredSlPct) }"
+              ></div>
+              <div
+                class="absolute -top-1 h-4 w-0.5 rounded bg-ink"
+                :style="{ left: bar(c.slTargetPct) }"
+                aria-hidden="true"
+              ></div>
+            </div>
+          </div>
+
+          <p class="mt-3 text-sm text-ink">
+            <span class="text-ink-muted">This week:</span> {{ coverage(c) }}
+          </p>
+          <ul
+            v-if="c.risks.length > 0"
+            class="mt-2 list-disc space-y-0.5 pl-4 text-xs text-ink-muted"
+          >
+            <li v-for="r in c.risks" :key="r">{{ r }}</li>
+          </ul>
+
+          <button
+            v-if="canChange"
+            type="button"
+            class="mt-3 text-sm font-medium text-brand-ink underline"
+            :aria-label="`Change ${c.customer} ${c.name}`"
+            @click="editing = c"
+          >
+            Change
+          </button>
+        </li>
+      </ul>
     </template>
   </section>
 </template>

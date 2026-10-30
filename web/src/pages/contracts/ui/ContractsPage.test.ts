@@ -56,11 +56,6 @@ describe('how each contract is doing', () => {
     expect(screen.getByTestId('risk-summary')).toHaveTextContent('1 of 1 contract is at risk')
   })
 
-  it('says which figure is measured and which is modelled', async () => {
-    await open('planner')
-    expect(await screen.findByTestId('how-measured')).toHaveTextContent(/modelled/)
-  })
-
   it('shows a missing figure as missing, not zero', async () => {
     await open('planner', [contract({ measuredSlPct: null, offered: 0, intervalsKnown: 0 })])
     const row = await screen.findByTestId('contract-1')

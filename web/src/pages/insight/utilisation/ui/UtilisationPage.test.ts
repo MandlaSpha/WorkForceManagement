@@ -118,9 +118,6 @@ describe('utilisation', () => {
     expect(row).toHaveTextContent('-5.0 pts (short)')
     expect(screen.getByTestId('team-0')).toBeVisible()
     expect(screen.getByTestId('customer-7')).toBeVisible()
-    expect(screen.getByTestId('modelled-note')).toHaveTextContent(
-      'Modelled from the published roster',
-    )
   })
 
   it('marks a target that is only an assumption', async () => {
@@ -141,7 +138,6 @@ describe('utilisation', () => {
     await open('lead')
     const row = await screen.findByTestId('person-E001')
     expect(row).toHaveTextContent('Ann Agent')
-    expect(screen.getByText(/not a ranking/)).toBeVisible()
     expect(screen.queryByText(/rank(?!ing)/i)).not.toBeInTheDocument()
   })
 

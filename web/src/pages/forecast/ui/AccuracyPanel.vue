@@ -45,13 +45,6 @@ const pct = (value: number | null) => (value === null ? '—' : `${value.toFixed
         Bias: {{ biasLabel(accuracy.data.value.biasPct) }}. Whether forecasts run high or low is
         tuned on the Calibration screen.
       </p>
-      <p class="text-xs text-ink-muted">
-        Measured on real calls: each day is forecast from only the days before it, using the
-        {{ accuracy.data.value.weeks }} most recent same-weekday days, then compared with what
-        happened. Accuracy is 100% minus the total error as a share of total calls. The half-hour
-        figure is always lower, and much lower for a small queue, where a half-hour holds only a
-        call or two and chance alone moves it. Judge staffing for the day by the day figure.
-      </p>
       <details class="text-sm">
         <summary class="cursor-pointer text-brand-ink">Show each day</summary>
         <div class="mt-2 max-h-72 overflow-auto rounded-xl border border-line">

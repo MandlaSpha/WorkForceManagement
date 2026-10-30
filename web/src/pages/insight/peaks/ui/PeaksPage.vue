@@ -273,10 +273,6 @@ const intervalRank = (list: ReadonlyArray<{ start: string; offered: number }>): 
           <h2 id="peaks-profile-title" class="text-sm font-semibold text-ink">
             Average calls by half-hour of the day
           </h2>
-          <p class="mt-1 text-xs text-ink-muted">
-            The busiest window is shaded orange; the quietest open half-hours are teal. A half-hour
-            with no calls in the range is closed and has no bar.
-          </p>
           <div class="mt-3 overflow-x-auto">
             <div class="min-w-[44rem] pt-4">
               <BarSeries

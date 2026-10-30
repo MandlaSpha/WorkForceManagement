@@ -18,7 +18,7 @@ describe('the roster grid', () => {
     expect(await cell('Alex Agent')).toHaveValue('2') // D1
     expect(await cell('Alex Agent', 'Tue 26 May')).toHaveValue('2')
     expect(await cell('Sam Planner')).toHaveValue('') // no shift
-    expect(screen.getByText(/E001 · 2d 16h of 40h/)).toBeVisible()
+    expect(screen.getByText(/2d · 16h of 40h/)).toBeVisible()
     expect(screen.getByTestId(`on-${MON}`)).toHaveTextContent('1 on')
     expect(screen.getByTestId(`on-${DAYS[2]}`)).toHaveTextContent('0 on')
   })

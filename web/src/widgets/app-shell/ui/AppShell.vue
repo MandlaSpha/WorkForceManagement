@@ -55,7 +55,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
     <div class="flex min-w-0 flex-1 flex-col">
       <TopBar :menu-open="menuOpen" @toggle-menu="menuOpen = !menuOpen" />
       <main id="main" class="flex-1 overflow-y-auto px-4 pb-8 pt-2 sm:px-6" tabindex="-1">
-        <div :key="route.path" class="page-enter"><RouterView /></div>
+        <div :key="route.path" class="page-stagger"><RouterView /></div>
       </main>
     </div>
   </div>

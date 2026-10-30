@@ -22,9 +22,12 @@ describe('the planner heatmap', () => {
 
   it('draws an unknown requirement as a dot, never as zero', async () => {
     seedScheduling()
+    const user = userEvent.setup()
     await openScheduling('/planner')
 
-    // Slot 30 on Tuesday has no requirement in the fixture.
+    // Slot 30 on Tuesday has no requirement in the fixture. The grid opens on the busy hours, so
+    // the whole day is asked for first.
+    await user.click(await screen.findByTestId('show-all-hours'))
     expect(await cellText(30, DAYS[1])).toBe('·')
     expect(await cellText(30, DAYS[1])).not.toBe('0')
   })
@@ -37,7 +40,7 @@ describe('the planner heatmap', () => {
     expect(screen.getByTestId('kpi-gap')).toHaveTextContent('4')
     expect(screen.getByTestId('kpi-gap')).toHaveTextContent('25 scheduled · 10 required')
     expect(screen.getByTestId('kpi-worst')).toHaveTextContent('−2 at 09:00 on Mon 25 May')
-    expect(screen.getByTestId('kpi-roster')).toHaveTextContent('draft')
+    expect(screen.getByTestId('kpi-roster')).toHaveTextContent('Draft')
   })
 
   it('opens a day as a chart when its heading is chosen', async () => {

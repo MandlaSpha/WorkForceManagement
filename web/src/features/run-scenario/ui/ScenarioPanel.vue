@@ -38,11 +38,6 @@ const fixed = (value: number, digits = 0): string => value.toFixed(digits)
 <template>
   <section class="space-y-3" aria-labelledby="scenario-title">
     <h2 id="scenario-title" class="text-base font-semibold text-ink">What if&hellip;</h2>
-    <p class="text-sm text-ink-muted">
-      See what a change would do to the agents needed, without changing this forecast. Nothing is
-      saved.
-    </p>
-
     <form class="space-y-3" aria-label="What if" @submit.prevent="submit">
       <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <TextField

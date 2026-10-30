@@ -67,14 +67,12 @@ describe('workload balance', () => {
     expect(c).not.toHaveTextContent('0%')
   })
 
-  it('offers a move as a suggestion and says nothing is moved from here', async () => {
+  it('offers a move as a suggestion, with no button that moves anyone', async () => {
     // Failure caught: a button that reassigns people, or wording that says it was done.
     await open()
     const move = await screen.findByTestId('move-E002')
     expect(move).toHaveTextContent('Move Bob Agent (E002) from QueueB to QueueA')
-    expect(move).toHaveTextContent('nothing is moved from here')
     expect(screen.queryByRole('button', { name: /move|apply|assign/i })).not.toBeInTheDocument()
-    expect(screen.getByTestId('balance-note')).toHaveTextContent('suggestions')
   })
 
   it('says so when no move is suggested', async () => {

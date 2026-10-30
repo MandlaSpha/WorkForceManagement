@@ -4,13 +4,22 @@ import DeltaChip from './DeltaChip.vue'
 import Sparkline from './Sparkline.vue'
 
 /** A tile for a list: render it inside a `<ul>`. */
-withDefaults(
+const TINTS = {
+  brand: 'bg-brand-soft',
+  ok: 'bg-ok-soft',
+  warn: 'bg-warn-soft',
+  danger: 'bg-danger-soft',
+} as const
+
+const props = withDefaults(
   defineProps<{
     label: string
     /** A number counts up (formatted with `format`); a string is shown as given. */
     value: number | string
     format?: (n: number) => string
     variant?: 'default' | 'feature'
+    /** A soft colour behind a default tile: brand, ok, warn or danger. */
+    tint?: 'brand' | 'ok' | 'warn' | 'danger'
     delta?: number | null
     deltaUnit?: string
     deltaGoodWhen?: 'up' | 'down'
@@ -22,6 +31,7 @@ withDefaults(
   {
     format: undefined,
     variant: 'default',
+    tint: undefined,
     delta: undefined,
     deltaUnit: '%',
     deltaGoodWhen: 'up',
@@ -34,11 +44,13 @@ withDefaults(
 
 <template>
   <li
-    class="rounded-xl p-4"
+    class="card-lift rounded-xl p-4"
     :class="
       variant === 'feature'
         ? 'bg-brand text-brand-contrast'
-        : 'border border-line bg-surface text-ink'
+        : props.tint
+          ? `${TINTS[props.tint]} text-ink`
+          : 'border border-line bg-surface text-ink'
     "
   >
     <div class="flex items-center justify-between gap-2">

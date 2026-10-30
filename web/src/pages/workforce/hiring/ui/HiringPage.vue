@@ -6,9 +6,11 @@ import { useSessionStore } from '@/entities/session'
 import { DeletePlanButton, HiringPlanForm } from '@/features/hiring/plan'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
+import BarSeries, { type BarItem } from '@/shared/ui/BarSeries.vue'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import SelectField from '@/shared/ui/SelectField.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 
 const screen = NAV_ITEMS.find((item) => item.key === 'hiring')
 const session = useSessionStore()
@@ -42,6 +44,19 @@ const monthLabel = (iso: string) =>
     year: 'numeric',
     timeZone: 'UTC',
   })
+// Hires month by month: the plan's output. A red bar is a month the plan still falls short; the
+// hover says what was needed and what is at full strength.
+const MONTH_SHORT = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-ZA', { month: 'short', timeZone: 'UTC' })
+const chartItems = computed<BarItem[]>(() =>
+  (plan.data.value?.rows ?? []).map((r) => ({
+    label: MONTH_SHORT(r.month),
+    title: `${monthLabel(r.month)}: hire ${r.hires}; ${one(r.required)} needed, ${one(r.effective)} at full strength`,
+    value: r.hires,
+    tone: r.gap < -0.05 ? ('high' as const) : undefined,
+    mark: r.hires > 0 ? String(r.hires) : undefined,
+  })),
+)
 const one = (n: number) => n.toLocaleString('en-ZA', { maximumFractionDigits: 1 })
 const rands = (n: number) =>
   `R ${n.toLocaleString('en-ZA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
@@ -114,92 +129,109 @@ const rands = (n: number) =>
       </NoticeBox>
 
       <template v-else-if="plan.data.value">
-        <dl class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="summary">
-          <div class="rounded-xl border border-line bg-surface p-4">
-            <dt class="text-xs text-ink-muted">People to hire</dt>
-            <dd class="text-lg font-semibold tabular-nums" data-testid="total-hires">
-              {{ plan.data.value.totalHires }}
-            </dd>
-          </div>
-          <div class="rounded-xl border border-line bg-surface p-4">
-            <dt class="text-xs text-ink-muted">Months short</dt>
-            <dd class="text-lg font-semibold tabular-nums" data-testid="short-months">
-              {{ plan.data.value.shortfallMonths }}
-            </dd>
-            <dd class="text-xs text-ink-muted">
-              {{ plan.data.value.unavoidableMonths }} too soon for any hire to help
-            </dd>
-          </div>
-          <div
-            v-if="plan.data.value.totalCostRands !== null"
-            class="rounded-xl border border-line bg-surface p-4"
+        <ul
+          class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          aria-label="Summary"
+          data-testid="summary"
+        >
+          <StatTile
+            label="People to hire"
+            :value="plan.data.value.totalHires"
+            tint="brand"
+            data-testid="total-hires"
+          />
+          <StatTile
+            label="Months short"
+            :value="plan.data.value.shortfallMonths"
+            tint="danger"
+            data-testid="short-months"
           >
-            <dt class="text-xs text-ink-muted">Cost over the plan</dt>
-            <dd class="text-lg font-semibold tabular-nums" data-testid="total-cost">
-              {{ rands(plan.data.value.totalCostRands) }}
-            </dd>
-          </div>
-        </dl>
+            {{ plan.data.value.unavoidableMonths }} too soon for any hire to help
+          </StatTile>
+          <StatTile
+            v-if="plan.data.value.totalCostRands !== null"
+            label="Cost over the plan"
+            :value="plan.data.value.totalCostRands"
+            :format="rands"
+            tint="warn"
+            data-testid="total-cost"
+          />
+        </ul>
 
-        <div class="overflow-x-auto rounded-xl border border-line bg-surface">
-          <table class="w-full min-w-[40rem] text-left text-sm" data-testid="plan-table">
-            <caption class="sr-only">
-              Month by month
-            </caption>
-            <thead class="border-b border-line bg-surface-muted text-xs text-ink-muted">
-              <tr>
-                <th scope="col" class="px-4 py-2 font-medium">Month</th>
-                <th scope="col" class="px-3 py-2 text-right font-medium">Needed</th>
-                <th scope="col" class="px-3 py-2 text-right font-medium">Employed</th>
-                <th scope="col" class="px-3 py-2 text-right font-medium">Hire</th>
-                <th scope="col" class="px-3 py-2 text-right font-medium">At full strength</th>
-                <th scope="col" class="px-3 py-2 text-right font-medium">Short or spare</th>
-                <th
-                  v-if="plan.data.value.totalCostRands !== null"
-                  scope="col"
-                  class="px-3 py-2 text-right font-medium"
-                >
-                  Cost
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="r in plan.data.value.rows"
-                :key="r.month"
-                class="border-b border-line"
-                :data-testid="`month-${r.month}`"
-              >
-                <th scope="row" class="px-4 py-2 text-left font-medium">
-                  {{ monthLabel(r.month) }}
-                </th>
-                <td class="px-3 py-2 text-right tabular-nums">{{ one(r.required) }}</td>
-                <td class="px-3 py-2 text-right tabular-nums">{{ one(r.headcount) }}</td>
-                <td class="px-3 py-2 text-right font-semibold tabular-nums">
-                  {{ r.hires || '-' }}
-                </td>
-                <td class="px-3 py-2 text-right tabular-nums">{{ one(r.effective) }}</td>
-                <td
-                  class="px-3 py-2 text-right tabular-nums"
-                  :class="r.gap < -0.05 ? 'text-danger' : 'text-ink'"
-                  data-testid="gap"
-                >
-                  {{ r.gap > 0.05 ? '+' : '' }}{{ one(r.gap) }}
-                  <span v-if="r.unavoidable" class="block text-[11px] text-ink-muted"
-                    >too soon to hire for</span
+        <section
+          class="rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]"
+          aria-labelledby="hiring-chart"
+        >
+          <h2 id="hiring-chart" class="text-base font-semibold text-ink">Hires each month</h2>
+          <div class="mt-6">
+            <BarSeries
+              :items="chartItems"
+              value-label="People to hire"
+              summary="People to hire each month. A red bar is a month the plan still falls short."
+            />
+          </div>
+        </section>
+
+        <details class="rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]" open>
+          <summary class="cursor-pointer px-4 py-3 text-base font-semibold text-ink">
+            Month by month
+          </summary>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[40rem] text-left text-sm" data-testid="plan-table">
+              <caption class="sr-only">
+                Month by month
+              </caption>
+              <thead class="border-b border-line bg-surface-muted text-xs text-ink-muted">
+                <tr>
+                  <th scope="col" class="px-4 py-2 font-medium">Month</th>
+                  <th scope="col" class="px-3 py-2 text-right font-medium">Needed</th>
+                  <th scope="col" class="px-3 py-2 text-right font-medium">Employed</th>
+                  <th scope="col" class="px-3 py-2 text-right font-medium">Hire</th>
+                  <th scope="col" class="px-3 py-2 text-right font-medium">At full strength</th>
+                  <th scope="col" class="px-3 py-2 text-right font-medium">Short or spare</th>
+                  <th
+                    v-if="plan.data.value.totalCostRands !== null"
+                    scope="col"
+                    class="px-3 py-2 text-right font-medium"
                   >
-                </td>
-                <td v-if="r.costRands !== null" class="px-3 py-2 text-right tabular-nums">
-                  {{ rands(r.costRands) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="text-xs text-ink-muted">
-          A new hire is paid from the month they start and reaches full strength after the ramp.
-          Hires are made that many months before they are needed.
-        </p>
+                    Cost
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="r in plan.data.value.rows"
+                  :key="r.month"
+                  class="border-b border-line"
+                  :data-testid="`month-${r.month}`"
+                >
+                  <th scope="row" class="px-4 py-2 text-left font-medium">
+                    {{ monthLabel(r.month) }}
+                  </th>
+                  <td class="px-3 py-2 text-right tabular-nums">{{ one(r.required) }}</td>
+                  <td class="px-3 py-2 text-right tabular-nums">{{ one(r.headcount) }}</td>
+                  <td class="px-3 py-2 text-right font-semibold tabular-nums">
+                    {{ r.hires || '-' }}
+                  </td>
+                  <td class="px-3 py-2 text-right tabular-nums">{{ one(r.effective) }}</td>
+                  <td
+                    class="px-3 py-2 text-right tabular-nums"
+                    :class="r.gap < -0.05 ? 'text-danger' : 'text-ink'"
+                    data-testid="gap"
+                  >
+                    {{ r.gap > 0.05 ? '+' : '' }}{{ one(r.gap) }}
+                    <span v-if="r.unavoidable" class="block text-[11px] text-ink-muted"
+                      >too soon to hire for</span
+                    >
+                  </td>
+                  <td v-if="r.costRands !== null" class="px-3 py-2 text-right tabular-nums">
+                    {{ rands(r.costRands) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
       </template>
     </template>
   </section>

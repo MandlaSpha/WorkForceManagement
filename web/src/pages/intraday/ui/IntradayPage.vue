@@ -12,22 +12,35 @@ import AppButton from '@/shared/ui/AppButton.vue'
 import IntervalChart from '@/shared/ui/IntervalChart.vue'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 
 const context = useContextStore()
 const screen = NAV_ITEMS.find((item) => item.key === 'intraday')
 
-const day = ref(new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' }))
+const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
+const day = ref(today)
+function step(days: number): void {
+  const moved = new Date(Date.parse(`${day.value}T00:00:00Z`) + days * 86_400_000)
+  day.value = moved.toISOString().slice(0, 10)
+}
 const queueId = computed(() => context.queueNumber)
 const intraday = useIntraday(queueId, day)
 
-const points = computed(() =>
-  (intraday.data.value?.slots ?? []).map((s, i) => ({
+const points = computed(() => {
+  const all = (intraday.data.value?.slots ?? []).map((s, i) => ({
     label: slotLabel(i),
     // Calls: what came where the half-hour is over, what is now expected where it is not.
     bars: s.actual ?? s.reforecast ?? s.forecast ?? 0,
     line: s.scheduled,
-  })),
-)
+  }))
+  // The axis runs over the hours with calls or people, two half-hours either side, from an even
+  // half-hour so the labels fall on whole hours.
+  const busy = all.flatMap((p, i) => (p.bars > 0 || p.line > 0 ? [i] : []))
+  if (busy.length === 0) return all
+  const first = Math.max(0, Math.min(...busy) - 2)
+  const last = Math.min(all.length - 1, Math.max(...busy) + 2)
+  return all.slice(first - (first % 2), last + 1)
+})
 
 // Cosmetic: the API refuses suggestions to anyone but a planner or admin.
 const session = useSessionStore()
@@ -48,6 +61,10 @@ const percent = computed(() =>
 const through = computed(() =>
   intraday.data.value?.dataThrough == null ? null : slotLabel(intraday.data.value.dataThrough),
 )
+// With no forecast and no calls there is nothing to draw: the notice says so instead.
+const showChart = computed(
+  () => !!intraday.data.value && (intraday.data.value.hasForecast || through.value !== null),
+)
 const critical = computed(
   () => (intraday.data.value?.alerts ?? []).filter((a) => a.severity === 'critical').length,
 )
@@ -57,10 +74,33 @@ const critical = computed(
   <PageHeader eyebrow="Operate" :title="screen?.label ?? 'Intraday'" :subtitle="screen?.subtitle" />
 
   <section class="space-y-4" aria-live="polite">
-    <label class="flex items-center gap-2 text-sm text-ink">
-      Day
-      <input v-model="day" type="date" class="rounded-lg border border-line bg-surface px-2 py-1" />
-    </label>
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        class="press grid size-9 place-items-center rounded-lg border border-line bg-surface text-lg text-ink"
+        aria-label="Earlier date"
+        @click="step(-1)"
+      >
+        ‹
+      </button>
+      <label class="flex items-center gap-2 text-sm text-ink">
+        Day
+        <input
+          v-model="day"
+          type="date"
+          class="rounded-lg border border-line bg-surface px-2 py-1"
+        />
+      </label>
+      <button
+        type="button"
+        class="press grid size-9 place-items-center rounded-lg border border-line bg-surface text-lg text-ink"
+        aria-label="Later date"
+        @click="step(1)"
+      >
+        ›
+      </button>
+      <AppButton v-if="day !== today" variant="ghost" @click="day = today">Today</AppButton>
+    </div>
 
     <NoticeBox v-if="context.queueNumber === null">
       Choose a queue at the top of the page. Queues appear once call data has been imported.
@@ -75,47 +115,62 @@ const critical = computed(
         No forecast has been published for this day, so there is nothing to compare the calls with.
       </NoticeBox>
 
-      <div class="grid gap-3 sm:grid-cols-3">
-        <div class="rounded-xl border border-line bg-surface p-4" data-testid="running">
-          <p class="text-xs text-ink-muted">The day so far</p>
-          <p class="text-lg font-semibold text-ink">
-            <template v-if="percent !== null">{{ percent }}% of forecast</template>
-            <template v-else>-</template>
-          </p>
-          <p class="text-xs text-ink-muted">
+      <div class="grid gap-4 lg:grid-cols-3">
+        <section
+          v-if="showChart"
+          aria-labelledby="chart-title"
+          class="rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] lg:col-span-2"
+        >
+          <h2 id="chart-title" class="text-base font-semibold text-ink">
+            Calls and people scheduled
+          </h2>
+          <IntervalChart
+            :points="points"
+            summary="Calls in each half-hour of the day as bars, and the people scheduled as a line"
+            bar-label="Calls (actual, then expected)"
+            line-label="People scheduled"
+            :label-every="2"
+          />
+        </section>
+
+        <ul
+          class="grid content-start gap-3"
+          :class="showChart ? '' : 'sm:grid-cols-3 lg:col-span-3'"
+          aria-label="The day"
+        >
+          <StatTile
+            label="The day so far"
+            :value="percent ?? '-'"
+            :format="(n) => `${Math.round(n)}% of forecast`"
+            tint="brand"
+            data-testid="running"
+          >
             <template v-if="through">Calls are imported up to {{ through }}.</template>
             <template v-else>No calls imported for this day yet.</template>
-          </p>
-        </div>
-        <div class="rounded-xl border border-line bg-surface p-4" data-testid="sl">
-          <p class="text-xs text-ink-muted">Service level so far</p>
-          <p class="text-lg font-semibold text-ink">
-            <template v-if="intraday.data.value.serviceLevelPct !== null">
-              {{ intraday.data.value.serviceLevelPct.toFixed(1) }}%
-            </template>
-            <template v-else>-</template>
-          </p>
-          <p class="text-xs text-ink-muted">Measured over the half-hours that are over.</p>
-        </div>
-        <div class="rounded-xl border border-line bg-surface p-4" data-testid="alert-count">
-          <p class="text-xs text-ink-muted">Half-hours short to come</p>
-          <p class="text-lg font-semibold text-ink">{{ intraday.data.value.alerts.length }}</p>
-          <p class="text-xs text-ink-muted">{{ critical }} critical</p>
-        </div>
+          </StatTile>
+          <StatTile
+            label="Service level so far"
+            :value="intraday.data.value.serviceLevelPct ?? '-'"
+            :format="(n) => `${n.toFixed(1)}%`"
+            tint="ok"
+            data-testid="sl"
+          />
+          <StatTile
+            label="Half-hours short to come"
+            :value="intraday.data.value.alerts.length"
+            :tint="critical > 0 ? 'danger' : 'warn'"
+            data-testid="alert-count"
+          >
+            {{ critical }} critical
+          </StatTile>
+        </ul>
       </div>
 
-      <section aria-labelledby="chart-title" class="space-y-2">
-        <h2 id="chart-title" class="text-sm font-semibold text-ink">Calls and people scheduled</h2>
-        <IntervalChart
-          :points="points"
-          summary="Calls in each half-hour of the day as bars, and the people scheduled as a line"
-          bar-label="Calls (actual, then expected)"
-          line-label="People scheduled"
-        />
-      </section>
-
-      <section aria-labelledby="alerts-title" class="space-y-2">
-        <h2 id="alerts-title" class="text-sm font-semibold text-ink">Where cover falls short</h2>
+      <section
+        aria-labelledby="alerts-title"
+        class="space-y-2 rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)]"
+      >
+        <h2 id="alerts-title" class="text-base font-semibold text-ink">Where cover falls short</h2>
         <NoticeBox v-if="intraday.data.value.alerts.length === 0" data-testid="no-alerts">
           Nothing short for the rest of the day.
         </NoticeBox>

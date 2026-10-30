@@ -59,7 +59,6 @@ describe('the dashboard shows measured service figures', () => {
     expect(await screen.findByTestId('service-title')).toHaveTextContent(
       /Service figures · July 2026/,
     )
-    expect(screen.getByTestId('planning-hint')).toHaveTextContent('top bar')
     await user.selectOptions(screen.getByLabelText('Month'), '2026-05')
     expect(await screen.findByText(/Service figures · May 2026/)).toBeVisible()
     expect(screen.getByText(/^Planning, week of/)).toBeVisible()

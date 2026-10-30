@@ -44,9 +44,6 @@ function submit(): void {
           class="mt-1 block w-full max-w-md text-sm text-ink file:mr-3 file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-2 file:text-sm"
           @change="choose"
         />
-        <p class="mt-1 text-xs text-ink-muted">
-          Phone numbers and agent names in the file are never stored.
-        </p>
       </div>
       <AppButton type="submit" :loading="importReport.isPending.value" :disabled="!file">
         {{ importReport.isPending.value ? 'Importing…' : 'Import report' }}

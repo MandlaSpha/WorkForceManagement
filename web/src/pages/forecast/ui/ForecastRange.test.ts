@@ -252,7 +252,7 @@ describe('the month', () => {
     expect(within(grid).getAllByText('Quietest')).toHaveLength(1)
   })
 
-  it('shows the events that cover a day, and says public holidays are not recorded', async () => {
+  it('shows the events that cover a day', async () => {
     weekForecast()
     backend.events = [
       {
@@ -277,7 +277,6 @@ describe('the month', () => {
     expect(
       within(grid.querySelector('[data-day="2026-05-27"]') as HTMLElement).queryByText('Payday'),
     ).toBeNull()
-    expect(screen.getByTestId('holiday-note')).toHaveTextContent(/Public holidays are not recorded/)
   })
 
   it('drops into the Day view when a day is clicked', async () => {

@@ -8,12 +8,9 @@ defineProps<{ costs: CostReport }>()
 <template>
   <section class="space-y-3" aria-labelledby="cost-heading" data-testid="cost-panel">
     <h2 id="cost-heading" class="text-base font-semibold text-ink">Cost</h2>
-    <NoticeBox>
-      Modelled: rostered time at the hourly rate from the salary on file, plus approved overtime.
-      Someone with no salary on file has no cost, not a zero cost.
-      <span v-if="costs.engineersWithoutSalary > 0" data-testid="no-salary">
-        {{ costs.engineersWithoutSalary }} engineer(s) have none.
-      </span>
+    <NoticeBox v-if="costs.engineersWithoutSalary > 0" data-testid="no-salary">
+      {{ costs.engineersWithoutSalary }} engineer(s) have no salary on file, so no cost is shown for
+      them.
     </NoticeBox>
 
     <div class="overflow-x-auto rounded-xl border border-line bg-surface">
@@ -55,45 +52,50 @@ defineProps<{ costs: CostReport }>()
       </table>
     </div>
 
-    <div class="overflow-x-auto rounded-xl border border-line bg-surface">
-      <table class="w-full text-left text-sm">
-        <caption class="sr-only">
-          Cost per engineer
-        </caption>
-        <thead class="text-xs text-ink-muted">
-          <tr>
-            <th scope="col" class="px-3 py-2">Engineer</th>
-            <th scope="col" class="px-3 py-2">Worked (h)</th>
-            <th scope="col" class="px-3 py-2">Ordinary</th>
-            <th scope="col" class="px-3 py-2">Overtime</th>
-            <th scope="col" class="px-3 py-2">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="e in costs.engineers"
-            :key="e.employeeId"
-            class="border-t border-line"
-            :data-testid="`engineer-${e.empNo}`"
-          >
-            <th scope="row" class="px-3 py-2 font-medium text-ink">
-              {{ e.employee }} <span class="text-ink-muted">({{ e.empNo }})</span>
-            </th>
-            <td class="px-3 py-2">{{ hours(e.workedMin) }}</td>
-            <td class="px-3 py-2">{{ rands(e.ordinaryRands) }}</td>
-            <td class="px-3 py-2">
-              {{ rands(e.overtimeRands) }}
-              <span v-if="e.overtimeMissing > 0" class="text-xs text-warn">
-                ({{ e.overtimeMissing }} unpriced)
-              </span>
-            </td>
-            <td class="px-3 py-2 font-semibold">
-              {{ e.totalRands == null ? 'No salary on file' : rands(e.totalRands) }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <details :open="costs.engineers.length <= 12" data-testid="engineer-costs">
+      <summary class="cursor-pointer text-sm font-semibold text-ink">
+        Engineers ({{ costs.engineers.length }})
+      </summary>
+      <div class="overflow-x-auto rounded-xl border border-line bg-surface">
+        <table class="w-full text-left text-sm">
+          <caption class="sr-only">
+            Cost per engineer
+          </caption>
+          <thead class="text-xs text-ink-muted">
+            <tr>
+              <th scope="col" class="px-3 py-2">Engineer</th>
+              <th scope="col" class="px-3 py-2">Worked (h)</th>
+              <th scope="col" class="px-3 py-2">Ordinary</th>
+              <th scope="col" class="px-3 py-2">Overtime</th>
+              <th scope="col" class="px-3 py-2">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="e in costs.engineers"
+              :key="e.employeeId"
+              class="border-t border-line"
+              :data-testid="`engineer-${e.empNo}`"
+            >
+              <th scope="row" class="px-3 py-2 font-medium text-ink">
+                {{ e.employee }} <span class="text-ink-muted">({{ e.empNo }})</span>
+              </th>
+              <td class="px-3 py-2">{{ hours(e.workedMin) }}</td>
+              <td class="px-3 py-2">{{ rands(e.ordinaryRands) }}</td>
+              <td class="px-3 py-2">
+                {{ rands(e.overtimeRands) }}
+                <span v-if="e.overtimeMissing > 0" class="text-xs text-warn">
+                  ({{ e.overtimeMissing }} unpriced)
+                </span>
+              </td>
+              <td class="px-3 py-2 font-semibold">
+                {{ e.totalRands == null ? 'No salary on file' : rands(e.totalRands) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
 
     <div class="overflow-x-auto rounded-xl border border-line bg-surface">
       <table class="w-full text-left text-sm">

@@ -68,9 +68,6 @@ function submit(): void {
       >
         {{ run.isPending.value ? 'Running…' : 'Run forecast' }}
       </AppButton>
-      <p class="text-xs text-ink-muted">
-        Creates a draft. Nothing changes for anyone until it is published.
-      </p>
     </div>
     <NoticeBox v-if="run.isError.value" tone="danger" data-testid="run-error">
       <p class="font-medium">No forecast was created.</p>

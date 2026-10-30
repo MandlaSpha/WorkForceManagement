@@ -16,6 +16,7 @@ import { NAV_ITEMS } from '@/shared/config'
 import { todayInJohannesburg } from '@/shared/lib/week'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 import SelectField from '@/shared/ui/SelectField.vue'
 import TextField from '@/shared/ui/TextField.vue'
 
@@ -23,7 +24,14 @@ const context = useContextStore()
 const session = useSessionStore()
 const screen = NAV_ITEMS.find((item) => item.key === 'continuity')
 
-const day = ref(todayInJohannesburg())
+// A roster covers working days: from a weekend the page opens on the Friday before, the last day
+// that has one.
+function lastWorkingDay(iso: string): string {
+  const at = new Date(`${iso}T12:00:00Z`)
+  const back = { 6: 1, 0: 2 }[at.getUTCDay()] ?? 0
+  return new Date(at.getTime() - back * 86_400_000).toISOString().slice(0, 10)
+}
+const day = ref(lastWorkingDay(todayInJohannesburg()))
 const scenario = ref<Scenario>('site')
 const lostText = ref('30')
 const lostPct = computed(() => {
@@ -81,48 +89,43 @@ const pct = (v: number | null) => (v === null ? '-' : `${v.toFixed(1)}%`)
           Could not work out the cover. {{ problemMessage(mobilise.error.value) }}
         </NoticeBox>
         <div v-else-if="mobilise.data.value" class="space-y-4" aria-live="polite">
-          <dl class="grid grid-cols-2 gap-3 lg:grid-cols-4" data-testid="impact">
-            <div class="rounded-xl border border-line bg-surface p-4">
-              <dt class="text-xs text-ink-muted">On the published roster</dt>
-              <dd class="text-lg font-semibold text-ink" data-testid="rostered">
-                {{ mobilise.data.value.impact.rostered }}
-              </dd>
-            </div>
-            <div class="rounded-xl border border-line bg-surface p-4">
-              <dt class="text-xs text-ink-muted">Lost</dt>
-              <dd class="text-lg font-semibold text-ink" data-testid="lost">
-                {{ mobilise.data.value.impact.lost }}
-              </dd>
-            </div>
-            <div class="rounded-xl border border-line bg-surface p-4">
-              <dt class="text-xs text-ink-muted">Covered by backups</dt>
-              <dd class="text-lg font-semibold text-ink" data-testid="recovered">
-                {{ mobilise.data.value.impact.recovered }}
-              </dd>
-            </div>
-            <div class="rounded-xl border border-line bg-surface p-4">
-              <dt class="text-xs text-ink-muted">Roster after (still short by)</dt>
-              <dd class="text-lg font-semibold text-ink" data-testid="after">
-                {{ pct(mobilise.data.value.impact.coveragePct) }}
-                <span
-                  class="text-sm font-normal"
-                  :class="mobilise.data.value.impact.shortfall > 0 ? 'text-danger' : 'text-ok'"
-                  data-testid="shortfall"
-                >
-                  ({{ mobilise.data.value.impact.shortfall }})
-                </span>
-              </dd>
-            </div>
-          </dl>
-          <p class="text-sm text-ink-muted">
-            {{
-              scenario === 'site'
-                ? 'A site failure takes out everyone who can only work from the office.'
-                : 'An outbreak takes out the chosen share of the roster, whatever their work mode.'
-            }}
-            Only the published roster counts. A backup person already on another queue is counted as
-            cover, but moving them leaves a gap there.
-          </p>
+          <ul
+            class="grid grid-cols-2 gap-3 lg:grid-cols-4"
+            aria-label="Impact"
+            data-testid="impact"
+          >
+            <StatTile
+              label="On the published roster"
+              :value="mobilise.data.value.impact.rostered"
+              tint="brand"
+              data-testid="rostered"
+            />
+            <StatTile
+              label="Lost"
+              :value="mobilise.data.value.impact.lost"
+              tint="danger"
+              data-testid="lost"
+            />
+            <StatTile
+              label="Covered by backups"
+              :value="mobilise.data.value.impact.recovered"
+              tint="ok"
+              data-testid="recovered"
+            />
+            <StatTile
+              label="Roster after (still short by)"
+              :value="pct(mobilise.data.value.impact.coveragePct)"
+              :tint="mobilise.data.value.impact.shortfall > 0 ? 'warn' : 'ok'"
+              data-testid="after"
+            >
+              <span
+                :class="mobilise.data.value.impact.shortfall > 0 ? 'text-danger' : 'text-ok'"
+                data-testid="shortfall"
+              >
+                ({{ mobilise.data.value.impact.shortfall }})
+              </span>
+            </StatTile>
+          </ul>
 
           <NoticeBox v-if="mobilise.data.value.teams.length === 0" data-testid="no-cover">
             No backup team is named for this queue, so nobody can be called on.

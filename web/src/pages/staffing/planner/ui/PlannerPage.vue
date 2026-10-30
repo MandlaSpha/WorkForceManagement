@@ -9,6 +9,7 @@ import { NAV_ITEMS } from '@/shared/config'
 import { formatDayLabel } from '@/shared/lib/datetime'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 import SelectField from '@/shared/ui/SelectField.vue'
 
 import DayView from './DayView.vue'
@@ -40,6 +41,10 @@ function open(clicked: string): void {
 }
 
 const summary = computed(() => plan.data.value?.summary)
+const rosterLabel = computed(() => {
+  const status = plan.data.value?.rosterStatus ?? ''
+  return status.charAt(0).toUpperCase() + status.slice(1)
+})
 const worst = computed(() => {
   const w = summary.value?.worst
   return w ? `${varianceLabel(w)} at ${slotLabel(w.slot)} on ${formatDayLabel(w.day)}` : null
@@ -95,7 +100,45 @@ const totalHalfHours = 7 * 48
         >
         screen.
       </NoticeBox>
+
+      <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Week summary">
+        <StatTile
+          label="Under-staffed half-hours"
+          :value="shareLabel(summary.underIntervals, summary.intervalsKnown)"
+          tint="danger"
+          data-testid="kpi-under"
+        />
+        <StatTile
+          label="Coverage gap"
+          :value="summary.intervalsKnown === 0 ? '—' : summary.gap"
+          tint="warn"
+          data-testid="kpi-gap"
+        >
+          {{ summary.scheduledTotal }} scheduled · {{ summary.requiredTotal }} required
+        </StatTile>
+        <StatTile
+          label="Worst half-hour"
+          :value="worst ?? (summary.intervalsKnown === 0 ? '—' : 'None')"
+          tint="brand"
+          data-testid="kpi-worst"
+        />
+        <StatTile
+          label="Roster"
+          :value="rosterLabel"
+          :tint="plan.data.value.rosterStatus === 'published' ? 'ok' : undefined"
+          data-testid="kpi-roster"
+        />
+      </ul>
+
+      <HeatmapGrid v-if="view === 'week'" :plan="plan.data.value" @select-day="open" />
       <template v-else>
+        <div class="w-44">
+          <SelectField v-model="selectedDay" label="Day" :options="dayOptions" />
+        </div>
+        <DayView :plan="plan.data.value" :day="day" />
+      </template>
+
+      <template v-if="plan.data.value.forecast !== null">
         <NoticeBox
           v-if="!plan.data.value.forecast.assumptionsConfirmed"
           tone="warn"
@@ -108,45 +151,6 @@ const totalHalfHours = 7 * 48
           The published forecast covers {{ summary.intervalsKnown }} of the week's
           {{ totalHalfHours }} half-hours. The rest show a dot: no requirement is known there.
         </NoticeBox>
-      </template>
-
-      <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Week summary">
-        <li class="rounded-xl border border-line bg-surface p-4" data-testid="kpi-under">
-          <p class="text-xs font-medium text-ink-muted">Under-staffed half-hours</p>
-          <p class="mt-1 text-xl font-semibold tabular-nums text-ink">
-            {{ shareLabel(summary.underIntervals, summary.intervalsKnown) }}
-          </p>
-        </li>
-        <li class="rounded-xl border border-line bg-surface p-4" data-testid="kpi-gap">
-          <p class="text-xs font-medium text-ink-muted">Coverage gap</p>
-          <p class="mt-1 text-xl font-semibold tabular-nums text-ink">
-            {{ summary.intervalsKnown === 0 ? '—' : summary.gap }}
-          </p>
-          <p class="text-xs text-ink-muted">
-            {{ summary.scheduledTotal }} scheduled · {{ summary.requiredTotal }} required (people ×
-            half-hours)
-          </p>
-        </li>
-        <li class="rounded-xl border border-line bg-surface p-4" data-testid="kpi-worst">
-          <p class="text-xs font-medium text-ink-muted">Worst half-hour</p>
-          <p class="mt-1 text-xl font-semibold tabular-nums text-ink">
-            {{ worst ?? (summary.intervalsKnown === 0 ? '—' : 'None') }}
-          </p>
-        </li>
-        <li class="rounded-xl border border-line bg-surface p-4" data-testid="kpi-roster">
-          <p class="text-xs font-medium text-ink-muted">Roster</p>
-          <p class="mt-1 text-xl font-semibold capitalize text-ink">
-            {{ plan.data.value.rosterStatus }}
-          </p>
-        </li>
-      </ul>
-
-      <HeatmapGrid v-if="view === 'week'" :plan="plan.data.value" @select-day="open" />
-      <template v-else>
-        <div class="w-44">
-          <SelectField v-model="selectedDay" label="Day" :options="dayOptions" />
-        </div>
-        <DayView :plan="plan.data.value" :day="day" />
       </template>
     </template>
   </section>

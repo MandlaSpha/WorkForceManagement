@@ -8,6 +8,7 @@ import { NAV_ITEMS } from '@/shared/config'
 import { formatMonth } from '@/shared/lib/month'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 import SelectField from '@/shared/ui/SelectField.vue'
 
 const screen = NAV_ITEMS.find((item) => item.key === 'call-detail')
@@ -42,11 +43,91 @@ const totals = computed<CallDetailEvent[]>(
 const days = computed<CallDetailEvent[]>(
   () => detail.data.value?.eventsByDay?.filter((e) => e.day !== null) ?? [],
 )
-const scopeText = computed(() => {
-  const scope = detail.data.value?.scope
-  if (scope === 'team') return 'Only agents in your own team are listed.'
-  if (scope === 'all') return 'All agents with a login are listed, mapped to people where known.'
-  return ''
+
+// Each part is a card; its table is given the same padding and header look as the other screens.
+const CARD =
+  'overflow-x-auto rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] ' +
+  '[&_table]:w-full [&_th]:px-3 [&_td]:px-3 [&_th]:py-2 [&_td]:py-2 [&_thead]:bg-surface-muted ' +
+  '[&_tbody_tr]:border-t [&_tbody_tr]:border-line [&_caption]:pb-2'
+
+// Headline figures, each only when its sheet was in the import.
+const rate = (part: number, whole: number): string =>
+  whole > 0 ? `${((part / whole) * 100).toFixed(1)}%` : NONE
+const sum = <T,>(rows: readonly T[], pick: (row: T) => number): number =>
+  rows.reduce((total, row) => total + pick(row), 0)
+
+const headline = computed(() => {
+  const d = detail.data.value
+  if (!d) return []
+  const tiles: Array<{
+    key: string
+    label: string
+    value: string
+    note: string
+    tint: 'brand' | 'ok' | 'warn' | 'danger'
+  }> = []
+  if (d.agentsAllowed && d.agents && d.agents.length > 0) {
+    tiles.push({
+      key: 'ring',
+      label: 'Ring-no-answer',
+      value: rate(
+        sum(d.agents, (a) => a.ringNoAnswer),
+        sum(d.agents, (a) => a.offers),
+      ),
+      note: `${count(sum(d.agents, (a) => a.ringNoAnswer))} of ${count(sum(d.agents, (a) => a.offers))} offers`,
+      tint: 'warn',
+    })
+  }
+  if (d.ivr && d.ivr.length > 0) {
+    tiles.push({
+      key: 'ivr',
+      label: 'Ended in the IVR',
+      value: rate(
+        sum(d.ivr, (q) => q.endedInIvr),
+        sum(d.ivr, (q) => q.calls),
+      ),
+      note: `${count(sum(d.ivr, (q) => q.endedInIvr))} of ${count(sum(d.ivr, (q) => q.calls))} calls`,
+      tint: 'brand',
+    })
+  }
+  if (totals.value.length > 0) {
+    tiles.push({
+      key: 'transfers',
+      label: 'Transfers',
+      value: count(sum(totals.value, (e) => e.transfers ?? 0)),
+      note: 'in the month',
+      tint: 'ok',
+    })
+    tiles.push({
+      key: 'holds',
+      label: 'Holds',
+      value: count(sum(totals.value, (e) => e.holds ?? 0)),
+      note: 'in the month',
+      tint: 'danger',
+    })
+  }
+  return tiles
+})
+
+// With none of the four sheets in the import there is nothing to lay out: one card says so.
+const missing = computed(() => {
+  const d = detail.data.value
+  if (!d) return []
+  const out: Array<{ key: string; text: string }> = []
+  if (d.agentsAllowed && !d.sheets.ring)
+    out.push({ key: 'ring-nodata', text: 'the Agent Offered Call sheet' })
+  if (d.ivr === null) out.push({ key: 'ivr-nodata', text: 'the Call IVR Details sheet' })
+  if (d.eventsByQueue === null)
+    out.push({ key: 'events-nodata', text: 'the transfer, hold and mute sheets' })
+  if (d.incidentsAllowed && d.incidents === null)
+    out.push({ key: 'incidents-nodata', text: 'the Call Disposition Details sheet' })
+  return out
+})
+const allMissing = computed(() => {
+  const d = detail.data.value
+  if (!d) return false
+  const wanted = 2 + (d.agentsAllowed ? 1 : 0) + (d.incidentsAllowed ? 1 : 0)
+  return missing.value.length === wanted
 })
 </script>
 
@@ -74,15 +155,41 @@ const scopeText = computed(() => {
       Could not load the call detail. {{ problemMessage(detail.error.value) }}
     </NoticeBox>
 
+    <section
+      v-else-if="detail.data.value && allMissing"
+      :class="CARD"
+      aria-labelledby="cd-missing"
+      data-testid="call-detail-missing"
+    >
+      <h2 id="cd-missing" class="text-base font-semibold text-ink">Not in this month's import</h2>
+      <ul class="mt-2 space-y-1 text-sm text-ink-muted">
+        <li v-for="m in missing" :key="m.key" :data-testid="m.key">
+          {{ NO_DATA }}: {{ m.text }} was not in the import for this month.
+        </li>
+      </ul>
+    </section>
+
     <template v-else-if="detail.data.value">
+      <ul
+        v-if="headline.length > 0"
+        class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        aria-label="Headline figures"
+      >
+        <StatTile
+          v-for="t in headline"
+          :key="t.key"
+          :label="t.label"
+          :value="t.value"
+          :tint="t.tint"
+          :data-testid="`tile-${t.key}`"
+        >
+          {{ t.note }}
+        </StatTile>
+      </ul>
+
       <!-- (a) Ring-no-answer by agent -->
-      <section v-if="detail.data.value.agentsAllowed" aria-labelledby="cd-ring">
-        <h2 id="cd-ring" class="text-sm font-semibold text-ink">Ring-no-answer by agent</h2>
-        <p class="mt-1 text-xs text-ink-muted">
-          Rests on the Agent Offered Call sheet: every call offered to an agent's phone, and whether
-          that agent took it. Listed in employee-number order, not ranked, with no team average.
-          {{ scopeText }}
-        </p>
+      <section v-if="detail.data.value.agentsAllowed" :class="CARD" aria-labelledby="cd-ring">
+        <h2 id="cd-ring" class="text-base font-semibold text-ink">Ring-no-answer by agent</h2>
         <NoticeBox v-if="!detail.data.value.sheets.ring" data-testid="ring-nodata">
           {{ NO_DATA }}: the Agent Offered Call sheet was not in the import for this month.
         </NoticeBox>
@@ -121,13 +228,8 @@ const scopeText = computed(() => {
       </NoticeBox>
 
       <!-- (b) IVR -->
-      <section aria-labelledby="cd-ivr">
-        <h2 id="cd-ivr" class="text-sm font-semibold text-ink">IVR menu and drop-off</h2>
-        <p class="mt-1 text-xs text-ink-muted">
-          Rests on the Call IVR Details sheet and on whether the call was later put in the queue.
-          "Ended in IVR" means the call never reached the queue; "abandoned after IVR" reached the
-          queue and was abandoned there. Aggregate per queue; no caller digits are kept.
-        </p>
+      <section :class="CARD" aria-labelledby="cd-ivr">
+        <h2 id="cd-ivr" class="text-base font-semibold text-ink">IVR menu and drop-off</h2>
         <NoticeBox v-if="detail.data.value.ivr === null" data-testid="ivr-nodata">
           {{ NO_DATA }}: the Call IVR Details sheet was not in the import for this month.
         </NoticeBox>
@@ -164,12 +266,8 @@ const scopeText = computed(() => {
       </section>
 
       <!-- (c) Transfers, hold, mute -->
-      <section aria-labelledby="cd-events">
-        <h2 id="cd-events" class="text-sm font-semibold text-ink">Transfers, holds and mutes</h2>
-        <p class="mt-1 text-xs text-ink-muted">
-          Rests on the Transfer, Hold and Mute detail sheets, by the day the call started. A column
-          reads "{{ NO_DATA }}" when its sheet was not in the import; a real zero is shown as 0.
-        </p>
+      <section :class="CARD" aria-labelledby="cd-events">
+        <h2 id="cd-events" class="text-base font-semibold text-ink">Transfers, holds and mutes</h2>
         <NoticeBox v-if="detail.data.value.eventsByQueue === null" data-testid="events-nodata">
           {{ NO_DATA }}: none of the transfer, hold or mute sheets were in the import for this
           month.
@@ -231,12 +329,8 @@ const scopeText = computed(() => {
       </section>
 
       <!-- (d) Incident links -->
-      <section v-if="detail.data.value.incidentsAllowed" aria-labelledby="cd-inc">
-        <h2 id="cd-inc" class="text-sm font-semibold text-ink">Incident links</h2>
-        <p class="mt-1 text-xs text-ink-muted">
-          Rests on the Call Disposition Details sheet: the first ITSM incident number found in an
-          agent's remark. The remark itself is never kept. Incident numbers are not personal data.
-        </p>
+      <section v-if="detail.data.value.incidentsAllowed" :class="CARD" aria-labelledby="cd-inc">
+        <h2 id="cd-inc" class="text-base font-semibold text-ink">Incident links</h2>
         <NoticeBox v-if="detail.data.value.incidents === null" data-testid="incidents-nodata">
           {{ NO_DATA }}: the Call Disposition Details sheet was not in the import for this month.
         </NoticeBox>

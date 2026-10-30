@@ -127,11 +127,6 @@ const pct = (v: number | null) => (v === null ? '-' : `${v.toFixed(1)}%`)
             </tbody>
           </table>
         </div>
-        <p class="text-xs text-ink-muted">
-          Adherence is the scheduled minutes spent available, on a call or in wrap-up, over the
-          scheduled minutes. Breaks and activities in the roster are not scheduled time. The
-          agent-state layout is a stand-in until the ACD vendor confirms the real feed.
-        </p>
       </template>
     </section>
   </div>

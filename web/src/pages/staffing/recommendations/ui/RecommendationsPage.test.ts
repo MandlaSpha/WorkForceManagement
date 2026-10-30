@@ -46,7 +46,7 @@ describe('recommendations', () => {
     expect(items).toHaveLength(2)
     expect(items[0]).toHaveTextContent('Add Sam Planner to D1 on Wed 27 May: closes 17')
     expect(items[1]).toHaveTextContent('2 half-hours would then have one person too many')
-    expect(await screen.findByTestId('rec-gap')).toHaveTextContent('Half-hours short this week:')
+    expect(await screen.findByTestId('rec-gap')).toHaveTextContent('Half-hours short this week')
   })
 
   it('applies exactly the suggestion shown, with the CSRF token, and it leaves the list', async () => {

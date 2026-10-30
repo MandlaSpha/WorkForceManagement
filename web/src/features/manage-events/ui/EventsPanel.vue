@@ -48,11 +48,6 @@ function add(): void {
 <template>
   <section class="space-y-3" aria-labelledby="events-title">
     <h2 id="events-title" class="text-base font-semibold text-ink">Events</h2>
-    <p class="text-sm text-ink-muted">
-      A campaign, an outage or a payment run changes demand on the days it covers. Forecasts you run
-      afterwards are adjusted by the percentage; forecasts already run are not changed.
-    </p>
-
     <p v-if="events.isPending.value" class="text-sm text-ink-muted">Loading…</p>
     <NoticeBox v-else-if="events.isError.value" tone="danger">
       Could not load the events. {{ problemMessage(events.error.value) }}

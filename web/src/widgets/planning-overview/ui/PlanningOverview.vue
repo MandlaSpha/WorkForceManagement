@@ -95,10 +95,6 @@ function describe(item: Attention): string {
     <h2 id="planning-title" class="text-base font-semibold text-ink">
       Planning, week of {{ formatDayLabel(context.weekStart) }}
     </h2>
-    <p class="-mt-3 text-xs text-ink-muted" data-testid="planning-hint">
-      Looking ahead at one week, Monday to Sunday. Change the week with the arrows in the top bar.
-    </p>
-
     <p v-if="overview.isPending.value" class="text-sm text-ink-muted">Loading…</p>
     <NoticeBox v-else-if="overview.isError.value" tone="danger">
       Could not load the planning overview. {{ problemMessage(overview.error.value) }}
@@ -123,10 +119,6 @@ function describe(item: Attention): string {
           data-testid="coverage-bar"
         >
           <h3 class="text-sm font-semibold text-ink">Coverage this week</h3>
-          <p class="mb-2 text-xs text-ink-muted">
-            Half-hours with a forecast, covered or short. The marker shows how far through the week
-            today is.
-          </p>
           <StackedBar
             :segments="coverageSegments"
             :summary="coverageSummary"
@@ -232,10 +224,6 @@ function describe(item: Attention): string {
 
             <div class="rounded-xl border border-line bg-surface p-4" data-testid="week-trend">
               <h3 class="text-sm font-semibold text-ink">Gap by day</h3>
-              <p class="text-xs text-ink-muted">
-                People-half-hours short, all queues together. Over-staffing elsewhere does not
-                offset it.
-              </p>
               <ul class="mt-3 grid grid-cols-7 gap-2" aria-label="Gap by day">
                 <li
                   v-for="d in data.days"

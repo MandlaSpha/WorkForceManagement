@@ -106,10 +106,6 @@ function onKeydown(event: KeyboardEvent): void {
 <template>
   <PageHeader eyebrow="Insight" :title="screen?.label ?? 'Copilot'" :subtitle="screen?.subtitle" />
 
-  <NoticeBox data-testid="copilot-banner">
-    Copilot only answers from what your role can already see. It cannot change anything.
-  </NoticeBox>
-
   <section
     class="mt-4 flex min-h-96 flex-col gap-4 rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] sm:p-6"
     aria-label="Conversation"

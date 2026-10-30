@@ -86,7 +86,11 @@ const linePath = computed(() => {
                   ? 'bg-chart-2'
                   : 'bg-chart-1'
             "
-            :style="{ height: pct(item.value), minHeight: item.value > 0 ? '2px' : '0' }"
+            :style="{
+              height: pct(item.value),
+              minHeight: item.value > 0 ? '2px' : '0',
+              animationDelay: `${Math.min(i * 22, 700)}ms`,
+            }"
           ></span>
           <span
             v-if="item.mark && item.value !== null"
@@ -124,11 +128,15 @@ const linePath = computed(() => {
       </svg>
     </div>
     <ol
-      class="grid gap-2 text-center text-[11px] text-ink-muted"
+      class="grid gap-2 text-center text-xs text-ink-muted"
       :style="{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }"
       aria-hidden="true"
     >
-      <li v-for="(item, i) in items" :key="item.title ?? item.label" class="truncate">
+      <li
+        v-for="(item, i) in items"
+        :key="item.title ?? item.label"
+        :class="labelEvery > 1 ? 'overflow-visible whitespace-nowrap' : 'truncate'"
+      >
         {{ i % labelEvery === 0 ? item.label : '' }}
       </li>
     </ol>

@@ -13,14 +13,14 @@ describe('the employee list', () => {
     seedScheduling()
     await openScheduling('/employees')
 
-    const alex = (await screen.findByText('Alex Agent')).closest('tr')!
+    const alex = (await screen.findByText('Alex Agent')).closest('li')!
     expect(within(alex).getByText('E001')).toBeVisible()
     expect(within(alex).getByText('40h')).toBeVisible()
     expect(within(alex).queryByText('Default')).toBeNull()
     expect(within(alex).getByText('QueueA L1')).toBeVisible()
 
     // A default must never pass for a contract figure someone typed.
-    const sam = screen.getByText('Sam Planner').closest('tr')!
+    const sam = screen.getByText('Sam Planner').closest('li')!
     expect(within(sam).getByText('Default')).toBeVisible()
   })
 
@@ -146,11 +146,11 @@ describe('who manages whom', () => {
     seedScheduling()
     backend.employees = [employeeOf({ managerId: 12, manager: 'Lee Lead' }), lead()]
     await openScheduling('/employees')
-    const alex = (await screen.findByText('Alex Agent')).closest('tr')!
+    const alex = (await screen.findByText('Alex Agent')).closest('li')!
     expect(within(alex).getByText('Lee Lead')).toBeVisible()
-    const lee = screen.getByText('Lee Lead', { selector: 'th' }).closest('tr')!
+    const lee = screen.getByText('Lee Lead', { selector: 'p' }).closest('li')!
     // No queues, no manager and no ACD logins: three dashes.
-    expect(within(lee).getAllByText('—')).toHaveLength(3)
+    expect(within(lee).getAllByText('—')).toHaveLength(2)
   })
 
   it('offers only people who can approve as managers, never the person themselves', async () => {
@@ -358,7 +358,7 @@ describe('mapping ACD logins to people', () => {
     seedScheduling()
     backend.employees = [employeeOf({ agentLogins: ['a1', 'a2'] })]
     await openScheduling('/employees')
-    const row = (await screen.findByText('Alex Agent')).closest('tr')!
+    const row = (await screen.findByText('Alex Agent')).closest('li')!
     expect(within(row).getByText('a1, a2')).toBeVisible()
   })
 })
@@ -398,7 +398,7 @@ describe('subject-access export', () => {
   it.each(['planner', 'lead'])('does not offer it to a %s', async (role) => {
     seedScheduling()
     await openScheduling('/employees', role)
-    await screen.findAllByRole('row')
+    await screen.findByRole('list', { name: 'Employees' })
     expect(screen.queryByRole('link', { name: /^Export the data held about/ })).toBeNull()
   })
 })

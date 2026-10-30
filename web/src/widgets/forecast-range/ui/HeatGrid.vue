@@ -94,9 +94,5 @@ function style(n: number | null): Record<string, string> | undefined {
         </tbody>
       </table>
     </div>
-    <p class="text-xs text-ink-muted">
-      Darker means more people to roster (shrinkage included); the darkest cell here needs
-      {{ max }}. Pale grey means nobody is needed. A dashed cell could not be worked out.
-    </p>
   </section>
 </template>

@@ -19,14 +19,6 @@ async function ask(text: string) {
 const REFUSAL = "I can't share that for your role."
 
 describe('copilot', () => {
-  it('says, before anything else, that it only reads what the role can already see', async () => {
-    // Failure caught: a Copilot page that does not set the expectation (read-only, role-scoped).
-    await open()
-    expect(await screen.findByTestId('copilot-banner')).toHaveTextContent(
-      'Copilot only answers from what your role can already see. It cannot change anything.',
-    )
-  })
-
   it.each(['agent', 'lead', 'planner', 'admin', 'executive', 'customer_ops'])(
     'is in the menu for %s, under Insight',
     async (role) => {

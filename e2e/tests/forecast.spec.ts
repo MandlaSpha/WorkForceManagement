@@ -124,7 +124,6 @@ test('a lead may read forecasts but cannot run or publish, in the screen or in t
 }) => {
   await signIn(page, 'lead')
   await page.getByRole('link', { name: 'Forecast' }).click()
-  await expect(page.getByText(/Planners and admins run and publish them/)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Run forecast' })).toHaveCount(0)
 
   // Hiding the button is cosmetic: the API refuses the lead too, with the CSRF token sent.

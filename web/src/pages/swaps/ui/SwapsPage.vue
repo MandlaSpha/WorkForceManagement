@@ -119,12 +119,6 @@ const TABS = computed(() => [
       >
         <section class="space-y-2" aria-labelledby="offer-title">
           <h2 id="offer-title" class="text-base font-semibold text-ink">Post a swap request</h2>
-          <p class="text-sm text-ink-muted">
-            Pick one of your shifts. Colleagues on the same queue whose own shifts would keep both
-            of you within the rest, hours, leave and availability rules see it under Open requests,
-            without your name. One of them takes it by offering a shift of theirs, then a lead
-            approves.
-          </p>
           <OfferSwapForm />
         </section>
 
@@ -273,10 +267,6 @@ const TABS = computed(() => [
 
         <section v-if="stillOpen.length > 0" class="space-y-2" aria-labelledby="open-title">
           <h2 id="open-title" class="text-base font-semibold text-ink">Waiting for a colleague</h2>
-          <p class="text-sm text-ink-muted">
-            Posted by your team and not taken yet. They reach you for approval once a colleague
-            takes them.
-          </p>
           <ul class="space-y-2" aria-label="Open team requests">
             <li
               v-for="s in stillOpen"

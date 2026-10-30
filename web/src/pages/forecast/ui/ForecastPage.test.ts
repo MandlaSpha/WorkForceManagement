@@ -140,7 +140,6 @@ describe('forecast accuracy', () => {
     expect(await screen.findByTestId('accuracy-daily')).toHaveTextContent('90.2%')
     expect(screen.getByTestId('accuracy-interval')).toHaveTextContent('81.4%')
     expect(screen.getByTestId('accuracy-days')).toHaveTextContent('Over 2 past days')
-    expect(screen.getByText(/only the days before it/)).toBeVisible()
   })
 
   it('says there is not enough data instead of showing a made-up score', async () => {
@@ -320,7 +319,6 @@ describe('who may change forecasts', () => {
     asRole('lead')
     await renderApp('/forecast')
 
-    expect(await screen.findByText(/Planners and admins run and publish them/)).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Run forecast' })).toBeNull()
     expect(screen.queryByRole('button', { name: /Publish/ })).toBeNull()
     expect(await screen.findByTestId('total-calls')).toBeVisible()
@@ -337,7 +335,7 @@ describe('who may change forecasts', () => {
 })
 
 describe('the two accuracy scores', () => {
-  it('explains why the half-hour score is lower, so a small queue is not misread', async () => {
+  it('shows the half-hour score beside the day score', async () => {
     withLiveForecast()
     backend.accuracy = accuracyFor({ overallAccuracyPct: 12.3, overallDailyAccuracyPct: 68.8 })
     asRole('planner')
@@ -345,7 +343,6 @@ describe('the two accuracy scores', () => {
 
     expect(await screen.findByTestId('accuracy-interval')).toHaveTextContent('12.3%')
     expect(screen.getByTestId('accuracy-daily')).toHaveTextContent('68.8%')
-    expect(screen.getByText(/much lower for a small queue/)).toBeVisible()
   })
 
   it('shows no figure rather than 0% when a score cannot be worked out', async () => {

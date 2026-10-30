@@ -8,6 +8,7 @@ import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 
 import CostPanel from './CostPanel.vue'
 import GroupTable from './GroupTable.vue'
@@ -27,6 +28,16 @@ const role = computed(() => session.user?.role ?? '')
 const seesCost = computed(() => ['planner', 'admin'].includes(role.value))
 const canSetTerms = computed(() => role.value === 'admin')
 const costs = useCosts(first, seesCost)
+
+// The teams cover everyone on a roster in the month, so their sum is the whole picture.
+const totals = computed(() => {
+  const teams = report.data.value?.teams ?? []
+  const worked = teams.reduce((sum, t) => sum + t.workedMin, 0)
+  const billable = teams.reduce((sum, t) => sum + t.billableMin, 0)
+  return { worked, billable, pct: worked > 0 ? (billable / worked) * 100 : null }
+})
+// A short list is shown open; a long one is behind its heading.
+const PEOPLE_OPEN_UP_TO = 12
 
 const termsFor = ref<number | null>(null)
 const termsContract = computed(() =>
@@ -57,34 +68,69 @@ const termsContract = computed(() =>
     </NoticeBox>
 
     <template v-else-if="report.data.value">
-      <NoticeBox data-testid="modelled-note">
-        Modelled from the published roster, not from timesheets. Worked time is the paid time of the
-        shifts; billable time is the part on a contracted queue, less training, meetings, coaching
-        and other time inside the shift. Where a contract has no target set, 75% is assumed and
-        marked.
-      </NoticeBox>
-
       <NoticeBox v-if="report.data.value.teams.length === 0" data-testid="utilisation-none">
         Nobody is on a published roster in that month (or none in your view).
       </NoticeBox>
 
       <template v-else>
+        <ul class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Totals">
+          <StatTile
+            label="Worked"
+            :value="totals.worked"
+            :format="hours"
+            tint="brand"
+            data-testid="total-worked"
+          >
+            hours on rosters
+          </StatTile>
+          <StatTile
+            label="Billable"
+            :value="totals.billable"
+            :format="hours"
+            tint="ok"
+            data-testid="total-billable"
+          >
+            hours on contracted queues
+          </StatTile>
+          <StatTile
+            label="Utilisation"
+            :value="totals.pct ?? pct(null)"
+            :format="pct"
+            tint="warn"
+            data-testid="total-utilisation"
+          >
+            billable over worked
+          </StatTile>
+          <StatTile
+            label="People"
+            :value="report.data.value.people.length"
+            tint="danger"
+            data-testid="total-people"
+          >
+            on a published roster
+          </StatTile>
+        </ul>
+
         <h2 class="text-base font-semibold text-ink">Teams</h2>
         <GroupTable caption="Utilisation by team" kind="team" :rows="report.data.value.teams" />
 
-        <h2 class="text-base font-semibold text-ink">Customers</h2>
-        <GroupTable
-          caption="Utilisation by customer"
-          kind="customer"
-          :rows="report.data.value.customers"
-        />
+        <template v-if="report.data.value.customers.length > 0">
+          <h2 class="text-base font-semibold text-ink">Customers</h2>
+          <GroupTable
+            caption="Utilisation by customer"
+            kind="customer"
+            :rows="report.data.value.customers"
+          />
+        </template>
 
-        <h2 class="text-base font-semibold text-ink">Contracts</h2>
-        <GroupTable
-          caption="Utilisation by contract"
-          kind="contract"
-          :rows="report.data.value.contracts"
-        />
+        <template v-if="report.data.value.contracts.length > 0">
+          <h2 class="text-base font-semibold text-ink">Contracts</h2>
+          <GroupTable
+            caption="Utilisation by contract"
+            kind="contract"
+            :rows="report.data.value.contracts"
+          />
+        </template>
 
         <section v-if="canSetTerms && report.data.value.contracts.length" class="space-y-2">
           <label class="flex items-center gap-2 text-sm text-ink">
@@ -113,16 +159,16 @@ const termsContract = computed(() =>
           />
         </section>
 
-        <section
+        <details
           v-if="report.data.value.people.length"
+          :open="report.data.value.people.length <= PEOPLE_OPEN_UP_TO"
           class="space-y-2"
-          aria-labelledby="people-heading"
+          data-testid="people-section"
         >
-          <h2 id="people-heading" class="text-base font-semibold text-ink">People</h2>
-          <p class="text-xs text-ink-muted">
-            In employee-number order. This is not a ranking and is not shown to colleagues.
-          </p>
-          <div class="overflow-x-auto rounded-xl border border-line bg-surface">
+          <summary id="people-heading" class="cursor-pointer text-base font-semibold text-ink">
+            People ({{ report.data.value.people.length }})
+          </summary>
+          <div class="mt-2 overflow-x-auto rounded-xl border border-line bg-surface">
             <table class="w-full text-left text-sm">
               <caption class="sr-only">
                 Utilisation of each person
@@ -154,7 +200,7 @@ const termsContract = computed(() =>
               </tbody>
             </table>
           </div>
-        </section>
+        </details>
       </template>
     </template>
 
