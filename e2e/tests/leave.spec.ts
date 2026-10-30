@@ -267,6 +267,7 @@ test('a lead cannot see or decide leave of someone outside their team, a planner
   csrf = (await page.context().cookies()).find((c) => c.name === 'csrftoken')?.value ?? ''
   const approved = await page.request.post(`/api/v1/people/leave/requests/${requestId}/reject`, {
     headers: headers(),
+    data: {},
   })
   expect(approved.status()).toBe(200)
 })
