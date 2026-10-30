@@ -90,7 +90,11 @@ describe('the swap board', () => {
     await user.type(within(dialog).getByLabelText('Reason'), 'Short on cover')
     await user.click(within(dialog).getByRole('button', { name: 'Decline swap' }))
     await waitFor(() => expect(backend.writes).toHaveLength(1))
-    expect(backend.writes[0]).toMatchObject({ path: '/api/v1/people/swaps/1/reject' })
+    expect(backend.writes[0]).toMatchObject({
+      path: '/api/v1/people/swaps/1/reject',
+      body: { reason: 'Short on cover' },
+    })
+    expect(await screen.findByTestId('decision-reason')).toHaveTextContent('Short on cover')
     expect(await screen.findByTestId('swap-result')).toHaveTextContent(/Reason: Short on cover/)
   })
 

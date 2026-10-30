@@ -42,7 +42,15 @@ export async function takeSwap(swapId: number, assignmentId: number): Promise<Sw
 
 export type SwapAnswer = 'approve' | 'reject' | 'cancel'
 
-export async function answerSwap(swapId: number, what: SwapAnswer): Promise<Swap> {
+export async function answerSwap(swapId: number, what: SwapAnswer, reason?: string): Promise<Swap> {
+  if (what === 'reject') {
+    return unwrap(
+      await api.POST('/api/v1/people/swaps/{swap_id}/reject', {
+        params: { path: { swap_id: swapId } },
+        body: { reason: reason ?? '' },
+      }),
+    )
+  }
   const path = `/api/v1/people/swaps/{swap_id}/${what}` as const
   return unwrap(await api.POST(path, { params: { path: { swap_id: swapId } } }))
 }

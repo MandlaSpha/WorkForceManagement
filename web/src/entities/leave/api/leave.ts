@@ -34,9 +34,22 @@ export async function applyForLeave(body: LeaveRequestBody): Promise<LeaveReques
 
 export type Decide = 'approve' | 'reject' | 'cancel'
 
-export async function decideLeave(requestId: number, what: Decide): Promise<Decision> {
+export async function decideLeave(
+  requestId: number,
+  what: Decide,
+  reason?: string,
+): Promise<Decision> {
+  const params = { path: { request_id: requestId } }
+  if (what === 'reject') {
+    return unwrap(
+      await api.POST('/api/v1/people/leave/requests/{request_id}/reject', {
+        params,
+        body: { reason: reason ?? '' },
+      }),
+    )
+  }
   const path = `/api/v1/people/leave/requests/{request_id}/${what}` as const
-  return unwrap(await api.POST(path, { params: { path: { request_id: requestId } } }))
+  return unwrap(await api.POST(path, { params }))
 }
 
 export async function fetchImpact(requestId: number): Promise<Impact> {

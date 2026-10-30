@@ -67,7 +67,7 @@ function run(item: Swap, what: 'approve' | 'reject', reason?: string): void {
   announcement.value = `${verb}: ${label(item)}.`
   void board.value?.focusCard(item.id)
   answer.mutate(
-    { swapId: item.id, what },
+    { swapId: item.id, what, reason },
     {
       onSuccess: () => {
         const extra = what === 'approve' ? ' The two shifts have been exchanged on the roster.' : ''
@@ -136,6 +136,13 @@ function declined(reason: string): void {
               <template v-else> (not taken yet)</template>
             </p>
             <p v-else class="text-xs text-ink-muted">{{ describe(item) }}</p>
+            <p
+              v-if="item.status === 'rejected' && item.decisionReason"
+              class="text-xs text-ink-muted"
+              data-testid="decision-reason"
+            >
+              Reason: {{ item.decisionReason }}
+            </p>
             <div class="flex flex-wrap gap-1.5 pt-1">
               <span
                 class="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] font-semibold text-ink"

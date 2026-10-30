@@ -4312,6 +4312,8 @@ export interface components {
             days: number;
             /** Decidedat */
             decidedAt: string | null;
+            /** Decisionreason */
+            decisionReason: string;
             /** Empno */
             empNo: string;
             /** Employee */
@@ -5291,6 +5293,14 @@ export interface components {
             /** Text */
             text: string;
         };
+        /** RejectIn */
+        RejectIn: {
+            /**
+             * Reason
+             * @default
+             */
+            reason: string;
+        };
         /** RequirementIn */
         RequirementIn: {
             /** Kind */
@@ -5972,6 +5982,8 @@ export interface components {
             createdAt: string;
             /** Decidedat */
             decidedAt: string | null;
+            /** Decisionreason */
+            decisionReason: string;
             /**
              * Fromday
              * Format: date
@@ -8636,7 +8648,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectIn"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -8947,7 +8963,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectIn"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

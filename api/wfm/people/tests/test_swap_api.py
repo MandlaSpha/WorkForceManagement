@@ -90,7 +90,10 @@ def take(client: Client, swap_id: int, mine: ShiftAssignment, **extra: Any) -> A
 
 
 def act(client: Client, swap_id: int, what: str) -> Any:
-    return client.post(f"{SW}/{swap_id}/{what}")
+    return client.post(
+        f"{SW}/{swap_id}/{what}",
+        **({"data": {}, "content_type": "application/json"} if what == "reject" else {}),
+    )
 
 
 def trade(giver: Client, give: ShiftAssignment, taker: Client, mine: ShiftAssignment) -> Any:
@@ -567,3 +570,40 @@ class TestTheShiftBeingGivenAwayIsNotHeldAgainstYou:
         swap_id = post(planner, row(q, WED), employeeId=q.pk).json()["id"]
         response = take(planner, swap_id, row(p, TUE), employeeId=p.pk)
         assert response.status_code == 200, response.content
+
+
+class TestRejectReason:
+    def test_both_parties_and_approvers_see_the_reason_other_agents_never(
+        self, rota: dict[str, Any]
+    ) -> None:
+        swap_id = agreed(rota)
+        response = login(Role.LEAD).post(
+            f"{SW}/{swap_id}/reject",
+            {"reason": " Too little rest "},
+            content_type="application/json",
+        )
+        assert response.json()["decisionReason"] == "Too little rest"
+        for client in (login(Role.AGENT), colleague_client(), login(Role.PLANNER)):
+            assert client.get(SW).json()[0]["decisionReason"] == "Too little rest"
+        stranger = as_agent("u-stranger")
+        assert stranger.get(SW).json() == []
+        assert "Too little rest" not in stranger.get(f"{SW}/board").content.decode()
+        event = AuditEvent.objects.get(action=Action.SWAP_REJECTED)
+        assert AuditChange.objects.filter(
+            event=event, field="decision_reason", new_value="Too little rest"
+        ).exists()
+
+    def test_the_reason_is_optional_and_bounded(self, rota: dict[str, Any]) -> None:
+        swap_id = agreed(rota)
+        too_long = login(Role.LEAD).post(
+            f"{SW}/{swap_id}/reject", {"reason": "x" * 301}, content_type="application/json"
+        )
+        assert too_long.status_code == 422
+        assert act(login(Role.LEAD), swap_id, "reject").json()["decisionReason"] == ""
+
+    def test_an_agent_cannot_reject_with_a_reason(self, rota: dict[str, Any]) -> None:
+        swap_id = agreed(rota)
+        response = colleague_client().post(
+            f"{SW}/{swap_id}/reject", {"reason": "no"}, content_type="application/json"
+        )
+        assert response.status_code == 403

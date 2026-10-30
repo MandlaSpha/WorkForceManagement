@@ -83,6 +83,7 @@ export function requestOf(over: Partial<LeaveRequest> = {}): LeaveRequest {
     createdAt: '2026-05-20T08:00:00Z',
     decidedAt: null,
     shiftsCleared: 0,
+    decisionReason: '',
     mine: true,
     ...over,
   }

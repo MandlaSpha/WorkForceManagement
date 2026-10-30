@@ -43,6 +43,7 @@ export function swapOf(over: Partial<Swap> = {}): Swap {
     toShift: null,
     createdAt: '2026-05-20T08:00:00Z',
     decidedAt: null,
+    decisionReason: '',
     asker: true,
     colleague: false,
     ...over,

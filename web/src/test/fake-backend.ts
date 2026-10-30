@@ -944,6 +944,7 @@ export const handlers = [
       createdAt: '2026-05-20T08:00:00Z',
       decidedAt: null,
       shiftsCleared: 0,
+      decisionReason: '',
       mine: true,
     }
     backend.leaveRequests = [...backend.leaveRequests, created]
@@ -956,8 +957,10 @@ export const handlers = [
     const what = String(info.params.what)
     const status =
       { approve: 'approved', reject: 'rejected', cancel: 'cancelled' }[what] ?? 'pending'
+    const sent = backend.writes[backend.writes.length - 1]?.body as { reason?: unknown } | null
+    const decisionReason = typeof sent?.reason === 'string' ? sent.reason : ''
     backend.leaveRequests = backend.leaveRequests.map((r) =>
-      r.id === Number(info.params.id) ? { ...r, status } : r,
+      r.id === Number(info.params.id) ? { ...r, status, decisionReason } : r,
     )
     const request = backend.leaveRequests.find((r) => r.id === Number(info.params.id))
     return HttpResponse.json({ request, ...backend.decision })
@@ -1753,6 +1756,7 @@ export const handlers = [
       toShift: null,
       createdAt: '2026-05-20T08:00:00Z',
       decidedAt: null,
+      decisionReason: '',
       asker: true,
       colleague: false,
     }
@@ -1781,6 +1785,7 @@ export const handlers = [
       toShift: mine?.shift ?? '',
       createdAt: '2026-05-20T08:00:00Z',
       decidedAt: null,
+      decisionReason: '',
       asker: false,
       colleague: true,
     }
@@ -1795,8 +1800,10 @@ export const handlers = [
     const status =
       { approve: 'approved', reject: 'rejected', cancel: 'cancelled' }[String(info.params.what)] ??
       'open'
+    const sent = backend.writes[backend.writes.length - 1]?.body as { reason?: unknown } | null
+    const decisionReason = typeof sent?.reason === 'string' ? sent.reason : ''
     backend.swaps = backend.swaps.map((s) =>
-      s.id === Number(info.params.id) ? { ...s, status } : s,
+      s.id === Number(info.params.id) ? { ...s, status, decisionReason } : s,
     )
     return HttpResponse.json(backend.swaps.find((s) => s.id === Number(info.params.id)))
   }),

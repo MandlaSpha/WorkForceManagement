@@ -12,7 +12,7 @@ from . import swap_selectors as selectors
 from . import swap_services as services
 from .models import SwapRequest
 from .policy import APPROVE_ROLES, SELF_ROLES
-from .swap_schemas import BoardOut, SwapIn, SwapOut, SwapShiftOut, TakeIn
+from .swap_schemas import BoardOut, RejectIn, SwapIn, SwapOut, SwapShiftOut, TakeIn
 
 router = Router(tags=["people"])
 
@@ -103,9 +103,12 @@ def approve(request: HttpRequest, swap_id: int) -> SwapOut:
 
 
 @router.post("/{swap_id}/reject", auth=APPROVE, response=SwapOut, summary="Reject a swap")
-def reject(request: HttpRequest, swap_id: int) -> SwapOut:
+def reject(request: HttpRequest, swap_id: int, body: RejectIn) -> SwapOut:
     user = current_user(request)
-    return _swap_out(user, services.decide(user=user, swap_id=swap_id, approve=False))
+    reason = body.reason
+    return _swap_out(
+        user, services.decide(user=user, swap_id=swap_id, approve=False, reason=reason)
+    )
 
 
 @router.post("/{swap_id}/cancel", auth=SELF, response=SwapOut, summary="Withdraw a swap")
@@ -141,6 +144,7 @@ def _swap_out(user: User, s: SwapRequest) -> SwapOut:
         toShift=s.to_template.code if s.to_template else None,
         createdAt=s.created_at,
         decidedAt=s.decided_at,
+        decisionReason=s.decision_reason,
         asker=s.from_employee.user_id == user.pk,
         colleague=s.to_employee is not None and s.to_employee.user_id == user.pk,
     )
