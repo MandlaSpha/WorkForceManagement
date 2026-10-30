@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { ReportSchedule } from '@/entities/report-schedule'
 import { backend } from '@/test/fake-backend'
+import { expectAriaReferencesResolve } from '@/test/aria'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
 
 const schedule = (over: Partial<ReportSchedule> = {}): ReportSchedule => ({
@@ -63,7 +64,7 @@ describe('scheduling a report', () => {
     const user = userEvent.setup()
     await open()
     const form = await screen.findByRole('form', { name: 'Schedule a report' })
-    await user.selectOptions(within(form).getByLabelText('Report'), 'Peaks and troughs')
+    await user.click(screen.getByRole('radio', { name: /^Peaks and troughs/ }))
     await user.type(within(form).getByLabelText(/Send to/), 'boss@example.co.za')
     expect(within(form).getByRole('button', { name: 'Schedule report' })).toBeDisabled()
   })
@@ -96,7 +97,7 @@ describe('scheduling a report', () => {
       const user = userEvent.setup()
       await open(role)
       const form = await screen.findByRole('form', { name: 'Schedule a report' })
-      await user.selectOptions(within(form).getByLabelText('Report'), 'Investment-board KPI pack')
+      await user.click(screen.getByRole('radio', { name: /^Investment-board KPI pack/ }))
       expect(within(form).queryByLabelText('Queue')).toBeNull()
       await user.type(within(form).getByLabelText(/Send to/), 'board@example.co.za')
       await user.click(within(form).getByRole('button', { name: 'Schedule report' }))
@@ -108,17 +109,20 @@ describe('scheduling a report', () => {
   it('does not offer a lead the board pack', async () => {
     // Failure caught: offering a lead a pack the API will refuse.
     await open('lead')
-    const form = await screen.findByRole('form', { name: 'Schedule a report' })
-    const options = within(within(form).getByLabelText('Report')).getAllByRole('option')
-    expect(options.map((o) => o.textContent)).not.toContain('Investment-board KPI pack')
+    await screen.findByRole('form', { name: 'Schedule a report' })
+    expect(screen.queryByRole('radio', { name: /^Investment-board KPI pack/ })).toBeNull()
   })
 
   it('offers a lead only the report a lead may see', async () => {
     // Failure caught: offering a lead a report the API will refuse.
     await open('lead')
-    const form = await screen.findByRole('form', { name: 'Schedule a report' })
-    const options = within(within(form).getByLabelText('Report')).getAllByRole('option')
-    expect(options.map((o) => o.textContent)).toEqual(['Peaks and troughs'])
+    await screen.findByRole('form', { name: 'Schedule a report' })
+    const picker = screen.getByRole('radiogroup', { name: 'Report type' })
+    expect(
+      within(picker)
+        .getAllByRole('radio')
+        .map((r) => r.getAttribute('value')),
+    ).toEqual(['peaks'])
   })
 })
 
@@ -152,11 +156,60 @@ describe('the schedules', () => {
     })
     expect(await screen.findByRole('button', { name: /^Resume/ })).toBeVisible()
     await user.click(screen.getByRole('button', { name: /^Delete Analytics scorecard schedule/ }))
+    // Failure caught: one stray click deleting a schedule; nothing is sent until it is confirmed.
+    expect(backend.writes).toHaveLength(1)
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete schedule' }),
+    )
     await waitFor(() => expect(backend.writes).toHaveLength(2))
     expect(backend.writes[1]).toMatchObject({
       method: 'DELETE',
       path: '/api/v1/reports/schedules/1',
     })
+  })
+
+  it('keeps a schedule when the delete is not confirmed', async () => {
+    // Failure caught: Keep it (or Escape) still deleting.
+    const user = userEvent.setup()
+    await open('planner', [schedule()])
+    await user.click(await screen.findByRole('button', { name: /^Delete Analytics scorecard/ }))
+    await user.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Keep it' }),
+    )
+    expect(backend.writes).toHaveLength(0)
+    expect(screen.getByTestId('schedule-1')).toBeVisible()
+  })
+
+  it('shows the last send as words in a chip and the schedule as a table row', async () => {
+    await open('planner', [schedule({ lastOutcome: 'sent', lastSentAt: '2031-03-01T05:00:00Z' })])
+    const row = await screen.findByTestId('schedule-1')
+    expect(within(row).getByTestId('outcome')).toHaveTextContent('Sent')
+    expect(row).not.toHaveTextContent('Not yet')
+    expect(screen.getByRole('table')).toBeVisible()
+  })
+
+  it('writes a sentence counting scheduled and paused reports', async () => {
+    await open('planner', [schedule(), schedule({ id: 2, paused: true })])
+    expect(await screen.findByText(/reports? (is|are) scheduled/)).toHaveTextContent(
+      '1 report is scheduled to be emailed, and 1 paused.',
+    )
+  })
+
+  it('offers the report types with a line on what each holds', async () => {
+    await open()
+    const picker = await screen.findByRole('radiogroup', { name: 'Report type' })
+    expect(within(picker).getAllByRole('radio')).toHaveLength(3)
+    expect(within(picker).getByText(/Measured, Modelled or Needs data/)).toBeVisible()
+    expectAriaReferencesResolve()
+  })
+
+  it('shows the weekday row only for a weekly schedule', async () => {
+    const user = userEvent.setup()
+    await open()
+    const form = await screen.findByRole('form', { name: 'Schedule a report' })
+    expect(within(form).queryByLabelText('On')).toBeNull()
+    await user.selectOptions(within(form).getByLabelText('How often'), 'Every week')
+    expect(within(form).getByLabelText('On')).toBeVisible()
   })
 
   it('tells the admin whose a schedule is, and nobody else', async () => {

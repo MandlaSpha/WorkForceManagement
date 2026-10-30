@@ -1,8 +1,10 @@
+import userEvent from '@testing-library/user-event'
 import { screen, within } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 
 import type { Scorecard } from '@/entities/scorecard'
 import { backend } from '@/test/fake-backend'
+import { expectAriaReferencesResolve } from '@/test/aria'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
 
 const card = (over: Partial<Scorecard> = {}): Scorecard => ({
@@ -60,7 +62,7 @@ describe('analytics', () => {
     // Failure caught: a modelled or missing figure passing as a measurement.
     await open()
     const sl = await screen.findByTestId('item-service_level')
-    expect(within(sl).getByTestId('value')).toHaveTextContent(/81[.,]3%/)
+    expect(within(sl).getByTestId('stat-value')).toHaveTextContent(/81[.,]3%/)
     expect(within(sl).getByTestId('basis')).toHaveTextContent('Measured')
     expect(within(screen.getByTestId('item-occupancy')).getByTestId('basis')).toHaveTextContent(
       'Modelled',
@@ -73,7 +75,7 @@ describe('analytics', () => {
   it('shows a dash, not zero, for a figure with nothing behind it', async () => {
     await open()
     const occupancy = await screen.findByTestId('item-occupancy')
-    expect(within(occupancy).getByTestId('value')).toHaveTextContent(/^-$/)
+    expect(within(occupancy).getByTestId('stat-value')).toHaveTextContent(/^-$/)
     expect(occupancy).toHaveTextContent('Needs a published roster.')
   })
 
@@ -90,6 +92,51 @@ describe('analytics', () => {
   it('shows the trend chart when there are days', async () => {
     await open()
     expect(await screen.findByText('Calls and service level by day')).toBeVisible()
+  })
+
+  it('writes one sentence from the real figures and counts those that need data', async () => {
+    // Failure caught: a summary that quotes a figure with nothing behind it, or hides the gaps.
+    await open()
+    const sentence = await screen.findByText(/figures need more data/)
+    expect(sentence.textContent).toMatch(/service level\s+81[.,]3%/)
+    expect(sentence).toHaveTextContent('average handling time 212 s')
+    expect(sentence).not.toHaveTextContent('occupancy')
+  })
+
+  it('keeps the basis chip on every tile, and says Needs data on the tiles that lack it', async () => {
+    // Failure caught: the restyle dropping the Measured / Modelled / Needs data labels (DAT-10).
+    await open()
+    await screen.findByTestId('analytics-tiles')
+    expect(screen.getAllByTestId('basis').map((b) => b.textContent?.trim())).toEqual([
+      'Measured',
+      'Measured',
+      'Modelled',
+      'Needs data',
+    ])
+  })
+
+  it('lists the daily numbers in a table, with a dash for a day without a service level', async () => {
+    await open()
+    const table = await screen.findByTestId('analytics-numbers')
+    const rows = within(table).getAllByRole('row')
+    expect(rows).toHaveLength(3)
+    expect(rows[2]).toHaveTextContent('-')
+    expectAriaReferencesResolve()
+  })
+
+  it('chooses the range with a segmented control', async () => {
+    const user = userEvent.setup()
+    await open()
+    const group = await screen.findByRole('group', { name: 'Range' })
+    expect(within(group).getByRole('button', { name: 'Last 28 days' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    await user.click(within(group).getByRole('button', { name: 'Last 7 days' }))
+    expect(within(group).getByRole('button', { name: 'Last 7 days' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
   })
 
   it.each(['agent', 'lead'])('keeps %s out', async (role) => {

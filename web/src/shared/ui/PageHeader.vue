@@ -9,8 +9,11 @@ defineProps<{ eyebrow?: string; title: string; subtitle?: string }>()
         {{ eyebrow }}
       </p>
       <h1 class="text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{{ title }}</h1>
-      <p v-if="subtitle" class="mt-2 max-w-2xl text-sm text-ink-muted sm:text-base">
-        {{ subtitle }}
+      <p
+        v-if="subtitle || $slots.subtitle"
+        class="mt-2 max-w-2xl text-sm text-ink-muted sm:text-base"
+      >
+        <slot name="subtitle">{{ subtitle }}</slot>
       </p>
     </div>
     <div class="flex items-center gap-2"><slot name="actions" /></div>

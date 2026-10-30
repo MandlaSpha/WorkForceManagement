@@ -9,8 +9,12 @@ import { useSaveTuning } from '@/features/save-tuning'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import AppButton from '@/shared/ui/AppButton.vue'
+import DeltaChip from '@/shared/ui/DeltaChip.vue'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 import PageHeader from '@/shared/ui/PageHeader.vue'
+import SettingsCard from '@/shared/ui/SettingsCard.vue'
+import SettingsRow from '@/shared/ui/SettingsRow.vue'
+import StatTile from '@/shared/ui/StatTile.vue'
 import TextField from '@/shared/ui/TextField.vue'
 
 const session = useSessionStore()
@@ -75,110 +79,193 @@ const direction = computed(() => ((result.value?.candidate.biasPct ?? 0) > 0 ? '
 const nothingToScore = computed(
   () => result.value !== undefined && result.value.candidate.days === 0,
 )
+
+/** Accuracy: points more (or fewer) day totals right than the saved settings. */
+const accuracyDelta = computed(() => {
+  const r = result.value
+  if (!r || r.candidate.dailyPct === null || r.current.dailyPct === null) return null
+  return r.candidate.dailyPct - r.current.dailyPct
+})
+/** Bias: how far from zero it sits, in points, against the saved settings. Less is better. */
+const biasDelta = computed(() => {
+  const r = result.value
+  if (!r || r.candidate.biasPct === null || r.current.biasPct === null) return null
+  return Math.abs(r.candidate.biasPct) - Math.abs(r.current.biasPct)
+})
+const subtitle = computed(() => {
+  const t = tuning.data.value
+  if (!t) return screen?.subtitle
+  const state = t.saved ? 'has its own saved tuning' : 'runs on the default tuning'
+  return `${t.queue} ${state}. Back-test a change against what really happened before you save it.`
+})
 </script>
 
 <template>
-  <PageHeader
-    eyebrow="Insight"
-    :title="screen?.label ?? 'Calibration'"
-    :subtitle="screen?.subtitle"
-  />
+  <PageHeader eyebrow="Insight" :title="screen?.label ?? 'Calibration'" :subtitle="subtitle" />
 
   <section class="space-y-6" aria-live="polite">
     <NoticeBox v-if="queueId === null">
       Choose a queue at the top of the page. Queues appear once call data has been imported.
     </NoticeBox>
-    <p v-else-if="tuning.isPending.value" class="text-sm text-ink-muted">Loading…</p>
+    <div v-else-if="tuning.isPending.value" class="space-y-4" data-testid="calibration-loading">
+      <span class="sr-only">Loading…</span>
+      <div class="skeleton h-72"></div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        <div class="skeleton h-28"></div>
+        <div class="skeleton h-28"></div>
+      </div>
+    </div>
     <NoticeBox v-else-if="tuning.isError.value" tone="danger">
       Could not load the tuning. {{ problemMessage(tuning.error.value) }}
     </NoticeBox>
 
     <template v-else-if="tuning.data.value">
-      <form
-        class="space-y-4 rounded-xl border border-line bg-surface p-4"
-        aria-label="Forecast tuning"
-        @submit.prevent="tryIt"
-      >
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h2 class="text-base font-semibold text-ink">
-            {{ tuning.data.value.queue }}: forecast tuning
-          </h2>
-          <span
-            class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
-            :class="
-              tuning.data.value.saved ? 'bg-brand-soft text-brand-ink' : 'bg-warn-soft text-warn'
-            "
-            data-testid="tuning-state"
+      <form aria-label="Forecast tuning" class="page-enter" @submit.prevent="tryIt">
+        <SettingsCard
+          :title="`${tuning.data.value.queue}: forecast tuning`"
+          description="Change the settings, back-test them against what really happened, and save the ones that do better. Forecasts already run are not changed."
+        >
+          <template #status>
+            <span
+              class="rounded-full px-2 py-0.5 text-[11px] font-semibold"
+              :class="
+                tuning.data.value.saved ? 'bg-brand-soft text-brand-ink' : 'bg-warn-soft text-warn'
+              "
+              data-testid="tuning-state"
+            >
+              {{ tuning.data.value.saved ? 'Saved' : 'Defaults, nobody has saved a tuning' }}
+            </span>
+          </template>
+          <SettingsRow
+            label="Look back"
+            helper="How many weeks of same-weekday history each forecast is built from (1 to 12)."
           >
-            {{ tuning.data.value.saved ? 'Saved' : 'Defaults, nobody has saved a tuning' }}
-          </span>
-        </div>
-        <p class="text-sm text-ink-muted">
-          Change the settings, back-test them against what really happened, and save the ones that
-          do better. Forecasts already run are not changed.
-        </p>
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <TextField v-model="weeks" type="number" label="Look back (weeks)" :min="1" :max="12" />
-          <TextField
-            v-model="decay"
-            type="number"
-            label="Recency weight (0.1 to 1)"
-            :min="0.1"
-            :max="1"
-            :step="0.05"
-          />
-          <TextField
-            v-model="volume"
-            type="number"
+            <TextField
+              v-model="weeks"
+              type="number"
+              label="Look back (weeks)"
+              hide-label
+              :min="1"
+              :max="12"
+            />
+          </SettingsRow>
+          <SettingsRow
+            label="Recency weight"
+            helper="How much less each older same-weekday day counts. 1 counts them all alike."
+          >
+            <TextField
+              v-model="decay"
+              type="number"
+              label="Recency weight (0.1 to 1)"
+              hide-label
+              :min="0.1"
+              :max="1"
+              :step="0.05"
+            />
+          </SettingsRow>
+          <SettingsRow
             label="Contacts multiplier"
-            :min="0.5"
-            :max="2"
-            :step="0.01"
-          />
-          <TextField
-            v-model="aht"
-            type="number"
+            helper="Corrects a forecast that runs high or low on how many contacts arrive."
+          >
+            <TextField
+              v-model="volume"
+              type="number"
+              label="Contacts multiplier"
+              hide-label
+              :min="0.5"
+              :max="2"
+              :step="0.01"
+            />
+          </SettingsRow>
+          <SettingsRow
             label="Handling-time multiplier"
-            :min="0.5"
-            :max="2"
-            :step="0.01"
-          />
-        </div>
-        <p class="text-xs text-ink-muted">
-          Recency weight: how much less each older same-weekday day counts (1 counts them all
-          alike). Multipliers correct a forecast that runs high or low.
-        </p>
-        <div class="flex flex-wrap items-center gap-2">
-          <AppButton type="submit" :loading="backtest.isFetching.value"
-            >Back-test these settings</AppButton
+            helper="Corrects a forecast that runs high or low on how long each contact takes."
           >
-          <AppButton
-            v-if="canSave"
-            type="button"
-            variant="secondary"
-            :loading="save.isPending.value"
-            @click="saveIt"
-          >
-            Save as this queue's tuning
-          </AppButton>
-        </div>
-        <NoticeBox v-if="save.isError.value" tone="danger" data-testid="tuning-error">
-          <p class="font-medium">The tuning was not saved.</p>
-          <p>{{ problemMessage(save.error.value) }}</p>
-        </NoticeBox>
-        <NoticeBox v-if="backtest.isError.value" tone="danger" data-testid="backtest-error">
-          <p class="font-medium">The back-test could not be worked out.</p>
-          <p>{{ problemMessage(backtest.error.value) }}</p>
-        </NoticeBox>
+            <TextField
+              v-model="aht"
+              type="number"
+              label="Handling-time multiplier"
+              hide-label
+              :min="0.5"
+              :max="2"
+              :step="0.01"
+            />
+          </SettingsRow>
+          <template #footer>
+            <div class="flex flex-wrap items-center gap-2">
+              <AppButton type="submit" :loading="backtest.isFetching.value"
+                >Back-test these settings</AppButton
+              >
+              <AppButton
+                v-if="canSave"
+                type="button"
+                variant="secondary"
+                :loading="save.isPending.value"
+                @click="saveIt"
+              >
+                Save as this queue's tuning
+              </AppButton>
+            </div>
+            <NoticeBox
+              v-if="save.isError.value"
+              tone="danger"
+              class="mt-3"
+              data-testid="tuning-error"
+            >
+              <p class="font-medium">The tuning was not saved.</p>
+              <p>{{ problemMessage(save.error.value) }}</p>
+            </NoticeBox>
+            <NoticeBox
+              v-if="backtest.isError.value"
+              tone="danger"
+              class="mt-3"
+              data-testid="backtest-error"
+            >
+              <p class="font-medium">The back-test could not be worked out.</p>
+              <p>{{ problemMessage(backtest.error.value) }}</p>
+            </NoticeBox>
+          </template>
+        </SettingsCard>
       </form>
 
-      <div v-if="result" class="space-y-3" data-testid="backtest">
+      <div
+        v-if="backtest.isPending.value && !result"
+        class="skeleton h-28"
+        data-testid="backtest-loading"
+      ></div>
+      <div v-if="result" class="page-enter space-y-4" data-testid="backtest">
         <NoticeBox v-if="nothingToScore" data-testid="nothing-to-score">
           There are no past days to score these settings against: a forecast needs at least one
           earlier day with the same weekday. Import more call data.
         </NoticeBox>
         <template v-else>
-          <div class="overflow-x-auto rounded-xl border border-line bg-surface">
+          <ul class="grid gap-3 sm:grid-cols-2" aria-label="Back-test comparison">
+            <StatTile
+              variant="feature"
+              label="These settings: day totals right"
+              :value="pctLabel(result.candidate.dailyPct)"
+              :delta="accuracyDelta"
+              delta-unit=" pts"
+              delta-versus="vs saved"
+              data-testid="tile-candidate"
+            >
+              <span class="block">Bias {{ biasLabel(result.candidate.biasPct) }}</span>
+              <span class="mt-1 flex flex-wrap items-center gap-1">
+                Bias error
+                <DeltaChip :value="biasDelta" unit=" pts" good-when="down" versus="vs saved" />
+              </span>
+            </StatTile>
+            <StatTile
+              label="Saved now: day totals right"
+              :value="pctLabel(result.current.dailyPct)"
+              data-testid="tile-current"
+            >
+              <span class="block">Bias {{ biasLabel(result.current.biasPct) }}</span>
+              <span class="block">Over {{ result.current.days }} past days</span>
+            </StatTile>
+          </ul>
+
+          <div class="overflow-x-auto rounded-2xl border border-line bg-surface shadow-card">
             <table class="w-full min-w-[30rem] text-left text-sm">
               <caption class="px-4 py-3 text-left text-sm font-semibold text-ink">
                 Back-test on

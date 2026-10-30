@@ -2,6 +2,7 @@ import userEvent from '@testing-library/user-event'
 import { screen, waitFor, within } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 
+import { expectAriaReferencesResolve } from '@/test/aria'
 import { backtestOf, tuningOf } from '@/test/forecast-fixtures'
 import { backend } from '@/test/fake-backend'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
@@ -136,6 +137,45 @@ describe('the back-test', () => {
     await user.click(screen.getByRole('button', { name: 'Back-test these settings' }))
 
     expect(await screen.findByTestId('backtest-error')).toBeVisible()
+  })
+})
+
+describe('the comparison tiles', () => {
+  it('sets these settings beside the saved ones, with the change in words', async () => {
+    // Failure caught: a comparison told by colour alone, or a delta worked the wrong way round.
+    await open()
+    const candidate = await screen.findByTestId('tile-candidate')
+    const saved = screen.getByTestId('tile-current')
+    expect(within(candidate).getByTestId('stat-value')).toHaveTextContent('60.0%')
+    expect(within(saved).getByTestId('stat-value')).toHaveTextContent('51.8%')
+    const chips = within(candidate).getAllByTestId('delta-chip')
+    expect(chips[0]).toHaveTextContent('Up 8.2 pts vs saved') // 60.00 - 51.76
+    expect(chips[0]).toHaveAttribute('data-tone', 'good')
+    // Bias moved from 48.2 to 40.0 away from zero: less error, which is good news.
+    expect(chips[1]).toHaveTextContent('Down 8.2 pts vs saved')
+    expect(chips[1]).toHaveAttribute('data-tone', 'good')
+    expectAriaReferencesResolve()
+  })
+
+  it('calls worse settings worse, in words and tone', async () => {
+    seedScheduling()
+    backend.tuning = tuningOf()
+    backend.backtest = backtestOf({
+      candidate: { dailyPct: 40, intervalPct: 30, biasPct: -60, days: 2 },
+    })
+    await openScheduling('/calibration')
+    const chips = within(await screen.findByTestId('tile-candidate')).getAllByTestId('delta-chip')
+    expect(chips[0]).toHaveTextContent('Down 11.8 pts vs saved')
+    expect(chips[0]).toHaveAttribute('data-tone', 'bad')
+    expect(chips[1]).toHaveAttribute('data-tone', 'bad')
+  })
+
+  it('shows each setting as a row with helper text', async () => {
+    await open()
+    expect(
+      await screen.findByText(/same-weekday history each forecast is built from/),
+    ).toBeVisible()
+    expect(screen.getByText(/how many contacts arrive/)).toBeVisible()
   })
 })
 

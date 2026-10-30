@@ -9,6 +9,13 @@ export const REPORT_LABEL: Record<string, string> = {
   peaks: 'Peaks and troughs',
   board: 'Investment-board KPI pack',
 }
+/** One line on what each report holds, shown beside the choice. */
+export const REPORT_BLURB: Record<string, string> = {
+  scorecard:
+    'Service level, handling time and the other headline figures, each labelled Measured, Modelled or Needs data.',
+  peaks: 'The busiest and quietest days and half-hours of one queue.',
+  board: 'The investment-board KPI pack. It covers every queue, so it needs none chosen.',
+}
 export const FREQUENCY_LABEL: Record<string, string> = {
   daily: 'Every day',
   weekly: 'Every week',

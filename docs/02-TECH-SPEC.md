@@ -923,3 +923,12 @@ Swaps and Leave each have a **Board | List** switch (a pill TabBar above the exi
 - Privacy is unchanged: lead, planner and admin see the names they already see; an agent sees only the swaps and leave they are in, with the same sentence the list gives them (no colleague names added), and no move buttons. Pay is never shown.
 - **Open decision:** declining or rejecting asks for a reason in a dialog and refuses an empty one, but neither endpoint stores a reason yet. It is shown in the confirmation on the page only. Storing it needs a field on both modules (services, audit last, tests for every role).
 - The coverage chip on a pending leave card reads the existing impact endpoint (`useImpact`), one request per pending card.
+
+## 18. Analytics, Reports and Calibration restyle (UI restyle stage 5)
+
+The three remaining Insight screens take the look of Peaks & troughs. No endpoint, data rule or privacy rule changed.
+
+- **Analytics:** hero with a one-sentence summary built only from figures that exist (`PageHeader` gained a `subtitle` slot so numbers can be bold), a segmented range (7, 28, 90 days, Custom), one `StatTile` per scorecard figure with its **Measured / Modelled / Needs data** basis chip kept on the tile (DAT-10), a "-" for a figure with nothing behind it, the existing calls and service-level chart, and a "The numbers" table of the daily rows. The scorecard API has no queue filter, so there is no queue control. No CSV exists for the scorecard today, so none is offered.
+- **Reports:** left card "Report type" (a radiogroup: scorecard, peaks, board pack, each with one line from `REPORT_BLURB`), right `SettingsCard` with the schedule form as `SettingsRow`s and `SettingsFooter`, a table of schedules (last sent, outcome chip, pause/resume and delete icon buttons; delete asks in a `Dialog`), and the admin's allowed domains as its own `SettingsCard`. No chart or preview is drawn because the schedule data holds none. The create call has no "paused" field, so a schedule starts active and is paused from the table.
+- **Calibration:** `SettingsCard` of four tuning rows with helper text, "Back-test these settings", and the comparison as two `StatTile`s (these settings versus saved) with `DeltaChip`s for accuracy (points) and bias error (points from zero, smaller is better). The back-test API returns scores, not per-day results, so there is no day chart; the existing numbers table stays.
+- `StatTile` value carries `data-testid="stat-value"`; `SelectField` has `hide-label` like `TextField`.

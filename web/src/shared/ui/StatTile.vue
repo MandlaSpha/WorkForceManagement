@@ -63,7 +63,7 @@ withDefaults(
         :versus="deltaVersus"
       />
     </div>
-    <p class="mt-2 text-3xl font-semibold tabular-nums tracking-tight">
+    <p class="mt-2 text-3xl font-semibold tabular-nums tracking-tight" data-testid="stat-value">
       <CountUp v-if="typeof value === 'number'" :value="value" :format="format" />
       <template v-else>{{ value }}</template>
     </p>

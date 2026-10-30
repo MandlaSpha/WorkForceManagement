@@ -9,6 +9,8 @@ defineProps<{
   disabled?: boolean
   /** Shown when there are no options yet (honest empty state, not a blank box). */
   emptyText?: string
+  /** The label stays for screen readers but is not drawn: a settings row already shows it. */
+  hideLabel?: boolean
 }>()
 
 const id = useId()
@@ -16,7 +18,11 @@ const id = useId()
 
 <template>
   <div class="min-w-0">
-    <label :for="id" class="block text-[11px] font-medium uppercase tracking-wide text-ink-muted">
+    <label
+      :for="id"
+      class="block text-[11px] font-medium uppercase tracking-wide text-ink-muted"
+      :class="{ 'sr-only': hideLabel }"
+    >
       {{ label }}
     </label>
     <select
