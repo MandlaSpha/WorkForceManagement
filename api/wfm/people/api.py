@@ -28,6 +28,7 @@ from .schemas import (
     LeaveRequestIn,
     LeaveRequestOut,
     LeaveTypeOut,
+    RejectIn,
     RetentionOut,
 )
 from .shrinkage_api import router as shrinkage_router
@@ -161,9 +162,12 @@ def approve(request: HttpRequest, request_id: int) -> DecisionOut:
     response=DecisionOut,
     summary="Reject a request",
 )
-def reject(request: HttpRequest, request_id: int) -> DecisionOut:
+def reject(request: HttpRequest, request_id: int, body: RejectIn) -> DecisionOut:
     user = current_user(request)
-    return _decision_out(user, services.decide(user=user, request_id=request_id, approve=False))
+    reason = body.reason
+    return _decision_out(
+        user, services.decide(user=user, request_id=request_id, approve=False, reason=reason)
+    )
 
 
 @router.post(
@@ -222,6 +226,7 @@ def _request_out(user: User, r: LeaveRequest) -> LeaveRequestOut:
         createdAt=r.created_at,
         decidedAt=r.decided_at,
         shiftsCleared=len(r.cleared_shifts),
+        decisionReason=r.decision_reason,
         mine=r.employee.user_id == user.pk,
     )
 

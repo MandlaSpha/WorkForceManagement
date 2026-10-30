@@ -66,7 +66,7 @@ function run(item: LeaveRequest, what: 'approve' | 'reject', reason?: string): v
   announcement.value = `${verb}: ${label(item)}.`
   void board.value?.focusCard(item.id)
   decide.mutate(
-    { requestId: item.id, what },
+    { requestId: item.id, what, reason },
     {
       onSuccess: (decision) => emit('decided', item.employee, decision, reason),
       onError: (error) => {
@@ -120,6 +120,13 @@ function rejected(reason: string): void {
             <p class="text-sm font-semibold text-ink">{{ item.employee }}</p>
             <p class="text-xs text-ink-muted">
               {{ rangeLabel(item.startDate, item.endDate) }}, {{ formatDays(item.days) }}
+            </p>
+            <p
+              v-if="item.status === 'rejected' && item.decisionReason"
+              class="text-xs text-ink-muted"
+              data-testid="decision-reason"
+            >
+              Reason: {{ item.decisionReason }}
             </p>
             <div class="flex flex-wrap gap-1.5 pt-1">
               <span

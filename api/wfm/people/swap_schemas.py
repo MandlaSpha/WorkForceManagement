@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time
+from typing import Annotated
 
 from ninja import Schema
+from pydantic import StringConstraints
 
 # camelCase on the wire; the noqa comments mark that deliberate choice.
 
@@ -41,8 +43,13 @@ class SwapOut(Schema):
     toShift: str | None  # noqa: N815
     createdAt: datetime  # noqa: N815
     decidedAt: datetime | None  # noqa: N815
+    decisionReason: str  # noqa: N815 - only the two people in the swap and approvers get this
     asker: bool  # the signed-in person posted it
     colleague: bool  # the signed-in person took it
+
+
+class RejectIn(Schema):
+    reason: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] = ""
 
 
 class BoardOut(Schema):

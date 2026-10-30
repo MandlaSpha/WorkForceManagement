@@ -92,6 +92,7 @@ class LeaveRequest(models.Model):
         User, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
     )
     decided_at = models.DateTimeField(null=True, blank=True)
+    decision_reason = models.CharField(max_length=300, blank=True, default="")
     # Shifts taken off the roster when it was approved, so cancelling can put them back:
     # [{"queueId": 1, "day": "2026-05-25", "templateId": 3}, ...]
     cleared_shifts = models.JSONField(default=list)
@@ -196,6 +197,7 @@ class SwapRequest(models.Model):
         User, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
     )
     decided_at = models.DateTimeField(null=True, blank=True)
+    decision_reason = models.CharField(max_length=300, blank=True, default="")
 
     objects = SwapRequestQuerySet.as_manager()
 

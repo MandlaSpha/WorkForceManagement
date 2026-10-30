@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Annotated
 
 from ninja import Schema
+from pydantic import StringConstraints
 
 # camelCase on the wire; the noqa comments mark that deliberate choice.
 
@@ -60,7 +62,12 @@ class LeaveRequestOut(Schema):
     createdAt: datetime  # noqa: N815
     decidedAt: datetime | None  # noqa: N815
     shiftsCleared: int  # noqa: N815 - shifts taken off the roster when it was approved
+    decisionReason: str  # noqa: N815 - why it was rejected; shown to the requester and approvers
     mine: bool  # the request is the signed-in person's own
+
+
+class RejectIn(Schema):
+    reason: Annotated[str, StringConstraints(strip_whitespace=True, max_length=300)] = ""
 
 
 class DecisionOut(Schema):

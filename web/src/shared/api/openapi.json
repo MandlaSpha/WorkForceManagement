@@ -4651,6 +4651,10 @@
             ],
             "title": "Decidedat"
           },
+          "decisionReason": {
+            "title": "Decisionreason",
+            "type": "string"
+          },
           "empNo": {
             "title": "Empno",
             "type": "string"
@@ -4712,6 +4716,7 @@
           "createdAt",
           "decidedAt",
           "shiftsCleared",
+          "decisionReason",
           "mine"
         ],
         "title": "LeaveRequestOut",
@@ -7298,6 +7303,18 @@
         "title": "RecommendationOut",
         "type": "object"
       },
+      "RejectIn": {
+        "properties": {
+          "reason": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "title": "RejectIn",
+        "type": "object"
+      },
       "RequirementIn": {
         "properties": {
           "kind": {
@@ -9156,6 +9173,10 @@
             ],
             "title": "Decidedat"
           },
+          "decisionReason": {
+            "title": "Decisionreason",
+            "type": "string"
+          },
           "fromDay": {
             "format": "date",
             "title": "Fromday",
@@ -9228,6 +9249,7 @@
           "toShift",
           "createdAt",
           "decidedAt",
+          "decisionReason",
           "asker",
           "colleague"
         ],
@@ -14552,6 +14574,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -15118,6 +15150,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {

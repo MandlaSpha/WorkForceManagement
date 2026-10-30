@@ -66,7 +66,12 @@ describe('the leave board', () => {
     await user.type(within(dialog).getByLabelText('Reason'), 'Year-end close')
     await user.click(within(dialog).getByRole('button', { name: 'Reject leave' }))
     await waitFor(() => expect(backend.writes).toHaveLength(1))
-    expect(backend.writes[0]).toMatchObject({ path: '/api/v1/people/leave/requests/1/reject' })
+    expect(backend.writes[0]).toMatchObject({
+      path: '/api/v1/people/leave/requests/1/reject',
+      body: { reason: 'Year-end close' },
+    })
+    // Failure caught: the reason shown in the toast but never sent or kept on the card.
+    expect(await screen.findByTestId('decision-reason')).toHaveTextContent('Year-end close')
     expect(await screen.findByTestId('decision-result')).toHaveTextContent(/Reason: Year-end close/)
   })
 

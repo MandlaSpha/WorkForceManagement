@@ -112,7 +112,7 @@ def apply(
     return request
 
 
-def decide(*, user: User, request_id: int, approve: bool) -> Decision:
+def decide(*, user: User, request_id: int, approve: bool, reason: str = "") -> Decision:
     """Approve or reject a pending request. Approving writes the leave into the schedule: the
     person's shifts on those days come off the roster (the leave wins, even in a published week),
     and coverage shows the gap. Nobody decides their own request."""
@@ -146,12 +146,27 @@ def decide(*, user: User, request_id: int, approve: bool) -> Decision:
         leave.decided_by = user
         leave.decided_at = Now()
         leave.cleared_shifts = cleared
-        leave.save(update_fields=["status", "decided_by", "decided_at", "cleared_shifts"])
+        leave.decision_reason = "" if approve else reason.strip()[:300]
+        leave.save(
+            update_fields=[
+                "status",
+                "decided_by",
+                "decided_at",
+                "cleared_shifts",
+                "decision_reason",
+            ]
+        )
         leave.refresh_from_db()
         _tell_about(user, leave, "approved" if approve else "rejected")
         changes = [
             audit.FieldChange("leave_request", str(leave.pk), "status", "pending", leave.status)
         ]
+        if leave.decision_reason:
+            changes.append(
+                audit.FieldChange(
+                    "leave_request", str(leave.pk), "decision_reason", None, leave.decision_reason
+                )
+            )
         if approve:
             changes.append(
                 audit.FieldChange(

@@ -233,14 +233,21 @@ def _move(
     action: Action,
     *,
     extra: list[audit.FieldChange] | None = None,
+    reason: str = "",
 ) -> SwapRequest:
     """Record the new status and audit it. This is the last write of the transaction."""
     was = swap.status
     swap.status = status
     swap.decided_by = user
     swap.decided_at = Now()
-    swap.save(update_fields=["status", "decided_by", "decided_at"])
+    swap.decision_reason = reason
+    swap.save(update_fields=["status", "decided_by", "decided_at", "decision_reason"])
     swap.refresh_from_db()
+    if reason:
+        extra = [
+            *(extra or []),
+            audit.FieldChange("swap_request", str(swap.pk), "decision_reason", None, reason),
+        ]
     audit.record(  # last write of the transaction
         actor=user,
         action=action,
@@ -255,7 +262,7 @@ def _move(
     return swap
 
 
-def decide(*, user: User, swap_id: int, approve: bool) -> SwapRequest:
+def decide(*, user: User, swap_id: int, approve: bool, reason: str = "") -> SwapRequest:
     """A lead, planner or admin approves or rejects a matched swap. Approving exchanges the two
     shifts."""
     with transaction.atomic():
@@ -270,7 +277,9 @@ def decide(*, user: User, swap_id: int, approve: bool) -> SwapRequest:
             raise _refuse(409, "swap.not_waiting_for_approval", f"This swap is {swap.status}.")
         if not approve:
             _tell_decided(user, swap, "rejected")
-            return _move(user, swap, SwapStatus.REJECTED, Action.SWAP_REJECTED)
+            return _move(
+                user, swap, SwapStatus.REJECTED, Action.SWAP_REJECTED, reason=reason.strip()[:300]
+            )
         _lock_people(swap.from_employee_id, swap.to_employee_id or 0)
         first, second = _current(swap)
         _check_rules(user, first, second)

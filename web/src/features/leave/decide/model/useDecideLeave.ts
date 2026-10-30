@@ -13,7 +13,8 @@ import { refreshQueries } from '@/shared/lib/refresh'
 export function useDecideLeave(reported?: (decision: Decision) => void) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (v: { requestId: number; what: Decide }) => decideLeave(v.requestId, v.what),
+    mutationFn: (v: { requestId: number; what: Decide; reason?: string }) =>
+      decideLeave(v.requestId, v.what, v.reason),
     onSuccess: async (decision) => {
       reported?.(decision)
       await refreshQueries(queryClient, leaveKeys.all, schedulingKeys.all)

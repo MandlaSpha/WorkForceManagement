@@ -11,7 +11,8 @@ import { refreshQueries } from '@/shared/lib/refresh'
 export function useAnswerSwap(reported?: (what: SwapAnswer, swap: Swap) => void) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (v: { swapId: number; what: SwapAnswer }) => answerSwap(v.swapId, v.what),
+    mutationFn: (v: { swapId: number; what: SwapAnswer; reason?: string }) =>
+      answerSwap(v.swapId, v.what, v.reason),
     onSuccess: async (swap, v) => {
       reported?.(v.what, swap)
       await refreshQueries(queryClient, swapKeys.all, schedulingKeys.all)

@@ -70,7 +70,10 @@ def ask(client: Client, start: date, end: date, code: str = "annual", **extra: A
 
 
 def act(client: Client, request_id: int, what: str) -> Any:
-    return client.post(f"{LEAVE}/requests/{request_id}/{what}")
+    return client.post(
+        f"{LEAVE}/requests/{request_id}/{what}",
+        **({"data": {}, "content_type": "application/json"} if what == "reject" else {}),
+    )
 
 
 @pytest.fixture
@@ -577,3 +580,47 @@ class TestAudit:
             "days_per_year": ("15.0", "18"),
             "confirmed": ("False", "True"),
         }
+
+
+class TestRejectReason:
+    def test_the_reason_is_trimmed_stored_audited_and_shown_to_the_requester(
+        self, week: dict[str, Any]
+    ) -> None:
+        request_id = ask(login(Role.AGENT), MON, TUE).json()["id"]
+        response = login(Role.LEAD).post(
+            f"{LEAVE}/requests/{request_id}/reject",
+            {"reason": "  Month end, short staffed  "},
+            content_type="application/json",
+        )
+        assert response.json()["request"]["decisionReason"] == "Month end, short staffed"
+        mine = login(Role.AGENT).get(f"{LEAVE}/requests").json()
+        assert [r["decisionReason"] for r in mine] == ["Month end, short staffed"]
+        event = AuditEvent.objects.get(action=Action.LEAVE_REJECTED)
+        assert AuditChange.objects.filter(
+            event=event, field="decision_reason", new_value="Month end, short staffed"
+        ).exists()
+
+    def test_a_reason_is_optional_and_bounded(self, week: dict[str, Any]) -> None:
+        request_id = ask(login(Role.AGENT), MON, TUE).json()["id"]
+        too_long = login(Role.PLANNER).post(
+            f"{LEAVE}/requests/{request_id}/reject",
+            {"reason": "x" * 301},
+            content_type="application/json",
+        )
+        assert too_long.status_code == 422
+        assert (
+            act(login(Role.PLANNER), request_id, "reject").json()["request"]["decisionReason"] == ""
+        )
+
+    @pytest.mark.parametrize("role", [Role.AGENT, Role.EXECUTIVE, Role.CUSTOMER_OPS])
+    def test_roles_that_cannot_decide_cannot_reject_with_a_reason(
+        self, week: dict[str, Any], role: Role
+    ) -> None:
+        request_id = ask(login(Role.AGENT), MON, TUE).json()["id"]
+        response = login(role).post(
+            f"{LEAVE}/requests/{request_id}/reject",
+            {"reason": "no"},
+            content_type="application/json",
+        )
+        assert response.status_code in (403, 404)
+        assert LeaveRequest.objects.get(pk=request_id).decision_reason == ""
