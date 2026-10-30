@@ -200,6 +200,64 @@ def _assign(
     return AssignResult(assignment, week)
 
 
+def move_to_queue(*, user: User, queue_id: int, employee_id: int, day: date) -> ShiftAssignment:
+    """Lend a person's shift for a day to another queue they are skilled on (SCH-09). The shift
+    itself is unchanged, so only the skill and the draft state of both weeks are checked."""
+    queue = _queue_for(user, queue_id)
+    try:
+        with transaction.atomic():
+            return _move_to_queue(user, queue, employee_id, day)
+    except _RefusalError as refusal:
+        raise _audited(user, refusal) from None
+
+
+def _move_to_queue(user: User, queue: Queue, employee_id: int, day: date) -> ShiftAssignment:
+    target, _ = RosterWeek.objects.select_for_update(no_key=True).get_or_create(
+        queue=queue, week_start=week_start_of(day)
+    )
+    employee = (
+        Employee.objects.select_for_update(no_key=True)
+        .for_user(user)
+        .filter(pk=employee_id)
+        .first()
+    )
+    if employee is None:
+        raise not_found("No such employee.")
+    existing: ShiftAssignment | None = (
+        ShiftAssignment.objects.filter(employee=employee, day=day)
+        .select_related("roster_week", "template")
+        .first()
+    )
+    if existing is None:
+        raise not_found("That person has no shift that day.")
+    source = existing.roster_week
+    if source.pk == target.pk:
+        raise _refused(user, queue, "roster.same_queue", "That shift is already on this queue.")
+    if RosterStatus.PUBLISHED in (target.status, source.status):
+        raise _refused(
+            user,
+            queue,
+            "roster.published",
+            "A week involved is published. Return it to draft before moving a shift.",
+            409,
+        )
+    _check_rules(user, queue, employee, day, existing.template, existing)
+    from_queue = source.queue.name
+    existing.roster_week = target
+    existing.save(update_fields=["roster_week"])
+    audit.record(  # last write of the transaction
+        actor=user,
+        action=Action.ROSTER_ASSIGNED,
+        entity_type="roster_week",
+        entity_id=str(target.pk),
+        subject_employee_id=employee.pk,
+        changes=[
+            audit.FieldChange("assignment", f"{employee.pk}:{day}", "queue", from_queue, queue.name)
+        ],
+    )
+    return existing
+
+
 def _clear(
     user: User,
     queue: Queue,
