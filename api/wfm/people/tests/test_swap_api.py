@@ -90,10 +90,10 @@ def take(client: Client, swap_id: int, mine: ShiftAssignment, **extra: Any) -> A
 
 
 def act(client: Client, swap_id: int, what: str) -> Any:
-    return client.post(
-        f"{SW}/{swap_id}/{what}",
-        **({"data": {}, "content_type": "application/json"} if what == "reject" else {}),
-    )
+    path = f"{SW}/{swap_id}/{what}"
+    if what == "reject":
+        return client.post(path, {}, content_type="application/json")
+    return client.post(path)
 
 
 def trade(giver: Client, give: ShiftAssignment, taker: Client, mine: ShiftAssignment) -> Any:

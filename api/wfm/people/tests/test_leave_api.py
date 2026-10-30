@@ -70,10 +70,10 @@ def ask(client: Client, start: date, end: date, code: str = "annual", **extra: A
 
 
 def act(client: Client, request_id: int, what: str) -> Any:
-    return client.post(
-        f"{LEAVE}/requests/{request_id}/{what}",
-        **({"data": {}, "content_type": "application/json"} if what == "reject" else {}),
-    )
+    path = f"{LEAVE}/requests/{request_id}/{what}"
+    if what == "reject":
+        return client.post(path, {}, content_type="application/json")
+    return client.post(path)
 
 
 @pytest.fixture
