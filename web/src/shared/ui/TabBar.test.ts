@@ -36,6 +36,15 @@ describe('TabBar', () => {
     expect(tab).toHaveAttribute('aria-controls', 'x-panel-two')
   })
 
+  it('names no panel when the tabs have none, so no aria-controls points at a missing id', () => {
+    render({
+      components: { TabBar },
+      setup: () => ({ chosen: ref('one'), TABS }),
+      template: `<TabBar v-model="chosen" :tabs="TABS" label="Sort" id-prefix="x" :panels="false" />`,
+    })
+    for (const tab of screen.getAllByRole('tab')) expect(tab).not.toHaveAttribute('aria-controls')
+  })
+
   it('chooses a tab when it is clicked', async () => {
     const chosen = mount()
     await userEvent.setup().click(screen.getByRole('tab', { name: 'Three' }))

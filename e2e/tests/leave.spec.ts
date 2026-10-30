@@ -65,6 +65,11 @@ test('an agent asks for leave, a lead sees its effect and approves it, and the a
     .click()
   await expect(page.getByTestId('apply-result')).toContainText('Asked for 2 working days')
   await expectNoAccessibilityViolations(page)
+  // The dialog stays open to show the result; close it before leaving.
+  await page
+    .getByRole('dialog', { name: 'Request leave' })
+    .getByRole('button', { name: 'Cancel' })
+    .click()
   await signOut(page)
 
   // The lead: the request is waiting, with its effect on coverage, and is approved.
@@ -88,14 +93,12 @@ test('an agent asks for leave, a lead sees its effect and approves it, and the a
   // The same request is still on the list, with the full impact text.
   await page.getByRole('tab', { name: 'List', exact: true }).click()
   await page.getByRole('tab', { name: 'Approvals' }).click()
-  await page
-    .getByRole('button', { name: 'Show coverage impact for Alex Agent' })
-    .first()
-    .click()
+  await page.getByRole('button', { name: 'Show coverage impact for Alex Agent' }).first().click()
   await expect(page.getByTestId('impact').first()).toContainText('nothing changes in the roster')
   await page.getByRole('tab', { name: 'Board', exact: true }).click()
-  // Approve it by dragging the card onto Approved (the Move to menu does the same by keyboard).
-  await request.dragTo(page.getByTestId('kanban-col-approved'))
+  // Approve it from the card's Move menu (dragging the card onto Approved does the same).
+  await request.getByRole('button', { name: /^Move .* to/ }).click()
+  await request.getByRole('button', { name: /^Approved/ }).click()
   await expect(page.getByTestId('decision-result')).toContainText('Approved leave for Alex Agent')
   await signOut(page)
 
@@ -163,6 +166,7 @@ test('an admin sets a blackout period, leave inside it is refused with the reaso
     })
   }
   await page.goto('/leave')
+  await page.getByRole('tab', { name: 'List', exact: true }).click() // admins open on the board
   await page.getByRole('tab', { name: 'Rules' }).click()
   const form = page.getByRole('form', { name: 'Add a blackout period' })
   await form.getByLabel(/^Name/).fill(name)
@@ -193,6 +197,10 @@ test('an admin sets a blackout period, leave inside it is refused with the reaso
     .getByRole('button', { name: 'Ask for leave' })
     .click()
   await expect(page.getByTestId('apply-result')).toContainText('Asked for 1 working day')
+  await page
+    .getByRole('dialog', { name: 'Request leave' })
+    .getByRole('button', { name: 'Cancel' })
+    .click()
   await signOut(page)
 
   // Clean up: cancel the sick leave request and remove the blackout so nothing is left behind.
@@ -210,6 +218,7 @@ test('an admin sets a blackout period, leave inside it is refused with the reaso
   await signOut(page)
   await signIn(page, 'admin')
   await page.goto('/leave')
+  await page.getByRole('tab', { name: 'List', exact: true }).click() // admins open on the board
   await page.getByRole('tab', { name: 'Rules' }).click()
   await page.getByRole('button', { name: `Remove ${name}` }).click()
   await expect(page.getByRole('button', { name: `Remove ${name}` })).toHaveCount(0)

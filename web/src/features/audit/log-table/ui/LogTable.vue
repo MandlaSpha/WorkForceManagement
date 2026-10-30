@@ -12,7 +12,12 @@ const OUTCOME_TONE: Record<string, string> = {
 </script>
 
 <template>
-  <div class="overflow-x-auto rounded-xl border border-line bg-surface">
+  <div
+    class="overflow-x-auto rounded-xl border border-line bg-surface"
+    role="region"
+    aria-label="Audit events table"
+    tabindex="0"
+  >
     <table class="w-full min-w-[56rem] text-left text-sm" data-testid="audit-table">
       <caption class="sr-only">
         Audit events, newest first

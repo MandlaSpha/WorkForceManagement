@@ -212,6 +212,9 @@ describe('the week calendar', () => {
     expect(screen.getByTestId('glance-hours')).toHaveTextContent('15 h')
     expect(screen.getByTestId('glance-activity')).toHaveTextContent('Lunch')
     expect(screen.getByTestId('week-glance')).toBeVisible()
+    // Failure caught: scrolling parts of the calendar that the keyboard cannot reach.
+    for (const name of ['Week calendar', 'Hours of the week'])
+      expect(screen.getByRole('region', { name })).toHaveAttribute('tabindex', '0')
     if (today >= monday && today <= addDays(monday, 6)) {
       expect(screen.getByTestId('now-marker')).toBeInTheDocument()
     }

@@ -65,6 +65,9 @@ const label = (shift: MyShift) =>
   <div
     class="overflow-x-auto rounded-3xl bg-surface p-3 shadow-[var(--shadow-card)]"
     data-testid="week-grid"
+    role="region"
+    aria-label="Week calendar"
+    tabindex="0"
   >
     <div class="min-w-[44rem]">
       <div class="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))] text-xs text-ink-muted">
@@ -81,6 +84,9 @@ const label = (shift: MyShift) =>
 
       <div
         class="quiet-scroll grid max-h-[34rem] grid-cols-[3rem_repeat(7,minmax(0,1fr))] overflow-y-auto"
+        role="region"
+        aria-label="Hours of the week"
+        tabindex="0"
       >
         <div class="relative h-[48rem]" aria-hidden="true">
           <span

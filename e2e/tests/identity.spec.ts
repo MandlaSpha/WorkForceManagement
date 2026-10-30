@@ -49,9 +49,11 @@ test('a directory planner signs in and gets the planner role from their group', 
   await expect(
     page.getByRole('heading', { name: /^Good (morning|afternoon|evening)/ }),
   ).toBeVisible()
-  const header = page.getByRole('banner')
-  await expect(header.getByText('Pat Planner')).toBeVisible()
-  await expect(header.getByText('Planner', { exact: true })).toBeVisible()
+  // The signed-in name and role sit on the account card at the foot of the sidebar.
+  const card = page.getByRole('button', { name: 'Account menu for Pat Planner' })
+  await expect(card).toBeVisible()
+  await expect(card.getByText('Pat Planner', { exact: true })).toBeVisible()
+  await expect(card.getByText('Planner', { exact: true })).toBeVisible()
   await expect(nav(page).getByRole('link', { name: 'Planner' })).toBeVisible()
   await expect(nav(page).getByRole('link', { name: 'Configure' })).toHaveCount(0)
   await signOut(page)
@@ -75,7 +77,9 @@ test('a directory agent lands on their own schedule', async ({ page }) => {
 
 test('a team lead gets the lead role', async ({ page }) => {
   await directorySignIn(page, 'lee')
-  await expect(page.getByRole('banner').getByText('Team lead')).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: /^Account menu/ }).getByText('Team lead', { exact: true }),
+  ).toBeVisible()
 })
 
 test('someone in the directory but in no application group is refused', async ({ page }) => {

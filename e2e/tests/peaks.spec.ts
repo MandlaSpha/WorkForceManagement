@@ -32,8 +32,8 @@ test('a planner sees the range control and either the dashboard or an honest emp
     'true',
   )
   await page.getByRole('button', { name: 'Custom' }).click()
-  await expect(page.getByLabel('From')).toBeVisible()
-  await expect(page.getByLabel('To')).toBeVisible()
+  await expect(page.getByLabel('From', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('To', { exact: true })).toBeVisible()
   if (await page.getByTestId('peaks-none').isVisible()) {
     await expect(page.getByTestId('peaks-heat')).toHaveCount(0)
   } else if (await page.getByTestId('peaks-tiles').isVisible()) {

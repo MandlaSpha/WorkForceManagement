@@ -90,6 +90,7 @@ async function closeDrawer(): Promise<void> {
         :tabs="SORTS"
         label="Sort the team by"
         id-prefix="sort"
+        :panels="false"
         variant="pill"
       />
     </div>

@@ -7,6 +7,7 @@ import {
   PASSWORD,
   signIn,
   signOut,
+  openSettingsPage,
 } from './helpers'
 import { addDays, rand } from './report'
 
@@ -114,7 +115,7 @@ test('an admin confirms the workforce limits and everybody who reads capacity se
   page,
 }) => {
   await signIn(page, 'admin')
-  await page.getByRole('link', { name: 'Configure' }).click()
+  await openSettingsPage(page, 'Configure')
   await page.getByRole('tab', { name: 'Workforce' }).click()
   const form = page.getByRole('form', { name: 'Workforce limits' })
   await expect(form.getByLabel('Permanent staff')).toHaveValue(/^\d+$/)

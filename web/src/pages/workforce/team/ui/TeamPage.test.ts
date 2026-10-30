@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 
+import { expectAriaReferencesResolve } from '@/test/aria'
 import { backend } from '@/test/fake-backend'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
 import { teamOverview, teamPerson } from '@/test/team-fixtures'
@@ -74,6 +75,16 @@ describe('Team screen', () => {
     expect(order()).toEqual(['E003', 'E002', 'E001'])
     await fireEvent.click(screen.getByRole('tab', { name: 'A-Z' }))
     expect(order()).toEqual(['E001', 'E002', 'E003'])
+  })
+
+  it('has no aria reference to an id that is not on the page', async () => {
+    // Failure caught: the sort tabs pointing aria-controls at panels that do not exist (axe:
+    // aria-valid-attr-value).
+    seedScheduling()
+    backend.team = teamOverview()
+    await openScheduling('/team', 'lead')
+    await screen.findByTestId('card-E001')
+    expectAriaReferencesResolve()
   })
 
   it('opens a drawer with the persons week and returns focus on close', async () => {

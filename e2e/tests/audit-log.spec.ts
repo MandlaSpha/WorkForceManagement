@@ -24,7 +24,7 @@ test('an admin reads, filters and downloads the audit log, and a planner cannot 
 
   // Filter by what: the sign-in the test itself just made.
   await page.getByLabel('What (action)').selectOption({ label: 'Login' })
-  await page.getByRole('button', { name: 'Search' }).click()
+  await page.getByRole('main').getByRole('button', { name: 'Search' }).click()
   await expect(page.getByTestId('audit-table')).toContainText('Login')
 
   // The CSV download is a file, and is itself recorded.
@@ -36,7 +36,7 @@ test('an admin reads, filters and downloads the audit log, and a planner cannot 
 
   // Searching and downloading show up as events of their own.
   await page.getByLabel('What (action)').selectOption({ label: 'Audit log exported' })
-  await page.getByRole('button', { name: 'Search' }).click()
+  await page.getByRole('main').getByRole('button', { name: 'Search' }).click()
   await expect(page.getByTestId('audit-table')).toContainText('Audit log exported')
   await signOut(page)
 

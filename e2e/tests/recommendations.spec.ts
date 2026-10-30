@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import { importDay, nextMonday, PASSWORD, signIn, signOut } from './helpers'
+import { importDay, nextMonday, openSettingsPage, PASSWORD, signIn, signOut } from './helpers'
 import { addDays, rand } from './report'
 
 /**
@@ -35,7 +35,7 @@ test('a planner applies suggestions one at a time and the list recalculates, and
   await signOut(page)
 
   await signIn(page, 'admin')
-  await page.getByRole('link', { name: 'Configure' }).click()
+  await openSettingsPage(page, 'Configure')
   // A half-hour shift at the peak, so one person covers exactly the 10:00 the forecast needs. A
   // whole-day shift would add more people than the half-hour is worth, and the optimiser rightly
   // declines (a half-hour short weighs three times a half-hour over, not seventeen).

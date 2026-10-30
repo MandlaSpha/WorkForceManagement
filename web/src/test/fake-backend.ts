@@ -1757,6 +1757,8 @@ export const handlers = [
       colleague: false,
     }
     backend.swaps = [...backend.swaps, created]
+    // As on the server, a shift that is in an open swap is no longer offered for a new one.
+    backend.myShifts = backend.myShifts.filter((s) => s.assignmentId !== sent.giveAssignmentId)
     return HttpResponse.json(created, { status: 201 })
   }),
 

@@ -50,6 +50,15 @@ describe('the audit log screen', () => {
     expect(screen.getByTestId('audit-count')).toHaveTextContent('1 event')
   })
 
+  it('makes the scrolling table reachable by keyboard and gives it a name', async () => {
+    // Failure caught: a sideways-scrolling region no keyboard user can focus (axe:
+    // scrollable-region-focusable).
+    await open([event(1)])
+    const region = await screen.findByRole('region', { name: 'Audit events table' })
+    expect(region).toHaveAttribute('tabindex', '0')
+    expect(within(region).getByTestId('audit-table')).toBeVisible()
+  })
+
   it('says the hash chain is intact', async () => {
     await open([event(1)])
     const box = await screen.findByTestId('chain-status')

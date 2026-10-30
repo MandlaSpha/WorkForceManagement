@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import { expectNoAccessibilityViolations, PASSWORD, signIn, signOut } from './helpers'
-import { rand } from './report'
+import { addDays, rand } from './report'
 
 /**
  * Quality results (QUA-01) and service metrics (KPI-01) against the real stack.
@@ -19,7 +19,8 @@ async function csrf(page: Page): Promise<string> {
   return (await page.context().cookies()).find((c) => c.name === 'csrftoken')?.value ?? ''
 }
 
-const today = (): string => new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
+const today = (): string =>
+  new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' })
 
 test('a planner loads quality results; the agent sees their own, nobody else sees them', async ({
   page,
@@ -99,7 +100,10 @@ test('service metrics show beside staffing and the cost is for pay roles only', 
   test.setTimeout(120_000)
   const run = rand(1_000_000)
   const pool = `E2E KPI p${run}`
-  const at = (n: number) => `${today()} 0${n}:00`
+  // Yesterday (this month), so the closing times are already past whatever the hour: the
+  // backlog counts what is still open now. On the 1st there is no earlier day in the month.
+  const day = today().endsWith('-01') ? today() : addDays(today(), -1)
+  const at = (n: number) => `${day} 0${n}:00`
   const csv = [
     'ref,pool,opened,closed,effort_minutes,fcr,csat,nps',
     `K${run}A,${pool},${at(1)},${at(5)},60,yes,5,10`,
@@ -132,6 +136,8 @@ test('service metrics show beside staffing and the cost is for pay roles only', 
   await page.getByRole('tab', { name: 'Service metrics' }).click()
   await expect(page.getByTestId('metrics-how')).toContainText('planners and admins only')
   await expect(page.getByTestId('service-metrics')).not.toContainText(/R\d/)
-  const report = await page.request.get(`/api/v1/service-kpis/report?month=${today().slice(0, 7)}-01`)
+  const report = await page.request.get(
+    `/api/v1/service-kpis/report?month=${today().slice(0, 7)}-01`,
+  )
   expect((await report.json()).costVisible).toBe(false)
 })

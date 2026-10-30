@@ -7,6 +7,7 @@ import {
   PASSWORD,
   signIn,
   signOut,
+  openSettingsPage,
 } from './helpers'
 import { addDays, rand } from './report'
 
@@ -65,7 +66,7 @@ test('shifts, people and a roster change the planner heatmap, and publishing loc
 
   await test.step('an admin adds a shift and confirms the queue assumptions', async () => {
     await signIn(page, 'admin')
-    await page.getByRole('link', { name: 'Configure' }).click()
+    await openSettingsPage(page, 'Configure')
     await page.getByLabel('Code').fill(shift)
     await page.getByRole('button', { name: 'Add shift' }).click()
     await page.getByLabel('Search shifts').fill(shift)

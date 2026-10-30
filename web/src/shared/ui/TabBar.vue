@@ -4,17 +4,23 @@ export interface Tab {
   label: string
 }
 
-const props = defineProps<{
-  tabs: ReadonlyArray<Tab>
-  /** Names the group of tabs for people who cannot see it. */
-  label: string
-  /** Prefix for the element ids: the tab is `${idPrefix}-tab-${key}`, its panel should be
-   * `${idPrefix}-panel-${key}` so the two point at each other. */
-  idPrefix: string
-  /** `underline` is the classic strip; `pill` is the segmented control: a soft rounded track
-   * with the chosen tab raised on it. Same roles, keys and ids either way. */
-  variant?: 'underline' | 'pill'
-}>()
+const props = withDefaults(
+  defineProps<{
+    tabs: ReadonlyArray<Tab>
+    /** Names the group of tabs for people who cannot see it. */
+    label: string
+    /** Prefix for the element ids: the tab is `${idPrefix}-tab-${key}`, its panel should be
+     * `${idPrefix}-panel-${key}` so the two point at each other. */
+    idPrefix: string
+    /** False when the tabs only choose a view of the same content (a sort order) and have no panel
+     * of their own: then no `aria-controls` is written, since it would name an id that is not there. */
+    panels?: boolean
+    /** `underline` is the classic strip; `pill` is the segmented control: a soft rounded track
+     * with the chosen tab raised on it. Same roles, keys and ids either way. */
+    variant?: 'underline' | 'pill'
+  }>(),
+  { panels: true, variant: 'underline' },
+)
 const model = defineModel<string>({ required: true })
 
 /** Arrow keys, Home and End move between tabs, as the tabs pattern asks. Only the chosen tab is
@@ -76,7 +82,7 @@ function onKey(event: KeyboardEvent): void {
             ],
       ]"
       :aria-selected="model === t.key"
-      :aria-controls="`${idPrefix}-panel-${t.key}`"
+      :aria-controls="panels === false ? undefined : `${idPrefix}-panel-${t.key}`"
       :tabindex="model === t.key ? 0 : -1"
       @click="model = t.key"
       @keydown="onKey"

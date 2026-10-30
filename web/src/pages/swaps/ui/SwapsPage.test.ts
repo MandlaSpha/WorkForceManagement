@@ -3,6 +3,7 @@ import { screen, waitFor, within } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 
 import type { BoardEntry, Swap, SwapShift } from '@/entities/swap'
+import { expectAriaReferencesResolve } from '@/test/aria'
 import { backend } from '@/test/fake-backend'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
 import { boardOf, matchedOf, shiftOf, swapOf } from '@/test/swap-fixtures'
@@ -43,6 +44,23 @@ describe('posting a swap request', () => {
     expect(await screen.findByTestId('offer-result')).toHaveTextContent(
       /will not see your name until someone does/,
     )
+  })
+
+  it('keeps the answer on screen when posting uses up my last shift', async () => {
+    // Failure caught: the form being replaced by "no shifts" the moment the list empties, so the
+    // person's click appears to have done nothing.
+    const user = userEvent.setup()
+    seedScheduling()
+    backend.myShifts = [shiftOf()] // the only one
+    await openScheduling('/shift-swaps', 'agent')
+    const form = await screen.findByRole('form', { name: 'Post a shift swap' })
+    await within(form).findByRole('option', { name: /Mon 01 Jun, D1/ })
+    await user.click(within(form).getByRole('button', { name: 'Post swap request' }))
+    expect(await screen.findByTestId('offer-result')).toHaveTextContent(/Posted:/)
+    await waitFor(() =>
+      expect(screen.queryByRole('form', { name: 'Post a shift swap' })).toBeNull(),
+    )
+    expect(screen.getByTestId('offer-result')).toBeVisible()
   })
 
   it('sends the shift I picked, not the first one', async () => {
@@ -272,5 +290,19 @@ describe('open team requests for the people who approve', () => {
     const row = await screen.findByTestId('open-7')
     expect(row).toHaveTextContent('Casey Teammate')
     expect(within(row).queryByRole('button')).toBeNull()
+  })
+})
+
+describe('accessibility references', () => {
+  it('points every tab, panel and label at an id that is on the page, in both views', async () => {
+    // Failure caught: the List tab naming a panel that was never rendered (axe:
+    // aria-valid-attr-value).
+    const user = userEvent.setup()
+    await open('lead')
+    await screen.findAllByRole('tabpanel')
+    expectAriaReferencesResolve()
+    await user.click(screen.getByRole('tab', { name: 'Board' }))
+    await screen.findAllByRole('tabpanel')
+    expectAriaReferencesResolve()
   })
 })

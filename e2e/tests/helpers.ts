@@ -19,8 +19,8 @@ export async function signIn(
   await page.getByRole('button', { name: 'Sign in' }).click()
   // The account card lives at the foot of the sidebar, which is a closed drawer on a phone, so
   // "signed in" means the card exists, not that it is on screen.
-  if (expectSuccess)
-    await expect(page.getByRole('button', { name: /^Account menu/ })).toBeAttached()
+  // (A closed drawer is `visibility: hidden`, which getByRole ignores, hence the attribute locator.)
+  if (expectSuccess) await expect(page.locator('button[aria-label^="Account menu"]')).toBeAttached()
 }
 
 /** Opens the account menu from the user card at the foot of the sidebar; on a phone the sidebar
@@ -68,4 +68,18 @@ export async function importDay(page: Page, date: string, queue: string): Promis
   await page.getByRole('button', { name: 'Import report' }).click()
   // Reading a workbook can take a few seconds on a busy machine.
   await expect(page.getByTestId('reconciles')).toBeVisible({ timeout: 20_000 })
+}
+
+/** Opens a screen from the Settings group at the foot of the sidebar (Configure, Users, Audit
+ * log...). The group is collapsed until asked, and a phone's sidebar is a drawer, so both are
+ * opened first. */
+export async function openSettingsPage(page: Page, name: string): Promise<void> {
+  const settings = page.getByRole('button', { name: /^Settings/ })
+  if (!(await settings.isVisible()))
+    await page.getByRole('button', { name: 'Open navigation' }).click()
+  if ((await settings.getAttribute('aria-expanded')) !== 'true') await settings.click()
+  await page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('link', { name })
+    .click()
 }

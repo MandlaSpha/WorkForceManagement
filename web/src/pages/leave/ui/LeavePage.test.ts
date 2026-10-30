@@ -2,6 +2,7 @@ import userEvent from '@testing-library/user-event'
 import { screen, waitFor, within } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 
+import { expectAriaReferencesResolve } from '@/test/aria'
 import { backend } from '@/test/fake-backend'
 import { balancesOf, impactOf, LEAVE_TYPES, requestOf } from '@/test/leave-fixtures'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
@@ -447,5 +448,19 @@ describe('who sees which tab', () => {
     expect(
       await screen.findByRole('heading', { name: "You don't have access to this page" }),
     ).toBeVisible()
+  })
+})
+
+describe('accessibility references', () => {
+  it('points every tab, panel and label at an id that is on the page, in both views', async () => {
+    // Failure caught: the List tab naming a panel that was never rendered (axe:
+    // aria-valid-attr-value).
+    const user = userEvent.setup()
+    await open('lead')
+    await screen.findAllByRole('tabpanel')
+    expectAriaReferencesResolve()
+    await user.click(screen.getByRole('tab', { name: 'Board' }))
+    await screen.findAllByRole('tabpanel')
+    expectAriaReferencesResolve()
   })
 })

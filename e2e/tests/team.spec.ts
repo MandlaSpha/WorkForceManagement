@@ -27,7 +27,11 @@ test('a planner sees the team grid, opens a person and gets the keyboard back', 
   expect(numbers.every(Boolean)).toBe(true)
 
   // No pay, and no wellbeing reason, anywhere on the grid.
-  await expect(page.getByRole('main')).not.toContainText(/overtime|salary|\bR\s?\d/i)
+  // (Person names in the demo data can contain words like "Overtime", so this looks for pay
+  // wording and amounts, not for the bare word.)
+  await expect(page.getByRole('main')).not.toContainText(
+    /salary|hourly|per hour|overtime (hours|pay)|\bZAR\b|\bR\s\d/i,
+  )
   await expectNoAccessibilityViolations(page)
 
   await cards.first().focus()
@@ -53,14 +57,25 @@ test('the team endpoint serves a lead, a planner and an admin, and nobody else',
     ['admin', 200],
     ['agent', 403],
     ['executive', 403],
-    ['customer_ops', 403],
+    ['customerops', 403],
   ] as const) {
     await signIn(page, username)
     const response = await page.request.get('/api/v1/people/team-overview')
     expect(response.status(), username).toBe(status)
     if (status === 200) {
       // Pay never travels with a team card.
-      expect(JSON.stringify(await response.json())).not.toMatch(/rate|salary|overtime|cost/i)
+      // Judged on the field names, not the values: demo people have names like "Olly Overtime".
+      const keys = new Set<string>()
+      const walk = (node: unknown): void => {
+        if (Array.isArray(node)) node.forEach(walk)
+        else if (node && typeof node === 'object')
+          for (const [key, value] of Object.entries(node)) {
+            keys.add(key)
+            walk(value)
+          }
+      }
+      walk(await response.json())
+      expect([...keys].filter((key) => /rate|salary|overtime|cost|pay/i.test(key))).toEqual([])
     }
     await signOut(page)
   }
