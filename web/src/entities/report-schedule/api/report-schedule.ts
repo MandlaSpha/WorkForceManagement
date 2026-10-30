@@ -38,3 +38,6 @@ export async function saveAllowedDomains(allowedDomains: string[]): Promise<stri
   return unwrap(await api.PUT('/api/v1/reports/settings', { body: { allowedDomains } }))
     .allowedDomains
 }
+
+/** The address of the CSV of the schedules this person may see. */
+export const schedulesCsvUrl = '/api/v1/reports/schedules.csv'

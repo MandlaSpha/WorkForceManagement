@@ -1061,7 +1061,7 @@ export const handlers = [
       hour: Number(sent.hour),
       weekday: Number(sent.weekday),
       dayOfMonth: Number(sent.dayOfMonth),
-      paused: false,
+      paused: sent.paused === true,
       lastSentAt: null,
       lastOutcome: '',
       mine: true,

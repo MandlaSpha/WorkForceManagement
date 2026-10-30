@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-import { useScorecard, type ScorecardItem } from '@/entities/scorecard'
+import { scorecardCsvUrl, useScorecard, type ScorecardItem } from '@/entities/scorecard'
 import { problemMessage } from '@/shared/api'
 import { NAV_ITEMS } from '@/shared/config'
 import { formatDayLabel } from '@/shared/lib/datetime'
@@ -31,6 +31,7 @@ watch(choice, (key) => {
   to.value = today
 })
 const card = useScorecard(from, to)
+const csvUrl = computed(() => scorecardCsvUrl(from.value, to.value))
 
 const BASIS: Record<string, { label: string; tone: string }> = {
   measured: { label: 'Measured', tone: 'bg-brand-soft text-brand-ink' },
@@ -139,6 +140,15 @@ const totalCalls = computed(() => days.value.reduce((sum, d) => sum + d.offered,
           />
         </label>
       </template>
+      <a
+        v-if="from <= to"
+        :href="csvUrl"
+        download
+        class="ml-auto text-sm font-medium text-brand-ink underline"
+        data-testid="scorecard-csv"
+      >
+        Download as CSV
+      </a>
     </div>
 
     <NoticeBox v-if="from > to" tone="warn">The start date is after the end date.</NoticeBox>

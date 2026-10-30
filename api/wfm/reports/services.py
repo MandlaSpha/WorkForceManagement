@@ -137,6 +137,7 @@ def create(
     hour: int,
     weekday: int = 0,
     day_of_month: int = 1,
+    paused: bool = False,
 ) -> ReportSchedule:
     queue = _check_shape(user, report, queue_id, frequency, hour, weekday, day_of_month)
     with transaction.atomic():
@@ -153,6 +154,7 @@ def create(
             hour=hour,
             weekday=weekday,
             day_of_month=day_of_month,
+            paused=paused,
         )
         audit.record(  # last write of the transaction
             actor=user,

@@ -372,6 +372,7 @@ Requirements RPT-04 and RPT-10. App `wfm.reports`, feature `insight`; Insight > 
 - **It stops** if the owner is deactivated (paused, outcome "stopped", audited). A failure (no allowed recipient, or the mail server) marks that schedule failed and audits it with a generic reason; it never stops the others.
 - **Audit:** `report.schedule_created/changed/deleted`, `report.sent`, `report.failed`, `report.stopped`, `report.domains_changed`. They hold counts and the domain list, never an address or a figure.
 - Only the owner changes what a schedule sends or to whom; the admin can list all schedules (told whose), pause and delete, but not redirect or read one.
+- **CSV downloads and paused start (30 Oct 2026).** `GET /insight/scorecard.csv?date_from&date_to` (same roles, scoping and range limits as the scorecard; the money figure is left out) and `GET /reports/schedules.csv` (same visibility as the list; the owner column is filled for the admin only). Both are built by `wfm_engine.payroll.to_csv`, so a cell starting `=`, `+`, `-` or `@` is prefixed with an apostrophe. `POST /reports/schedules` takes `paused` (default false) so a schedule can be made switched off. On the screen, each report-type radio is named by its title only; the line about what it holds is its description.
 - Outgoing mail uses `WFM_EMAIL_*` settings (console in development; the SMTP password is named by environment variable). Not built: PDF packs, a send-now button.
 
 ### 4.13 Intraday (Phase 5, built in part)

@@ -58,6 +58,14 @@ async function open(role = 'executive', over: Partial<Scorecard> = {}) {
 }
 
 describe('analytics', () => {
+  it('links to the CSV of the range on show', async () => {
+    await open()
+    const link = await screen.findByTestId('scorecard-csv')
+    expect(link.getAttribute('href')).toMatch(
+      /^\/api\/v1\/insight\/scorecard\.csv\?date_from=\d{4}-\d\d-\d\d&date_to=\d{4}-\d\d-\d\d$/,
+    )
+  })
+
   it('labels each figure by where it comes from', async () => {
     // Failure caught: a modelled or missing figure passing as a measurement.
     await open()

@@ -5,6 +5,7 @@ import { useQueues } from '@/entities/call-data'
 import {
   OUTCOME_LABEL,
   REPORT_LABEL,
+  schedulesCsvUrl,
   useAllowedDomains,
   useSchedules,
   whenLabel,
@@ -74,6 +75,15 @@ const outcomeChip = (o: string) =>
       >
         {{ isAdmin ? 'All schedules' : 'Your schedules' }}
       </h2>
+      <a
+        v-if="rows.length > 0"
+        :href="schedulesCsvUrl"
+        download
+        class="mx-5 mt-1 inline-block text-sm font-medium text-brand-ink underline sm:mx-6"
+        data-testid="schedules-csv"
+      >
+        Download as CSV
+      </a>
       <div v-if="schedules.isPending.value" class="space-y-2 p-5" data-testid="schedules-loading">
         <span class="sr-only">Loading…</span>
         <div v-for="n in 3" :key="n" class="skeleton h-12"></div>
