@@ -3524,6 +3524,103 @@
         "title": "FilterIn",
         "type": "object"
       },
+      "FlexAppliedOut": {
+        "properties": {
+          "applied": {
+            "title": "Applied",
+            "type": "boolean"
+          },
+          "closes": {
+            "title": "Closes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "applied",
+          "closes"
+        ],
+        "title": "FlexAppliedOut",
+        "type": "object"
+      },
+      "FlexApplyIn": {
+        "properties": {
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "queueId": {
+            "title": "Queueid",
+            "type": "integer"
+          },
+          "weekStart": {
+            "format": "date",
+            "title": "Weekstart",
+            "type": "string"
+          }
+        },
+        "required": [
+          "queueId",
+          "weekStart",
+          "employeeId",
+          "day"
+        ],
+        "title": "FlexApplyIn",
+        "type": "object"
+      },
+      "FlexOut": {
+        "properties": {
+          "addsOver": {
+            "title": "Addsover",
+            "type": "integer"
+          },
+          "closes": {
+            "title": "Closes",
+            "type": "integer"
+          },
+          "day": {
+            "format": "date",
+            "title": "Day",
+            "type": "string"
+          },
+          "employee": {
+            "title": "Employee",
+            "type": "string"
+          },
+          "employeeId": {
+            "title": "Employeeid",
+            "type": "integer"
+          },
+          "fromQueue": {
+            "title": "Fromqueue",
+            "type": "string"
+          },
+          "shift": {
+            "title": "Shift",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "employeeId",
+          "employee",
+          "fromQueue",
+          "day",
+          "shift",
+          "closes",
+          "addsOver",
+          "text"
+        ],
+        "title": "FlexOut",
+        "type": "object"
+      },
       "ForecastIntervalOut": {
         "properties": {
           "ahtS": {
@@ -16233,6 +16330,94 @@
           }
         ],
         "summary": "Link an employee to the login they sign in with, or unlink it",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/flex": {
+      "get": {
+        "operationId": "wfm_scheduling_flex_api_list_flex",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "queue_id",
+            "required": true,
+            "schema": {
+              "title": "Queue Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "week_start",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "Week Start",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FlexOut"
+                  },
+                  "title": "Response",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "People to borrow across queues",
+        "tags": [
+          "scheduling"
+        ]
+      }
+    },
+    "/api/v1/scheduling/flex/apply": {
+      "post": {
+        "operationId": "wfm_scheduling_flex_api_apply_flex",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlexApplyIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlexAppliedOut"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "security": [
+          {
+            "RoleSessionAuth": []
+          }
+        ],
+        "summary": "Borrow one person",
         "tags": [
           "scheduling"
         ]

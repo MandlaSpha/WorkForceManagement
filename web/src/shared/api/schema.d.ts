@@ -1857,6 +1857,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scheduling/flex": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** People to borrow across queues */
+        get: operations["wfm_scheduling_flex_api_list_flex"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/scheduling/flex/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Borrow one person */
+        post: operations["wfm_scheduling_flex_api_apply_flex"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scheduling/overview": {
         parameters: {
             query?: never;
@@ -3917,6 +3951,52 @@ export interface components {
             since?: string | null;
             /** Until */
             until?: string | null;
+        };
+        /** FlexAppliedOut */
+        FlexAppliedOut: {
+            /** Applied */
+            applied: boolean;
+            /** Closes */
+            closes: number;
+        };
+        /** FlexApplyIn */
+        FlexApplyIn: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Queueid */
+            queueId: number;
+            /**
+             * Weekstart
+             * Format: date
+             */
+            weekStart: string;
+        };
+        /** FlexOut */
+        FlexOut: {
+            /** Addsover */
+            addsOver: number;
+            /** Closes */
+            closes: number;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Employee */
+            employee: string;
+            /** Employeeid */
+            employeeId: number;
+            /** Fromqueue */
+            fromQueue: string;
+            /** Shift */
+            shift: string;
+            /** Text */
+            text: string;
         };
         /** ForecastIntervalOut */
         ForecastIntervalOut: {
@@ -9560,6 +9640,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EmployeeOut"];
+                };
+            };
+        };
+    };
+    wfm_scheduling_flex_api_list_flex: {
+        parameters: {
+            query: {
+                queue_id: number;
+                week_start: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlexOut"][];
+                };
+            };
+        };
+    };
+    wfm_scheduling_flex_api_apply_flex: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlexApplyIn"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlexAppliedOut"];
                 };
             };
         };

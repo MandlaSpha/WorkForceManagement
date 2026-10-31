@@ -7,6 +7,7 @@ import {
   fetchEmployees,
   fetchOverview,
   fetchPlan,
+  fetchFlex,
   fetchRecommendations,
   fetchRoster,
   fetchShifts,
@@ -21,6 +22,7 @@ export const schedulingKeys = {
   rules: ['scheduling', 'rules'] as const,
   recommendations: (queueId: number, week: string) =>
     ['scheduling', 'recommendations', queueId, week] as const,
+  flex: (queueId: number, week: string) => ['scheduling', 'flex', queueId, week] as const,
   unmappedLogins: ['scheduling', 'unmapped-logins'] as const,
   employees: (queueId: number | null, credential: string | null = null) =>
     ['scheduling', 'employees', queueId, credential] as const,
@@ -83,6 +85,14 @@ export function useRecommendations(queueId: MaybeRef<number | null>, week: Maybe
   return useQuery({
     queryKey: computed(() => schedulingKeys.recommendations(toValue(queueId) ?? 0, toValue(week))),
     queryFn: () => fetchRecommendations(toValue(queueId) as number, toValue(week)),
+    enabled: computed(() => toValue(queueId) !== null),
+  })
+}
+
+export function useFlex(queueId: MaybeRef<number | null>, week: MaybeRef<string>) {
+  return useQuery({
+    queryKey: computed(() => schedulingKeys.flex(toValue(queueId) ?? 0, toValue(week))),
+    queryFn: () => fetchFlex(toValue(queueId) as number, toValue(week)),
     enabled: computed(() => toValue(queueId) !== null),
   })
 }

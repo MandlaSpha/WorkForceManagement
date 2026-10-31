@@ -3,6 +3,8 @@ import { api, unwrap } from '@/shared/api'
 import type {
   AutoScheduleProposal,
   Recommendation,
+  Flex,
+  FlexApply,
   RecommendationApply,
   AutoScheduleRequest,
   AutoScheduleJob,
@@ -179,6 +181,18 @@ export async function fetchRecommendations(
 
 export async function applyRecommendation(body: RecommendationApply): Promise<{ closes: number }> {
   return unwrap(await api.POST('/api/v1/scheduling/recommendations/apply', { body }))
+}
+
+export async function fetchFlex(queueId: number, weekStart: string): Promise<Flex[]> {
+  return unwrap(
+    await api.GET('/api/v1/scheduling/flex', {
+      params: { query: { queue_id: queueId, week_start: weekStart } },
+    }),
+  )
+}
+
+export async function applyFlex(body: FlexApply): Promise<{ closes: number }> {
+  return unwrap(await api.POST('/api/v1/scheduling/flex/apply', { body }))
 }
 
 export async function fetchActivities(

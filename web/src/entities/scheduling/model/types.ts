@@ -37,3 +37,6 @@ export interface AutoScheduleResult {
 }
 export type Recommendation = components['schemas']['RecommendationOut']
 export type RecommendationApply = components['schemas']['ApplyIn']
+/** Someone on another queue who could be borrowed for a shift (SCH-09). */
+export type Flex = components['schemas']['FlexOut']
+export type FlexApply = components['schemas']['FlexApplyIn']

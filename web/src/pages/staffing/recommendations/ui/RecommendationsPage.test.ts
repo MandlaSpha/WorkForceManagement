@@ -2,7 +2,7 @@ import userEvent from '@testing-library/user-event'
 import { screen, waitFor, within } from '@testing-library/vue'
 import { describe, expect, it } from 'vitest'
 
-import type { Recommendation } from '@/entities/scheduling'
+import type { Flex, Recommendation } from '@/entities/scheduling'
 import { backend } from '@/test/fake-backend'
 import { openScheduling, seedScheduling } from '@/test/open-scheduling'
 
@@ -92,6 +92,79 @@ describe('recommendations', () => {
   it('says so when there is nothing to suggest', async () => {
     await open('planner', [])
     expect(await screen.findByTestId('rec-none')).toBeVisible()
+  })
+})
+
+const borrow = (over: Partial<Flex> = {}): Flex => ({
+  employeeId: 9,
+  employee: 'Bo Flex',
+  fromQueue: 'QueueB',
+  day: '2026-05-27',
+  shift: 'D1',
+  closes: 6,
+  addsOver: 0,
+  text: 'Borrow Bo Flex (D1) from QueueB on Wed 27 May: closes 6 half-hours short.',
+  ...over,
+})
+
+describe('borrowing from other queues (SCH-09)', () => {
+  it('lists the people another queue can spare, each with where they come from', async () => {
+    seedScheduling()
+    backend.flex = [borrow()]
+    await openScheduling('/recommendations', 'planner')
+    const list = await screen.findByRole('list', { name: 'People to borrow' })
+    const item = within(list).getByTestId('flex-0')
+    expect(item).toHaveTextContent('From QueueB')
+    expect(item).toHaveTextContent('Borrow Bo Flex (D1) from QueueB on Wed 27 May')
+    expect(item).toHaveTextContent('closes 6')
+  })
+
+  it('borrows exactly the person shown, with the CSRF token, and they leave the list', async () => {
+    // Failure caught: moving a different person or day than the one clicked.
+    const user = userEvent.setup()
+    seedScheduling()
+    backend.flex = [borrow(), borrow({ employeeId: 10, employee: 'Cy Other', text: 'Second' })]
+    await openScheduling('/recommendations', 'planner')
+    await user.click(await screen.findByRole('button', { name: 'Borrow Bo Flex from QueueB' }))
+    await waitFor(() => expect(backend.writes).toHaveLength(1))
+    expect(backend.writes[0]).toEqual({
+      method: 'POST',
+      path: '/api/v1/scheduling/flex/apply',
+      body: { queueId: 1, weekStart: '2026-05-25', employeeId: 9, day: '2026-05-27' },
+      csrf: 'test-csrf-token',
+    })
+    await waitFor(() => expect(screen.queryByText(/Borrow Bo Flex/)).toBeNull())
+    expect(screen.getByText('Second')).toBeVisible()
+  })
+
+  it('says why a borrow was refused and keeps the suggestion', async () => {
+    const user = userEvent.setup()
+    seedScheduling()
+    backend.flex = [borrow()]
+    await openScheduling('/recommendations', 'planner')
+    backend.nextProblem = {
+      status: 409,
+      code: 'flex.stale',
+      title: 'Suggestion refused',
+      detail: 'That suggestion no longer applies: the rosters have changed.',
+    }
+    await user.click(await screen.findByRole('button', { name: 'Borrow Bo Flex from QueueB' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent('no longer applies')
+    expect(screen.getByText(/Borrow Bo Flex/)).toBeVisible()
+  })
+
+  it('says a published week is locked instead of showing an error', async () => {
+    seedScheduling()
+    backend.plan = { ...backend.plan!, rosterStatus: 'published' }
+    await openScheduling('/recommendations', 'planner')
+    expect(await screen.findByTestId('rec-published')).toHaveTextContent('published')
+    expect(screen.queryByTestId('flex-section')).toBeNull()
+  })
+
+  it('says so when nobody can be spared', async () => {
+    seedScheduling()
+    await openScheduling('/recommendations', 'planner')
+    expect(await screen.findByTestId('flex-none')).toBeVisible()
   })
 })
 

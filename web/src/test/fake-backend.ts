@@ -35,6 +35,7 @@ import type { AdminUser } from '@/entities/user-admin'
 import type { AuditChain, AuditEvent } from '@/entities/audit-log'
 import type {
   AutoScheduleProposal,
+  Flex,
   Recommendation,
   ComplianceRulesState,
   EmployeeImportReport,
@@ -186,6 +187,7 @@ export const backend = {
   autoSkipped: {} as Record<string, number>,
   /** Recommendations for the chosen queue and week; applying one takes it off the list. */
   recommendations: [] as Recommendation[],
+  flex: [] as Flex[],
   /** Overtime requests as the signed-in person may see them, and who has a salary on file. */
   overtime: [] as Overtime[],
   /** Planned shrinkage by team, and the months asked for. */
@@ -421,6 +423,7 @@ export const backend = {
     }
     this.autoSkipped = {}
     this.recommendations = []
+    this.flex = []
     this.employeeImport = null
     this.employeeImports = []
     this.unmapped = []
@@ -579,8 +582,8 @@ export const handlers = [
   http.get('*/api/v1/forecasting/accuracy', () =>
     backend.accuracy
       ? HttpResponse.json(backend.accuracy)
-      : problem(404, 'resource.not_found', 'Not found'),
-  ),
+      : problem(404, 'resource.not_found', 'Not found')
+  }),
 
   http.post('*/api/v1/forecasting/versions/jobs', async ({ request }) => {
     const csrf = request.headers.get('X-CSRFToken')
@@ -1040,6 +1043,27 @@ export const handlers = [
     )
     backend.recommendations = backend.recommendations.filter((r) => r !== applied)
     return HttpResponse.json({ applied: true, closes: applied?.closes ?? 0 })
+  }),
+
+  http.get('*/api/v1/scheduling/flex', () => HttpResponse.json(backend.flex)),
+
+  http.post('*/api/v1/scheduling/flex/apply', async (info) => {
+    const sent = (await info.request.clone().json()) as { employeeId: number; day: string }
+    const response = await schedulingWrite(info, 'POST')
+    if (!response.ok) return response
+    const taken = backend.flex.find((f) => f.employeeId === sent.employeeId && f.day === sent.day)
+    if (!taken) {
+      return HttpResponse.json(
+        {
+          code: 'flex.stale',
+          title: 'Suggestion refused',
+          detail: 'That suggestion no longer applies.',
+        },
+        { status: 409 },
+      )
+    }
+    backend.flex = backend.flex.filter((f) => f !== taken)
+    return HttpResponse.json({ applied: true, closes: taken.closes })
   }),
 
   http.get('*/api/v1/scheduling/compliance-rules', () => HttpResponse.json(backend.rules)),
