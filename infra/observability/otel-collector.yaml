@@ -1,0 +1,74 @@
+# OpenTelemetry Collector for the optional Grafana stack (requirement OBS-11, ADR 0004).
+#
+# The API and worker send a second copy of their spans here (WFM_OTEL_MIRROR_ENDPOINT, port 4318),
+# beside the Aspire dashboard. Traces go to Jaeger; the same spans are also turned into request
+# metrics (rate, errors, latency by route and role) for Prometheus.
+#
+# POPIA (OBS-04 to OBS-10): the application already keeps people out of spans. The processor below is
+# a second line of defence, so a future instrumentation that adds an identity attribute is dropped
+# here before anything is stored. Metric labels are limited to the role, the route template, the
+# method and the status: never a user, a name, a query string or a value.
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+  attributes/scrub:
+    actions:
+      - { key: enduser.id, action: delete }
+      - { key: enduser.role, action: delete }
+      - { key: user.id, action: delete }
+      - { key: user.name, action: delete }
+      - { key: user.email, action: delete }
+      - { key: http.request.header.cookie, action: delete }
+      - { key: http.request.header.authorization, action: delete }
+      - { key: http.request.header.x-csrftoken, action: delete }
+      - { key: http.response.header.set-cookie, action: delete }
+      - { key: url.query, action: delete }
+      # A caller's address and browser can single a person out; the API blanks them already.
+      - { key: net.peer.ip, action: delete }
+      - { key: net.sock.peer.addr, action: delete }
+      - { key: http.client_ip, action: delete }
+      - { key: client.address, action: delete }
+      - { key: http.user_agent, action: delete }
+      - { key: user_agent.original, action: delete }
+  batch: {}
+
+connectors:
+  spanmetrics:
+    namespace: wfm
+    metrics_flush_interval: 15s
+    histogram:
+      explicit:
+        buckets: [10ms, 50ms, 100ms, 250ms, 500ms, 1s, 2.5s, 5s, 10s]
+    dimensions:
+      - name: wfm.role
+      - name: http.route
+      # The attribute names the Django instrumentation emits today (older conventions).
+      - name: http.method
+      - name: http.status_code
+
+exporters:
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes/scrub, batch]
+      exporters: [otlp/jaeger, spanmetrics]
+    metrics:
+      receivers: [spanmetrics]
+      exporters: [prometheus]

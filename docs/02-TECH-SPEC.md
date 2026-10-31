@@ -786,7 +786,29 @@ What exists: browser → API → Celery worker → PostgreSQL as one trace (OBS-
   - The fetch instrumentation names spans `GET`/`POST` (not `HTTP GET`) with `url.full`, `http.request.method` and keeps a span open about 300 ms after the response, so tests must wait for spans.
   - `openapi-fetch` and tracing both rely on `fetch` being resolved per call (see 9.2).
 - **`POST /api/v1/system/ping-worker`** (admin) round-trips a task through Valkey and Celery, which also runs a database query, and returns the API and worker trace ids. Both must equal the browser's; the e2e test asserts it. It doubles as an "is the worker alive" check. Valkey now also serves as Celery's result backend (results expire after one hour).
-- **Not built yet:** metrics (Prometheus), Jaeger or another long-term trace store, the collector's PII-stripping stage, per-user-action root spans, retention settings, and the privacy-safe usage-event tracker (separate pipeline, OBS-03 to OBS-09).
+- **Not built yet:** per-user-action root spans, retention settings, log export, and the privacy-safe usage-event tracker (separate pipeline, OBS-03 to OBS-09). Metrics, a trace store and a collector stage that strips personal attributes exist as an optional development stack: section 9.4.
+
+### 9.4 Operations dashboards in Grafana (OBS-11; development stack, built in part, 31 Oct 2026)
+
+Decision record: `docs/adr/0004-grafana-operations-dashboards.md` (status Proposed: legal confirmation of Grafana's AGPL-3.0 position is still open, so this is development-only and opt-in).
+
+`just dev-grafana` (`WFM_GRAFANA=1`) starts, beside the normal stack, an OpenTelemetry Collector, Jaeger, Prometheus and Grafana (http://localhost:3000, anonymous, this machine only). Without the flag none of it exists and nothing changes. Config is in `infra/observability/`.
+
+```mermaid
+flowchart LR
+    API["API + worker<br/>(scrubbed spans)"] -->|"OTEL_EXPORTER_OTLP_* (Aspire)"| AD["Aspire dashboard"]
+    API -->|"WFM_OTEL_MIRROR_ENDPOINT<br/>(second copy, :4318)"| COL["OpenTelemetry Collector<br/>scrub, spanmetrics"]
+    COL --> JG["Jaeger (traces)"]
+    COL -->|"request metrics"| PR["Prometheus"]
+    JG --> GF["Grafana"]
+    PR --> GF
+```
+
+- **Second copy of the spans.** `WFM_OTEL_MIRROR_ENDPOINT` adds a second OTLP/HTTP processor to the same tracer provider (`wfm/core/telemetry.py`), so the collector gets exactly the scrubbed spans the dashboard gets. It never switches telemetry on by itself and ignores anything that is not an http(s) URL. (The collector cannot sit in front of the Aspire dashboard, which only listens on localhost.) The browser's spans still go only to the dashboard.
+- **Metrics from spans.** The collector's `spanmetrics` connector produces `wfm_calls_total` and `wfm_duration_milliseconds` with only these labels: service, span kind, route template, HTTP method, status code and the signed-in person's role (never who). The dashboard "API health" (Grafana folder Gijima WFM, provisioned from `grafana/dashboards/api-health.json`) shows requests per second, server errors, median and p95 latency, by route, status and role, background work and the slowest routes. Its queries are plain PromQL.
+- **Personal data.** Checking real traces found that the Django instrumentation records the caller's IP address (`net.peer.ip`) and user agent on every server span, which the earlier scrubbing (browser side only) did not remove. The API now blanks both and the other client-address attributes in the response hook (a test searches spans for a unique address and agent string), and the collector deletes them again, with other identity-looking attributes and query strings, before anything is stored. A check against stored traces and Prometheus labels found none.
+- **Licences.** Grafana OSS is the only AGPL component (separate, unmodified container); Jaeger, Prometheus and the Collector are Apache-2.0. Tempo and Loki (also AGPL) are not used; each would be added to the ADR if chosen.
+- **Not built yet:** logs (the application does not export them; Loki is AGPL), browser spans in Grafana, alert rules, retention settings (OBS-08), a hosted deployment of the stack (needs the legal confirmation), and re-export of OTLP to the customer's own tools.
 
 ## 10. Identity and sign-in as built (AUTH-01 to AUTH-15; verified 13 Oct 2026)
 

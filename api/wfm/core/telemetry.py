@@ -6,7 +6,8 @@ usernames, passwords, pay values, query strings or SQL parameter values. The use
 in the audit trail, which is a separate system (system design section 7.1).
 
 Configuration is by the standard OTEL_* environment variables, which Aspire sets in development.
-With no exporter endpoint configured, telemetry is simply off.
+With no exporter endpoint configured, telemetry is simply off. WFM_OTEL_MIRROR_ENDPOINT adds a
+second OTLP/HTTP destination for the same spans (the optional Grafana stack, OBS-11).
 """
 
 from __future__ import annotations
@@ -120,6 +121,25 @@ def _exporter_from_env() -> SpanExporter | None:
     return GrpcExporter()
 
 
+def _mirror_exporter() -> SpanExporter | None:
+    """A second OTLP/HTTP destination for the very same spans, from WFM_OTEL_MIRROR_ENDPOINT
+    (requirement OBS-11): the Grafana stack's collector, beside whatever the standard OTEL_*
+    variables point at (the Aspire dashboard in development). It is a second processor on the same
+    provider, so it sees exactly what the first one sees, spans already scrubbed at the source; it
+    never switches telemetry on by itself. None when unset or not an http(s) URL."""
+    endpoint = os.environ.get("WFM_OTEL_MIRROR_ENDPOINT", "").strip()
+    if not endpoint:
+        return None
+    if urlsplit(endpoint).scheme not in ("http", "https"):
+        log.warning("Ignoring WFM_OTEL_MIRROR_ENDPOINT: it must be an http(s) URL")
+        return None
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+        OTLPSpanExporter as HttpExporter,
+    )
+
+    return HttpExporter(endpoint=endpoint.rstrip("/") + "/v1/traces")
+
+
 def _ensure_provider(service_name: str, exporter: SpanExporter | None) -> TracerProvider | None:
     """Create and register the tracer provider once per process. A forked child (Celery
     prefork) gets its own, because exporter threads do not survive a fork."""
@@ -150,6 +170,9 @@ def _ensure_provider(service_name: str, exporter: SpanExporter | None) -> Tracer
         else BatchSpanProcessor(exporter)
     )
     provider.add_span_processor(processor)
+    mirror = _mirror_exporter()
+    if mirror is not None:
+        provider.add_span_processor(BatchSpanProcessor(mirror))
     try:
         trace.set_tracer_provider(provider)
     except Exception:

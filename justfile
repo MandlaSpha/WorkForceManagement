@@ -84,6 +84,16 @@ e2e:
 dev:
     dotnet run --project infra/aspire/WfmAppHost --launch-profile http
 
+# `dev` plus the optional Grafana operations dashboards (OBS-11): an OpenTelemetry Collector, Jaeger,
+# Prometheus and Grafana (http://localhost:3000, anonymous, this machine only). First start pulls the images.
+[windows]
+dev-grafana:
+    $env:WFM_GRAFANA = "1"; dotnet run --project infra/aspire/WfmAppHost --launch-profile http
+
+[unix]
+dev-grafana:
+    WFM_GRAFANA=1 dotnet run --project infra/aspire/WfmAppHost --launch-profile http
+
 # Everything CI runs (grows as security and CI-only checks are added).
 # The two halves are independent (lint/types/unit tests; API tests on their own Postgres), so they
 # run side by side. About 2 minutes instead of 5.

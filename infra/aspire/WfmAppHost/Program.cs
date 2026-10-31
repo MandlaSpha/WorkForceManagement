@@ -118,6 +118,50 @@ builder.AddPythonApp("seed-demo-data", apiDir, "manage.py")
     .WaitForCompletion(seed)
     .WithExplicitStart();
 
+// Optional operations dashboards (requirement OBS-11, ADR 0004): `just dev-grafana` sets WFM_GRAFANA=1.
+// The API and worker then send a second copy of their (already scrubbed) spans to an OpenTelemetry
+// Collector, which feeds Jaeger (traces) and Prometheus (request metrics derived from the spans);
+// Grafana shows them. Off by default: nothing here starts, and nothing changes, without the flag.
+// Grafana is AGPL-3.0 and runs as a separate, unmodified service. Development only: it is anonymous
+// and bound to this machine, like the Aspire dashboard.
+var withGrafana = builder.Configuration["WFM_GRAFANA"] == "1";
+string? otlpMirror = null;
+if (withGrafana)
+{
+    string Observability(params string[] parts) =>
+        Path.GetFullPath(Path.Combine([builder.AppHostDirectory, "..", "..", "observability", .. parts]));
+
+    var jaeger = builder.AddContainer("jaeger", "jaegertracing/jaeger", "2.5.0")
+        .WithHttpEndpoint(port: 16686, targetPort: 16686, name: "ui", isProxied: false)
+        .WithEndpoint(targetPort: 4317, name: "otlp-grpc", scheme: "http");
+
+    var collector = builder.AddContainer("otel-collector", "otel/opentelemetry-collector-contrib", "0.128.0")
+        .WithBindMount(Observability("otel-collector.yaml"), "/etc/otelcol-contrib/config.yaml", isReadOnly: true)
+        .WithHttpEndpoint(port: 4318, targetPort: 4318, name: "otlp-http", isProxied: false)
+        .WithEndpoint(targetPort: 8889, name: "metrics", scheme: "http")
+        .WaitFor(jaeger);
+
+    var prometheus = builder.AddContainer("prometheus", "prom/prometheus", "v3.4.0")
+        .WithBindMount(Observability("prometheus.yml"), "/etc/prometheus/prometheus.yml", isReadOnly: true)
+        .WithHttpEndpoint(port: 9090, targetPort: 9090, name: "ui", isProxied: false)
+        .WaitFor(collector);
+
+    builder.AddContainer("grafana", "grafana/grafana-oss", "12.0.2")
+        .WithBindMount(Observability("grafana", "provisioning"), "/etc/grafana/provisioning", isReadOnly: true)
+        .WithBindMount(Observability("grafana", "dashboards"), "/var/lib/grafana/dashboards", isReadOnly: true)
+        .WithEnvironment("GF_AUTH_ANONYMOUS_ENABLED", "true")
+        .WithEnvironment("GF_AUTH_ANONYMOUS_ORG_ROLE", "Admin")
+        .WithEnvironment("GF_AUTH_DISABLE_LOGIN_FORM", "true")
+        .WithEnvironment("GF_ANALYTICS_REPORTING_ENABLED", "false")
+        .WithEnvironment("GF_ANALYTICS_CHECK_FOR_UPDATES", "false")
+        .WithEnvironment("GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH", "/var/lib/grafana/dashboards/api-health.json")
+        .WithHttpEndpoint(port: 3000, targetPort: 3000, name: "ui", isProxied: false)
+        .WaitFor(prometheus);
+
+    // The API and worker run on the host, so they reach the collector through its published port.
+    otlpMirror = "http://localhost:4318";
+}
+
 var api = builder.AddPythonApp("api", apiDir, "manage.py")
     .WithUv()
     .WithArgs("runserver", "127.0.0.1:8000", "--noreload")
@@ -130,15 +174,17 @@ var api = builder.AddPythonApp("api", apiDir, "manage.py")
     .WaitForCompletion(seed)
     .WaitForCompletion(seedDirectory)
     .WaitFor(valkey);
+if (otlpMirror is not null) api.WithEnvironment("WFM_OTEL_MIRROR_ENDPOINT", otlpMirror);
 
 // Windows has no prefork pool, so the dev worker uses the solo pool.
-builder.AddPythonExecutable("worker", apiDir, "celery")
+var worker = builder.AddPythonExecutable("worker", apiDir, "celery")
     .WithUv()
     .WithArgs("-A", "config", "worker", "-l", "info", "-P", "solo")
     .WithEnvironment("DATABASE_URL", db.Resource.UriExpression)
     .WithEnvironment("WFM_BROKER_URL", valkey.Resource.UriExpression)
     .WaitForCompletion(migrate)
     .WaitFor(valkey);
+if (otlpMirror is not null) worker.WithEnvironment("WFM_OTEL_MIRROR_ENDPOINT", otlpMirror);
 
 // The Vue app. Vite proxies /api to the Django API so cookies stay same-origin.
 // The scheduler: runs the nightly audit hash-chain check (CELERY_BEAT_SCHEDULE in settings).

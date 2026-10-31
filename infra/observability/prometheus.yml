@@ -1,0 +1,8 @@
+# Prometheus for the optional Grafana stack (OBS-11): scrapes the request metrics the collector
+# derives from spans. Nothing else is scraped; there is no personal data in any label.
+global:
+  scrape_interval: 15s
+scrape_configs:
+  - job_name: wfm-spanmetrics
+    static_configs:
+      - targets: ["otel-collector:8889"]

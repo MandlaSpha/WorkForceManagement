@@ -233,3 +233,34 @@ def test_log_lines_carry_the_trace_id(spans: InMemorySpanExporter) -> None:
         record = logging.LogRecord("x", logging.INFO, __file__, 1, "msg", None, None)
         telemetry.TraceContextFilter().filter(record)
         assert record.trace_id == telemetry.trace_id_hex(span)  # type: ignore[attr-defined]
+
+
+class TestTheMirrorDestination:
+    """WFM_OTEL_MIRROR_ENDPOINT (OBS-11): the same spans to a second place, never on its own."""
+
+    def test_nothing_is_mirrored_unless_asked(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delenv("WFM_OTEL_MIRROR_ENDPOINT", raising=False)
+        assert telemetry._mirror_exporter() is None
+
+    def test_an_http_endpoint_gets_the_traces_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("WFM_OTEL_MIRROR_ENDPOINT", "http://localhost:4318/")
+        mirror = telemetry._mirror_exporter()
+        assert mirror is not None
+        # The exporter keeps its target in a private attribute; there is no public getter.
+        assert getattr(mirror, "_endpoint", "") == "http://localhost:4318/v1/traces"
+
+    @pytest.mark.parametrize("value", ["localhost:4318", "ftp://collector", "file:///tmp/x", "  "])
+    def test_anything_but_an_http_url_is_ignored(
+        self, value: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setenv("WFM_OTEL_MIRROR_ENDPOINT", value)
+        assert telemetry._mirror_exporter() is None
+
+    def test_a_mirror_alone_does_not_switch_telemetry_on(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # No standard OTLP variable: the primary exporter is None, so telemetry stays off.
+        monkeypatch.setenv("WFM_OTEL_MIRROR_ENDPOINT", "http://localhost:4318")
+        monkeypatch.delenv("OTEL_EXPORTER_OTLP_ENDPOINT", raising=False)
+        monkeypatch.delenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", raising=False)
+        assert telemetry._exporter_from_env() is None
