@@ -96,8 +96,9 @@ describe('importing a report', () => {
     await pick(user, chooser)
     await importNow(user)
 
-    const table = within(await screen.findByRole('table'))
-    expect(table.getByText('may.xlsx')).toBeVisible()
+    // The success card has its own sheet table, so look only inside the history section.
+    const history = within(await screen.findByRole('region', { name: 'Previous imports' }))
+    expect(await history.findByText('may.xlsx')).toBeVisible()
   })
 })
 
