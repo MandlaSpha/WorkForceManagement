@@ -13,8 +13,9 @@ class RunForecastIn(Schema):
     dateFrom: date  # noqa: N815
     dateTo: date  # noqa: N815
     label: str = Field("", max_length=100)
-    # "prophet" is used only where it beats the baseline on past days (ADR 0002).
-    method: Literal["baseline", "prophet"] = "baseline"
+    # "prophet" is used only where it beats the baseline on past days (ADR 0002). "smoothed" is
+    # the baseline made steadier for small queues (tech spec 4.3): day level and a pooled shape.
+    method: Literal["baseline", "smoothed", "prophet"] = "baseline"
 
 
 class ForecastVersionOut(Schema):

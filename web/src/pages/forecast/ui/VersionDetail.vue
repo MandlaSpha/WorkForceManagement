@@ -79,6 +79,7 @@ const appliedEvents = computed(() => {
   return all.filter((e) => e.days.includes(day.value))
 })
 const usedProphet = computed(() => props.version.method.startsWith('prophet'))
+const usedSmoothed = computed(() => props.version.method.startsWith('smoothed'))
 const fallbackMessage = computed(() => {
   const message = props.version.fallback?.message
   return typeof message === 'string' ? message : null
@@ -223,7 +224,13 @@ const chartSummary = computed(
           the baseline, which is why it was used. It forecasts each day's total; the total is then
           spread over the half-hours in the shape of recent days.
         </p>
-        <p class="mt-1" data-testid="evidence">
+        <p v-if="usedSmoothed" class="mt-1" data-testid="model">
+          Model: Smoothed. Half of each day's total follows the recent same weekdays and half the
+          usual level of weekdays (weekends are kept apart), so one odd day moves it less. Where in
+          the day the calls fall is pooled over about eight weeks of days of the same kind. Agents
+          to roster include {{ number('shrinkagePct') }}% shrinkage.
+        </p>
+        <p v-if="!usedSmoothed" class="mt-1" data-testid="evidence">
           Daily shape from the {{ evidence }} most recent earlier
           {{ evidence === 1 ? 'day' : 'days' }} with the same weekday that have call data. Agents to
           roster include {{ number('shrinkagePct') }}% shrinkage.

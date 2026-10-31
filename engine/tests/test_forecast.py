@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, timedelta
+from typing import ClassVar
 
 import pytest
 
@@ -12,6 +13,7 @@ from wfm_engine.forecast import (
     backtest_with,
     baseline_day,
     bias_pct,
+    smoothed_day,
     spread_day_total,
 )
 
@@ -315,3 +317,122 @@ class TestBias:
         result = backtest_with(history, observed, always_ten)
         # forecast 30, actual 40 -> 25% too low
         assert result.bias_pct == pytest.approx(-25.0)
+
+
+class TestSmoothedDay:
+    """`smoothed_day`: the day's total is half the baseline's and half the usual weekday level, and
+    the shape of the day is pooled over many days. All hand-worked with equal weights."""
+
+    # Three Mondays of 100 calls, then a Tuesday of 200 and a Wednesday of 300, all at 10:00.
+    # Target: Monday 25 May. Baseline total: 100. Weekday level: (100*3 + 200 + 300) / 5 = 160.
+    WEEKDAYS = [row(d, 100) for d in (MON_4, MON_11, MON_18)] + [
+        row(date(2026, 5, 19), 200),
+        row(date(2026, 5, 20), 300),
+    ]
+    EQUAL: ClassVar[dict[str, float]] = {"decay": 1.0, "level_decay": 1.0}
+
+    @staticmethod
+    def days_of(history: list[SlotHistory]) -> set[date]:
+        return {r.day for r in history}
+
+    def test_the_total_is_half_baseline_half_weekday_level(self):
+        forecast = smoothed_day(self.WEEKDAYS, self.days_of(self.WEEKDAYS), MON_25, **self.EQUAL)
+        assert forecast is not None
+        # 0.5 * 100 (the Mondays) + 0.5 * 160 (every weekday so far) = 130
+        assert slot_of(forecast).volume == pytest.approx(130.0)
+
+    def test_all_weight_on_the_baseline_gives_the_baseline_total(self):
+        forecast = smoothed_day(
+            self.WEEKDAYS, self.days_of(self.WEEKDAYS), MON_25, level_weight=0.0, **self.EQUAL
+        )
+        assert forecast is not None
+        assert slot_of(forecast).volume == pytest.approx(100.0)
+
+    def test_all_weight_on_the_level_gives_the_weekday_level(self):
+        forecast = smoothed_day(
+            self.WEEKDAYS, self.days_of(self.WEEKDAYS), MON_25, level_weight=1.0, **self.EQUAL
+        )
+        assert forecast is not None
+        assert slot_of(forecast).volume == pytest.approx(160.0)
+
+    def test_a_weekend_does_not_move_a_weekday(self):
+        with_weekend = [*self.WEEKDAYS, row(date(2026, 5, 23), 500), row(date(2026, 5, 24), 500)]
+        forecast = smoothed_day(with_weekend, self.days_of(with_weekend), MON_25, **self.EQUAL)
+        assert forecast is not None
+        assert slot_of(forecast).volume == pytest.approx(130.0)
+
+    def test_a_saturday_is_forecast_from_saturdays_only(self):
+        history = [*self.WEEKDAYS, row(date(2026, 5, 9), 40), row(date(2026, 5, 16), 60)]
+        forecast = smoothed_day(history, self.days_of(history), date(2026, 5, 23), **self.EQUAL)
+        assert forecast is not None
+        assert slot_of(forecast).volume == pytest.approx(50.0)  # (40 + 60) / 2, both ways
+
+    def test_it_never_peeks_at_the_target_or_later(self):
+        peeking = [*self.WEEKDAYS, row(MON_25, 9_999), row(date(2026, 5, 26), 9_999)]
+        forecast = smoothed_day(peeking, self.days_of(peeking), MON_25, **self.EQUAL)
+        assert forecast is not None
+        assert slot_of(forecast).volume == pytest.approx(130.0)
+
+    def test_the_day_is_spread_over_the_pooled_shape_and_adds_up_to_its_total(self):
+        history = [
+            row(MON_4, 60, slot=20),
+            row(MON_4, 40, slot=22),
+            row(MON_11, 20, slot=20),
+            row(MON_11, 80, slot=22),
+            row(MON_18, 50, slot=20),
+            row(MON_18, 50, slot=22),
+        ]
+        forecast = smoothed_day(history, self.days_of(history), MON_25, **self.EQUAL)
+        assert forecast is not None
+        assert sum(s.volume for s in forecast) == pytest.approx(100.0)  # every day had 100
+        assert forecast[20].volume > 0
+        assert forecast[22].volume > 0
+        # No call was ever seen at 09:00 or 11:00, so none is forecast there.
+        assert forecast[18].volume == 0
+        assert forecast[24].volume == 0
+
+    def test_no_earlier_day_with_the_same_weekday_means_no_forecast(self):
+        tuesdays_only = [row(date(2026, 5, 19), 200), row(date(2026, 5, 12), 200)]
+        assert smoothed_day(tuesdays_only, self.days_of(tuesdays_only), MON_25) is None
+
+    def test_days_with_no_calls_leave_the_shape_unknown_so_there_is_no_forecast(self):
+        # Observed Mondays that had no calls at all: nothing says where in the day calls fall.
+        quiet = {MON_4, MON_11, MON_18}
+        assert smoothed_day([], quiet, MON_25) is None
+
+    def test_a_day_without_data_is_not_a_quiet_day(self):
+        # 11 May was never imported. It must not drag the level down as a day of zero calls.
+        history = [row(MON_4, 100), row(MON_18, 100)]
+        forecast = smoothed_day(history, self.days_of(history), MON_25, **self.EQUAL)
+        assert forecast is not None
+        assert slot_of(forecast).volume == pytest.approx(100.0)
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"level_weight": -0.1},
+            {"level_weight": 1.1},
+            {"level_days": 0},
+            {"shape_weeks": 0},
+            {"level_decay": 0.0},
+        ],
+    )
+    def test_nonsense_settings_are_refused(self, kwargs):
+        with pytest.raises(ValueError, match="must be"):
+            smoothed_day(self.WEEKDAYS, self.days_of(self.WEEKDAYS), MON_25, **kwargs)
+
+    def test_a_steady_queue_is_forecast_exactly(self):
+        # Every weekday of three weeks has 100 calls at 10:00: the last week is predicted exactly.
+        weekdays = [date(2026, 5, 4) + timedelta(days=i) for i in range(21)]
+        weekdays = [d for d in weekdays if d.weekday() < 5]
+        history = [row(d, 100) for d in weekdays]
+        observed = set(weekdays)
+        last_week = {d for d in weekdays if d >= date(2026, 5, 18)}
+        result = backtest_with(
+            history,
+            observed,
+            lambda day: smoothed_day(history, observed, day),
+            only_days=last_week,
+        )
+        assert result.daily_pct == pytest.approx(100.0)
+        assert result.interval_pct == pytest.approx(100.0)

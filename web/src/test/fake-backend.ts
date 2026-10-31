@@ -136,6 +136,8 @@ export const backend = {
   versions: [] as ForecastVersion[],
   intervals: {} as Record<string, ForecastInterval[]>,
   accuracy: null as ForecastAccuracy | null,
+  /** The model each accuracy request asked for, in order. */
+  accuracyAsked: [] as string[],
   /** What the next forecast run returns: a new draft, or an API problem (refused). */
   runOutcome: null as
     ForecastVersion | { status: number; code: string; title: string; detail: string } | null,
@@ -328,6 +330,7 @@ export const backend = {
     this.versions = []
     this.intervals = {}
     this.accuracy = null
+    this.accuracyAsked = []
     this.runOutcome = null
     this.runs = []
     this.events = []
@@ -579,8 +582,9 @@ export const handlers = [
     return HttpResponse.json(backend.versions.find((v) => v.id === info.params.id))
   }),
 
-  http.get('*/api/v1/forecasting/accuracy', () =>
-    backend.accuracy
+  http.get('*/api/v1/forecasting/accuracy', ({ request }) => {
+    backend.accuracyAsked.push(new URL(request.url).searchParams.get('method') ?? '')
+    return backend.accuracy
       ? HttpResponse.json(backend.accuracy)
       : problem(404, 'resource.not_found', 'Not found')
   }),

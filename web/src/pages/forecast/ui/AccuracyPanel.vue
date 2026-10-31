@@ -1,19 +1,50 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
-import { biasLabel, useAccuracy } from '@/entities/forecast'
+import { biasLabel, useAccuracy, type ForecastMethod } from '@/entities/forecast'
 import { problemMessage } from '@/shared/api'
 import { formatDayLabel } from '@/shared/lib/datetime'
 import NoticeBox from '@/shared/ui/NoticeBox.vue'
 
 const props = defineProps<{ queueId: number }>()
-const accuracy = useAccuracy(computed(() => props.queueId))
+const MODELS: ReadonlyArray<{ value: ForecastMethod; label: string }> = [
+  { value: 'baseline', label: 'Baseline' },
+  { value: 'smoothed', label: 'Smoothed' },
+]
+const method = ref<ForecastMethod>('baseline')
+const accuracy = useAccuracy(
+  computed(() => props.queueId),
+  method,
+)
 const pct = (value: number | null) => (value === null ? '—' : `${value.toFixed(1)}%`)
 </script>
 
 <template>
   <section class="space-y-3" aria-labelledby="accuracy-title">
-    <h2 id="accuracy-title" class="text-base font-semibold text-ink">Forecast accuracy</h2>
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <h2 id="accuracy-title" class="text-base font-semibold text-ink">Forecast accuracy</h2>
+      <div role="group" aria-label="Model" class="inline-flex rounded-lg border border-line">
+        <button
+          v-for="m in MODELS"
+          :key="m.value"
+          type="button"
+          class="min-h-10 px-3 text-sm font-medium first:rounded-l-lg last:rounded-r-lg"
+          :class="
+            method === m.value
+              ? 'bg-brand text-brand-contrast'
+              : 'bg-surface text-ink hover:bg-surface-muted'
+          "
+          :aria-pressed="method === m.value"
+          @click="method = m.value"
+        >
+          {{ m.label }}
+        </button>
+      </div>
+    </div>
+    <p v-if="method === 'smoothed'" class="text-sm text-ink-muted" data-testid="smoothed-note">
+      Smoothed blends the recent same weekdays with the usual level of weekdays and pools the shape
+      of the day, so one odd day moves it less. Compare it with the baseline on the same days.
+    </p>
     <p v-if="accuracy.isPending.value" class="text-sm text-ink-muted">Loading…</p>
     <NoticeBox v-else-if="accuracy.isError.value" tone="danger">
       Could not load the accuracy. {{ problemMessage(accuracy.error.value) }}

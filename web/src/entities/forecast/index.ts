@@ -42,6 +42,7 @@ export type {
   Backtest,
   EventRequest,
   ForecastAccuracy,
+  ForecastMethod,
   ForecastEvent,
   ForecastInterval,
   ForecastJob,

@@ -5609,7 +5609,7 @@ export interface components {
              * @default baseline
              * @enum {string}
              */
-            method: "baseline" | "prophet";
+            method: "baseline" | "smoothed" | "prophet";
             /** Queueid */
             queueId: number;
         };
@@ -7466,7 +7466,7 @@ export interface operations {
         parameters: {
             query: {
                 queue_id: number;
-                method?: "baseline" | "prophet";
+                method?: "baseline" | "smoothed" | "prophet";
             };
             header?: never;
             path?: never;

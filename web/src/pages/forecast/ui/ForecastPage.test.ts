@@ -142,6 +142,25 @@ describe('forecast accuracy', () => {
     expect(screen.getByTestId('accuracy-days')).toHaveTextContent('Over 2 past days')
   })
 
+  it('scores the baseline first and the smoothed model when asked, on the same screen', async () => {
+    // Failure caught: the toggle looking like it switched models while still showing the baseline.
+    withLiveForecast()
+    asRole('planner')
+    const u = user()
+    await renderApp('/forecast?tab=accuracy')
+
+    await screen.findByTestId('accuracy-daily')
+    expect(screen.getByRole('button', { name: 'Baseline' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByTestId('smoothed-note')).toBeNull()
+    expect(backend.accuracyAsked).toEqual(['baseline'])
+
+    await u.click(screen.getByRole('button', { name: 'Smoothed' }))
+
+    expect(await screen.findByTestId('smoothed-note')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Smoothed' })).toHaveAttribute('aria-pressed', 'true')
+    await waitFor(() => expect(backend.accuracyAsked).toEqual(['baseline', 'smoothed']))
+  })
+
   it('says there is not enough data instead of showing a made-up score', async () => {
     withLiveForecast()
     backend.accuracy = accuracyFor({
@@ -379,6 +398,35 @@ describe('which model made the forecast', () => {
 
     await waitFor(() => expect(backend.runs).toHaveLength(1))
     expect(backend.runs[0]?.body).toMatchObject({ method: 'baseline' })
+  })
+
+  it('can ask for the smoothed model', async () => {
+    withLiveForecast()
+    backend.runOutcome = forecastVersion({ id: 'v-new', status: 'draft', publishedAt: null })
+    backend.intervals['v-new'] = dayIntervals()
+    asRole('planner')
+    const u = user()
+    await renderApp('/forecast')
+
+    const form = await screen.findByRole('form', { name: 'Run a forecast' })
+    await u.selectOptions(within(form).getByLabelText('Model'), 'smoothed')
+    await u.click(within(form).getByRole('button', { name: 'Run forecast' }))
+
+    await waitFor(() => expect(backend.runs).toHaveLength(1))
+    expect(backend.runs[0]?.body).toMatchObject({ method: 'smoothed' })
+  })
+
+  it('explains a smoothed forecast in plain words, with no Prophet evidence', async () => {
+    withLiveForecast({ method: 'smoothed-v1', params: { ...prophetParams, backtest: undefined } })
+    asRole('planner')
+    await renderApp('/forecast')
+
+    const model = await screen.findByTestId('model')
+    expect(model).toHaveTextContent('Model: Smoothed')
+    expect(model).toHaveTextContent('30% shrinkage')
+    expect(screen.queryByTestId('evidence')).toBeNull()
+    expect(screen.queryByTestId('fallback-notice')).toBeNull()
+    expect(screen.queryByTestId('total-range')).toBeNull()
   })
 
   it('says Prophet was used, with the evidence that earned it the place, and shows the range', async () => {

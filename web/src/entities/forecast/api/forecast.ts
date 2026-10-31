@@ -4,6 +4,7 @@ import type {
   Backtest,
   EventRequest,
   ForecastAccuracy,
+  ForecastMethod,
   ForecastEvent,
   ForecastInterval,
   ForecastJob,
@@ -48,9 +49,14 @@ export async function fetchRange(
   )
 }
 
-export async function fetchAccuracy(queueId: number): Promise<ForecastAccuracy> {
+export async function fetchAccuracy(
+  queueId: number,
+  method: ForecastMethod = 'baseline',
+): Promise<ForecastAccuracy> {
   return unwrap(
-    await api.GET('/api/v1/forecasting/accuracy', { params: { query: { queue_id: queueId } } }),
+    await api.GET('/api/v1/forecasting/accuracy', {
+      params: { query: { queue_id: queueId, method } },
+    }),
   )
 }
 

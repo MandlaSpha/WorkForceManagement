@@ -82,11 +82,12 @@ def forecast_accuracy(user: User, queue_id: int, method: str = "baseline") -> Ac
         raise not_found("No such queue.")
     tuning, _ = tuning_of(user, queue)
     history, observed = load_history(queue)
-    result = (
-        modeling.prophet_backtest(history, observed, tuning)[0]
-        if method == "prophet"
-        else modeling.baseline_backtest(history, observed, tuning)
-    )
+    if method == "prophet":
+        result = modeling.prophet_backtest(history, observed, tuning)[0]
+    elif method == "smoothed":
+        result = modeling.smoothed_backtest(history, observed, tuning)
+    else:
+        result = modeling.baseline_backtest(history, observed, tuning)
     return Accuracy(
         queue,
         result.interval_pct,

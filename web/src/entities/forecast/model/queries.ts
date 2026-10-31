@@ -11,6 +11,7 @@ import {
   fetchVersions,
   type TuningTrial,
 } from '../api/forecast'
+import type { ForecastMethod } from './types'
 
 /** Query keys. Running or publishing a forecast invalidates `all`. */
 export const forecastKeys = {
@@ -23,7 +24,8 @@ export const forecastKeys = {
   tuning: (queueId: number) => ['forecast', 'tuning', queueId] as const,
   backtest: (queueId: number, trial: TuningTrial) =>
     ['forecast', 'backtest', queueId, trial] as const,
-  accuracy: (queueId: number) => ['forecast', 'accuracy', queueId] as const,
+  accuracy: (queueId: number, method: ForecastMethod) =>
+    ['forecast', 'accuracy', queueId, method] as const,
 }
 
 export function useVersions(queueId: MaybeRef<number | null>) {
@@ -59,10 +61,13 @@ export function useRange(
   })
 }
 
-export function useAccuracy(queueId: MaybeRef<number | null>) {
+export function useAccuracy(
+  queueId: MaybeRef<number | null>,
+  method: MaybeRef<ForecastMethod> = 'baseline',
+) {
   return useQuery({
-    queryKey: computed(() => forecastKeys.accuracy(toValue(queueId) ?? 0)),
-    queryFn: () => fetchAccuracy(toValue(queueId) as number),
+    queryKey: computed(() => forecastKeys.accuracy(toValue(queueId) ?? 0, toValue(method))),
+    queryFn: () => fetchAccuracy(toValue(queueId) as number, toValue(method)),
     enabled: computed(() => toValue(queueId) !== null),
   })
 }

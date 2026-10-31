@@ -20,6 +20,7 @@ from wfm_engine.forecast import (
     SlotHistory,
     backtest_with,
     baseline_day,
+    smoothed_day,
     spread_day_total,
 )
 
@@ -28,9 +29,10 @@ from wfm.core.errors import ApiError
 from . import prophet_model
 
 BASELINE = "baseline-v1"
+SMOOTHED = "smoothed-v1"
 MIN_SCORED_DAYS = 7  # fewer compared days and "Prophet is better" would be a guess
 
-METHODS = ("baseline", "prophet")
+METHODS = ("baseline", "smoothed", "prophet")
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,6 +126,19 @@ def baseline_forecaster(
     return forecast
 
 
+def smoothed_forecaster(
+    history: list[SlotHistory], observed: Collection[date], tuning: Tuning
+) -> Callable[[date], list[SlotForecast] | None]:
+    """The smoothed model (day-level level and a pooled intraday shape) as a function of the day,
+    with the queue's tuning applied. Same looking-back settings as the baseline."""
+
+    def forecast(day: date) -> list[SlotForecast] | None:
+        slots = smoothed_day(history, observed, day, weeks=tuning.weeks, decay=tuning.decay)
+        return None if slots is None else tuning.scaled(slots)
+
+    return forecast
+
+
 def baseline_days(
     history: list[SlotHistory],
     observed: Collection[date],
@@ -140,6 +155,13 @@ def baseline_backtest(
 ) -> Backtest:
     """The tuned baseline scored on every past day it could have forecast."""
     return backtest_with(history, observed, baseline_forecaster(history, observed, tuning))
+
+
+def smoothed_backtest(
+    history: list[SlotHistory], observed: Collection[date], tuning: Tuning = DEFAULT_TUNING
+) -> Backtest:
+    """The smoothed model scored on every past day it could have forecast."""
+    return backtest_with(history, observed, smoothed_forecaster(history, observed, tuning))
 
 
 def prophet_backtest(
@@ -181,6 +203,14 @@ def build(
         baseline_days(history, observed, days, tuning),
         {"tuning": tuning.as_params()},
     )
+    if method == "smoothed":
+        forecast = smoothed_forecaster(history, observed, tuning)
+        days_forecast = ((day, forecast(day)) for day in days)
+        return Built(
+            SMOOTHED,
+            {day: DayForecast(slots) for day, slots in days_forecast if slots is not None},
+            {"tuning": tuning.as_params()},
+        )
     if method != "prophet":
         return baseline
 

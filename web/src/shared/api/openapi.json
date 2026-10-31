@@ -7910,6 +7910,7 @@
             "default": "baseline",
             "enum": [
               "baseline",
+              "smoothed",
               "prophet"
             ],
             "title": "Method",
@@ -12368,6 +12369,7 @@
               "default": "baseline",
               "enum": [
                 "baseline",
+                "smoothed",
                 "prophet"
               ],
               "title": "Method",

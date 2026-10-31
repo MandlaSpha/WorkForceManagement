@@ -217,7 +217,9 @@ def version_intervals(request: HttpRequest, version_id: UUID) -> list[ForecastIn
     summary="How well a model would have predicted each past day (backtest)",
 )
 def accuracy(
-    request: HttpRequest, queue_id: int, method: Literal["baseline", "prophet"] = "baseline"
+    request: HttpRequest,
+    queue_id: int,
+    method: Literal["baseline", "smoothed", "prophet"] = "baseline",
 ) -> AccuracyOut:
     result = selectors.forecast_accuracy(current_user(request), queue_id, method)
     return AccuracyOut(

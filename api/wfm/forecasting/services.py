@@ -39,7 +39,8 @@ def run_forecast(
     """Forecast every day from `date_from` to `date_to` and work out the agents each half-hour
     needs. The result is a DRAFT version; publishing it is a separate, deliberate step.
 
-    `method="prophet"` asks for Prophet, which is used only if it beats the baseline on past days;
+    `method="smoothed"` uses the smoothed model (day-level level, pooled shape). `method="prophet"`
+    asks for Prophet, which is used only if it beats the baseline on past days;
     the version records the model that was really used and, if it fell back, why (ADR 0002)."""
     queue = Queue.objects.for_user(user).filter(pk=queue_id).first()
     if queue is None:

@@ -129,6 +129,23 @@ Computed iteratively in log space to avoid factorial overflow. Variance = schedu
 
 The half-hour score is low for small queues because a half-hour holds a call or two and chance alone moves it; the day score is the one staffing a day leans on, and even that is only moderate. **This is a first baseline, not a finished forecast.** Likely gains, in order: a trend factor and day-level (rather than slot-level) averaging, smoothing neighbouring half-hours for small queues, holiday and event uplifts (FC-04), then the Phase 7 machine-learning model (FC-07) judged against this backtest.
 
+**Smoothed model (built, `method=smoothed`, version label `smoothed-v1`).** `wfm_engine.forecast.smoothed_day` (pure) is the baseline made steadier for small queues, chosen after trying four variants on the real May and July reports and on the synthetic demo queues:
+- **The day's total** is half the baseline's total (recent same weekdays) and half the usual level of the recent days of the same kind (Monday to Friday pooled; Saturday and Sunday each alone; newest 20 days, weight 0.9 per step back). A weekday pattern survives (half still follows the same weekday) and one odd day is diluted.
+- **The shape of the day** is pooled: the average of each day's share per half-hour over about eight weeks of days of the same kind, instead of four same-weekday days.
+- Handling times, the honesty rules above and the queue's tuning (volume and handling multipliers) are unchanged; a day it cannot forecast is refused (`forecast.no_history`, 422) and nothing is invented. Events (FC-04) are applied on top as for the baseline.
+- **Run and compare.** `POST /forecasting/versions` and `/versions/jobs` take `method` (`baseline`, `smoothed`, `prophet`); `GET /forecasting/accuracy?method=` scores `smoothed` as well. Roles as for the baseline (run: planner and admin; accuracy: planner, admin and lead). The Forecast screen's Model list has "Smoothed (steadier for small queues)", and the Accuracy tab toggles Baseline / Smoothed on the same past days. The baseline stays the default until the smoothed numbers have held up on more data.
+
+| Queue (real May and July) | Baseline: day / half-hour | Smoothed: day / half-hour |
+|---|---|---|
+| TotalSA | 71.8% / 41.8% | 75.2% / 48.6% |
+| Platinumhealth | 68.8% / 12.3% | 73.1% / 21.3% |
+| Gijima | 59.6% / 0.0% | 64.3% / 1.2% |
+| PPECB | 42.9% / 0.0% | 51.7% / 0.0% |
+| NightShiftTotalSA | 48.2% / 0.0% | 53.3% / 0.0% |
+| NightShiftGijima | 48.3% / 0.0% | 50.8% / 0.0% |
+
+The day total improved on every real queue (2 to 9 points); on the synthetic demo queues, which have a weekday pattern, it stays within one point either way. A variant that used only the weekday level (no same-weekday half) was rejected: it lost one to three points on the demo queues. Two months from six queues is a small sample, and the small and night queues are still at or below about 50% on day totals: more months of history (12 or more) matter more than any averaging.
+
 **Not built yet:** the monthly trend factor, multi-channel (FC-06), ML (FC-07), per-queue and per-contract settings screens (ENG-05; the values exist on the queue but are changed in Configure, Phase 2). Whole days are assumed: an import that stops mid-day would make that day look quiet.
 
 ### 4.3c Events calendar (Phase 2.5, built)

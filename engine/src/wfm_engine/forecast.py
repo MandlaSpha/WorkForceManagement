@@ -152,6 +152,95 @@ def spread_day_total(
     return [SlotForecast(s.slot, s.volume * factor, s.aht_s, s.days_used) for s in profile]
 
 
+DEFAULT_LEVEL_DAYS = 20  # recent days of the same kind that set the day's usual level
+DEFAULT_LEVEL_DECAY = 0.9
+DEFAULT_LEVEL_WEIGHT = 0.5  # how much of the day's total comes from that level
+DEFAULT_SHAPE_WEEKS = 8  # weeks of same-kind days whose intraday shape is pooled
+DEFAULT_SHAPE_DECAY = 0.9
+
+
+def _day_kind(day: date) -> int:
+    """Monday to Friday are one kind of day; Saturday and Sunday each stand alone."""
+    return 0 if day.weekday() < 5 else day.weekday()
+
+
+def smoothed_day(
+    history: Iterable[SlotHistory],
+    observed_days: Collection[date],
+    target: date,
+    *,
+    weeks: int = DEFAULT_WEEKS,
+    decay: float = DEFAULT_DECAY,
+    level_days: int = DEFAULT_LEVEL_DAYS,
+    level_decay: float = DEFAULT_LEVEL_DECAY,
+    level_weight: float = DEFAULT_LEVEL_WEIGHT,
+    shape_weeks: int = DEFAULT_SHAPE_WEEKS,
+) -> list[SlotForecast] | None:
+    """A steadier forecast than `baseline_day`, for queues with few calls per half-hour (FC-02).
+
+    The baseline averages only the last few days with the same weekday, so on a small queue one odd
+    day moves the whole forecast and a half-hour holds a call or two of noise. This model does two
+    things differently:
+
+    - **The day's total** blends the baseline's total with the usual level of the recent days of
+      the same kind (Monday to Friday, or that Saturday or Sunday), taking `level_weight` from the
+      level. A weekday pattern is kept (half of the total still follows the same weekday); a
+      single odd day is diluted by the others.
+    - **The shape of the day** (where in the day the calls fall) is pooled over `shape_weeks`
+      weeks of days of the same kind instead of four same-weekday days, so a half-hour is judged
+      on many days, not four.
+
+    Handling times are the baseline's. Same honesty rules: only days BEFORE `target` and only
+    observed days count, and None when no earlier day with the same weekday has data, or when the
+    days that set the shape had no calls (nothing says where in the day the calls fall).
+    """
+    if not 0 <= level_weight <= 1:
+        raise ValueError("level_weight must be between 0 and 1")
+    if level_days < 1 or shape_weeks < 1:
+        raise ValueError("level_days and shape_weeks must be at least 1")
+    if not 0 < level_decay <= 1:
+        raise ValueError("level_decay must be in (0, 1]")
+
+    base = baseline_day(history, observed_days, target, weeks=weeks, decay=decay)
+    if base is None:
+        return None
+    baseline_total = sum(s.volume for s in base)
+
+    kind = _day_kind(target)
+    same_kind = sorted(
+        (d for d in observed_days if d < target and _day_kind(d) == kind), reverse=True
+    )
+    by_day: dict[date, dict[int, int]] = defaultdict(dict)
+    for r in history:
+        by_day[r.day][r.slot] = r.offered
+    totals = {day: float(sum(by_day[day].values())) for day in same_kind}
+
+    level_pool = same_kind[:level_days]
+    level_weights = [level_decay**age for age in range(len(level_pool))]
+    level = sum(w * totals[d] for w, d in zip(level_weights, level_pool, strict=True)) / sum(
+        level_weights
+    )
+    total = (1 - level_weight) * baseline_total + level_weight * level
+
+    # Weekdays are five days a week, so the pool of weekday days is five times as deep.
+    shape_pool = same_kind[: shape_weeks * (5 if kind == 0 else 1)]
+    shape = [0.0] * SLOTS_PER_DAY
+    shape_weight = 0.0
+    for age, day in enumerate(shape_pool):
+        if totals[day] <= 0:
+            continue
+        w = DEFAULT_SHAPE_DECAY**age
+        shape_weight += w
+        for slot, offered in by_day[day].items():
+            shape[slot] += w * offered / totals[day]
+    if shape_weight == 0:
+        return None
+    return [
+        SlotForecast(s.slot, total * shape[s.slot] / shape_weight, s.aht_s, s.days_used)
+        for s in base
+    ]
+
+
 def bias_pct(pairs: Iterable[tuple[float, float]]) -> float | None:
     """How far the forecasts ran from what happened, in total: +10 means 10% too many calls
     forecast, -10 means 10% too few. Unlike accuracy it keeps the sign, because a forecast that is

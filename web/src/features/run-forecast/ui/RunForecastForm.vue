@@ -25,6 +25,7 @@ const label = ref('')
 const method = ref('prophet')
 const METHODS = [
   { value: 'prophet', label: 'Best available (Prophet, checked against the baseline)' },
+  { value: 'smoothed', label: 'Smoothed (steadier for small queues)' },
   { value: 'baseline', label: 'Baseline (recent same weekdays)' },
 ]
 
@@ -44,7 +45,7 @@ function submit(): void {
       dateFrom: dateFrom.value,
       dateTo: dateTo.value,
       label: label.value.trim(),
-      method: method.value === 'baseline' ? 'baseline' : 'prophet',
+      method: method.value === 'baseline' || method.value === 'smoothed' ? method.value : 'prophet',
     },
     { onSuccess: (version) => emit('ran', version) },
   )
