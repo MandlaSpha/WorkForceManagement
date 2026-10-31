@@ -173,6 +173,22 @@ def test_login_password_never_reaches_a_span(spans: InMemorySpanExporter) -> Non
     assert token not in recorded
 
 
+def test_the_callers_address_and_browser_never_reach_a_span(spans: InMemorySpanExporter) -> None:
+    # A client address and a user agent can single a person out (POPIA), so neither is recorded.
+    client = signed_in_client()
+
+    client.get(
+        "/api/v1/auth/me",
+        REMOTE_ADDR="203.0.113.77",
+        HTTP_USER_AGENT="SecretBrowser/9.9 (Private Device)",
+    )
+
+    recorded = everything_recorded(spans)
+    assert "203.0.113.77" not in recorded
+    assert "SecretBrowser" not in recorded
+    assert "Private Device" not in recorded
+
+
 def test_a_copilot_question_never_reaches_a_span(spans: InMemorySpanExporter) -> None:
     # Failure caught: the question text (it can name a person) or the answer in a span, a query
     # parameter or an event. The question lives only in the audit trail, for admin review.

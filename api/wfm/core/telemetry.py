@@ -36,6 +36,16 @@ _provider: TracerProvider | None = None
 EXCLUDED_URLS = "healthz,readyz"
 # Span attributes that can carry a URL, and so a query string.
 _URL_ATTRIBUTES = ("url.full", "http.url", "http.target", "url.query")
+# Span attributes that identify the caller's machine or browser: a client address and a user agent
+# can single a person out, so they are blanked (POPIA, OBS-05 and OBS-10), old and new names alike.
+_CLIENT_ATTRIBUTES = (
+    "net.peer.ip",
+    "net.sock.peer.addr",
+    "http.client_ip",
+    "client.address",
+    "http.user_agent",
+    "user_agent.original",
+)
 
 
 def trace_id_hex(span: trace.Span | None = None) -> str:
@@ -60,6 +70,13 @@ def _redact_url_attributes(span: trace.Span) -> None:
         span.set_attribute(name, "" if name == "url.query" else redact_query(value))
 
 
+def _blank_client_attributes(span: trace.Span) -> None:
+    attributes = getattr(span, "attributes", None) or {}
+    for name in _CLIENT_ATTRIBUTES:
+        if name in attributes:
+            span.set_attribute(name, "")
+
+
 def _django_response_hook(span: trace.Span, request: Any, response: Any) -> None:
     """Runs after all middleware: add the role and request id, scrub URLs. Never the user."""
     if not span.is_recording():
@@ -71,6 +88,7 @@ def _django_response_hook(span: trace.Span, request: Any, response: Any) -> None
     if request_id:
         span.set_attribute("wfm.request_id", request_id)
     _redact_url_attributes(span)
+    _blank_client_attributes(span)
 
 
 def _sample_ratio() -> float:
