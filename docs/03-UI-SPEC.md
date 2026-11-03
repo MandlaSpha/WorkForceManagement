@@ -19,7 +19,7 @@ Derived from `Files/VID-20260917-WA0001.mp4` (111 s screen recording of the refe
 - **Tabs**: segmented pill group under the header (e.g. Plan | Hiring | Versions | Assumptions).
 - **Tables**: uppercase muted headers, generous row height, status pills (`pending`, `published`, `Draft`, `Critical`, `unavailable`, `preferred`).
 - **Loading**: skeleton bars. **Warnings**: amber callout boxes ("Before you act on these numbers").
-- Typography: Inter-style sans; primary colour deep blue (#1E4FA0-ish), danger red, success green, over-staffed cyan.
+- Typography: Urbanist, self-hosted (ADR 0003); primary colour blue `#2A4FD0` (light) / `#7B95FF` (dark), defined as `--brand` tokens in `web/src/app/styles/index.css`; danger red, success green, over-staffed cyan.
 
 ## Screens
 

@@ -316,7 +316,17 @@ const subtitle = computed(() => {
             </table>
           </div>
 
-          <p class="text-sm" data-testid="verdict">
+          <p
+            class="rounded-2xl border px-4 py-3 text-sm font-medium"
+            :class="
+              better === 'better'
+                ? 'border-ok/40 bg-ok-soft text-ok'
+                : better === 'worse'
+                  ? 'border-warn/40 bg-warn-soft text-warn'
+                  : 'border-line bg-surface text-ink-muted'
+            "
+            data-testid="verdict"
+          >
             <template v-if="better === 'better'">
               These settings predict day totals better than the saved ones.
             </template>

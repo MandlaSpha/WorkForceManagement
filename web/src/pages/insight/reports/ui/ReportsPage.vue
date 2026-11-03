@@ -66,24 +66,23 @@ const outcomeChip = (o: string) =>
     />
 
     <section
-      class="page-enter overflow-hidden rounded-3xl bg-surface shadow-[var(--shadow-card)]"
+      class="page-enter overflow-hidden rounded-2xl border border-line bg-surface shadow-card"
       aria-labelledby="schedules-title"
     >
-      <h2
-        id="schedules-title"
-        class="px-5 pt-5 text-lg font-semibold tracking-tight text-ink sm:px-6"
-      >
-        {{ isAdmin ? 'All schedules' : 'Your schedules' }}
-      </h2>
-      <a
-        v-if="rows.length > 0"
-        :href="schedulesCsvUrl"
-        download
-        class="mx-5 mt-1 inline-block text-sm font-medium text-brand-ink underline sm:mx-6"
-        data-testid="schedules-csv"
-      >
-        Download as CSV
-      </a>
+      <div class="flex flex-wrap items-center justify-between gap-2 px-5 pt-5 sm:px-6">
+        <h2 id="schedules-title" class="text-lg font-semibold tracking-tight text-ink">
+          {{ isAdmin ? 'All schedules' : 'Your schedules' }}
+        </h2>
+        <a
+          v-if="rows.length > 0"
+          :href="schedulesCsvUrl"
+          download
+          class="rounded-xl border border-line px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-muted"
+          data-testid="schedules-csv"
+        >
+          Download as CSV
+        </a>
+      </div>
       <div v-if="schedules.isPending.value" class="space-y-2 p-5" data-testid="schedules-loading">
         <span class="sr-only">Loading…</span>
         <div v-for="n in 3" :key="n" class="skeleton h-12"></div>
